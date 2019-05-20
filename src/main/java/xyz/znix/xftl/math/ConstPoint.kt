@@ -3,6 +3,10 @@ package xyz.znix.xftl.math
 class ConstPoint(override val x: Int, override val y: Int) : IPoint {
     constructor(p: IPoint) : this(p.x, p.y)
 
+    companion object {
+        val ZERO = ConstPoint(0, 0)
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other !is IPoint)
             return false
