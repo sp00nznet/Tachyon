@@ -28,7 +28,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             if (room.containsRelative(target))
                 return
 
-            if(value.isDiagonal)
+            if (value.isDiagonal)
                 throw IllegalArgumentException("Cannot move diagonally through a doorway")
 
             targetDoor = null
