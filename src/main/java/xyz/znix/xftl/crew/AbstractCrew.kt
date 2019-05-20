@@ -27,7 +27,11 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     var movement: Direction? = null
         set(value) {
             field = value
-            updateAnimation()
+
+            // If we're stopping but are targeting to walk through a door, this will be handled for us, as
+            // we're currently in an invalid position
+            if (value != null || targetDoor == null)
+                updateAnimation()
 
             if (value == null)
                 return
@@ -97,6 +101,8 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
 
                     room = newRoom
                     targetDoor = null
+
+                    updateAnimation()
                 }
 
                 // Calculate the next movement
