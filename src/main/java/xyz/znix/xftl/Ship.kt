@@ -4,9 +4,12 @@ import org.w3c.dom.Element
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.layout.Door
+import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
+import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.systems.*
 import java.awt.Rectangle
 import java.util.stream.Collectors
@@ -22,6 +25,8 @@ class Ship(base: Datafile, val name: String) {
     val imageName: String
 
     val crew: MutableList<AbstractCrew> = ArrayList()
+
+    val pathFinder: PathFinder
 
     init {
         val blueprints = base.parseXML(base["data/blueprints.xml"])
@@ -166,7 +171,22 @@ class Ship(base: Datafile, val name: String) {
         hullOffset = ConstPoint(
                 imgTag.getAttribute("x").toInt() + ROOM_SIZE * offset.x,
                 imgTag.getAttribute("y").toInt() + ROOM_SIZE * offset.y)
+
+        // Set up the pathfinder after the layout is loaded
+        pathFinder = PathFinder(this)
     }
 
     private fun roomByIdOrNull(id: Int): Room? = if (id == -1) null else rooms[id]
+
+    fun shipToRoomPos(pos: IPoint): RoomPoint? {
+        if (pos is RoomPoint)
+            return pos
+
+        for (r in rooms) {
+            if (r.containsAbsolute(pos))
+                return RoomPoint(r, pos - r.position)
+        }
+
+        return null
+    }
 }
