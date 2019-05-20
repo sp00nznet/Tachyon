@@ -7,7 +7,17 @@ class RoomPoint(val room: Room, override val x: Int, override val y: Int) : IPoi
 
     val shipX: Int get() = room.x + x
     val shipY: Int get() = room.y + y
-    val shipPoint: ConstPoint get() = ConstPoint(shipX, shipY)
+    val shipPoint: ConstPoint
+        get() {
+            var cache = shipPointCache
+            if (cache != null)
+                return cache
+            cache = ConstPoint(shipX, shipY)
+            shipPointCache = cache
+            return cache
+        }
+
+    private var shipPointCache: ConstPoint? = null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
