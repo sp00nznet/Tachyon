@@ -7,12 +7,22 @@ import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.math.RoomPoint
 
 abstract class AbstractCrew(private val codename: String, private val anims: Animations, var room: Room) {
     var icon: Animation
 
     // The cell position in the current room
     var position: Point = Point(0, 0)
+    val roomPosition: RoomPoint get() = RoomPoint(room, position)
+
+    var pathingTarget: RoomPoint? = null
+        private set(value) {
+            val old = field
+            field = value
+            if (old == null)
+                actionComplete()
+        }
 
     var movement: Direction? = null
         set(value) {
@@ -96,7 +106,16 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     }
 
     private fun actionComplete() {
-        movement = Direction.LEFT
+        if (pathingTarget == roomPosition)
+            pathingTarget = null
+
+        val immPt = pathingTarget ?: return
+
+        val pf = room.ship.pathFinder
+        pf.path(immPt)
+        val current = pf.nodes.getValue(roomPosition)
+        val tgt = current.next!!
+        movement = Direction.fromPoint(tgt.pos.shipPoint - roomPosition.shipPoint)
     }
 
     private fun dirAsString(dir: Direction): String {
@@ -126,5 +145,20 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
 
         icon = anims["${codename}_portrait"].start()
         return
+    }
+
+    fun setTargetRoom(value: Room) {
+        // TODO enemy support
+        val slots = value.reservedPlayerSlots
+        for (i in 0 until slots.size) {
+            if (slots[i] != null)
+                continue
+
+            slots[i] = this
+            pathingTarget = RoomPoint(value, value.slotToPoint(i))
+            return
+        }
+
+        throw IllegalStateException("No spare slot in room")
     }
 }

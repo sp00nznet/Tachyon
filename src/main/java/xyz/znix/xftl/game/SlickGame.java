@@ -5,10 +5,8 @@ import xyz.znix.xftl.*;
 import xyz.znix.xftl.crew.AbstractCrew;
 import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Door;
-import xyz.znix.xftl.layout.PathFinder;
 import xyz.znix.xftl.layout.Room;
-import xyz.znix.xftl.math.Direction;
-import xyz.znix.xftl.math.RoomPoint;
+import xyz.znix.xftl.math.ConstPoint;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +49,7 @@ public class SlickGame extends BasicGame {
 
         HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0));
         player.getCrew().add(crew);
-        crew.setMovement(Direction.DOWN);
+        crew.setTargetRoom(player.shipToRoomPos(new ConstPoint(1, 1)).getRoom());
     }
 
     @Override

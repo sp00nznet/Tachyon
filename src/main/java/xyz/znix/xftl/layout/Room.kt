@@ -3,6 +3,7 @@ package xyz.znix.xftl.layout
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -30,6 +31,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val offsetY get() = ROOM_SIZE * (y + ship.offset.y) - ship.hullOffset.y
 
     val position = ConstPoint(x, y)
+
+    val reservedPlayerSlots: Array<AbstractCrew?> = Array(width * height) { null }
+    val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
 
     fun initialise(doors: List<Door>) {
         if (_doors != null)
@@ -74,5 +78,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             return false
 
         return true
+    }
+
+    fun slotToPoint(slot: Int): IPoint {
+        if (slot >= width * height)
+            throw ArrayIndexOutOfBoundsException("Invalid slot $slot for $width*$height room - range is 0 to ${width * height}")
+
+        return ConstPoint(slot % width, slot / width)
     }
 }
