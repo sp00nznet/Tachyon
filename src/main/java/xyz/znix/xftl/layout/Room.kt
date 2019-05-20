@@ -64,4 +64,15 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         return true
     }
+
+    // Check if a point (relative to the ship's origin) is inside this room
+    fun containsAbsolute(target: IPoint): Boolean {
+        if (target.x < x || target.y < y)
+            return false
+
+        if (target.x >= x + width || target.y >= y + height)
+            return false
+
+        return true
+    }
 }
