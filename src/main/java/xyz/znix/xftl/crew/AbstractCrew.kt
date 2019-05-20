@@ -36,7 +36,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
                 // note can only walk horizontally through a vertical doorway and vice versa, since horizontal
                 // and vertical refer to the door's orientation on the player's screen, not the direction
                 // crew can travel through it
-                if (door.roomPos(room) == position && door.isVertical == value.isHorizontal) {
+                if (door.roomPos(room) posEq position && door.isVertical == value.isHorizontal) {
                     targetDoor = door
                     break
                 }

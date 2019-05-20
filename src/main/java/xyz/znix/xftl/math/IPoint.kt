@@ -20,4 +20,11 @@ interface IPoint {
     operator fun unaryMinus(): ConstPoint {
         return ConstPoint(-x, -y)
     }
+
+    /**
+     * Compare two points, matching if they have the same X or Y, regardless of their type
+     */
+    infix fun posEq(other: IPoint): Boolean {
+        return x == other.x && y == other.y
+    }
 }
