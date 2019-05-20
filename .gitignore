@@ -1,0 +1,16 @@
+# Ignore Gradle project-specific cache directory
+/.gradle
+
+# Ignore Gradle build output directory
+/build
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# IntelliJ IDEA files
+/out
+/*.iml
+/.idea
+
+# LWJGL Natives (TODO autoextract these)
+/natives
