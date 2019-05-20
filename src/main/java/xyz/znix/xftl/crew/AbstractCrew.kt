@@ -156,15 +156,25 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     fun setTargetRoom(value: Room) {
         // TODO enemy support
         val slots = value.reservedPlayerSlots
-        for (i in 0 until slots.size) {
-            if (slots[i] != null)
-                continue
 
-            slots[i] = this
-            pathingTarget = RoomPoint(value, value.slotToPoint(i))
-            return
+        if (value.computerPoint != null)
+            if (setTargetRoom(value, value.pointToSlot(value.computerPoint!!), slots))
+                return
+
+        for (i in 0 until slots.size) {
+            if (setTargetRoom(value, i, slots))
+                return
         }
 
         throw IllegalStateException("No spare slot in room")
+    }
+
+    private fun setTargetRoom(value: Room, slot: Int, slots: Array<AbstractCrew?>): Boolean {
+        if (slots[slot] != null)
+            return false
+
+        slots[slot] = this
+        pathingTarget = RoomPoint(value, value.slotToPoint(slot))
+        return true
     }
 }

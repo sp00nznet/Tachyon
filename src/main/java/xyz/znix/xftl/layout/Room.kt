@@ -86,4 +86,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         return ConstPoint(slot % width, slot / width)
     }
+
+    fun pointToSlot(point: IPoint): Int {
+        check(containsRelative(point))
+
+        return point.x + point.y * width
+    }
 }
