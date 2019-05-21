@@ -94,20 +94,6 @@ class PathFinder(val ship: Ship) {
         val shipPoints = HashMap<ConstPoint, Node>()
         for (room in nodes)
             shipPoints[room.key.shipPoint] = room.value
-
-        for (y in 0..15) {
-            for (x in 0..15) {
-                val node = shipPoints[ConstPoint(x, y)]
-                val weight = node?.weight
-
-                System.out.print(when (weight) {
-                    Node.MAX_WEIGHT -> "xx"
-                    null -> "  "
-                    else -> weight.toInt().toString().padStart(2)
-                })
-            }
-            System.out.println()
-        }
     }
 
     class Node(val pos: RoomPoint) {
