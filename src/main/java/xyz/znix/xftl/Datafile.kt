@@ -1,9 +1,9 @@
 package xyz.znix.xftl
 
+import org.jdom2.Document
+import org.jdom2.input.SAXBuilder
 import org.newdawn.slick.Image
-import org.w3c.dom.Document
 import java.io.*
-import javax.xml.parsers.DocumentBuilderFactory
 
 const val HEADER_SIZE = 16
 const val ENTRY_SIZE = 20
@@ -113,9 +113,8 @@ constructor(private val data_file: File) {
     fun readString(file: FTLFile) = String(read(file), Charsets.UTF_8)
 
     fun parseXML(file: FTLFile): Document {
-        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(open(file))
-        doc.documentElement.normalize()
-        return doc
+        val builder = SAXBuilder()
+        return builder.build(open(file))
     }
 
     fun open(file: FTLFile): InputStream {

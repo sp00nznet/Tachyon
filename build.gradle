@@ -26,6 +26,8 @@ dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     implementation 'org.slick2d:slick2d-core:1.0.2'
 
+    implementation 'org.jdom:jdom:2.0.2'
+
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 

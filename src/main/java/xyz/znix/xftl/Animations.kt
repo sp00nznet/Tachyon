@@ -1,7 +1,6 @@
 package xyz.znix.xftl
 
 import org.newdawn.slick.SpriteSheet
-import org.w3c.dom.Element
 
 class Animations(df: Datafile) {
     private val sheets: Map<String, SpriteSheet>
@@ -14,11 +13,8 @@ class Animations(df: Datafile) {
         val doc = df.parseXML(df["data/animations.xml"])
 
         // Parse the sheets
-        val sheets = doc.getElementsByTagName("animSheet")
-        for (i in 0..sheets.length) {
-            val elem = sheets.item(i) as? Element ?: continue
-
-            val name = elem.getAttribute("name")
+        for (elem in doc.rootElement.getChildren("animSheet")) {
+            val name = elem.getAttributeValue("name")
 
             if (this.sheets.containsKey(name)) {
                 System.out.println("Warning: duplicate spritesheet $name, using first one")
@@ -34,14 +30,14 @@ class Animations(df: Datafile) {
                 continue
 
             // The filename is the text inside the element
-            val img = df.readImage(df["img/${elem.textContent}"])
+            val img = df.readImage(df["img/${elem.textTrim}"])
 
             // Make sure the texture size is correct
-            check(elem.getAttribute("w").toInt() == img.width)
-            check(elem.getAttribute("h").toInt() == img.height)
+            check(elem.getAttributeValue("w").toInt() == img.width)
+            check(elem.getAttributeValue("h").toInt() == img.height)
 
-            val frame_width = elem.getAttribute("fw").toInt()
-            val frame_height = elem.getAttribute("fh").toInt()
+            val frame_width = elem.getAttributeValue("fw").toInt()
+            val frame_height = elem.getAttributeValue("fh").toInt()
 
             val sheet = SpriteSheet(img, frame_width, frame_height)
 
@@ -51,13 +47,10 @@ class Animations(df: Datafile) {
         val mutableAnimations: MutableMap<String, AnimationSpec> = HashMap()
         animations = mutableAnimations
 
-        val animsXMl = doc.getElementsByTagName("anim")
-        for (i in 0..animsXMl.length) {
-            val xml = animsXMl.item(i) as? Element ?: continue
+        for (xml in doc.rootElement.getChildren("anim")) {
+            val name = xml.getAttributeValue("name")
 
-            val name = xml.getAttribute("name")
-
-            val sheetName = xml.getElementsByTagName("sheet").item(0).textContent
+            val sheetName = xml.getChild("sheet").textTrim
 
             // Skip the broken animation files
             if (sheetName == "bomb_1")
@@ -69,14 +62,14 @@ class Animations(df: Datafile) {
 
             val sheet = this.sheets[sheetName] ?: throw IllegalStateException("Unknown sheet $sheetName")
 
-            val desc = xml.getElementsByTagName("desc").item(0) as Element
+            val desc = xml.getChild("desc")
 
-            val length = desc.getAttribute("length").toInt()
-            val x = desc.getAttribute("x").toInt()
-            val y = sheet.verticalCount - desc.getAttribute("y").toInt() - 1
+            val length = desc.getAttributeValue("length").toInt()
+            val x = desc.getAttributeValue("x").toInt()
+            val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
 
             // Convert from per-cycle to per-frame
-            val time = xml.getElementsByTagName("time").item(0).textContent.toFloat() / length
+            val time = xml.getChild("time").textTrim.toFloat() / length
 
             animations[name] = AnimationSpec(sheet, x, y, length, time)
         }

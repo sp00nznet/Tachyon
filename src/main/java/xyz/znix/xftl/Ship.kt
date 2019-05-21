@@ -1,6 +1,6 @@
 package xyz.znix.xftl
 
-import org.w3c.dom.Element
+import org.jdom2.Element
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.layout.Door
@@ -11,6 +11,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.systems.*
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import java.awt.Rectangle
 import java.util.stream.Collectors
 
@@ -28,15 +29,14 @@ class Ship(base: Datafile, val name: String) {
 
     val pathFinder: PathFinder
 
+    val hardpoints: List<Hardpoint>
+
     init {
         val blueprints = base.parseXML(base["data/blueprints.xml"])
-        val shipBlueprints = blueprints.getElementsByTagName("shipBlueprint")
         var shipNode: Element? = null
 
-        for (i in 0..shipBlueprints.length) {
-            val node = shipBlueprints.item(i) as? Element ?: continue
-
-            if (node.getAttribute("name") != name)
+        for (node in blueprints.rootElement.getChildren("shipBlueprint")) {
+            if (node.getAttributeValue("name") != name)
                 continue
 
             shipNode = node
@@ -45,9 +45,9 @@ class Ship(base: Datafile, val name: String) {
         if (shipNode == null)
             throw IllegalArgumentException("Cannot find ship $name in blueprints")
 
-        imageName = shipNode.getAttribute("img")
+        imageName = shipNode.getAttributeValue("img")
 
-        val layout = base.readString(base["data/${shipNode.getAttribute("layout")}.txt"])
+        val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
 
         val l = layout.replace("\r\n", "\n").split('\n')
         var i = 0
@@ -98,18 +98,14 @@ class Ship(base: Datafile, val name: String) {
 
         offset = ConstPoint(found_offset_x, found_offset_y)
 
-        val systemList = (shipNode.getElementsByTagName("systemList").item(0) as Element).childNodes
-
-        for (i in 0..systemList.length) {
-            val node = systemList.item(i) as? Element ?: continue
-
-            if (node.tagName == "clonebay") {
+        for (node in shipNode.getChild("systemList").children) {
+            if (node.name == "clonebay") {
                 // TODO support
                 // for now, just don't overwrite the medbay
                 continue
             }
 
-            val system: AbstractSystem = when (node.tagName) {
+            val system: AbstractSystem = when (node.name) {
                 "doors" -> Doors(node)
                 "engines" -> Engines(node)
                 "medbay" -> Medbay(node)
@@ -120,57 +116,57 @@ class Ship(base: Datafile, val name: String) {
                 "weapons" -> Weapons(node)
                 else -> {
                     // TODO throw exception when all systems are implemented
-                    System.out.println("Warning: unimplemented system ${node.tagName}")
+                    System.out.println("Warning: unimplemented system ${node.name}")
                     null
                 }
             } ?: continue
 
             // TODO remove when all systems are here
 
-            val slotElems = node.getElementsByTagName("slot")
-            check(slotElems.length < 2)
+            val slotElems = node.getChildren("slot")
+            check(slotElems.size < 2)
 
             var compDir: Direction? = null
             var compPoint: ConstPoint? = null
 
-            if (slotElems.length == 1) {
-                val elem: Element = slotElems.item(0) as Element
+            if (slotElems.size == 1) {
+                val elem: Element = slotElems[0]
 
-                val dir = elem.getElementsByTagName("direction")
-                if (dir.length == 1)
-                    compDir = Direction.valueOf(dir.item(0).textContent.toUpperCase())
+                val dir = elem.getChildren("direction")
+                if (dir.size == 1)
+                    compDir = Direction.valueOf(dir[0].textTrim.toUpperCase())
 
-                val idx = elem.getElementsByTagName("number")
+                val idx = elem.getChildren("number")
 
-                if (idx.length == 1)
-                    compPoint = when (idx.item(0).textContent) {
+                if (idx.size == 1)
+                    compPoint = when (idx[0].textTrim) {
                         "0" -> ConstPoint(0, 0)
                         "1" -> ConstPoint(1, 0)
                         "2" -> ConstPoint(0, 1)
                         "3" -> ConstPoint(1, 1)
-                        else -> throw IllegalStateException("Invalid point value '${idx.item(0).textContent}'")
+                        else -> throw IllegalStateException("Invalid point value '${idx[0].textTrim}'")
                     }
 
-                check(dir.length <= 1)
-                check(idx.length <= 1)
+                check(dir.size <= 1)
+                check(idx.size <= 1)
             }
 
-            rooms[node.getAttribute("room").toInt()].setSystem(system, compPoint, compDir)
+            rooms[node.getAttributeValue("room").toInt()].setSystem(system, compPoint, compDir)
         }
 
-        val visualsXML = base.parseXML(base["data/${shipNode.getAttribute("layout")}.xml"])
-        val offsets = visualsXML.getElementsByTagName("offsets")
-        check(offsets.length == 1)
-        val floors = (offsets.item(0) as Element).getElementsByTagName("floor")
-        check(floors.length == 1)
-        val floorElem = floors.item(0) as Element
+        val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"])
+        val offsets = visualsXML.rootElement.getChildren("offsets")
+        check(offsets.size == 1)
+        val floors = offsets[0].getChildren("floor")
+        check(floors.size == 1)
+        val floorElem = floors[0]
 
-        floorOffset = ConstPoint(floorElem.getAttribute("x").toInt(), floorElem.getAttribute("y").toInt())
+        floorOffset = ConstPoint(floorElem.getAttributeValue("x").toInt(), floorElem.getAttributeValue("y").toInt())
 
-        val imgTag = visualsXML.getElementsByTagName("img").item(0) as Element
+        val imgTag = visualsXML.rootElement.getChild("img")
         hullOffset = ConstPoint(
-                imgTag.getAttribute("x").toInt() + ROOM_SIZE * offset.x,
-                imgTag.getAttribute("y").toInt() + ROOM_SIZE * offset.y)
+                imgTag.getAttributeValue("x").toInt() + ROOM_SIZE * offset.x,
+                imgTag.getAttributeValue("y").toInt() + ROOM_SIZE * offset.y)
 
         // Set up the pathfinder after the layout is loaded
         pathFinder = PathFinder(this)

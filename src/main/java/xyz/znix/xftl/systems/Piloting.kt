@@ -1,6 +1,6 @@
 package xyz.znix.xftl.systems
 
-import org.w3c.dom.Element
+import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 
 class Piloting(elem: Element) : AbstractSystem("pilot", elem) {
