@@ -2,8 +2,14 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
+import xyz.znix.xftl.layout.Room
 
 abstract class AbstractSystem(val codename: String, elem: Element) {
+    // TODO handle this properly
+    var room: Room? = null
+
+    protected val ship: Ship get() = room!!.ship
+
     fun update(dt: Float) {
     }
 
