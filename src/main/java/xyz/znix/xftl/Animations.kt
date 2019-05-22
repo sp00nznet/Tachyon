@@ -1,10 +1,14 @@
 package xyz.znix.xftl
 
+import org.jdom2.Element
+import org.newdawn.slick.Animation
 import org.newdawn.slick.SpriteSheet
+import xyz.znix.xftl.math.ConstPoint
 
 class Animations(df: Datafile) {
     private val sheets: Map<String, SpriteSheet>
     val animations: Map<String, AnimationSpec>
+    val weaponAnimations: Map<String, WeaponAnimationSpec>
 
     init {
         val mutableSheets: MutableMap<String, SpriteSheet> = HashMap()
@@ -73,9 +77,54 @@ class Animations(df: Datafile) {
 
             animations[name] = AnimationSpec(sheet, x, y, length, time)
         }
+
+        weaponAnimations = HashMap()
+
+        for (xml in doc.rootElement.getChildren("weaponAnim")) {
+            val name = xml.getAttributeValue("name")
+
+            val sheetName = xml.getChild("sheet").textTrim
+
+            // Skip the broken animation files
+            if (sheetName == "bomb_1")
+                continue
+            if (sheetName == "artillery_fed")
+                continue
+            if (sheetName == "explosion_big1")
+                continue
+
+            val sheet = this.sheets[sheetName] ?: throw IllegalStateException("Unknown sheet $sheetName")
+
+            val desc = xml.getChild("desc")
+
+            val length = desc.getAttributeValue("length").toInt()
+            val x = desc.getAttributeValue("x").toInt()
+            val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
+
+            val chargedFrame = xml.getChild("chargedFrame").textTrim.toInt()
+            val fireFrame = xml.getChild("fireFrame").textTrim.toInt()
+
+            val mountPoint = parsePosElem(xml.getChild("mountPoint"))
+            val firePoint = parsePosElem(xml.getChild("firePoint"))
+
+            weaponAnimations[name] = WeaponAnimationSpec(sheet, x, y, length, chargedFrame, fireFrame, mountPoint, firePoint)
+            System.out.println(name)
+        }
+    }
+
+    private fun parsePosElem(elem: Element): ConstPoint {
+        val x = elem.getAttributeValue("x").toInt()
+        val y = elem.getAttributeValue("y").toInt()
+        return ConstPoint(x, y)
     }
 
     operator fun get(name: String): AnimationSpec {
         return animations[name] ?: throw IllegalArgumentException("Cannot find animation $name")
+    }
+
+    class WeaponAnimationSpec(val sheet: SpriteSheet, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
+                              val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint) {
+        // TODO find out the time properly
+        fun start() = Animation(sheet, x, y, x + length - 1, y, true, (1000 * 0.25f).toInt(), true)
     }
 }
