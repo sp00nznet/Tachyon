@@ -11,6 +11,9 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
 
     protected val ship: Ship get() = room!!.ship
 
+    var energyLevels: Int = 1
+    var damagedEnergyLevels: Int = 0
+
     fun update(dt: Float) {
     }
 
@@ -24,9 +27,17 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
         // Draw the system icon
         val room = room!!
         val img = room.ship.sys.getImg(icon)
+
+        val colour = when {
+            damagedEnergyLevels == energyLevels -> Constants.SYSTEM_BROKEN
+            damagedEnergyLevels > 0 -> Constants.SYSTEM_DAMAGED
+            else -> Constants.SYSTEM_NORMAL
+        }
+
         g.drawImage(img,
                 (room.offsetX + (room.width * ROOM_SIZE / 2f - img.width / 2f).toInt()).toFloat(),
-                (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).toFloat()
+                (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).toFloat(),
+                colour
         )
     }
 
