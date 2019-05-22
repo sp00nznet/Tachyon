@@ -7,12 +7,13 @@ import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Door;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
+import xyz.znix.xftl.math.IPoint;
+import xyz.znix.xftl.weapons.AbstractProjectile;
 import xyz.znix.xftl.weapons.WeaponDict;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import static xyz.znix.xftl.Constants.*;
 
 public class SlickGame extends BasicGame {
     private Ship player;
@@ -58,11 +59,20 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void update(GameContainer container, int delta) throws SlickException {
+        float dt = delta / 1000f;
         for (Room room : player.getRooms())
-            room.update(delta / 1000f);
+            room.update(dt);
 
         for (AbstractCrew crew : player.getCrew())
-            crew.update(delta / 1000f);
+            crew.update(dt);
+
+        List<AbstractProjectile> ib = player.getInboundProjectiles();
+
+        // Walk backwards, since missiles remove themselves when they hit
+        for (int i = ib.size() - 1; i >= 0; i--) {
+            AbstractProjectile projectile = ib.get(i);
+            projectile.update(dt);
+        }
     }
 
     @Override
@@ -126,6 +136,13 @@ public class SlickGame extends BasicGame {
                 continue;
 
             system.drawForeground(g);
+        }
+
+        // Draw the projectiles
+        for (AbstractProjectile proj : player.getInboundProjectiles()) {
+            IPoint pos = proj.getPosition();
+            g.setColor(Color.blue);
+            g.drawOval(pos.getX() - 10, pos.getY() - 10, 20, 20);
         }
     }
 

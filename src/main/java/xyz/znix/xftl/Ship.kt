@@ -12,6 +12,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.systems.*
+import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import java.awt.Rectangle
 import java.util.stream.Collectors
@@ -31,6 +32,8 @@ class Ship(base: Datafile, val name: String, val sys: SlickGame) {
     val pathFinder: PathFinder
 
     val hardpoints: List<Hardpoint>
+
+    val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
 
     init {
         val blueprints = base.parseXML(base["data/blueprints.xml"])
