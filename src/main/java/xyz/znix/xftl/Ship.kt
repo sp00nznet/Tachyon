@@ -169,6 +169,28 @@ class Ship(base: Datafile, val name: String, val sys: SlickGame) {
                 imgTag.getAttributeValue("x").toInt() + ROOM_SIZE * offset.x,
                 imgTag.getAttributeValue("y").toInt() + ROOM_SIZE * offset.y)
 
+        // Load the hardpoints
+        val mutableHardpoints = ArrayList<Hardpoint>()
+        hardpoints = mutableHardpoints
+
+        for (node in visualsXML.rootElement.getChild("weaponMounts").children) {
+            val hardpoint = Hardpoint(
+                    node.getAttributeValue("x").toInt(),
+                    node.getAttributeValue("y").toInt(),
+                    node.getAttributeValue("rotate")!!.toBoolean(),
+                    node.getAttributeValue("mirror")!!.toBoolean(),
+                    node.getAttributeValue("gib").toInt(),
+                    Direction.valueOf(node.getAttributeValue("slide").toUpperCase())
+            )
+            mutableHardpoints += hardpoint
+        }
+
+        for ((nextHardpoint, node) in shipNode.getChild("weaponList").children.withIndex()) {
+            val name = node.getAttributeValue("name")
+            val weapon = sys.weapons.blueprints.getValue(name)
+            hardpoints[nextHardpoint].weapon = weapon
+        }
+
         // Set up the pathfinder after the layout is loaded
         pathFinder = PathFinder(this)
     }
@@ -185,5 +207,9 @@ class Ship(base: Datafile, val name: String, val sys: SlickGame) {
         }
 
         return null
+    }
+
+    data class Hardpoint(val x: Int, val y: Int, val rotate: Boolean, val mirror: Boolean, val gib: Int, val slide: Direction) {
+        var weapon: AbstractWeaponBlueprint? = null
     }
 }

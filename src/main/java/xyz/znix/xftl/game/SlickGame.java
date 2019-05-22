@@ -188,4 +188,12 @@ public class SlickGame extends BasicGame {
         images.put(name, img);
         return img;
     }
+
+    public Animations getAnimations() {
+        return animations;
+    }
+
+    public WeaponDict getWeapons() {
+        return weapons;
+    }
 }
