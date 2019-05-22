@@ -1,6 +1,8 @@
 package xyz.znix.xftl.math
 
 data class Point(override var x: Int, override var y: Int) : IPoint {
+    constructor(point: IPoint) : this(point.x, point.y)
+
     override fun equals(other: Any?): Boolean {
         if (other !is IPoint)
             return false
