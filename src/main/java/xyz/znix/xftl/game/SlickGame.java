@@ -7,6 +7,7 @@ import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Door;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
+import xyz.znix.xftl.weapons.WeaponDict;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,7 @@ public class SlickGame extends BasicGame {
 
     private Map<String, Image> images = new HashMap<>();
     private Animations animations;
+    private WeaponDict weapons;
 
     public SlickGame(Datafile df, Ship player) throws SlickException {
         super("Subluminal");
@@ -30,6 +32,9 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void init(GameContainer container) throws SlickException {
+        animations = new Animations(df);
+        weapons = new WeaponDict(df);
+
         String filename = "img/ship/" + player.getImageName() + "_floor.png";
         floorPlan = new Image(df.open(df.get(filename)), filename, false);
 
@@ -44,8 +49,6 @@ public class SlickGame extends BasicGame {
             getImg(system.getIcon());
             getImg(system.getImg());
         }
-
-        animations = new Animations(df);
 
         HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0));
         player.getCrew().add(crew);
