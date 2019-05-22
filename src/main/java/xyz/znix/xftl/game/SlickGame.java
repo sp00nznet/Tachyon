@@ -80,57 +80,7 @@ public class SlickGame extends BasicGame {
 
         // Draw the rooms
         for (Room room : player.getRooms()) {
-            int x = room.getOffsetX();
-            int y = room.getOffsetY();
-
-            g.setColor(FLOOR_COLOUR);
-            g.fillRect(
-                    x,
-                    y,
-                    ROOM_SIZE * room.getWidth(),
-                    ROOM_SIZE * room.getHeight());
-
-            g.setColor(FLOOR_GRID_COLOUR);
-            for (int i = 1; i < room.getWidth(); i++) {
-                g.drawLine(
-                        x + i * ROOM_SIZE,
-                        y,
-                        x + i * ROOM_SIZE,
-                        y + ROOM_SIZE * room.getHeight() - 1);
-            }
-
-            for (int i = 1; i < room.getHeight(); i++) {
-                g.drawLine(
-                        x,
-                        y + ROOM_SIZE * i,
-                        x + ROOM_SIZE * room.getWidth() - 1,
-                        y + ROOM_SIZE * i);
-            }
-
-            AbstractSystem system = room.getSystem();
-            if (system != null) {
-                Image bg = images.get(system.getImg());
-                g.drawImage(bg, x, y);
-            }
-
-            g.setColor(ROOM_BORDER_COLOUR);
-            // Draw two one-pixel lines around the room, as it's too much of a hassle to
-            // change the line width, as it seems to be rather implementation-specific
-            g.drawRect(x, y,
-                    ROOM_SIZE * room.getWidth() - 1,
-                    ROOM_SIZE * room.getHeight() - 1);
-            g.drawRect(x + 1, y + 1,
-                    ROOM_SIZE * room.getWidth() - 3,
-                    ROOM_SIZE * room.getHeight() - 3);
-
-            if (system == null)
-                continue;
-
-            Image img = images.get(system.getIcon());
-            g.drawImage(img,
-                    x + (int) (room.getWidth() * ROOM_SIZE / 2f - img.getWidth() / 2f),
-                    y + (int) (room.getHeight() * ROOM_SIZE / 2f - img.getHeight() / 2f)
-            );
+            room.render(g);
         }
 
         // Draw the doors
@@ -179,7 +129,7 @@ public class SlickGame extends BasicGame {
         }
     }
 
-    private Image getImg(String name) {
+    public Image getImg(String name) {
         Image img = images.get(name);
         if (img != null)
             return img;

@@ -2,6 +2,7 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
+import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.layout.Room
 
 abstract class AbstractSystem(val codename: String, elem: Element) {
@@ -17,6 +18,16 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
     }
 
     open fun drawForeground(g: Graphics) {
+    }
+
+    fun drawRoom(g: Graphics) {
+        // Draw the system icon
+        val room = room!!
+        val img = room.ship.sys.getImg(icon)
+        g.drawImage(img,
+                (room.offsetX + (room.width * ROOM_SIZE / 2f - img.width / 2f).toInt()).toFloat(),
+                (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).toFloat()
+        )
     }
 
     open val icon: String = "img/icons/s_${codename}_overlay.png"
