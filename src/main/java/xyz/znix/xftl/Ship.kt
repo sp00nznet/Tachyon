@@ -3,6 +3,7 @@ package xyz.znix.xftl
 import org.jdom2.Element
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
@@ -15,7 +16,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import java.awt.Rectangle
 import java.util.stream.Collectors
 
-class Ship(base: Datafile, val name: String) {
+class Ship(base: Datafile, val name: String, val sys: SlickGame) {
     val rooms: List<Room>
     val doors: MutableList<Door> = ArrayList()
 

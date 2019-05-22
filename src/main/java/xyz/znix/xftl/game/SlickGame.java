@@ -15,7 +15,7 @@ import java.util.Map;
 import static xyz.znix.xftl.Constants.*;
 
 public class SlickGame extends BasicGame {
-    private final Ship player;
+    private Ship player;
     private final Datafile df;
     private Image floorPlan;
     private Image outside;
@@ -24,9 +24,8 @@ public class SlickGame extends BasicGame {
     private Animations animations;
     private WeaponDict weapons;
 
-    public SlickGame(Datafile df, Ship player) throws SlickException {
+    public SlickGame(Datafile df) throws SlickException {
         super("Subluminal");
-        this.player = player;
         this.df = df;
     }
 
@@ -34,6 +33,8 @@ public class SlickGame extends BasicGame {
     public void init(GameContainer container) throws SlickException {
         animations = new Animations(df);
         weapons = new WeaponDict(df);
+
+        player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
 
         String filename = "img/ship/" + player.getImageName() + "_floor.png";
         floorPlan = new Image(df.open(df.get(filename)), filename, false);

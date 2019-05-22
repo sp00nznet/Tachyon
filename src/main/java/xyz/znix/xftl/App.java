@@ -18,13 +18,11 @@ public class App {
     public static void main(String[] args) throws FileNotFoundException, SlickException {
         Datafile df = new Datafile(new File("/home/znix/Static/Games/FTL-linux/data/ftl.dat"));
 
-        Ship ship = new Ship(df, "PLAYER_SHIP_HARD"); // Kestral
-
         // TODO automatic extraction
         System.setProperty("org.lwjgl.librarypath", new File("natives").getAbsolutePath());
 
         AppGameContainer appgc;
-        appgc = new AppGameContainer(new SlickGame(df, ship));
+        appgc = new AppGameContainer(new SlickGame(df));
         appgc.setTargetFrameRate(120);
         appgc.setDisplayMode(640, 480, false);
         appgc.start();
