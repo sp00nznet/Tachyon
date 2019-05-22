@@ -1,7 +1,51 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import org.newdawn.slick.Graphics
+import org.newdawn.slick.Image
 import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.math.Point
 
 class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
+    // override fun drawBackground(g: Graphics) {
+    override fun drawForeground(g: Graphics) {
+        for (hp in ship.hardpoints) {
+            val blueprint = hp.weapon ?: continue
+
+            val weaponAnimations = ship.sys.animations.weaponAnimations
+            val anim = weaponAnimations.getValue(blueprint.launcher)
+
+            run {
+                val start = anim.start()
+
+                var launcher: Image = start.currentFrame
+                val pnt = Point(hp.x, hp.y)
+
+                if (hp.mirror) {
+                    val margin = launcher.height - anim.mountPoint.y
+                    launcher = launcher.getFlippedCopy(true, false)
+                    pnt.y -= margin
+                }
+
+                pnt -= anim.mountPoint
+
+                launcher.setCenterOfRotation(anim.mountPoint.x.toFloat(), anim.mountPoint.y.toFloat())
+
+                // launcher.rotation = ((System.currentTimeMillis() / 4) % 360).toFloat()
+                launcher.rotation = if (hp.rotate) 90f else 0f
+
+                // TODO how much are the weapons retracted by?
+
+                launcher.draw(pnt.x.toFloat(), pnt.y.toFloat(), launcher.width.toFloat(), launcher.height.toFloat())
+            }
+
+            run {
+                val animPnt = Point(hp.x, hp.y)
+                animPnt -= anim.firePoint
+
+                val projectile = ship.sys.animations[blueprint.projectile]
+                projectile.start().draw(animPnt.x.toFloat(), animPnt.y.toFloat())
+            }
+        }
+    }
 }
