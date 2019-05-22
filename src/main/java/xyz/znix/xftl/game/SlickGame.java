@@ -66,6 +66,14 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
+        for (Room room : player.getRooms()) {
+            AbstractSystem system = room.getSystem();
+            if (system == null)
+                continue;
+
+            system.drawBackground(g);
+        }
+
         g.drawImage(outside, 0, 0);
         g.drawImage(floorPlan, player.getFloorOffset().getX(), player.getFloorOffset().getY());
 
@@ -157,8 +165,16 @@ public class SlickGame extends BasicGame {
 
         // Draw the crew
         for (AbstractCrew crew : player.getCrew()) {
-            Room room = crew.getRoom();
             crew.getIcon().draw(crew.getScreenX(), crew.getScreenY());
+        }
+
+        // Draw the system foregrounds
+        for (Room room : player.getRooms()) {
+            AbstractSystem system = room.getSystem();
+            if (system == null)
+                continue;
+
+            system.drawForeground(g);
         }
     }
 
