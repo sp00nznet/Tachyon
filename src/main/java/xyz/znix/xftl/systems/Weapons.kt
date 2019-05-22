@@ -13,9 +13,16 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
             val blueprint = hp.weapon ?: continue
 
             val weaponAnimations = ship.sys.animations.weaponAnimations
-            val anim = weaponAnimations.getValue(blueprint.launcher)
 
             run {
+                val animPnt = Point(hp.x, hp.y)
+
+                val projectile = ship.sys.animations[blueprint.projectile]
+                projectile.start().draw(animPnt.x.toFloat(), animPnt.y.toFloat())
+            }
+
+            run {
+                val anim = weaponAnimations.getValue(blueprint.launcher)
                 val start = anim.start()
 
                 var launcher: Image = start.currentFrame
@@ -37,14 +44,6 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
                 // TODO how much are the weapons retracted by?
 
                 launcher.draw(pnt.x.toFloat(), pnt.y.toFloat(), launcher.width.toFloat(), launcher.height.toFloat())
-            }
-
-            run {
-                val animPnt = Point(hp.x, hp.y)
-                animPnt -= anim.firePoint
-
-                val projectile = ship.sys.animations[blueprint.projectile]
-                projectile.start().draw(animPnt.x.toFloat(), animPnt.y.toFloat())
             }
         }
     }
