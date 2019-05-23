@@ -17,7 +17,11 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import java.awt.Rectangle
 import java.util.stream.Collectors
 
-class Ship(base: Datafile, val name: String, val sys: SlickGame) {
+class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
+    constructor(base: Datafile, name: String, sys: SlickGame) : this(base, findDefaultShipElement(base, name)
+            ?: throw IllegalArgumentException("Cannot find ship $name in blueprints"), sys)
+
+    val name: String = shipNode.getAttributeValue("name")
     val rooms: List<Room>
     val doors: MutableList<Door> = ArrayList()
 
@@ -25,7 +29,7 @@ class Ship(base: Datafile, val name: String, val sys: SlickGame) {
     val floorOffset: ConstPoint
     val hullOffset: ConstPoint
 
-    val imageName: String
+    val imageName: String = shipNode.getAttributeValue("img")
 
     val crew: MutableList<AbstractCrew> = ArrayList()
 
@@ -36,21 +40,6 @@ class Ship(base: Datafile, val name: String, val sys: SlickGame) {
     val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
 
     init {
-        val blueprints = base.parseXML(base["data/blueprints.xml"])
-        var shipNode: Element? = null
-
-        for (node in blueprints.rootElement.getChildren("shipBlueprint")) {
-            if (node.getAttributeValue("name") != name)
-                continue
-
-            shipNode = node
-        }
-
-        if (shipNode == null)
-            throw IllegalArgumentException("Cannot find ship $name in blueprints")
-
-        imageName = shipNode.getAttributeValue("img")
-
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
 
         val l = layout.replace("\r\n", "\n").split('\n')
@@ -210,6 +199,21 @@ class Ship(base: Datafile, val name: String, val sys: SlickGame) {
         }
 
         return null
+    }
+
+    companion object {
+        private fun findDefaultShipElement(df: Datafile, name: String): Element? {
+            val blueprints = df.parseXML(df["data/blueprints.xml"])
+
+            for (node in blueprints.rootElement.getChildren("shipBlueprint")) {
+                if (node.getAttributeValue("name") != name)
+                    continue
+
+                return node
+            }
+
+            return null
+        }
     }
 
     data class Hardpoint(val x: Int, val y: Int, val rotate: Boolean, val mirror: Boolean, val gib: Int, val slide: Direction) {
