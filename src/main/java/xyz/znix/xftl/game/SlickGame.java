@@ -37,12 +37,6 @@ public class SlickGame extends BasicGame {
 
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
 
-        String filename = "img/ship/" + player.getImageName() + "_floor.png";
-        floorPlan = new Image(df.open(df.get(filename)), filename, false);
-
-        filename = "img/ship/" + player.getImageName() + "_base.png";
-        outside = new Image(df.open(df.get(filename)), filename, false);
-
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
             if (system == null)
@@ -77,73 +71,7 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
-        for (Room room : player.getRooms()) {
-            AbstractSystem system = room.getSystem();
-            if (system == null)
-                continue;
-
-            system.drawBackground(g);
-        }
-
-        g.drawImage(outside, 0, 0);
-        g.drawImage(floorPlan, player.getFloorOffset().getX(), player.getFloorOffset().getY());
-
-        // Draw the rooms
-        for (Room room : player.getRooms()) {
-            room.render(g);
-        }
-
-        // Draw the doors
-        for (Door door : player.getDoors()) {
-            g.setColor(Color.blue);
-
-            if (door.isVertical()) {
-                int x = door.getOffsetX() - 3;
-                int y = door.getOffsetY() + 8;
-
-                g.setColor(Color.black);
-                g.fillRect(x, y, 6, 21);
-
-                g.setColor(Constants.DOOR_COLOUR_1);
-                g.fillRect(x + 1, y + 1, 4, 21 - 2);
-
-                g.setColor(Color.black);
-                g.drawLine(x + 1, y + 10, x + 5, y + 10);
-            } else {
-                int x = door.getOffsetX() + 8;
-                int y = door.getOffsetY() - 3;
-
-                g.setColor(Color.black);
-                g.fillRect(x, y, 21, 6);
-
-                g.setColor(Constants.DOOR_COLOUR_1);
-                g.fillRect(x + 1, y + 1, 21 - 2, 4);
-
-                g.setColor(Color.black);
-                g.drawLine(x + 10, y + 1, x + 10, y + 5);
-            }
-        }
-
-        // Draw the crew
-        for (AbstractCrew crew : player.getCrew()) {
-            crew.getIcon().draw(crew.getScreenX(), crew.getScreenY());
-        }
-
-        // Draw the system foregrounds
-        for (Room room : player.getRooms()) {
-            AbstractSystem system = room.getSystem();
-            if (system == null)
-                continue;
-
-            system.drawForeground(g);
-        }
-
-        // Draw the projectiles
-        for (AbstractProjectile proj : player.getInboundProjectiles()) {
-            IPoint pos = proj.getPosition();
-            g.setColor(Color.blue);
-            g.drawOval(pos.getX() - 10, pos.getY() - 10, 20, 20);
-        }
+        player.render(g);
     }
 
     public Image getImg(String name) {

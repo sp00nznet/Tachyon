@@ -1,6 +1,8 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import org.newdawn.slick.Color
+import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.SlickGame
@@ -30,6 +32,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val hullOffset: ConstPoint
 
     val imageName: String = shipNode.getAttributeValue("img")
+
+    val floorPlan = base.readImage(base["img/ship/${imageName}_floor.png"])
+    val outside = base.readImage(base["img/ship/${imageName}_base.png"])
 
     val crew: MutableList<AbstractCrew> = ArrayList()
 
@@ -150,10 +155,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         val offsets = visualsXML.rootElement.getChildren("offsets")
         check(offsets.size == 1)
         val floors = offsets[0].getChildren("floor")
-        check(floors.size == 1)
-        val floorElem = floors[0]
-
-        floorOffset = ConstPoint(floorElem.getAttributeValue("x").toInt(), floorElem.getAttributeValue("y").toInt())
+        check(floors.size <= 1)
+        floorOffset = if (floors.size == 1) {
+            ConstPoint(floors[0].getAttributeValue("x").toInt(), floors[0].getAttributeValue("y").toInt())
+        } else {
+            ConstPoint.ZERO
+        }
 
         val imgTag = visualsXML.rootElement.getChild("img")
         hullOffset = ConstPoint(
@@ -183,6 +190,65 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         // Set up the pathfinder after the layout is loaded
         pathFinder = PathFinder(this)
+    }
+
+    fun render(g: Graphics) {
+        for (room in rooms)
+            room.system?.drawBackground(g)
+
+        g.drawImage(outside, 0f, 0f)
+        g.drawImage(floorPlan, floorOffset.x.toFloat(), floorOffset.y.toFloat())
+
+        // Draw the rooms
+        for (room in rooms)
+            room.render(g)
+
+        // Draw the doors
+        for (door in doors) {
+            g.color = Color.blue
+
+            if (door.isVertical) {
+                val x = door.offsetX - 3
+                val y = door.offsetY + 8
+
+                g.color = Color.black
+                g.fillRect(x.toFloat(), y.toFloat(), 6f, 21f)
+
+                g.color = Constants.DOOR_COLOUR_1
+                g.fillRect((x + 1).toFloat(), (y + 1).toFloat(), 4f, (21 - 2).toFloat())
+
+                g.color = Color.black
+                g.drawLine((x + 1).toFloat(), (y + 10).toFloat(), (x + 5).toFloat(), (y + 10).toFloat())
+            } else {
+                val x = door.offsetX + 8
+                val y = door.offsetY - 3
+
+                g.color = Color.black
+                g.fillRect(x.toFloat(), y.toFloat(), 21f, 6f)
+
+                g.color = Constants.DOOR_COLOUR_1
+                g.fillRect((x + 1).toFloat(), (y + 1).toFloat(), (21 - 2).toFloat(), 4f)
+
+                g.color = Color.black
+                g.drawLine((x + 10).toFloat(), (y + 1).toFloat(), (x + 10).toFloat(), (y + 5).toFloat())
+            }
+        }
+
+        // Draw the crew
+        for (crew in crew) {
+            crew.icon.draw(crew.screenX.toFloat(), crew.screenY.toFloat())
+        }
+
+        // Draw the system foregrounds
+        for (room in rooms)
+            room.system?.drawForeground(g)
+
+        // Draw the projectiles
+        for (proj in inboundProjectiles) {
+            val pos = proj.position
+            g.color = Color.blue
+            g.drawOval((pos.x - 10).toFloat(), (pos.y - 10).toFloat(), 20f, 20f)
+        }
     }
 
     private fun roomByIdOrNull(id: Int): Room? = if (id == -1) null else rooms[id]
