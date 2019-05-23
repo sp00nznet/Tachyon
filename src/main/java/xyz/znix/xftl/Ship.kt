@@ -45,8 +45,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         val l = layout.replace("\r\n", "\n").split('\n')
         var i = 0
 
-        val mutableRooms: MutableList<Room> = ArrayList()
-        rooms = mutableRooms
+        rooms = ArrayList()
 
         var found_offset_x = 0
         var found_offset_y = 0
@@ -67,7 +66,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 "ROOM" -> {
                     val id = l[i++].toInt()
                     check(id == rooms.size)
-                    mutableRooms += Room(this, id, l[i++].toInt(), l[i++].toInt(), l[i++].toInt(), l[i++].toInt())
+                    rooms += Room(this, id, l[i++].toInt(), l[i++].toInt(), l[i++].toInt(), l[i++].toInt())
                     check(rooms[id].id == id)
                 }
                 "DOOR" -> {
@@ -162,8 +161,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 imgTag.getAttributeValue("y").toInt() + ROOM_SIZE * offset.y)
 
         // Load the hardpoints
-        val mutableHardpoints = ArrayList<Hardpoint>()
-        hardpoints = mutableHardpoints
+        hardpoints = ArrayList()
 
         for (node in visualsXML.rootElement.getChild("weaponMounts").children) {
             val hardpoint = Hardpoint(
@@ -174,7 +172,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                     node.getAttributeValue("gib").toInt(),
                     Direction.valueOf(node.getAttributeValue("slide").toUpperCase())
             )
-            mutableHardpoints += hardpoint
+            hardpoints += hardpoint
         }
 
         for ((nextHardpoint, node) in shipNode.getChild("weaponList").children.withIndex()) {
