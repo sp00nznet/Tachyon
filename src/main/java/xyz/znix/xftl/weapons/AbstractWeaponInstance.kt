@@ -14,4 +14,8 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
         if (timeCharged > type.chargeTime)
             timeCharged = type.chargeTime
     }
+
+    protected fun fire() {
+        timeCharged = 0f
+    }
 }

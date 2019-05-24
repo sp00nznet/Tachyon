@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.systems.Weapons
 
 class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     override fun buildInstance(ship: Ship): AbstractWeaponInstance? {
@@ -11,6 +12,10 @@ class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     }
 
     inner class LaserInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
+        fun fire(hp: Ship.Hardpoint, weapons: Weapons, target: Room) {
+            fire()
+            weapons.launchProjectile(hp, LaserProjectile(target))
+        }
     }
 
     inner class LaserProjectile(room: Room) : AbstractProjectile(room, 500f) {

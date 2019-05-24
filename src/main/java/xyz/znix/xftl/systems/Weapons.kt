@@ -3,8 +3,9 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.weapons.AbstractProjectile
 
 class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
     override fun update(dt: Float) {
@@ -17,13 +18,6 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
             val blueprint = hp.weapon ?: continue
 
             val weaponAnimations = ship.sys.animations.weaponAnimations
-
-            run {
-                val animPnt = Point(hp.x, hp.y)
-
-                val projectile = ship.sys.animations[blueprint.type.projectile]
-                projectile.start().draw(animPnt.x.toFloat(), animPnt.y.toFloat())
-            }
 
             g.pushTransform()
 
@@ -54,6 +48,13 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
 
             g.popTransform()
         }
+    }
+
+    fun launchProjectile(hp: Ship.Hardpoint, projectile: AbstractProjectile) {
+        val weaponAnimations = ship.sys.animations.weaponAnimations
+        val anim = weaponAnimations.getValue(hp.weapon!!.type.launcher)
+
+        projectile.target.ship.inboundProjectiles += projectile
     }
 
     private fun translateHardpoint(g: Graphics, hp: Ship.Hardpoint) {
