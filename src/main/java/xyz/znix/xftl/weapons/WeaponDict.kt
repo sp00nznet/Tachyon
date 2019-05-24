@@ -17,6 +17,7 @@ class WeaponDict(df: Datafile) {
             val weapon: AbstractWeaponBlueprint = when (type) {
                 "LASER" -> LaserBlueprint(elem)
                 "MISSILES" -> MissileBlueprint(elem)
+                "BEAM" -> BeamBlueprint(elem)
                 else -> null
             } ?: continue
 
