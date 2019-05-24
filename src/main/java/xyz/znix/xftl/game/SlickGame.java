@@ -57,19 +57,7 @@ public class SlickGame extends BasicGame {
     @Override
     public void update(GameContainer container, int delta) throws SlickException {
         float dt = delta / 1000f;
-        for (Room room : player.getRooms())
-            room.update(dt);
-
-        for (AbstractCrew crew : player.getCrew())
-            crew.update(dt);
-
-        List<AbstractProjectile> ib = player.getInboundProjectiles();
-
-        // Walk backwards, since missiles remove themselves when they hit
-        for (int i = ib.size() - 1; i >= 0; i--) {
-            AbstractProjectile projectile = ib.get(i);
-            projectile.update(dt);
-        }
+        player.update(dt);
     }
 
     @Override

@@ -16,7 +16,6 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.AbstractProjectile
-import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.awt.Rectangle
@@ -270,6 +269,21 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         }
 
         return null
+    }
+
+    fun update(dt: Float) {
+        for (room in rooms)
+            room.update(dt)
+
+        for (crew in crew)
+            crew.update(dt)
+
+        val ib = inboundProjectiles
+
+        // Walk backwards, since missiles remove themselves when they hit
+        for (i in ib.size - 1 downTo 0) {
+            ib[i].update(dt)
+        }
     }
 
     companion object {
