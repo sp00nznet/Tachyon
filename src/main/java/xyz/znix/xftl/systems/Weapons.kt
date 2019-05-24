@@ -38,19 +38,7 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
 
                 // We start in ship space - x and y are relative to the hull
 
-                g.translate(hp.x.toFloat(), hp.y.toFloat())
-
-                // We are now in hardpoint-xy space - x and y are relative to the hardpoint's xy,
-                // but rotation is independant
-
-                if (hp.rotate)
-                    g.rotate(0f, 0f, 90f)
-
-                // We are now properly in hardpoint space, y+ is always forward and y- is always backwards
-
-                if (hp.mirror) {
-                    g.scale(-1f, 1f)
-                }
+                translateHardpoint(g, hp)
 
                 // We are now in image space - any given XY value here will line up to the pixel
                 // with the same XY on the launcher image.
@@ -70,6 +58,22 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
             }
 
             g.popTransform()
+        }
+    }
+
+    private fun translateHardpoint(g: Graphics, hp: Ship.Hardpoint) {
+        g.translate(hp.x.toFloat(), hp.y.toFloat())
+
+        // We are now in hardpoint-xy space - x and y are relative to the hardpoint's xy,
+        // but rotation is independant
+
+        if (hp.rotate)
+            g.rotate(0f, 0f, 90f)
+
+        // We are now properly in hardpoint space, y+ is always forward and y- is always backwards
+
+        if (hp.mirror) {
+            g.scale(-1f, 1f)
         }
     }
 }
