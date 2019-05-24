@@ -2,7 +2,6 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
@@ -30,11 +29,7 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
 
             run {
                 val anim = weaponAnimations.getValue(blueprint.type.launcher)
-                val start = anim.start()
-
-                start.setCurrentFrame((anim.chargedFrame * blueprint.chargeProgress).toInt())
-
-                var launcher: Image = start.currentFrame
+                val launcher = anim.spriteAt((anim.chargedFrame * blueprint.chargeProgress).toInt())
 
                 // We start in ship space - x and y are relative to the hull
 
