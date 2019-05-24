@@ -1,5 +1,6 @@
 package xyz.znix.xftl.weapons
 
+import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
@@ -45,4 +46,6 @@ abstract class AbstractProjectile(val target: Room, val speed: Float) {
             ship.inboundProjectiles.remove(this)
         }
     }
+
+    abstract fun render(g: Graphics, x: Float, y: Float, rotation: Float)
 }

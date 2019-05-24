@@ -1,7 +1,9 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.layout.Room
 
 class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     override fun buildInstance(ship: Ship): AbstractWeaponInstance? {
@@ -9,5 +11,20 @@ class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     }
 
     inner class LaserInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
+    }
+
+    inner class LaserProjectile(room: Room) : AbstractProjectile(room, 500f) {
+        override fun render(g: Graphics, x: Float, y: Float, rotation: Float) {
+            val img = target.ship.sys.animations[projectile]
+            val spr = img.spriteAt(0)
+            g.pushTransform()
+            g.translate(x, y)
+            g.rotate(0f, 0f, rotation)
+
+            g.translate(-spr.width.toFloat(), -spr.height.toFloat() / 2)
+            spr.draw(0f, 0f)
+
+            g.popTransform()
+        }
     }
 }
