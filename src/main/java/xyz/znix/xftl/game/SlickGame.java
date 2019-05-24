@@ -1,18 +1,17 @@
 package xyz.znix.xftl.game;
 
 import org.newdawn.slick.*;
-import xyz.znix.xftl.*;
-import xyz.znix.xftl.crew.AbstractCrew;
+import xyz.znix.xftl.AbstractSystem;
+import xyz.znix.xftl.Animations;
+import xyz.znix.xftl.Datafile;
+import xyz.znix.xftl.Ship;
 import xyz.znix.xftl.crew.HumanCrew;
-import xyz.znix.xftl.layout.Door;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
-import xyz.znix.xftl.math.IPoint;
-import xyz.znix.xftl.weapons.AbstractProjectile;
+import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.weapons.WeaponDict;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SlickGame extends BasicGame {
