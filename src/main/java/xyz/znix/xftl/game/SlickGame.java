@@ -17,6 +17,7 @@ import java.util.Map;
 
 public class SlickGame extends BasicGame {
     private Ship player;
+    private Ship enemy; // temporary, TODO handle this properly
     private final Datafile df;
     private Image floorPlan;
     private Image outside;
@@ -24,6 +25,7 @@ public class SlickGame extends BasicGame {
     private Map<String, Image> images = new HashMap<>();
     private Animations animations;
     private WeaponDict weapons;
+    private ShipGenerator generator;
 
     public SlickGame(Datafile df) throws SlickException {
         super("Subluminal");
@@ -34,8 +36,10 @@ public class SlickGame extends BasicGame {
     public void init(GameContainer container) throws SlickException {
         animations = new Animations(df);
         weapons = new WeaponDict(df);
+        generator = new ShipGenerator(df);
 
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
+        enemy = generator.buildShip(this, "REBEL_FAT");
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
@@ -58,11 +62,15 @@ public class SlickGame extends BasicGame {
     public void update(GameContainer container, int delta) throws SlickException {
         float dt = delta / 1000f;
         player.update(dt);
+        enemy.update(dt);
     }
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
         player.render(g);
+
+        g.translate(container.getWidth() - enemy.getHullImage().getWidth(), 0);
+        enemy.render(g);
     }
 
     public Image getImg(String name) {
