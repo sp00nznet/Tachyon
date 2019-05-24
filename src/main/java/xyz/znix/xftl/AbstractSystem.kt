@@ -14,7 +14,7 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
     var energyLevels: Int = 1
     var damagedEnergyLevels: Int = 0
 
-    fun update(dt: Float) {
+    open fun update(dt: Float) {
     }
 
     open fun drawBackground(g: Graphics) {

@@ -17,6 +17,8 @@ import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponInstance
+import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.awt.Rectangle
 import java.util.stream.Collectors
 
@@ -186,8 +188,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         for ((nextHardpoint, node) in shipNode.getChild("weaponList").children.withIndex()) {
             val name = node.getAttributeValue("name")
-            val weapon = sys.weapons.blueprints.getValue(name)
-            hardpoints[nextHardpoint].weapon = weapon
+            val weapon = sys.weapons.blueprints.getValue(name) as ShipWeaponBlueprint
+
+            hardpoints[nextHardpoint].weapon = weapon.buildInstance(this)
         }
 
         // Set up the pathfinder after the layout is loaded
@@ -285,6 +288,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     }
 
     data class Hardpoint(val x: Int, val y: Int, val rotate: Boolean, val mirror: Boolean, val gib: Int, val slide: Direction) {
-        var weapon: AbstractWeaponBlueprint? = null
+        var weapon: AbstractWeaponInstance? = null
     }
 }

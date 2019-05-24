@@ -7,6 +7,11 @@ import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.math.Point
 
 class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
+    override fun update(dt: Float) {
+        for (hp in ship.hardpoints)
+            hp.weapon?.update(dt)
+    }
+
     // override fun drawBackground(g: Graphics) {
     override fun drawForeground(g: Graphics) {
         for (hp in ship.hardpoints) {
