@@ -5,6 +5,7 @@ import xyz.znix.xftl.AbstractSystem;
 import xyz.znix.xftl.Animations;
 import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.Ship;
+import xyz.znix.xftl.ai.ShipAI;
 import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class SlickGame extends BasicGame {
     private Ship player;
     private Ship enemy; // temporary, TODO handle this properly
+    private ShipAI enemyAI;
     private final Datafile df;
     private Image floorPlan;
     private Image outside;
@@ -39,6 +41,7 @@ public class SlickGame extends BasicGame {
 
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
         enemy = generator.buildShip(this, "REBEL_FAT");
+        enemyAI = new ShipAI(enemy, player);
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
@@ -62,6 +65,7 @@ public class SlickGame extends BasicGame {
         float dt = delta / 1000f;
         player.update(dt);
         enemy.update(dt);
+        enemyAI.update(dt);
     }
 
     @Override
