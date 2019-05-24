@@ -130,5 +130,10 @@ class Animations(df: Datafile) {
                               val chargeImage: Image?) {
         // TODO find out the time properly
         fun start() = Animation(sheet, x, y, x + length - 1, y, true, (1000 * 0.25f).toInt(), true)
+
+        fun spriteAt(i: Int): Image {
+            if (i >= length) throw IndexOutOfBoundsException(i)
+            return sheet.getSprite(x + i, y)
+        }
     }
 }
