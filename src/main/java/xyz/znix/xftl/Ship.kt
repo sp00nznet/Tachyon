@@ -3,6 +3,7 @@ package xyz.znix.xftl
 import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.SlickGame
@@ -33,8 +34,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     val imageName: String = shipNode.getAttributeValue("img")
 
-    val floorPlan = base.readImage(base["img/ship/${imageName}_floor.png"])
-    val outside = base.readImage(base["img/ship/${imageName}_base.png"])
+    val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
+    val hullImage: Image = base.readImage(base.getOrNull("img/ship/${imageName}_base.png")
+            ?: base["img/ships_glow/${imageName}_base.png"])
 
     val crew: MutableList<AbstractCrew> = ArrayList()
 
@@ -196,8 +198,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         for (room in rooms)
             room.system?.drawBackground(g)
 
-        g.drawImage(outside, 0f, 0f)
-        g.drawImage(floorPlan, floorOffset.x.toFloat(), floorOffset.y.toFloat())
+        g.drawImage(hullImage, 0f, 0f)
+
+        if (floorImage != null)
+            g.drawImage(floorImage, floorOffset.x.toFloat(), floorOffset.y.toFloat())
 
         // Draw the rooms
         for (room in rooms)

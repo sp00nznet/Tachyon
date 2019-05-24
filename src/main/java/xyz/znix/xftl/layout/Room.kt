@@ -76,7 +76,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         }
 
         val system = system
-        if (system != null) {
+        if (system?.img != null) {
             // Render the interior decals
             val bg = ship.sys.getImg(system.img)
             g.drawImage(bg, x.toFloat(), y.toFloat())

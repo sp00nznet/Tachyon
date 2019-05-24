@@ -43,7 +43,10 @@ public class SlickGame extends BasicGame {
                 continue;
 
             getImg(system.getIcon());
-            getImg(system.getImg());
+
+            String img = system.getImg();
+            if (img != null)
+                getImg(img);
         }
 
         HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0));
