@@ -22,12 +22,12 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
             run {
                 val animPnt = Point(hp.x, hp.y)
 
-                val projectile = ship.sys.animations[blueprint.projectile]
+                val projectile = ship.sys.animations[blueprint.type.projectile]
                 projectile.start().draw(animPnt.x.toFloat(), animPnt.y.toFloat())
             }
 
             run {
-                val anim = weaponAnimations.getValue(blueprint.launcher)
+                val anim = weaponAnimations.getValue(blueprint.type.launcher)
                 val start = anim.start()
 
                 start.setCurrentFrame((anim.chargedFrame * blueprint.chargeProgress).toInt())
