@@ -2,6 +2,7 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.newdawn.slick.Animation
+import org.newdawn.slick.Image
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.math.ConstPoint
 
@@ -107,7 +108,9 @@ class Animations(df: Datafile) {
             val mountPoint = parsePosElem(xml.getChild("mountPoint"))
             val firePoint = parsePosElem(xml.getChild("firePoint"))
 
-            weaponAnimations[name] = WeaponAnimationSpec(sheet, x, y, length, chargedFrame, fireFrame, mountPoint, firePoint)
+            val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage(df["img/$i"]) }
+
+            weaponAnimations[name] = WeaponAnimationSpec(sheet, x, y, length, chargedFrame, fireFrame, mountPoint, firePoint, chargeImage)
             System.out.println(name)
         }
     }
@@ -123,7 +126,8 @@ class Animations(df: Datafile) {
     }
 
     class WeaponAnimationSpec(val sheet: SpriteSheet, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
-                              val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint) {
+                              val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint,
+                              val chargeImage: Image?) {
         // TODO find out the time properly
         fun start() = Animation(sheet, x, y, x + length - 1, y, true, (1000 * 0.25f).toInt(), true)
     }

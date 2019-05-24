@@ -30,6 +30,8 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
                 val anim = weaponAnimations.getValue(blueprint.launcher)
                 val start = anim.start()
 
+                start.setCurrentFrame((anim.chargedFrame * blueprint.chargeProgress).toInt())
+
                 var launcher: Image = start.currentFrame
                 val pnt = Point(hp.x, hp.y)
 
@@ -49,6 +51,18 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
                 // TODO how much are the weapons retracted by?
 
                 launcher.draw(pnt.x.toFloat(), pnt.y.toFloat(), launcher.width.toFloat(), launcher.height.toFloat())
+
+                // Draw the charging glow, if present
+                if (blueprint.isCharged) return@run
+                var glow = anim.chargeImage ?: return@run
+
+                if (hp.mirror)
+                    glow = glow.getFlippedCopy(true, false)
+
+                glow.setCenterOfRotation(launcher.centerOfRotationX, launcher.centerOfRotationY)
+                glow.rotation = launcher.rotation
+                glow.alpha = blueprint.chargeProgress
+                glow.draw(pnt.x.toFloat(), pnt.y.toFloat())
             }
         }
     }
