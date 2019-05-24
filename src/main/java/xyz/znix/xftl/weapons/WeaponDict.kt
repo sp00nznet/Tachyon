@@ -9,8 +9,7 @@ class WeaponDict(df: Datafile) {
         val doc = df.parseXML(df["data/blueprints.xml"])
         val weaponElems = doc.rootElement.getChildren("weaponBlueprint")
 
-        val mutableWeapons = HashMap<String, AbstractWeaponBlueprint>()
-        blueprints = mutableWeapons
+        blueprints = HashMap()
 
         for (elem in weaponElems) {
             val type = elem.getChildren("type")[0].textTrim
@@ -21,7 +20,7 @@ class WeaponDict(df: Datafile) {
                 else -> null
             } ?: continue
 
-            mutableWeapons[weapon.name] = weapon
+            blueprints[weapon.name] = weapon
         }
     }
 }
