@@ -2,5 +2,5 @@ package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
 
-class LaserBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
+class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
 }

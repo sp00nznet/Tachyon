@@ -14,6 +14,10 @@ class WeaponDict(df: Datafile) {
         for (elem in weaponElems) {
             val type = elem.getChildren("type")[0].textTrim
 
+            // Anything without a cooldown is a drone weapon, skip it
+            if (elem.getChild("cooldown") == null)
+                continue
+
             val weapon: AbstractWeaponBlueprint = when (type) {
                 "LASER" -> LaserBlueprint(elem)
                 "MISSILES" -> MissileBlueprint(elem)
