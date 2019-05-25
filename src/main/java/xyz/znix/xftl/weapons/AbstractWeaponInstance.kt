@@ -1,5 +1,6 @@
 package xyz.znix.xftl.weapons
 
+import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 
 abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: Ship) {
@@ -8,6 +9,8 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
 
     val isCharged: Boolean get() = timeCharged >= type.chargeTime
     val chargeProgress: Float get() = timeCharged / type.chargeTime
+
+    val animation = ship.sys.animations.weaponAnimations.getValue(type.launcher)
 
     open fun update(dt: Float) {
         timeCharged += dt

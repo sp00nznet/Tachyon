@@ -38,8 +38,7 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
             g.pushTransform()
 
             run {
-                val anim = weaponAnimations.getValue(blueprint.type.launcher)
-                val launcher = anim.spriteAt((anim.chargedFrame * blueprint.chargeProgress).toInt())
+                val anim = blueprint.animation
 
                 // We start in ship space - x and y are relative to the hull
 
@@ -68,7 +67,7 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
 
     fun launchProjectile(hp: Ship.Hardpoint, projectile: AbstractProjectile) {
         val weaponAnimations = ship.sys.animations.weaponAnimations
-        val anim = weaponAnimations.getValue(hp.weapon!!.type.launcher)
+        val anim = hp.weapon!!.animation
 
         departing += DepartingShot(hp, anim.firePoint - anim.mountPoint, projectile)
         projectile.target.ship.inboundProjectiles += projectile
