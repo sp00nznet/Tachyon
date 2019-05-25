@@ -20,7 +20,7 @@ abstract class AbstractProjectile(val target: Room, val speed: Float) {
 
     val ship: Ship get() = target.ship
 
-    var distance: Float = 100f
+    var distance: Float = 1500f
 
     /**
      * The position of this projectile on the screen, relative to the target ship
