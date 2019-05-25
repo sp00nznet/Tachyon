@@ -16,7 +16,7 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
     private val departing: MutableList<DepartingShot> = ArrayList()
 
     override fun drawBackground(g: Graphics) {
-        var missing: DepartingShot? = null
+        // Draw the departing projectiles
         for (shot in departing) {
             val dist = shot.initialDistance - shot.projectile.distance
             g.pushTransform()
@@ -24,13 +24,11 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
             g.translate(shot.offset.x.toFloat(), shot.offset.y.toFloat())
             shot.projectile.render(g, 0f, -dist, -90f)
             g.popTransform()
-
-            if (!shot.projectile.target.ship.inboundProjectiles.contains(shot.projectile))
-                missing = shot
         }
 
-        if (missing != null)
-            departing.remove(missing)
+        // Discard these once they hit or miss their target. We could certainly
+        // remove them sooner, but there is little reason to.
+        departing.removeIf { p -> !p.projectile.target.ship.inboundProjectiles.contains(p.projectile) }
 
         for (hp in ship.hardpoints) {
             val blueprint = hp.weapon ?: continue
