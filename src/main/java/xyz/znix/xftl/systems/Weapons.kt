@@ -13,7 +13,25 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
             hp.weapon?.update(dt)
     }
 
+    private val departing: MutableList<DepartingShot> = ArrayList()
+
     override fun drawBackground(g: Graphics) {
+        var missing: DepartingShot? = null
+        for (shot in departing) {
+            val dist = shot.initialDistance - shot.projectile.distance
+            g.pushTransform()
+            translateHardpoint(g, shot.hardpoint)
+            g.translate(shot.offset.x.toFloat(), shot.offset.y.toFloat())
+            shot.projectile.render(g, 0f, -dist, -90f)
+            g.popTransform()
+
+            if (!shot.projectile.target.ship.inboundProjectiles.contains(shot.projectile))
+                missing = shot
+        }
+
+        if (missing != null)
+            departing.remove(missing)
+
         for (hp in ship.hardpoints) {
             val blueprint = hp.weapon ?: continue
 
@@ -54,6 +72,7 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
         val weaponAnimations = ship.sys.animations.weaponAnimations
         val anim = weaponAnimations.getValue(hp.weapon!!.type.launcher)
 
+        departing += DepartingShot(hp, anim.firePoint - anim.mountPoint, projectile)
         projectile.target.ship.inboundProjectiles += projectile
     }
 
@@ -71,5 +90,9 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
         if (hp.mirror) {
             g.scale(-1f, 1f)
         }
+    }
+
+    class DepartingShot(val hardpoint: Ship.Hardpoint, val offset: ConstPoint, val projectile: AbstractProjectile) {
+        val initialDistance: Float = projectile.distance
     }
 }
