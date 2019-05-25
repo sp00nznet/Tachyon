@@ -7,7 +7,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
-abstract class AbstractProjectile(val target: Room, val speed: Float) {
+abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val speed: Float) {
     // The angle we are approaching the target at, in radians
     val angle: Float = (Math.random() * Math.PI * 2).toFloat()
 
@@ -51,7 +51,14 @@ abstract class AbstractProjectile(val target: Room, val speed: Float) {
             }
 
             ship.inboundProjectiles.remove(this)
+
+            renderHit()
         }
+    }
+
+    protected open fun renderHit() {
+        val animation = ship.sys.animations[type.explosion]
+        ship.animations += Ship.FloatingAnimation.centered(animation.start(), position)
     }
 
     abstract fun render(g: Graphics, x: Float, y: Float, rotation: Float)

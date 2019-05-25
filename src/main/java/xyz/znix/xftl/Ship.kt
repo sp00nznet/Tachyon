@@ -1,6 +1,7 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
@@ -46,6 +47,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val hardpoints: List<Hardpoint>
 
     val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
+    val animations: MutableList<FloatingAnimation> = ArrayList()
 
     init {
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
@@ -255,6 +257,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             val angle = (proj.projectileAngle * 180 / Math.PI).toFloat()
             proj.render(g, pos.x.toFloat(), pos.y.toFloat(), angle)
         }
+
+        // Draw the floating animations (eg, from projectile explosions)
+        for (a in animations)
+            a.render()
+
+        animations.removeIf { a -> a.isFinished }
     }
 
     private fun roomByIdOrNull(id: Int): Room? = if (id == -1) null else rooms[id]
@@ -303,5 +311,25 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     data class Hardpoint(val x: Int, val y: Int, val rotate: Boolean, val mirror: Boolean, val gib: Int, val slide: Direction) {
         var weapon: AbstractWeaponInstance? = null
+    }
+
+    class FloatingAnimation(val animation: Animation, val pos: ConstPoint) {
+        val isFinished get() = animation.isStopped
+
+        init {
+            animation.setLooping(false)
+            animation.setAutoUpdate(true)
+        }
+
+        fun render() {
+            animation.draw(pos.x.toFloat(), pos.y.toFloat())
+        }
+
+        companion object {
+            fun centered(animation: Animation, center: IPoint): FloatingAnimation {
+                val offsetPos = ConstPoint(center.x - animation.width / 2, center.y - animation.height / 2)
+                return FloatingAnimation(animation, offsetPos)
+            }
+        }
     }
 }
