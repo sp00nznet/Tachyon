@@ -133,8 +133,9 @@ class Animations(df: Datafile) {
     class WeaponAnimationSpec(val sheet: SpriteSheet, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
                               val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint,
                               val chargeImage: Image?) {
-        // TODO find out the time properly
-        fun start() = Animation(sheet, x, y, x + length - 1, y, true, (1000 * 0.25f).toInt(), true)
+
+        // It *appears* that FTL plays the shoot animation at around 30fps
+        fun shoot() = Animation(sheet, x + chargedFrame, y, x + length - 1, y, true, 1000 / 30, true)
 
         fun spriteAt(i: Int): Image {
             if (i >= length) throw IndexOutOfBoundsException(i)
