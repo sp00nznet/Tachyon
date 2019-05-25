@@ -13,7 +13,7 @@ class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
         return LaserInstance(ship)
     }
 
-    inner class LaserInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
+    inner class LaserInstance(ship: Ship) : AbstractProjectileWeaponInstance(this, ship) {
         fun fire(hp: Ship.Hardpoint, weapons: Weapons, target: Room) {
             fire()
             weapons.launchProjectile(hp, LaserProjectile(target))

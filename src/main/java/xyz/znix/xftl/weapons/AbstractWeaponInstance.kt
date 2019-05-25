@@ -9,7 +9,7 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
     val isCharged: Boolean get() = timeCharged >= type.chargeTime
     val chargeProgress: Float get() = timeCharged / type.chargeTime
 
-    fun update(dt: Float) {
+    open fun update(dt: Float) {
         timeCharged += dt
         if (timeCharged > type.chargeTime)
             timeCharged = type.chargeTime
