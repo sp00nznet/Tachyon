@@ -57,7 +57,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     }
 
     protected open fun renderHit() {
-        val animation = ship.sys.animations[type.explosion]
+        val animation = ship.sys.animations[type.explosion ?: throw IllegalStateException("Default explosion not set")]
         ship.animations += Ship.FloatingAnimation.centered(animation.start(), position)
     }
 
