@@ -4,6 +4,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.LaserBlueprint
+import xyz.znix.xftl.weapons.MissileBlueprint
 
 class ShipAI(val ship: Ship, val player: Ship) {
     fun update(dt: Float) {
@@ -17,6 +18,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
             when (weapon) {
                 is LaserBlueprint.LaserInstance -> {
+                    weapon.fire(hp, weapons, pickTarget())
+                }
+                is MissileBlueprint.MissileInstance -> {
                     weapon.fire(hp, weapons, pickTarget())
                 }
             }
