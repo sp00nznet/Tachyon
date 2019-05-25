@@ -11,6 +11,13 @@ abstract class AbstractProjectile(val target: Room, val speed: Float) {
     // The angle we are approaching the target at, in radians
     val angle: Float = (Math.random() * Math.PI * 2).toFloat()
 
+    // The angle the projectile is heading in, in radians
+    val projectileAngle: Float
+        get() {
+            val shift = angle - Math.PI
+            return (if (shift < 0) shift + Math.PI * 2 else shift).toFloat()
+        }
+
     val ship: Ship get() = target.ship
 
     var distance: Float = 100f

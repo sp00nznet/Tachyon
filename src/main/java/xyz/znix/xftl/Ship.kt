@@ -252,8 +252,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         // Draw the projectiles
         for (proj in inboundProjectiles) {
             val pos = proj.position
-            g.color = Color.blue
-            g.drawOval((pos.x - 10).toFloat(), (pos.y - 10).toFloat(), 20f, 20f)
+            val angle = (proj.projectileAngle * 180 / Math.PI).toFloat()
+            proj.render(g, pos.x.toFloat(), pos.y.toFloat(), angle)
         }
     }
 
