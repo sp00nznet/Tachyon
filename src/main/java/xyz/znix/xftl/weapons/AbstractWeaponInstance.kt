@@ -21,4 +21,9 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
     protected fun fire() {
         timeCharged = 0f
     }
+
+    open fun render(g: Graphics) {
+        val launcher = animation.spriteAt((animation.chargedFrame * chargeProgress).toInt())
+        launcher.draw(0f, 0f)
+    }
 }

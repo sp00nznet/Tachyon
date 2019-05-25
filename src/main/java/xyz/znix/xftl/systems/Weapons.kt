@@ -51,7 +51,7 @@ class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
 
                 // TODO how much are the weapons retracted by?
 
-                launcher.draw(0f, 0f)
+                blueprint.render(g)
 
                 // Draw the charging glow, if present
                 if (blueprint.isCharged) return@run
