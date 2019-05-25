@@ -127,7 +127,7 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
                     cx.toFloat(), cy,
                     cx.toFloat() + info.w * scale, cy + info.h * scale,
                     info.x.toFloat(), info.y.toFloat(),
-                    (info.x + info.w).toFloat(), (info.y + info.h).toFloat())
+                    (info.x + info.w).toFloat(), (info.y + info.h).toFloat(), col)
             next += ((info.w + info.postkern) * scale).roundToInt()
         }
     }
