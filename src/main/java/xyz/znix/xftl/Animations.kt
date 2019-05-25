@@ -122,6 +122,11 @@ class Animations(df: Datafile) {
     }
 
     operator fun get(name: String): AnimationSpec {
+        if (name == "explosion_random") {
+            val test = arrayOf("explosion_big2", "explosion_big3", "explosion_big4")
+            return this[test.random()]
+        }
+
         return animations[name] ?: throw IllegalArgumentException("Cannot find animation $name")
     }
 
