@@ -16,6 +16,8 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
     private var weapons: Weapons? = null
     private var target: Room? = null
 
+    private var shotsFired: Int = 0
+
     override fun update(dt: Float) {
         super.update(dt)
 
@@ -29,8 +31,12 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
             fireFrameHit()
         }
 
-        if (fa.isStopped)
-            firingAnimation = null
+        if (fa.isStopped) {
+            if (shotsFired >= type.shots)
+                firingAnimation = null
+            else
+                primeShot()
+        }
     }
 
     override fun render(g: Graphics) {
@@ -51,11 +57,18 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
         this.hp = hp
         this.weapons = weapons
         this.target = target
-        hasFired = false
+        shotsFired = 0
         fire()
         val anim = animation.shoot()
         anim.setLooping(false)
         firingAnimation = anim
+        primeShot()
+    }
+
+    private fun primeShot() {
+        shotsFired++
+        hasFired = false
+        firingAnimation!!.restart()
     }
 
     protected abstract fun buildProjectile(target: Room): AbstractProjectile

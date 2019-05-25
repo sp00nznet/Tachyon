@@ -7,6 +7,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) {
     val launcher: String
     val projectile: String
     open val explosion: String? = xml.getChildTextTrim("explosion")
+    val shots = xml.getChildTextTrim("shots")?.toInt() ?: 1
 
     init {
         launcher = tag(xml, "weaponArt")
