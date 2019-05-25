@@ -4,7 +4,6 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.systems.Weapons
 
 class MissileBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_random"
@@ -13,11 +12,8 @@ class MissileBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
         return MissileInstance(ship)
     }
 
-    inner class MissileInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
-        fun fire(hp: Ship.Hardpoint, weapons: Weapons, target: Room) {
-            fire()
-            weapons.launchProjectile(hp, MissileProjectile(target))
-        }
+    inner class MissileInstance(ship: Ship) : AbstractProjectileWeaponInstance(this, ship) {
+        override fun buildProjectile(target: Room): AbstractProjectile = MissileProjectile(target)
     }
 
     inner class MissileProjectile(room: Room) : AbstractProjectile(this, room, 500f) {
