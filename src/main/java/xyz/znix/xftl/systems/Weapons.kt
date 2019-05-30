@@ -2,12 +2,11 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
 
-class Weapons(elem: Element) : AbstractSystem("weapons", elem) {
+class Weapons(elem: Element) : MainSystem("weapons", elem) {
     override fun update(dt: Float) {
         for (hp in ship.hardpoints)
             hp.weapon?.update(dt)

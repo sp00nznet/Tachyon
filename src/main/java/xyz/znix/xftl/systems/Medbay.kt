@@ -1,7 +1,6 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import xyz.znix.xftl.AbstractSystem
 
-class Medbay(elem: Element) : AbstractSystem("medbay", elem) {
+class Medbay(elem: Element) : MainSystem("medbay", elem) {
 }
