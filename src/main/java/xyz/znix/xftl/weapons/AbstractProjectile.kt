@@ -9,7 +9,7 @@ import xyz.znix.xftl.math.IPoint
 
 abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val speed: Float) {
     // The angle we are approaching the target at, in radians
-    val angle: Float = (Math.random() * Math.PI * 2).toFloat()
+    var angle: Float = (Math.random() * Math.PI * 2).toFloat()
 
     // The angle the projectile is heading in, in radians
     val projectileAngle: Float
