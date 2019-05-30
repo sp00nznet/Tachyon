@@ -18,6 +18,13 @@ public class Constants {
     public static final Color SYSTEM_DAMAGED = new Color(255, 153, 76);
     public static final Color SYSTEM_BROKEN = new Color(255, 0, 0);
 
+    public static final Color UI_TEXT_COLOUR_1 = new Color(40, 78, 82);
+    public static final Color UI_BACKGROUND_GLOW_COLOUR = new Color(243, 255, 238);
+
+    public static final Color SYS_ENERGY_ACTIVE = new Color(96, 255, 64);
+    public static final Color SYS_ENERGY_DEPOWERED = new Color(251, 251, 251);
+    public static final Color SYS_ENERGY_BROKEN = new Color(255, 50, 50);
+
     private Constants() {
     }
 }
