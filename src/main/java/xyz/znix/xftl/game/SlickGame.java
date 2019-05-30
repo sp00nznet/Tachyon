@@ -10,10 +10,13 @@ import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.shipgen.ShipGenerator;
+import xyz.znix.xftl.systems.MainSystem;
 import xyz.znix.xftl.weapons.WeaponDict;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static xyz.znix.xftl.Constants.*;
 
 public class SlickGame extends BasicGame {
     private Ship player;
@@ -74,6 +77,53 @@ public class SlickGame extends BasicGame {
 
         g.translate(container.getWidth() - enemy.getHullImage().getWidth(), 0);
         enemy.render(g);
+
+        g.resetTransform();
+
+        // Draw the systems
+        int x = 58;
+        for (Room r : player.getRooms()) {
+            AbstractSystem as = r.getSystem();
+            if (!(as instanceof MainSystem))
+                continue;
+
+            MainSystem sys = (MainSystem) as;
+
+            String mode;
+            if (sys.getDamagedEnergyLevels() == sys.getEnergyLevels())
+                mode = "red";
+            else if (sys.getDamagedEnergyLevels() > 0)
+                mode = "orange";
+            else if (sys.getSelectedEnergyLevel() == 0)
+                mode = "gray";
+            else
+                mode = "green";
+
+            int y = container.getHeight() - 69;
+            getImg("img/icons/s_" + sys.getCodename() + "_" + mode + "1.png").draw(x, y);
+
+            y += 8;
+
+            for (int i = 0; i < sys.getEnergyLevels(); i++) {
+                if (i >= sys.getEnergyLevels() - sys.getDamagedEnergyLevels()) {
+                    // System damaged/broken
+                    g.setColor(SYS_ENERGY_BROKEN);
+                    g.drawRect(x + 24, y, 16 - 1, 6 - 1);
+                    g.drawLine(x + 24, y + 6, x + 24 + 16, y);
+                } else if (i < sys.getSelectedEnergyLevel()) {
+                    // System powered
+                    g.setColor(SYS_ENERGY_ACTIVE);
+                    g.fillRect(x + 24, y, 16, 6);
+                } else {
+                    // System depowered
+                    g.setColor(SYS_ENERGY_DEPOWERED);
+                    g.drawRect(x + 24, y, 16 - 1, 6 - 1);
+                }
+                y -= 8;
+            }
+
+            x += 36;
+        }
     }
 
     public Image getImg(String name) {
