@@ -47,16 +47,19 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         system?.update(dt)
     }
 
-    fun render(g: Graphics) {
+    fun render(g: Graphics, selected: Boolean) {
         val x = offsetX
         val y = offsetY
+
+        val w = width * ROOM_SIZE
+        val h = height * ROOM_SIZE
 
         g.color = FLOOR_COLOUR
         g.fillRect(
                 x.toFloat(),
                 y.toFloat(),
-                (ROOM_SIZE * width).toFloat(),
-                (ROOM_SIZE * height).toFloat())
+                w.toFloat(),
+                h.toFloat())
 
         g.color = FLOOR_GRID_COLOUR
         for (i in 1 until width) {
@@ -64,14 +67,14 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
                     (x + i * ROOM_SIZE).toFloat(),
                     y.toFloat(),
                     (x + i * ROOM_SIZE).toFloat(),
-                    (y + ROOM_SIZE * height - 1).toFloat())
+                    (y + h - 1).toFloat())
         }
 
         for (i in 1 until height) {
             g.drawLine(
                     x.toFloat(),
                     (y + ROOM_SIZE * i).toFloat(),
-                    (x + ROOM_SIZE * width - 1).toFloat(),
+                    (x + w - 1).toFloat(),
                     (y + ROOM_SIZE * i).toFloat())
         }
 
@@ -86,11 +89,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         // Draw two one-pixel lines around the room, as it's too much of a hassle to
         // change the line width, as it seems to be rather implementation-specific
         g.drawRect(x.toFloat(), y.toFloat(),
-                (ROOM_SIZE * width - 1).toFloat(),
-                (ROOM_SIZE * height - 1).toFloat())
+                (w - 1).toFloat(),
+                (h - 1).toFloat())
         g.drawRect((x + 1).toFloat(), (y + 1).toFloat(),
-                (ROOM_SIZE * width - 3).toFloat(),
-                (ROOM_SIZE * height - 3).toFloat())
+                (w - 3).toFloat(),
+                (h - 3).toFloat())
 
         // Draw the system icon
         system?.drawRoom(g)
