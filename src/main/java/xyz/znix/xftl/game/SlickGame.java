@@ -61,6 +61,20 @@ public class SlickGame extends BasicGame {
         HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0));
         player.getCrew().add(crew);
         crew.setTargetRoom(player.shipToRoomPos(new ConstPoint(1, 1)).getRoom());
+
+        for (Room r : player.getRooms()) {
+            AbstractSystem system = r.getSystem();
+            if (system == null)
+                continue;
+
+            if (!(system instanceof MainSystem))
+                continue;
+
+            getImg("img/icons/s_" + system.getCodename() + "_red1.png");
+            getImg("img/icons/s_" + system.getCodename() + "_orange1.png");
+            getImg("img/icons/s_" + system.getCodename() + "_grey1.png");
+            getImg("img/icons/s_" + system.getCodename() + "_green1.png");
+        }
     }
 
     @Override
