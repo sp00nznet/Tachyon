@@ -16,6 +16,7 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
     private val picture: Image
 
     private val height: Int
+    private val baseline: Int
 
     var scale: Float = 1f
 
@@ -27,7 +28,7 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
 
         val version = bytes.read()
         height = bytes.read()
-        val baseline = bytes.read()
+        baseline = bytes.read()
 
         // Pad
         bytes.read()
@@ -120,7 +121,7 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
         var next = x
         for (ch in text) {
             val info = chars[ch] ?: throw IllegalStateException("Unknown char $ch")
-            val cy = y + (scale * height - info.h).roundToInt()
+            val cy = y + (scale * (height - info.h - baseline)).roundToInt()
             next += (info.prekern * scale).roundToInt()
             val cx = next.roundToInt()
             picture.draw(
