@@ -26,9 +26,7 @@ class Animations(df: Datafile) {
                 continue
             }
 
-            // These have image sizes which don't match the XML, skip them for now
-            if (name == "bomb_1")
-                continue
+            // These have image sizes which don't match the XML, skip verification of them for now
             if (name == "artillery_fed")
                 continue
             if (name == "explosion_big1")
@@ -37,9 +35,15 @@ class Animations(df: Datafile) {
             // The filename is the text inside the element
             val img = df.readImage(df["img/${elem.textTrim}"])
 
-            // Make sure the texture size is correct
-            check(elem.getAttributeValue("w").toInt() == img.width)
-            check(elem.getAttributeValue("h").toInt() == img.height)
+            run {
+                // Don't verify the small bomb, since it's image is two pixels short
+                if (name == "bomb_1")
+                    return@run
+
+                // Make sure the texture size is correct
+                check(elem.getAttributeValue("w").toInt() == img.width)
+                check(elem.getAttributeValue("h").toInt() == img.height)
+            }
 
             val frame_width = elem.getAttributeValue("fw").toInt()
             val frame_height = elem.getAttributeValue("fh").toInt()
@@ -58,8 +62,6 @@ class Animations(df: Datafile) {
             val sheetName = xml.getChild("sheet").textTrim
 
             // Skip the broken animation files
-            if (sheetName == "bomb_1")
-                continue
             if (sheetName == "artillery_fed")
                 continue
             if (sheetName == "explosion_big1")
@@ -87,8 +89,6 @@ class Animations(df: Datafile) {
             val sheetName = xml.getChild("sheet").textTrim
 
             // Skip the broken animation files
-            if (sheetName == "bomb_1")
-                continue
             if (sheetName == "artillery_fed")
                 continue
             if (sheetName == "explosion_big1")

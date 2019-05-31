@@ -22,6 +22,7 @@ class WeaponDict(df: Datafile) {
                 "LASER" -> LaserBlueprint(elem)
                 "MISSILES" -> MissileBlueprint(elem)
                 "BEAM" -> BeamBlueprint(elem)
+                "BOMB" -> BombBlueprint(elem)
                 else -> null
             } ?: continue
 
