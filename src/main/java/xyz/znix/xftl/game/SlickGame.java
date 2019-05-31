@@ -1,10 +1,7 @@
 package xyz.znix.xftl.game;
 
 import org.newdawn.slick.*;
-import xyz.znix.xftl.AbstractSystem;
-import xyz.znix.xftl.Animations;
-import xyz.znix.xftl.Datafile;
-import xyz.znix.xftl.Ship;
+import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
 import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Room;
@@ -31,6 +28,8 @@ public class SlickGame extends BasicGame {
     private WeaponDict weapons;
     private ShipGenerator generator;
 
+    private SILFontLoader font;
+
     public SlickGame(Datafile df) throws SlickException {
         super("Subluminal");
         this.df = df;
@@ -45,6 +44,8 @@ public class SlickGame extends BasicGame {
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
         enemy = generator.buildShip(this, "REBEL_FAT");
         enemyAI = new ShipAI(enemy, player);
+
+        font = new SILFontLoader(df, df.get("fonts/HL2.font"));
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
@@ -93,6 +94,24 @@ public class SlickGame extends BasicGame {
         enemy.render(g, enemy.getRooms().get(0));
 
         g.resetTransform();
+
+        font.setScale(2);
+        g.setFont(font);
+
+        int bx = 234;
+        int by = container.getHeight() - 113;
+        getImg("img/box_weapons_bottom" + player.getWeaponSlots() + ".png").draw(bx, by);
+        int tx = bx + 18;
+        int ty = by + 61;
+
+        g.setColor(UI_BACKGROUND_GLOW_COLOUR);
+        int tw = font.getWidth("WEAPONS");
+        g.fillRect(tx, ty, tw - 13, 20);
+        getImg("img/box_weapons_bottom_label.png").draw(tx + tw - 13, ty);
+
+        g.setColor(UI_TEXT_COLOUR_1);
+        g.drawString("WEAPONS", tx + 1, ty + 11);
+        // getImg("img/icons/s_weapons_grey1.png").draw(202, container.getHeight() - 69);
 
         // Draw the systems
         int x = 58;
