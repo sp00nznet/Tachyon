@@ -44,11 +44,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
             // TODO shields
             // TODO missing (dodge chance, etc)
 
-            val system = target.system
-            if (system != null) {
-                if (system.damagedEnergyLevels < system.energyLevels)
-                    system.damagedEnergyLevels++
-            }
+            target.system?.dealDamage(type.sysDamage)
 
             ship.inboundProjectiles.remove(this)
 
