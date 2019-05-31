@@ -29,4 +29,26 @@ data class Point(override var x: Int, override var y: Int) : IPoint {
         x -= other.x
         y -= other.y
     }
+
+    fun add(x: Int, y: Int) {
+        this.x += x
+        this.y += y
+    }
+
+    fun sub(x: Int, y: Int) = add(-x, -y)
+
+    fun mult(v: Int) {
+        x *= v
+        y *= v
+    }
+
+    fun divide(v: Int) {
+        x /= v
+        y /= v
+    }
+
+    fun divideFloor(v: Int) {
+        x = Math.floorDiv(x, v)
+        y = Math.floorDiv(y, v)
+    }
 }
