@@ -137,8 +137,14 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
         TODO("not implemented")
     }
 
-    override fun getWidth(str: String?): Int {
-        TODO("not implemented")
+    override fun getWidth(str: String): Int {
+        var next = 0
+        for (ch in str) {
+            val info = chars[ch] ?: throw IllegalStateException("Unknown char $ch")
+            next += (info.prekern * scale).roundToInt()
+            next += ((info.w + info.postkern) * scale).roundToInt()
+        }
+        return next
     }
 
     override fun getLineHeight(): Int {
