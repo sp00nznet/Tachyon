@@ -125,6 +125,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
             // TODO remove when all systems are here
 
+            system.energyLevels = node.getAttributeValue("power").toInt()
+
             val slotElems = node.getChildren("slot")
             check(slotElems.size < 2)
 
