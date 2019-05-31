@@ -40,6 +40,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val hullImage: Image = base.readImage(base.getOrNull("img/ship/${imageName}_base.png")
             ?: base["img/ships_glow/${imageName}_base.png"])
 
+    val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
+
     val crew: MutableList<AbstractCrew> = ArrayList()
 
     val pathFinder: PathFinder
