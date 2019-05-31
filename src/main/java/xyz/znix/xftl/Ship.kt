@@ -11,10 +11,7 @@ import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.Direction
-import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.math.RoomPoint
+import xyz.znix.xftl.math.*
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
@@ -267,6 +264,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             a.render()
 
         animations.removeIf { a -> a.isFinished }
+    }
+
+    fun screenPosToShipPos(point: Point) {
+        point.add(hullOffset.x, hullOffset.y)
+        point.divide(ROOM_SIZE)
+        point.sub(offset.x, offset.y)
     }
 
     private fun roomByIdOrNull(id: Int): Room? = if (id == -1) null else rooms[id]
