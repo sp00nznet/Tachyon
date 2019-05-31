@@ -6,12 +6,15 @@ import xyz.znix.xftl.ai.ShipAI;
 import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
+import xyz.znix.xftl.math.Point;
+import xyz.znix.xftl.math.RoomPoint;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.MainSystem;
 import xyz.znix.xftl.weapons.WeaponDict;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static xyz.znix.xftl.Constants.*;
 
@@ -29,6 +32,11 @@ public class SlickGame extends BasicGame {
     private ShipGenerator generator;
 
     private SILFontLoader font;
+
+    private Point tempPoint = new Point(0, 0);
+
+    private Room hoveredRoom;
+    private Consumer<Room> clickEvent;
 
     public SlickGame(Datafile df) throws SlickException {
         super("Subluminal");
@@ -84,14 +92,46 @@ public class SlickGame extends BasicGame {
         player.update(dt);
         enemy.update(dt);
         enemyAI.update(dt);
+
+        hoveredRoom = null;
+
+        if (clickEvent == null)
+            return;
+
+        // Hovering over the enemy
+        int enemyX = container.getWidth() - enemy.getHullImage().getWidth();
+        tempPoint.setX(container.getInput().getMouseX());
+        tempPoint.setY(container.getInput().getMouseY());
+        tempPoint.add(-enemyX, 0);
+        enemy.screenPosToShipPos(tempPoint);
+
+        RoomPoint rp = enemy.shipToRoomPos(tempPoint);
+        if (rp != null)
+            hoveredRoom = rp.getRoom();
+
+        // Hovering over the player
+        tempPoint.setX(container.getInput().getMouseX());
+        tempPoint.setY(container.getInput().getMouseY());
+        player.screenPosToShipPos(tempPoint);
+
+        rp = player.shipToRoomPos(tempPoint);
+        if (rp != null)
+            hoveredRoom = rp.getRoom();
+
+        if (hoveredRoom != null && clickEvent != null
+                && container.getInput().isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)) {
+            var prev = clickEvent;
+            clickEvent = null;
+            prev.accept(hoveredRoom);
+        }
     }
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
-        player.render(g, player.getRooms().get(0));
+        player.render(g, hoveredRoom);
 
         g.translate(container.getWidth() - enemy.getHullImage().getWidth(), 0);
-        enemy.render(g, enemy.getRooms().get(0));
+        enemy.render(g, hoveredRoom);
 
         g.resetTransform();
 
