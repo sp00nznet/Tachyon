@@ -85,10 +85,17 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             g.drawImage(bg, x.toFloat(), y.toFloat())
         }
 
-        g.color = ROOM_BORDER_COLOUR
         // Draw two one-pixel lines around the room, as it's too much of a hassle to
         // change the line width, as it seems to be rather implementation-specific
-        for (i in 0..1) {
+        for (i in 0..5) {
+            if (i < 2)
+                g.color = ROOM_BORDER_COLOUR
+            else if (!selected)
+                continue
+            else if (i < 5)
+                g.color = ROOM_BORDER_COLOUR_SELECTED
+            else
+                g.color = ROOM_BORDER_COLOUR_SELECTED_INNER
             g.drawRect((x + i).toFloat(), (y + i).toFloat(),
                     (w - 1 - i * 2).toFloat(),
                     (h - 1 - i * 2).toFloat())
