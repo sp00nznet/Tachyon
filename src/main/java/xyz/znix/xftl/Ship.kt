@@ -198,7 +198,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         pathFinder = PathFinder(this)
     }
 
-    fun render(g: Graphics) {
+    fun render(g: Graphics, selected: Room?) {
         for (room in rooms)
             room.system?.drawBackground(g)
 
@@ -209,7 +209,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         // Draw the rooms
         for (room in rooms)
-            room.render(g)
+            room.render(g, selected == room)
 
         // Draw the doors
         for (door in doors) {

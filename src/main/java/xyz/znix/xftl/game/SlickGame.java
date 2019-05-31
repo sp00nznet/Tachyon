@@ -73,10 +73,10 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
-        player.render(g);
+        player.render(g, player.getRooms().get(0));
 
         g.translate(container.getWidth() - enemy.getHullImage().getWidth(), 0);
-        enemy.render(g);
+        enemy.render(g, enemy.getRooms().get(0));
 
         g.resetTransform();
 
