@@ -88,12 +88,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         g.color = ROOM_BORDER_COLOUR
         // Draw two one-pixel lines around the room, as it's too much of a hassle to
         // change the line width, as it seems to be rather implementation-specific
-        g.drawRect(x.toFloat(), y.toFloat(),
-                (w - 1).toFloat(),
-                (h - 1).toFloat())
-        g.drawRect((x + 1).toFloat(), (y + 1).toFloat(),
-                (w - 3).toFloat(),
-                (h - 3).toFloat())
+        for (i in 0..1) {
+            g.drawRect((x + i).toFloat(), (y + i).toFloat(),
+                    (w - 1 - i * 2).toFloat(),
+                    (h - 1 - i * 2).toFloat())
+        }
 
         // Draw the system icon
         system?.drawRoom(g)
