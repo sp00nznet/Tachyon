@@ -10,6 +10,7 @@ import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.MainSystem;
+import xyz.znix.xftl.weapons.AbstractWeaponInstance;
 import xyz.znix.xftl.weapons.WeaponDict;
 
 import java.util.Comparator;
@@ -199,6 +200,42 @@ public class SlickGame extends BasicGame {
             }
 
             x += 36;
+        }
+
+        for (int i = 0; i < player.getWeaponSlots(); i++) {
+            int wx = bx + 12 + 12 + 97 * i;
+            int wy = by + 12 + 4;
+
+            Ship.Hardpoint hp = player.getHardpoints().get(i);
+            AbstractWeaponInstance weapon = hp.getWeapon();
+
+            if (weapon == null)
+                g.setColor(WEAPONS_ITEM_DESELECTED);
+            else if (weapon.isCharged())
+                g.setColor(WEAPONS_ITEM_CHARGED);
+            else
+                g.setColor(WEAPONS_ITEM_SELECTED);
+
+            // Draw the outline box
+            g.drawRect(wx, wy, 87 - 1, 39 - 1);
+            g.drawRect(wx + 1, wy + 1, 87 - 3, 39 - 3);
+
+            if (weapon == null)
+                continue;
+
+            // The Y position of the inside of the charge bar, relative to the main weapons box
+            int top = 5;
+
+            // The top point of the triangle
+            int triangle_top = top - 7;
+
+            for (int j = 8; j > 0; j--) {
+                int pos = j + triangle_top;
+                if (pos < 0)
+                    continue;
+                int y = wy + pos;
+                g.drawLine(wx - j, y, wx, y);
+            }
         }
     }
 
