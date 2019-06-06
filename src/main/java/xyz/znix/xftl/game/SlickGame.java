@@ -16,6 +16,7 @@ import xyz.znix.xftl.weapons.WeaponDict;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -206,6 +207,14 @@ public class SlickGame extends BasicGame {
 
         g.setFont(weaponNameText);
 
+        // Find the longest charge time of all equipped weapons
+        float max_weapon_charge_time = player.getHardpoints().stream()
+                .map(Ship.Hardpoint::getWeapon)
+                .filter(Objects::nonNull)
+                .map(hp -> hp.getType().getChargeTime())
+                .reduce(Math::max)
+                .orElse(1f);
+
         for (int i = 0; i < player.getWeaponSlots(); i++) {
             int wx = bx + 12 + 12 + 97 * i;
             int wy = by + 12 + 4;
@@ -227,8 +236,11 @@ public class SlickGame extends BasicGame {
             if (weapon == null)
                 continue;
 
+            int max_bar_size = 35 - 2;
+            int bar_size = (int) (max_bar_size * weapon.getType().getChargeTime() / max_weapon_charge_time);
+
             // The Y position of the inside of the charge bar, relative to the main weapons box
-            int top = 5;
+            int top = max_bar_size - bar_size;
 
             // The top point of the triangle
             int triangle_top = top - 7;
@@ -241,13 +253,21 @@ public class SlickGame extends BasicGame {
                 g.drawLine(wx - j, y, wx, y);
             }
 
+            int charge_px = (int) (bar_size * weapon.getChargeProgress());
+            g.fillRect(wx - 5, wy + 36 - charge_px, 4, charge_px);
+
+            g.setLineWidth(2);
+            g.drawLine(wx - 7.5f, wy + top + 1.5f, wx - 7.5f, wy + 39 - 1.5f);
+            g.drawLine(wx - 7.5f, wy + 39 - 1.5f, wx - 0.5f, wy + 39 - 1.5f);
+            g.setLineWidth(1);
+
             String shortName = translator.get(weapon.getType().getShortKey()).replaceFirst(" ", "\n");
             drawWeaponString(g, shortName, wx + 26, wy + 8);
         }
     }
 
     private void drawWeaponString(Graphics g, String str, int x, int y) {
-        for(String line : str.split("\n")) {
+        for (String line : str.split("\n")) {
             g.drawString(line, x, y);
             y += 15;
         }
