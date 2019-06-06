@@ -12,9 +12,11 @@ import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.MainSystem;
 import xyz.znix.xftl.weapons.WeaponDict;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static xyz.znix.xftl.Constants.*;
 
@@ -157,13 +159,12 @@ public class SlickGame extends BasicGame {
 
         // Draw the systems
         int x = 58;
-        for (Room r : player.getRooms()) {
-            AbstractSystem as = r.getSystem();
-            if (!(as instanceof MainSystem))
-                continue;
-
-            MainSystem sys = (MainSystem) as;
-
+        Stream<MainSystem> systems = player.getRooms().stream()
+                .map(Room::getSystem)
+                .filter(MainSystem.class::isInstance)
+                .map(MainSystem.class::cast)
+                .sorted(Comparator.comparing(MainSystem::getSortingType));
+        for (MainSystem sys : systems.toArray(MainSystem[]::new)) {
             String mode;
             if (sys.getDamagedEnergyLevels() == sys.getEnergyLevels())
                 mode = "red";

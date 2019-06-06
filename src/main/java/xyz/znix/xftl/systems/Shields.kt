@@ -4,4 +4,5 @@ import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 
 class Shields(elem: Element) : MainSystem("shields", elem) {
+    override val sortingType: SortingType get() = SortingType.SHIELD
 }

@@ -3,4 +3,5 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 
 class Medbay(elem: Element) : MainSystem("medbay", elem) {
+    override val sortingType: SortingType get() = SortingType.MEDBAY
 }

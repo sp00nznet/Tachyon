@@ -7,6 +7,8 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
 
 class Weapons(elem: Element) : MainSystem("weapons", elem) {
+    override val sortingType: SortingType get() = SortingType.WEAPONS
+
     override fun update(dt: Float) {
         for (hp in ship.hardpoints)
             hp.weapon?.update(dt)
