@@ -31,6 +31,7 @@ public class SlickGame extends BasicGame {
     private WeaponDict weapons;
     private ShipGenerator generator;
 
+    private Translator translator;
     private SILFontLoader font;
 
     private Point tempPoint = new Point(0, 0);
@@ -53,6 +54,7 @@ public class SlickGame extends BasicGame {
         enemy = generator.buildShip(this, "REBEL_FAT");
         enemyAI = new ShipAI(enemy, player);
 
+        translator = new Translator(df, "en");
         font = new SILFontLoader(df, df.get("fonts/HL2.font"));
 
         for (Room room : player.getRooms()) {
