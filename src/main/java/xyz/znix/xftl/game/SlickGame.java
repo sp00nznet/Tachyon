@@ -38,6 +38,7 @@ public class SlickGame extends BasicGame {
     private Translator translator;
     private SILFontLoader font;
     private SILFontLoader weaponNameText;
+    private SILFontLoader weaponNumberFont;
 
     private Point tempPoint = new Point(0, 0);
 
@@ -62,6 +63,7 @@ public class SlickGame extends BasicGame {
         translator = new Translator(df, "en");
         font = new SILFontLoader(df, df.get("fonts/HL2.font"));
         weaponNameText = new SILFontLoader(df, df.get("fonts/JustinFont8.font"));
+        weaponNumberFont = new SILFontLoader(df, df.get("fonts/c&c.font"));
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
@@ -260,6 +262,18 @@ public class SlickGame extends BasicGame {
             g.drawLine(wx - 7.5f, wy + top + 1.5f, wx - 7.5f, wy + 39 - 1.5f);
             g.drawLine(wx - 7.5f, wy + 39 - 1.5f, wx - 0.5f, wy + 39 - 1.5f);
             g.setLineWidth(1);
+
+            // Draw the weapon number box
+            g.setLineWidth(2);
+            g.drawLine(wx + 75 + 0.5f, wy + 24 + 0.5f, wx + 75 + 0.5f, wy + 36 + 0.5f);
+            g.drawLine(wx + 75 + 0.5f, wy + 24 + 0.5f, wx + 85 + 0.5f, wy + 24 + 0.5f);
+            g.setLineWidth(1);
+
+            // Draw the weapon number itself
+            g.setFont(weaponNumberFont);
+            String weaponNumber = Integer.toString(i + 1);
+            int weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber);
+            g.drawString(weaponNumber, wx + 77 + 1 + (8 - weaponNumberWidth) / 2, wy + 30);
 
             String shortName = translator.get(weapon.getType().getShortKey()).replaceFirst(" ", "\n");
             drawWeaponString(g, shortName, wx + 26, wy + 8);
