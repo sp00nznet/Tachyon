@@ -8,7 +8,7 @@ import xyz.znix.xftl.layout.Room
 class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_missile1"
 
-    override fun buildInstance(ship: Ship): AbstractWeaponInstance? {
+    override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return LaserInstance(ship)
     }
 

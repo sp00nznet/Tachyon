@@ -4,7 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.Ship
 
 class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
-    override fun buildInstance(ship: Ship): AbstractWeaponInstance? {
+    override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return BeamInstance(ship)
     }
 

@@ -6,5 +6,5 @@ import xyz.znix.xftl.Ship
 abstract class ShipWeaponBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     val chargeTime: Float = xml.getChild("cooldown").textTrim.toFloat()
 
-    abstract fun buildInstance(ship: Ship): AbstractWeaponInstance?
+    abstract fun buildInstance(ship: Ship): AbstractWeaponInstance
 }
