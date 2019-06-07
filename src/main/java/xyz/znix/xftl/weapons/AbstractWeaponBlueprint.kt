@@ -15,6 +15,8 @@ abstract class AbstractWeaponBlueprint(xml: Element) {
     val shortKey = xml.getChild("short").getAttributeValue("id")
     val descKey = xml.getChild("desc").getAttributeValue("id")
 
+    val power = xml.getChildTextTrim("power").toInt()
+
     init {
         launcher = tag(xml, "weaponArt")
         projectile = tag(xml, "image")

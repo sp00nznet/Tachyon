@@ -263,6 +263,27 @@ public class SlickGame extends BasicGame {
 
             String shortName = translator.get(weapon.getType().getShortKey()).replaceFirst(" ", "\n");
             drawWeaponString(g, shortName, wx + 26, wy + 8);
+
+            // TODO make these correct
+            boolean isPowered = true;
+            int zoltanPower = 1;
+
+            for (int bar = 0; bar < weapon.getType().getPower(); bar++) {
+                int y = wy + 28 - bar * 8;
+
+                if (zoltanPower > bar) {
+                    g.setColor(WEAPONS_ITEM_ENERGY_ZOLTAN);
+                } else if (!isPowered) {
+                    g.setColor(WEAPONS_ITEM_ENERGY_UNPOWERED);
+                    g.drawRect(wx + 4, y, 16 - 1, 7 - 1);
+                    continue;
+                } else if (weapon.isCharged()) {
+                    g.setColor(WEAPONS_ITEM_ENERGY_CHARGED);
+                } else {
+                    g.setColor(WEAPONS_ITEM_ENERGY_POWERED);
+                }
+                g.fillRect(wx + 4, y, 16, 7);
+            }
         }
     }
 
