@@ -38,6 +38,8 @@ public class SlickGame extends BasicGame {
 
     private PlayerShipUI shipUI;
 
+    private boolean paused;
+
     public SlickGame(Datafile df) throws SlickException {
         super("Subluminal");
         this.df = df;
@@ -90,12 +92,15 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void update(GameContainer container, int delta) throws SlickException {
-        float dt = delta / 1000f;
-        player.update(dt);
-        enemy.update(dt);
-        enemyAI.update(dt);
+        if (!paused)
+            updateGameState(delta / 1000f);
 
         hoveredRoom = null;
+
+        Input in = container.getInput();
+
+        if (in.isKeyPressed(Input.KEY_SPACE))
+            paused = !paused;
 
         if (clickEvent == null)
             return;
@@ -138,6 +143,19 @@ public class SlickGame extends BasicGame {
         g.resetTransform();
 
         shipUI.render(container, g);
+
+        if (paused) {
+            Image pauseImg = getImg("img/Text_pause2.png");
+            int imgY = shipUI.getBoxY() - 80;
+            int imgX = container.getWidth() / 2 - pauseImg.getWidth() / 2;
+            pauseImg.draw(imgX, imgY);
+        }
+    }
+
+    private void updateGameState(float dt) {
+        player.update(dt);
+        enemy.update(dt);
+        enemyAI.update(dt);
     }
 
     public Image getImg(String name) {
