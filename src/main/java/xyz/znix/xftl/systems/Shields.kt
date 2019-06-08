@@ -7,10 +7,10 @@ class Shields(elem: Element) : MainSystem("shields", elem) {
 
     var selectedShieldBars: Int = 0
 
-    override val selectedEnergyLevel: Int get() = selectedShieldBars * 2
+    override val powerSelected: Int get() = selectedShieldBars * 2
 
     override fun powerStateChanged() {
-        if (powerAvailable < selectedEnergyLevel)
+        if (powerAvailable < powerSelected)
             selectedShieldBars = Math.floorDiv(powerAvailable, 2)
     }
 

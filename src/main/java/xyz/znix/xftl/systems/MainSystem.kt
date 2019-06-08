@@ -5,14 +5,14 @@ import xyz.znix.xftl.AbstractSystem
 
 abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(codename, elem) {
     private var simpleSelectedEnergyLevel: Int = 1
-    open val selectedEnergyLevel: Int get() = simpleSelectedEnergyLevel
+    open val powerSelected: Int get() = simpleSelectedEnergyLevel
 
     val powerAvailable: Int get() = energyLevels - damagedEnergyLevels
 
     abstract val sortingType: SortingType
 
     override fun powerStateChanged() {
-        if (selectedEnergyLevel > powerAvailable)
+        if (powerSelected > powerAvailable)
             simpleSelectedEnergyLevel = powerAvailable
     }
 

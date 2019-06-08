@@ -17,7 +17,7 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
 
     private val departing: MutableList<DepartingShot> = ArrayList()
 
-    override val selectedEnergyLevel: Int
+    override val powerSelected: Int
         get() {
             var power = 0
             for (hp in ship.hardpoints) {
@@ -114,7 +114,7 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
     override fun powerStateChanged() {
         // The weapons are arranged in order of priority, so turn the last ones off if possible.
         for (hp in ship.hardpoints.asReversed()) {
-            if (powerAvailable >= selectedEnergyLevel)
+            if (powerAvailable >= powerSelected)
                 break
 
             hp.weapon?.isPowered = false

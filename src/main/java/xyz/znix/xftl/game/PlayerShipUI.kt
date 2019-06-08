@@ -70,9 +70,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val imgY = sysImgY(i) + 19
 
             if (x >= imgX && y >= imgY && x < imgX + 26 && y < imgY + 26) {
-                if (button == MOUSE_LEFT_BUTTON && sys.selectedEnergyLevel < sys.powerAvailable) {
+                if (button == MOUSE_LEFT_BUTTON && sys.powerSelected < sys.powerAvailable) {
                     sys.increasePower()
-                } else if (button == MOUSE_RIGHT_BUTTON && sys.selectedEnergyLevel > 0) {
+                } else if (button == MOUSE_RIGHT_BUTTON && sys.powerSelected > 0) {
                     sys.decreasePower()
                 }
                 return
@@ -87,7 +87,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         if (!weapon.isPowered) {
             val weapons = ship.weapons!!
-            if (weapon.type.power + weapons.selectedEnergyLevel > weapons.powerAvailable) {
+            if (weapon.type.power + weapons.powerSelected > weapons.powerAvailable) {
                 // TODO warn the player there is not enough energy
                 return
             }
@@ -154,7 +154,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val colour = when {
                 sys.damagedEnergyLevels == sys.energyLevels -> "red"
                 sys.damagedEnergyLevels > 0 -> "orange"
-                sys.selectedEnergyLevel == 0 -> "grey"
+                sys.powerSelected == 0 -> "grey"
                 else -> "green"
             }
 
@@ -172,7 +172,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                         g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
                         g.drawLine((x + 24).f, (y + 6).f, (x + 24 + 16).f, y.f)
                     }
-                    i < sys.selectedEnergyLevel -> {
+                    i < sys.powerSelected -> {
                         // System powered
                         g.color = SYS_ENERGY_ACTIVE
                         g.fillRect((x + 24).f, y.f, 16f, 6f)
