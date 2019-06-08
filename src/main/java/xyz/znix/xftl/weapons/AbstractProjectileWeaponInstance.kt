@@ -12,7 +12,6 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
     var firingAnimation: Animation? = null
     var hasFired: Boolean = false
 
-    private var hp: Ship.Hardpoint? = null
     private var weapons: Weapons? = null
     private var target: Room? = null
 
@@ -51,16 +50,16 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
 
     private fun fireFrameHit() {
         val projectile = buildProjectile(target!!)
+        val hp = weapons!!.findHardpoint(this)
         lastProjectile?.run { projectile.angle = angle }
-        weapons!!.launchProjectile(hp!!, projectile)
+        weapons!!.launchProjectile(hp, projectile)
         lastProjectile = projectile
     }
 
-    fun fire(hp: Ship.Hardpoint, weapons: Weapons, target: Room) {
+    fun fire(weapons: Weapons, target: Room) {
         if (isFiring)
             throw IllegalStateException("Cannot file while already firing!")
 
-        this.hp = hp
         this.weapons = weapons
         this.target = target
         shotsFired = 0

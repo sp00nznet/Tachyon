@@ -5,6 +5,7 @@ import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
+import xyz.znix.xftl.weapons.AbstractWeaponInstance
 
 class Weapons(elem: Element) : MainSystem("weapons", elem) {
     override val sortingType: SortingType get() = SortingType.WEAPONS
@@ -75,6 +76,15 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
 
             g.popTransform()
         }
+    }
+
+    fun findHardpoint(weapon: AbstractWeaponInstance): Ship.Hardpoint {
+        for (hp in ship.hardpoints) {
+            if (hp.weapon == weapon)
+                return hp
+        }
+
+        throw IllegalArgumentException("No matching hardpoint for weapon $weapon")
     }
 
     fun launchProjectile(hp: Ship.Hardpoint, projectile: AbstractProjectile) {

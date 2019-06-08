@@ -18,10 +18,10 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
             when (weapon) {
                 is LaserBlueprint.LaserInstance -> {
-                    weapon.fire(hp, weapons, pickTarget())
+                    weapon.fire(weapons, pickTarget())
                 }
                 is MissileBlueprint.MissileInstance -> {
-                    weapon.fire(hp, weapons, pickTarget())
+                    weapon.fire(weapons, pickTarget())
                 }
             }
         }
