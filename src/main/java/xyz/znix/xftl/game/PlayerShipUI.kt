@@ -59,7 +59,26 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 if (button == MOUSE_RIGHT_BUTTON) {
                     ship.hardpoints[i].weapon?.isPowered = false
                 }
+
+                return
             }
+        }
+
+        var i = 0
+        for (sys in sortedMainSystems()) {
+            val imgX = sysImgX(i) + 19
+            val imgY = sysImgY(i) + 19
+
+            if (x >= imgX && y >= imgY && x < imgX + 26 && y < imgY + 26) {
+                if (button == MOUSE_LEFT_BUTTON && sys.selectedEnergyLevel < sys.powerAvailable) {
+                    sys.increasePower()
+                } else if (button == MOUSE_RIGHT_BUTTON && sys.selectedEnergyLevel > 0) {
+                    sys.decreasePower()
+                }
+                return
+            }
+
+            i++
         }
     }
 

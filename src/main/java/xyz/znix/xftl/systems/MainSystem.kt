@@ -16,6 +16,16 @@ abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(code
             simpleSelectedEnergyLevel = powerAvailable
     }
 
+    open fun increasePower() {
+        simpleSelectedEnergyLevel++
+        powerStateChanged()
+    }
+
+    open fun decreasePower() {
+        simpleSelectedEnergyLevel = Math.max(0, simpleSelectedEnergyLevel - 1)
+        powerStateChanged()
+    }
+
     // List of the default systems, for sorting purposes
     // TODO handle modded systems
     enum class SortingType {
