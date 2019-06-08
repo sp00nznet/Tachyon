@@ -11,6 +11,8 @@ abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(code
 
     val powerAvailable: Int get() = Math.min(powerAvailableSys, ship.powerAvailable + powerSelected)
 
+    val powerUnused: Int get() = Math.min(powerAvailableSys - powerSelected, ship.powerAvailable)
+
     abstract val sortingType: SortingType
 
     override fun powerStateChanged() {

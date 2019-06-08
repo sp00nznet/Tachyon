@@ -70,7 +70,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val imgY = sysImgY(i) + 19
 
             if (x >= imgX && y >= imgY && x < imgX + 26 && y < imgY + 26) {
-                if (button == MOUSE_LEFT_BUTTON && sys.powerSelected < sys.powerAvailable) {
+                if (button == MOUSE_LEFT_BUTTON && sys.powerUnused > 0) {
                     sys.increasePower()
                 } else if (button == MOUSE_RIGHT_BUTTON && sys.powerSelected > 0) {
                     sys.decreasePower()
@@ -87,7 +87,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         if (!weapon.isPowered) {
             val weapons = ship.weapons!!
-            if (weapon.type.power + weapons.powerSelected > weapons.powerAvailable) {
+            if (weapon.type.power > weapons.powerUnused) {
                 // TODO warn the player there is not enough energy
                 return
             }
