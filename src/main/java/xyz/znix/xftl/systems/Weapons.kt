@@ -16,6 +16,17 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
 
     private val departing: MutableList<DepartingShot> = ArrayList()
 
+    override val selectedEnergyLevel: Int
+        get() {
+            var power = 0
+            for (hp in ship.hardpoints) {
+                val weapon = hp.weapon ?: continue
+                if (weapon.isPowered)
+                    power += weapon.type.power
+            }
+            return power
+        }
+
     override fun drawBackground(g: Graphics) {
         // Draw the departing projectiles
         for (shot in departing) {
