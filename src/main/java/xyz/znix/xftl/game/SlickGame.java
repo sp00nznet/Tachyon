@@ -113,6 +113,10 @@ public class SlickGame extends BasicGame {
 
         for (int i = 0; i < 3; i++) {
             if (in.isMousePressed(i)) {
+                if (i == Input.MOUSE_RIGHT_BUTTON) {
+                    clickEvent = null;
+                }
+
                 shipUI.mouseClick(i, in.getMouseX(), in.getMouseY());
             }
         }
