@@ -172,6 +172,7 @@ public class SlickGame extends BasicGame {
     }
 
     private void updateGameState(float dt) {
+        shipUI.update(dt);
         player.update(dt);
         enemy.update(dt);
         enemyAI.update(dt);

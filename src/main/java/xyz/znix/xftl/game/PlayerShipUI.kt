@@ -11,8 +11,11 @@ import xyz.znix.xftl.Translator
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
+import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import java.util.*
 import java.util.function.Consumer
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
     // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
@@ -24,6 +27,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     private var selectWeaponClickEvent: Consumer<Room>? = null
     private var targetingSelectedWeapon: Int? = null
+
+    private val selectedTargets: MutableMap<AbstractWeaponInstance, SelectedTarget> = HashMap()
 
     // Set by render
     private var height: Int = 500
@@ -53,12 +58,38 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponHotkeyPressed(id: Int) {
         val weapon = ship.hardpoints[id].weapon ?: return
 
+        selectedTargets.remove(weapon)
+
         targetingSelectedWeapon = id
         selectWeaponClickEvent = Consumer { r: Room ->
-            val apwi = weapon as AbstractProjectileWeaponInstance
-            apwi.fire(ship.weapons!!, r)
+            selectedTargets[weapon] = SelectedTarget(r, weapon)
         }
         game.clickEvent = selectWeaponClickEvent
+    }
+
+    // Dispatch actions from the UI - this is only called when the game is not paused, so dispatch
+    // everything from here so a player can cancel their actions if they remain paused.
+    fun update(dt: Float) {
+        var fired: MutableList<SelectedTarget>? = null
+
+        for (tgt in selectedTargets.values) {
+            val weapon = tgt.weapon
+            if (!weapon.isCharged)
+                continue
+
+            if (fired == null)
+                fired = ArrayList()
+
+            fired.add(tgt)
+
+            val apwi = weapon as AbstractProjectileWeaponInstance
+            apwi.fire(ship.weapons!!, tgt.room)
+        }
+
+        fired?.let { selectedTargets.values.removeAll(it) }
+
+        // Untarget all unpowered weapons
+        selectedTargets.keys.removeIf { !it.isPowered }
     }
 
     fun render(gc: GameContainer, g: Graphics) {
@@ -184,8 +215,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 g.drawLine((wx - j).f, y.f, wx.f, y.f)
             }
 
+            if (selectedTargets.containsKey(weapon))
+                g.color = WEAPONS_ITEM_TARGETING
+
             val chargePx = (barSize * weapon.chargeProgress).toInt()
             g.fillRect((wx - 5).f, (wy + 36 - chargePx).f, 4f, chargePx.f)
+
+            g.color = mainColour
 
             g.lineWidth = 2f
             g.drawLine(wx - 7.5f, wy.f + top.f + 1.5f, wx - 7.5f, wy + 39 - 1.5f)
@@ -236,4 +272,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             y += 15
         }
     }
+
+    private class SelectedTarget(val room: Room, val weapon: AbstractWeaponInstance)
 }
