@@ -177,7 +177,7 @@ public class SlickGame extends BasicGame {
             else if (sys.getDamagedEnergyLevels() > 0)
                 mode = "orange";
             else if (sys.getSelectedEnergyLevel() == 0)
-                mode = "gray";
+                mode = "grey";
             else
                 mode = "green";
 
