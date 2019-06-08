@@ -151,14 +151,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val hp = ship.hardpoints[i]
             val weapon = hp.weapon
 
-            if (weapon == null || !weapon.isPowered)
-                g.color = WEAPONS_ITEM_DESELECTED
-            else if (targetingSelectedWeapon == i)
-                g.color = WEAPONS_ITEM_TARGETING
-            else if (weapon.isCharged)
-                g.color = WEAPONS_ITEM_CHARGED
-            else
-                g.color = WEAPONS_ITEM_SELECTED
+            val mainColour = when {
+                weapon == null -> WEAPONS_ITEM_DESELECTED
+                !weapon.isPowered -> WEAPONS_ITEM_DESELECTED
+                targetingSelectedWeapon == i -> WEAPONS_ITEM_TARGETING
+                weapon.isCharged -> WEAPONS_ITEM_CHARGED
+                else -> WEAPONS_ITEM_SELECTED
+            }
+            g.color = mainColour
 
             // Draw the outline box
             g.drawRect(wx.f, wy.f, (87 - 1).f, (39 - 1).f)
