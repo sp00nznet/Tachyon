@@ -4,11 +4,17 @@ import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 
 abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(codename, elem) {
-    open val selectedEnergyLevel: Int = 1
+    private var simpleSelectedEnergyLevel: Int = 1
+    open val selectedEnergyLevel: Int get() = simpleSelectedEnergyLevel
 
     val powerAvailable: Int get() = energyLevels - damagedEnergyLevels
 
     abstract val sortingType: SortingType
+
+    override fun powerStateChanged() {
+        if (selectedEnergyLevel > powerAvailable)
+            simpleSelectedEnergyLevel = powerAvailable
+    }
 
     // List of the default systems, for sorting purposes
     // TODO handle modded systems
