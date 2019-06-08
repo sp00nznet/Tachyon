@@ -15,6 +15,7 @@ import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import java.util.*
 import java.util.function.Consumer
+import java.util.stream.Stream
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -126,18 +127,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         g.color = UI_TEXT_COLOUR_1
         g.drawString("WEAPONS", (tx + 1).f, (ty + 11).f)
-        // getImg("img/icons/s_weapons_grey1.png").draw(202, container.getHeight() - 69);
 
         // Draw the systems
-        val systems = ship.rooms.stream()
-                .map { it.system }
-                .filter { MainSystem::class.java.isInstance(it) }
-                .map { MainSystem::class.java.cast(it) }
-                .sorted(Comparator.comparing<MainSystem, MainSystem.SortingType> { it.sortingType })
-
         var systemCount = 0
 
-        for (sys in systems) {
+        for (sys in sortedMainSystems()) {
             val colour = when {
                 sys.damagedEnergyLevels == sys.energyLevels -> "red"
                 sys.damagedEnergyLevels > 0 -> "orange"
@@ -294,6 +288,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             }
         }
     }
+
+    private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()
+            .map { it.system }
+            .filter { MainSystem::class.java.isInstance(it) }
+            .map { MainSystem::class.java.cast(it) }
+            .sorted(Comparator.comparing<MainSystem, MainSystem.SortingType> { it.sortingType })
 
     private fun drawWeaponString(g: Graphics, str: String, x: Int, y: Int) {
         var y = y
