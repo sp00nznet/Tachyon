@@ -43,6 +43,13 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
 
     open fun dealDamage(damage: Int) {
         damagedEnergyLevels = Math.min(energyLevels, damagedEnergyLevels + damage)
+        powerStateChanged()
+    }
+
+    // Something - anything - happened to the system's power level.
+    // Systems should generally override this rather than dealDamage, to include stuff like ionisation or
+    // a Zoltan leaving the room.
+    protected open fun powerStateChanged() {
     }
 
     open val icon: String = "img/icons/s_${codename}_overlay.png"

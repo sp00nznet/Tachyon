@@ -111,6 +111,16 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
         }
     }
 
+    override fun powerStateChanged() {
+        // The weapons are arranged in order of priority, so turn the last ones off if possible.
+        for (hp in ship.hardpoints.asReversed()) {
+            if (powerAvailable >= selectedEnergyLevel)
+                break
+
+            hp.weapon?.isPowered = false
+        }
+    }
+
     class DepartingShot(val hardpoint: Ship.Hardpoint, val offset: ConstPoint, val projectile: AbstractProjectile) {
         val initialDistance: Float = projectile.distance
     }
