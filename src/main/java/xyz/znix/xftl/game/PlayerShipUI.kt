@@ -126,12 +126,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // getImg("img/icons/s_weapons_grey1.png").draw(202, container.getHeight() - 69);
 
         // Draw the systems
-        var x = 58
+        val sysImgX = 58
+        val sysImgY = gc.height - 69
         val systems = ship.rooms.stream()
                 .map { it.system }
                 .filter { MainSystem::class.java.isInstance(it) }
                 .map { MainSystem::class.java.cast(it) }
                 .sorted(Comparator.comparing<MainSystem, MainSystem.SortingType> { it.sortingType })
+
+        var systemCount = 0
 
         for (sys in systems) {
             val colour = when {
@@ -141,12 +144,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 else -> "green"
             }
 
-            var y = gc.height - 69
-            game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png").draw(x.f, y.f)
+            val x = sysImgX + 36 * systemCount
 
-            y += 8
+            game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png").draw(x.f, sysImgY.f)
 
             for (i in 0 until sys.energyLevels) {
+                val y = sysImgY + 8 - i * 8
+
                 when {
                     i >= sys.energyLevels - sys.damagedEnergyLevels -> {
                         // System damaged/broken
@@ -165,10 +169,21 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                         g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
                     }
                 }
-                y -= 8
             }
 
-            x += 36
+            systemCount++
+        }
+
+        // Draw the wires between the systems
+        for (i in 0 until systemCount - 1) {
+            // Draw the power bar to the next item
+            val powerX = sysImgX + 31 + 36 * i
+            val powerY = sysImgY + 45 + 12 - 26
+
+            if (i == systemCount - 2)
+                game.getImg("img/wireUI/wire_36_cap.png").draw(powerX.f, powerY.f)
+            else
+                game.getImg("img/wireUI/wire_36.png").draw(powerX.f, powerY.f)
         }
 
         // If a weapon is being targeted, check that our click event is still the game's active click
