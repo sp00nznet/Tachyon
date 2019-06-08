@@ -6,6 +6,8 @@ import xyz.znix.xftl.AbstractSystem
 abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(codename, elem) {
     open val selectedEnergyLevel: Int = 1
 
+    val powerAvailable: Int get() = energyLevels - damagedEnergyLevels
+
     abstract val sortingType: SortingType
 
     // List of the default systems, for sorting purposes

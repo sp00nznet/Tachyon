@@ -62,6 +62,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponHotkeyPressed(id: Int) {
         val weapon = ship.hardpoints[id].weapon ?: return
 
+        if (!weapon.isPowered) {
+            val weapons = ship.weapons!!
+            if (weapon.type.power + weapons.selectedEnergyLevel > weapons.powerAvailable) {
+                // TODO warn the player there is not enough energy
+                return
+            }
+            weapon.isPowered = true
+            return
+        }
+
         selectedTargets.remove(weapon)
 
         targetingSelectedWeapon = id
