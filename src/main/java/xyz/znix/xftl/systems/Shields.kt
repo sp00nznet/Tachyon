@@ -15,7 +15,8 @@ class Shields(elem: Element) : MainSystem("shields", elem) {
     }
 
     override fun increasePower() {
-        selectedShieldBars++
+        if (ship.powerAvailable >= 2)
+            selectedShieldBars++
         powerStateChanged()
     }
 

@@ -17,7 +17,8 @@ abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(code
     }
 
     open fun increasePower() {
-        simpleSelectedEnergyLevel++
+        if (ship.powerAvailable >= 1)
+            simpleSelectedEnergyLevel++
         powerStateChanged()
     }
 

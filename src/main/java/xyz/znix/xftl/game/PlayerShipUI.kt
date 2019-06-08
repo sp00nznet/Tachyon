@@ -91,6 +91,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 // TODO warn the player there is not enough energy
                 return
             }
+            if (weapon.type.power > ship.powerAvailable) {
+                // TODO warn the player there is not enough reactor power
+                return
+            }
             weapon.isPowered = true
             return
         }
