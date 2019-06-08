@@ -48,6 +48,27 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
+    val weapons: Weapons?
+        get() {
+            for (room in rooms)
+                return room.system as? Weapons ?: continue
+            return null
+        }
+
+    val engines: Engines?
+        get() {
+            for (room in rooms)
+                return room.system as? Engines ?: continue
+            return null
+        }
+
+    val shields: Shields?
+        get() {
+            for (room in rooms)
+                return room.system as? Shields ?: continue
+            return null
+        }
+
     init {
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
 
