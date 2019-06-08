@@ -268,7 +268,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     fun screenPosToShipPos(point: Point) {
         point.add(hullOffset.x, hullOffset.y)
-        point.divide(ROOM_SIZE)
+        point.x = Math.floorDiv(point.x, ROOM_SIZE)
+        point.y = Math.floorDiv(point.y, ROOM_SIZE)
         point.sub(offset.x, offset.y)
     }
 
