@@ -48,6 +48,25 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
+    // The raw amount of reactor power purchased by the player
+    var purchasedReactorPower: Int = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()
+
+    // The amount of reactor power available for use by the player, taking ion storms, events and so on into account
+    val reactorPower: Int get() = purchasedReactorPower
+
+    // The amount of unused reactor power
+    val powerAvailable: Int get() = reactorPower - powerConsumed
+
+    // The amount of power currently used by the ship's systems
+    val powerConsumed: Int
+        get() {
+            var used = 0
+            for (room in rooms) {
+                used += (room.system as? MainSystem ?: continue).powerSelected
+            }
+            return used
+        }
+
     val weapons: Weapons?
         get() {
             for (room in rooms)
