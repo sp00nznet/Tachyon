@@ -23,6 +23,8 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
 
         val fa = firingAnimation ?: return
 
+        fa.update((dt * 1000).toLong())
+
         // Don't charge while firing
         timeCharged = 0f
 

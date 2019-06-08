@@ -135,7 +135,7 @@ class Animations(df: Datafile) {
                               val chargeImage: Image?) {
 
         // It *appears* that FTL plays the shoot animation at around 30fps
-        fun shoot() = Animation(sheet, x + chargedFrame, y, x + length - 1, y, true, 1000 / 30, true)
+        fun shoot() = Animation(sheet, x + chargedFrame, y, x + length - 1, y, true, 1000 / 30, false)
 
         fun spriteAt(i: Int): Image {
             if (i >= length) throw IndexOutOfBoundsException(i)

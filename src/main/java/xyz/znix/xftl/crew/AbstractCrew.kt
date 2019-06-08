@@ -80,6 +80,8 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     }
 
     fun update(dt: Float) {
+        icon.update((dt * 1000).toLong())
+
         val pos = position
         if (movement != null) {
             movementProgress += dt * 2

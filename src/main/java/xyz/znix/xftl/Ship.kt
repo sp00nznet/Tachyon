@@ -321,6 +321,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         for (i in ib.size - 1 downTo 0) {
             ib[i].update(dt)
         }
+
+        // Update the animations
+        for (a in animations)
+            a.update(dt)
     }
 
     companion object {
@@ -347,11 +351,15 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         init {
             animation.setLooping(false)
-            animation.setAutoUpdate(true)
+            animation.setAutoUpdate(false)
         }
 
         fun render() {
             animation.draw(pos.x.toFloat(), pos.y.toFloat())
+        }
+
+        fun update(dt: Float) {
+            animation.update((dt * 1000).toLong())
         }
 
         companion object {
