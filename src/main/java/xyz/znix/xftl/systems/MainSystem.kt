@@ -7,7 +7,9 @@ abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(code
     private var simpleSelectedEnergyLevel: Int = 1
     open val powerSelected: Int get() = simpleSelectedEnergyLevel
 
-    val powerAvailable: Int get() = energyLevels - damagedEnergyLevels
+    val powerAvailableSys: Int get() = energyLevels - damagedEnergyLevels
+
+    val powerAvailable: Int get() = Math.min(powerAvailableSys, ship.powerAvailable + powerSelected)
 
     abstract val sortingType: SortingType
 
@@ -17,8 +19,7 @@ abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(code
     }
 
     open fun increasePower() {
-        if (ship.powerAvailable >= 1)
-            simpleSelectedEnergyLevel++
+        simpleSelectedEnergyLevel++
         powerStateChanged()
     }
 
