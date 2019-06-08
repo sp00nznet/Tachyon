@@ -121,6 +121,35 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
         }
     }
 
+    override fun increasePower() {
+        for (hp in ship.hardpoints) {
+            val weapon = hp.weapon ?: continue
+
+            if (weapon.isPowered)
+                continue
+
+            if (weapon.type.power > powerUnused)
+                continue
+
+            weapon.isPowered = true
+            powerStateChanged()
+            return
+        }
+    }
+
+    override fun decreasePower() {
+        for (hp in ship.hardpoints.asReversed()) {
+            val weapon = hp.weapon ?: continue
+
+            if (!weapon.isPowered)
+                continue
+
+            weapon.isPowered = false
+            powerStateChanged()
+            return
+        }
+    }
+
     class DepartingShot(val hardpoint: Ship.Hardpoint, val offset: ConstPoint, val projectile: AbstractProjectile) {
         val initialDistance: Float = projectile.distance
     }
