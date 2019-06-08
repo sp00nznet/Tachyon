@@ -102,6 +102,21 @@ public class SlickGame extends BasicGame {
         if (in.isKeyPressed(Input.KEY_SPACE))
             paused = !paused;
 
+        if (in.isKeyPressed(Input.KEY_1))
+            shipUI.weaponHotkeyPressed(0);
+        if (in.isKeyPressed(Input.KEY_2))
+            shipUI.weaponHotkeyPressed(1);
+        if (in.isKeyPressed(Input.KEY_3))
+            shipUI.weaponHotkeyPressed(2);
+        if (in.isKeyPressed(Input.KEY_4))
+            shipUI.weaponHotkeyPressed(3);
+
+        for (int i = 0; i < 3; i++) {
+            if (in.isMousePressed(i)) {
+                shipUI.mouseClick(i, in.getMouseX(), in.getMouseY());
+            }
+        }
+
         if (clickEvent == null)
             return;
 
@@ -174,5 +189,13 @@ public class SlickGame extends BasicGame {
 
     public WeaponDict getWeapons() {
         return weapons;
+    }
+
+    public Consumer<Room> getClickEvent() {
+        return clickEvent;
+    }
+
+    public void setClickEvent(Consumer<Room> clickEvent) {
+        this.clickEvent = clickEvent;
     }
 }

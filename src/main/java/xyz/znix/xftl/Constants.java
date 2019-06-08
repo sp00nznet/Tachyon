@@ -30,6 +30,7 @@ public class Constants {
     public static final Color WEAPONS_ITEM_DESELECTED = new Color(150, 150, 150);
     public static final Color WEAPONS_ITEM_SELECTED = UI_BACKGROUND_GLOW_COLOUR;
     public static final Color WEAPONS_ITEM_CHARGED = new Color(120, 255, 120);
+    public static final Color WEAPONS_ITEM_TARGETING = new Color(255, 120, 120);
 
     public static final Color WEAPONS_ITEM_ENERGY_UNPOWERED = WEAPONS_ITEM_DESELECTED;
     public static final Color WEAPONS_ITEM_ENERGY_POWERED = WEAPONS_ITEM_SELECTED;

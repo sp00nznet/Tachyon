@@ -2,13 +2,17 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.Translator
+import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.MainSystem
+import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import java.util.*
+import java.util.function.Consumer
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
     // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
@@ -17,6 +21,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private val font = SILFontLoader(df, df["fonts/HL2.font"])
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])
+
+    private var selectWeaponClickEvent: Consumer<Room>? = null
+    private var targetingSelectedWeapon: Int? = null
 
     // Set by render
     private var height: Int = 500
@@ -29,6 +36,30 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponBoxX(i: Int): Int = boxX + 12 + 12 + 97 * i
 
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
+
+    fun mouseClick(button: Int, x: Int, y: Int) {
+        for (i in 0 until ship.weaponSlots!!) {
+            val wx = weaponBoxX(i)
+            val wy = weaponBoxY(i)
+
+            if (button == MOUSE_LEFT_BUTTON) {
+                if (x >= wx && y >= wy && x < wx + 87 && y < wy + 39) {
+                    weaponHotkeyPressed(i)
+                }
+            }
+        }
+    }
+
+    fun weaponHotkeyPressed(id: Int) {
+        val weapon = ship.hardpoints[id].weapon ?: return
+
+        targetingSelectedWeapon = id
+        selectWeaponClickEvent = Consumer { r: Room ->
+            val apwi = weapon as AbstractProjectileWeaponInstance
+            apwi.fire(ship.weapons!!, r)
+        }
+        game.clickEvent = selectWeaponClickEvent
+    }
 
     fun render(gc: GameContainer, g: Graphics) {
         height = gc.height
@@ -95,6 +126,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             x += 36
         }
 
+        // If a weapon is being targeted, check that our click event is still the game's active click
+        // event. This ensures that if the click event is cancelled or overridden, targeting mode
+        // is disabled.
+        if (targetingSelectedWeapon != null && selectWeaponClickEvent != game.clickEvent) {
+            targetingSelectedWeapon = null
+            selectWeaponClickEvent = null
+        }
+
         g.font = weaponNameText
 
         // Find the longest charge time of all equipped weapons
@@ -114,6 +153,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             if (weapon == null || !weapon.isPowered)
                 g.color = WEAPONS_ITEM_DESELECTED
+            else if (targetingSelectedWeapon == i)
+                g.color = WEAPONS_ITEM_TARGETING
             else if (weapon.isCharged)
                 g.color = WEAPONS_ITEM_CHARGED
             else
