@@ -4,4 +4,6 @@ import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 
 class Piloting(elem: Element) : AbstractSystem("pilot", elem) {
+    // TODO add crew evasion
+    val evasion: Int get() = 0
 }

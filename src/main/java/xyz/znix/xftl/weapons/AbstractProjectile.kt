@@ -22,6 +22,8 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
     var distance: Float = 1500f
 
+    private var missed: Boolean? = null
+
     /**
      * The position of this projectile on the screen, relative to the target ship
      */
@@ -39,10 +41,16 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         distance -= speed * dt
 
         if (distance <= 0) {
+            if (missed == null) {
+                missed = Math.random() * 100 < target.ship.evasion
+            }
+
+            if (missed == true)
+                return
+
             distance = 0f
 
             // TODO shields
-            // TODO missing (dodge chance, etc)
 
             target.system?.dealDamage(type.sysDamage)
 
