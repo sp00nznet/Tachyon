@@ -11,6 +11,8 @@ import xyz.znix.xftl.systems.MainSystem
 import java.util.*
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
+    // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
+    private val Int.f: Float get() = this.toFloat()
 
     private val font = SILFontLoader(df, df["fonts/HL2.font"])
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
@@ -22,17 +24,17 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         val bx = 234
         val by = gc.height - 113
-        game.getImg("img/box_weapons_bottom" + ship.weaponSlots + ".png").draw(bx.toFloat(), by.toFloat())
+        game.getImg("img/box_weapons_bottom" + ship.weaponSlots + ".png").draw(bx.f, by.f)
         val tx = bx + 18
         val ty = by + 61
 
         g.color = UI_BACKGROUND_GLOW_COLOUR
         val tw = font.getWidth("WEAPONS")
-        g.fillRect(tx.toFloat(), ty.toFloat(), (tw - 13).toFloat(), 20f)
-        game.getImg("img/box_weapons_bottom_label.png").draw((tx + tw - 13).toFloat(), ty.toFloat())
+        g.fillRect(tx.f, ty.f, (tw - 13).f, 20f)
+        game.getImg("img/box_weapons_bottom_label.png").draw((tx + tw - 13).f, ty.f)
 
         g.color = UI_TEXT_COLOUR_1
-        g.drawString("WEAPONS", (tx + 1).toFloat(), (ty + 11).toFloat())
+        g.drawString("WEAPONS", (tx + 1).f, (ty + 11).f)
         // getImg("img/icons/s_weapons_grey1.png").draw(202, container.getHeight() - 69);
 
         // Draw the systems
@@ -52,7 +54,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             }
 
             var y = gc.height - 69
-            game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png").draw(x.toFloat(), y.toFloat())
+            game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png").draw(x.f, y.f)
 
             y += 8
 
@@ -61,18 +63,18 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     i >= sys.energyLevels - sys.damagedEnergyLevels -> {
                         // System damaged/broken
                         g.color = SYS_ENERGY_BROKEN
-                        g.drawRect((x + 24).toFloat(), y.toFloat(), (16 - 1).toFloat(), (6 - 1).toFloat())
-                        g.drawLine((x + 24).toFloat(), (y + 6).toFloat(), (x + 24 + 16).toFloat(), y.toFloat())
+                        g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
+                        g.drawLine((x + 24).f, (y + 6).f, (x + 24 + 16).f, y.f)
                     }
                     i < sys.selectedEnergyLevel -> {
                         // System powered
                         g.color = SYS_ENERGY_ACTIVE
-                        g.fillRect((x + 24).toFloat(), y.toFloat(), 16f, 6f)
+                        g.fillRect((x + 24).f, y.f, 16f, 6f)
                     }
                     else -> {
                         // System depowered
                         g.color = SYS_ENERGY_DEPOWERED
-                        g.drawRect((x + 24).toFloat(), y.toFloat(), (16 - 1).toFloat(), (6 - 1).toFloat())
+                        g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
                     }
                 }
                 y -= 8
@@ -106,8 +108,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 g.color = WEAPONS_ITEM_SELECTED
 
             // Draw the outline box
-            g.drawRect(wx.toFloat(), wy.toFloat(), (87 - 1).toFloat(), (39 - 1).toFloat())
-            g.drawRect((wx + 1).toFloat(), (wy + 1).toFloat(), (87 - 3).toFloat(), (39 - 3).toFloat())
+            g.drawRect(wx.f, wy.f, (87 - 1).f, (39 - 1).f)
+            g.drawRect((wx + 1).f, (wy + 1).f, (87 - 3).f, (39 - 3).f)
 
             if (weapon == null)
                 continue
@@ -126,28 +128,28 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 if (pos < 0)
                     continue
                 val y = wy + pos
-                g.drawLine((wx - j).toFloat(), y.toFloat(), wx.toFloat(), y.toFloat())
+                g.drawLine((wx - j).f, y.f, wx.f, y.f)
             }
 
             val chargePx = (barSize * weapon.chargeProgress).toInt()
-            g.fillRect((wx - 5).toFloat(), (wy + 36 - chargePx).toFloat(), 4f, chargePx.toFloat())
+            g.fillRect((wx - 5).f, (wy + 36 - chargePx).f, 4f, chargePx.f)
 
             g.lineWidth = 2f
-            g.drawLine(wx - 7.5f, wy.toFloat() + top.toFloat() + 1.5f, wx - 7.5f, wy + 39 - 1.5f)
+            g.drawLine(wx - 7.5f, wy.f + top.f + 1.5f, wx - 7.5f, wy + 39 - 1.5f)
             g.drawLine(wx - 7.5f, wy + 39 - 1.5f, wx - 0.5f, wy + 39 - 1.5f)
             g.lineWidth = 1f
 
             // Draw the weapon number box
             g.lineWidth = 2f
-            g.drawLine(wx.toFloat() + 75f + 0.5f, wy.toFloat() + 24f + 0.5f, wx.toFloat() + 75f + 0.5f, wy.toFloat() + 36f + 0.5f)
-            g.drawLine(wx.toFloat() + 75f + 0.5f, wy.toFloat() + 24f + 0.5f, wx.toFloat() + 85f + 0.5f, wy.toFloat() + 24f + 0.5f)
+            g.drawLine(wx.f + 75f + 0.5f, wy.f + 24f + 0.5f, wx.f + 75f + 0.5f, wy.f + 36f + 0.5f)
+            g.drawLine(wx.f + 75f + 0.5f, wy.f + 24f + 0.5f, wx.f + 85f + 0.5f, wy.f + 24f + 0.5f)
             g.lineWidth = 1f
 
             // Draw the weapon number itself
             g.font = weaponNumberFont
             val weaponNumber = Integer.toString(i + 1)
             val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
-            g.drawString(weaponNumber, (wx + 77 + 1 + (8 - weaponNumberWidth) / 2).toFloat(), (wy + 30).toFloat())
+            g.drawString(weaponNumber, (wx + 77 + 1 + (8 - weaponNumberWidth) / 2).f, (wy + 30).f)
 
             val shortName = translator[weapon.type.shortKey].replaceFirst(" ".toRegex(), "\n")
             drawWeaponString(g, shortName, wx + 26, wy + 8)
@@ -162,14 +164,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     g.color = WEAPONS_ITEM_ENERGY_ZOLTAN
                 } else if (!weapon.isPowered) {
                     g.color = WEAPONS_ITEM_ENERGY_UNPOWERED
-                    g.drawRect((wx + 4).toFloat(), y.toFloat(), (16 - 1).toFloat(), (7 - 1).toFloat())
+                    g.drawRect((wx + 4).f, y.f, (16 - 1).f, (7 - 1).f)
                     continue
                 } else if (weapon.isCharged) {
                     g.color = WEAPONS_ITEM_ENERGY_CHARGED
                 } else {
                     g.color = WEAPONS_ITEM_ENERGY_POWERED
                 }
-                g.fillRect((wx + 4).toFloat(), y.toFloat(), 16f, 7f)
+                g.fillRect((wx + 4).f, y.f, 16f, 7f)
             }
         }
     }
@@ -177,7 +179,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private fun drawWeaponString(g: Graphics, str: String, x: Int, y: Int) {
         var y = y
         for (line in str.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-            g.drawString(line, x.toFloat(), y.toFloat())
+            g.drawString(line, x.f, y.f)
             y += 15
         }
     }
