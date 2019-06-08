@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game
 
+import org.lwjgl.opengl.GL11
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
@@ -146,6 +147,47 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         g.color = UI_TEXT_COLOUR_1
         g.drawString("WEAPONS", (tx + 1).f, (ty + 11).f)
+
+        val powerTreeX = 86 - 53
+        val powerTreeY = gc.height - 21 - 302
+        val powerTreeMaskY = powerTreeY + 27 - (ship.purchasedReactorPower - 1) * 9
+
+        // Draw the power tree, using OpenGL stenciling
+        GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT)
+        GL11.glStencilMask(0xff)
+        GL11.glEnable(GL11.GL_STENCIL_TEST)
+
+        // Draw the mask into the stencil buffer
+        GL11.glEnable(GL11.GL_ALPHA_TEST)
+        GL11.glAlphaFunc(GL11.GL_GREATER, 0.1f)
+        GL11.glStencilFunc(GL11.GL_NEVER, 1, 0xFF)
+        GL11.glStencilOp(GL11.GL_REPLACE, GL11.GL_KEEP, GL11.GL_KEEP)
+        game.getImg("img/wire_left_mask.png").draw(powerTreeX.f + 4, powerTreeMaskY.f)
+        GL11.glDisable(GL11.GL_ALPHA_TEST)
+
+        // Draw the wire image with the stencil in place
+        GL11.glStencilFunc(GL11.GL_EQUAL, 0, 0xFF)
+        GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP)
+        game.getImg("img/wireUI/wire_full.png").draw(powerTreeX.f, powerTreeY.f)
+
+        // Don't break anything else
+        GL11.glDisable(GL11.GL_STENCIL_TEST)
+
+        // Draw the power tree's energy bars
+        val availablePower = ship.powerAvailable
+        val totalPower = ship.reactorPower
+        for (i in 0 until totalPower) {
+            val x = 12
+            val y = height - 34 - 9 * i
+
+            if (i < availablePower) {
+                g.color = SYS_ENERGY_ACTIVE
+                g.fillRect(x.f, y.f, 28f, 7f)
+            } else {
+                g.color = SYS_ENERGY_DEPOWERED
+                g.drawRect(x.f, y.f, 28f - 1f, 7f - 1f)
+            }
+        }
 
         // Draw the systems
         var systemCount = 0

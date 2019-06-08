@@ -4,6 +4,7 @@
 package xyz.znix.xftl;
 
 import org.newdawn.slick.AppGameContainer;
+import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.SlickException;
 import xyz.znix.xftl.game.SlickGame;
 
@@ -20,6 +21,9 @@ public class App {
 
         // TODO automatic extraction
         System.setProperty("org.lwjgl.librarypath", new File("natives").getAbsolutePath());
+
+        // Enable stenciling support
+        GameContainer.enableStencil();
 
         AppGameContainer appgc;
         appgc = new AppGameContainer(new SlickGame(df));
