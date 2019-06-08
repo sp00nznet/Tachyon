@@ -38,6 +38,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     val boxX get() = 234
     val boxY get() = height - 113
 
+    fun sysImgX(i: Int): Int = 58 + i * 36
+    fun sysImgY(i: Int): Int = height - 69
+
     // The position of a given weapon's selector
     fun weaponBoxX(i: Int): Int = boxX + 12 + 12 + 97 * i
 
@@ -126,8 +129,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // getImg("img/icons/s_weapons_grey1.png").draw(202, container.getHeight() - 69);
 
         // Draw the systems
-        val sysImgX = 58
-        val sysImgY = gc.height - 69
         val systems = ship.rooms.stream()
                 .map { it.system }
                 .filter { MainSystem::class.java.isInstance(it) }
@@ -144,12 +145,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 else -> "green"
             }
 
-            val x = sysImgX + 36 * systemCount
+            val x = sysImgX(systemCount)
 
-            game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png").draw(x.f, sysImgY.f)
+            game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png").draw(x.f, sysImgY(systemCount).f)
 
             for (i in 0 until sys.energyLevels) {
-                val y = sysImgY + 8 - i * 8
+                val y = sysImgY(systemCount) + 8 - i * 8
 
                 when {
                     i >= sys.energyLevels - sys.damagedEnergyLevels -> {
@@ -177,8 +178,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // Draw the wires between the systems
         for (i in 0 until systemCount - 1) {
             // Draw the power bar to the next item
-            val powerX = sysImgX + 31 + 36 * i
-            val powerY = sysImgY + 45 + 12 - 26
+            val powerX = sysImgX(i) + 31
+            val powerY = sysImgY(i) + 45 + 12 - 26
 
             if (i == systemCount - 2)
                 game.getImg("img/wireUI/wire_36_cap.png").draw(powerX.f, powerY.f)
