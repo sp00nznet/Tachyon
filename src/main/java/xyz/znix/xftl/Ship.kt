@@ -33,9 +33,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     val imageName: String = shipNode.getAttributeValue("img")
 
+    val isPlayerShip: Boolean = name.startsWith("PLAYER_SHIP_")
+
     val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
-    val hullImage: Image = base.readImage(base.getOrNull("img/ship/${imageName}_base.png")
-            ?: base["img/ships_glow/${imageName}_base.png"])
+    val hullImage: Image = base.readImage(base["img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png"])
 
     val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
 
