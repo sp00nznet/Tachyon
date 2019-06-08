@@ -224,7 +224,7 @@ public class SlickGame extends BasicGame {
             Ship.Hardpoint hp = player.getHardpoints().get(i);
             AbstractWeaponInstance weapon = hp.getWeapon();
 
-            if (weapon == null)
+            if (weapon == null || !weapon.isPowered())
                 g.setColor(WEAPONS_ITEM_DESELECTED);
             else if (weapon.isCharged())
                 g.setColor(WEAPONS_ITEM_CHARGED);
@@ -279,7 +279,6 @@ public class SlickGame extends BasicGame {
             drawWeaponString(g, shortName, wx + 26, wy + 8);
 
             // TODO make these correct
-            boolean isPowered = true;
             int zoltanPower = 1;
 
             for (int bar = 0; bar < weapon.getType().getPower(); bar++) {
@@ -287,7 +286,7 @@ public class SlickGame extends BasicGame {
 
                 if (zoltanPower > bar) {
                     g.setColor(WEAPONS_ITEM_ENERGY_ZOLTAN);
-                } else if (!isPowered) {
+                } else if (!weapon.isPowered()) {
                     g.setColor(WEAPONS_ITEM_ENERGY_UNPOWERED);
                     g.drawRect(wx + 4, y, 16 - 1, 7 - 1);
                     continue;
