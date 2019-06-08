@@ -18,8 +18,12 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
     open fun update(dt: Float) {
         if (isPowered)
             timeCharged += dt
+        else
+            timeCharged -= dt * 10
         if (timeCharged > type.chargeTime)
             timeCharged = type.chargeTime
+        if (timeCharged < 0f)
+            timeCharged = 0f
     }
 
     protected fun fire() {

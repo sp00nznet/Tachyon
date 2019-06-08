@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
+import org.newdawn.slick.Input.MOUSE_RIGHT_BUTTON
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.SILFontLoader
@@ -47,9 +48,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val wx = weaponBoxX(i)
             val wy = weaponBoxY(i)
 
-            if (button == MOUSE_LEFT_BUTTON) {
-                if (x >= wx && y >= wy && x < wx + 87 && y < wy + 39) {
+            if (x >= wx && y >= wy && x < wx + 87 && y < wy + 39) {
+                if (button == MOUSE_LEFT_BUTTON) {
                     weaponHotkeyPressed(i)
+                }
+                if (button == MOUSE_RIGHT_BUTTON) {
+                    ship.hardpoints[i].weapon?.isPowered = false
                 }
             }
         }
