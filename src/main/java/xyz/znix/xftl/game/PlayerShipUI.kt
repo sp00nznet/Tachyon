@@ -18,15 +18,27 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])
 
+    // Set by render
+    private var height: Int = 500
+
+    // The position of the weapons box
+    val boxX get() = 234
+    val boxY get() = height - 113
+
+    // The position of a given weapon's selector
+    fun weaponBoxX(i: Int): Int = boxX + 12 + 12 + 97 * i
+
+    fun weaponBoxY(i: Int): Int = boxY + 12 + 4
+
     fun render(gc: GameContainer, g: Graphics) {
+        height = gc.height
+
         font.scale = 2f
         g.font = font
 
-        val bx = 234
-        val by = gc.height - 113
-        game.getImg("img/box_weapons_bottom" + ship.weaponSlots + ".png").draw(bx.f, by.f)
-        val tx = bx + 18
-        val ty = by + 61
+        game.getImg("img/box_weapons_bottom" + ship.weaponSlots + ".png").draw(boxX.f, boxY.f)
+        val tx = boxX + 18
+        val ty = boxY + 61
 
         g.color = UI_BACKGROUND_GLOW_COLOUR
         val tw = font.getWidth("WEAPONS")
@@ -94,10 +106,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 .orElse(1f)
 
         for (i in 0 until ship.weaponSlots!!) {
-            val wx = bx + 12 + 12 + 97 * i
-            val wy = by + 12 + 4
+            val wx = weaponBoxX(i)
+            val wy = weaponBoxY(i)
 
-            val hp = ship.hardpoints.get(i)
+            val hp = ship.hardpoints[i]
             val weapon = hp.weapon
 
             if (weapon == null || !weapon.isPowered)
