@@ -278,6 +278,22 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             shieldPos.divide(2)
             shieldPos += shieldPoint
             g.drawImage(shieldImage, shieldPos.x.toFloat(), shieldPos.y.toFloat())
+        } else {
+            // This is centerpointOfHull - centerpointOfShield + shieldPos
+            val shieldPos = Point(hullImage.width, hullImage.height)
+            shieldPos.divide(2)
+            shieldPos.sub(shieldHalfSize.x, shieldHalfSize.y)
+
+            // FIXME the pirate interceptor has a shield point of 0,-130 which clearly makes
+            // no sense. Are we just supposed to ignore this?
+            // shieldPos += shieldPoint
+
+            g.drawImage(shieldImage,
+                    shieldPos.x.toFloat(), shieldPos.y.toFloat(),
+                    shieldPos.x.toFloat() + shieldHalfSize.x * 2, shieldPos.y.toFloat() + shieldHalfSize.y * 2,
+                    0f, 0f,
+                    shieldImage.width.toFloat(), shieldImage.height.toFloat()
+            )
         }
 
         for (room in rooms)
