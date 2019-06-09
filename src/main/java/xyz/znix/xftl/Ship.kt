@@ -270,7 +270,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     }
 
     fun render(g: Graphics, selected: Room?) {
-        val level = shields?.selectedShieldBars ?: 0
+        val level = shields?.activeShields ?: 0
         shieldImage.alpha = SHIELD_OPACITY_BASE + SHIELD_OPACITY_LEVEL * level
 
         // Draw the shield
