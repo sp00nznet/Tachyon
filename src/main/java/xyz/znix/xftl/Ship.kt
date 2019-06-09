@@ -5,7 +5,7 @@ import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
-import xyz.znix.xftl.Constants.ROOM_SIZE
+import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
@@ -270,30 +270,39 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     }
 
     fun render(g: Graphics, selected: Room?) {
+        val level = shields?.selectedShieldBars ?: 0
+        shieldImage.alpha = SHIELD_OPACITY_BASE + SHIELD_OPACITY_LEVEL * level
+
         // Draw the shield
-        if (isPlayerShip) {
-            // This is centerpointOfHull - centerpointOfShield + shieldPos
-            val shieldPos = Point(hullImage.width, hullImage.height)
-            shieldPos.sub(shieldImage.width, shieldImage.height)
-            shieldPos.divide(2)
-            shieldPos += shieldPoint
-            g.drawImage(shieldImage, shieldPos.x.toFloat(), shieldPos.y.toFloat())
-        } else {
-            // This is centerpointOfHull - centerpointOfShield + shieldPos
-            val shieldPos = Point(hullImage.width, hullImage.height)
-            shieldPos.divide(2)
-            shieldPos.sub(shieldHalfSize.x, shieldHalfSize.y)
+        when {
+            level == 0 -> {
+                // Do nothing, shields disabled
+            }
+            isPlayerShip -> {
+                // This is centerpointOfHull - centerpointOfShield + shieldPos
+                val shieldPos = Point(hullImage.width, hullImage.height)
+                shieldPos.sub(shieldImage.width, shieldImage.height)
+                shieldPos.divide(2)
+                shieldPos += shieldPoint
+                g.drawImage(shieldImage, shieldPos.x.toFloat(), shieldPos.y.toFloat())
+            }
+            else -> {
+                // This is centerpointOfHull - centerpointOfShield + shieldPos
+                val shieldPos = Point(hullImage.width, hullImage.height)
+                shieldPos.divide(2)
+                shieldPos.sub(shieldHalfSize.x, shieldHalfSize.y)
 
-            // FIXME the pirate interceptor has a shield point of 0,-130 which clearly makes
-            // no sense. Are we just supposed to ignore this?
-            // shieldPos += shieldPoint
+                // FIXME the pirate interceptor has a shield point of 0,-130 which clearly makes
+                // no sense. Are we just supposed to ignore this?
+                // shieldPos += shieldPoint
 
-            g.drawImage(shieldImage,
-                    shieldPos.x.toFloat(), shieldPos.y.toFloat(),
-                    shieldPos.x.toFloat() + shieldHalfSize.x * 2, shieldPos.y.toFloat() + shieldHalfSize.y * 2,
-                    0f, 0f,
-                    shieldImage.width.toFloat(), shieldImage.height.toFloat()
-            )
+                g.drawImage(shieldImage,
+                        shieldPos.x.toFloat(), shieldPos.y.toFloat(),
+                        shieldPos.x.toFloat() + shieldHalfSize.x * 2, shieldPos.y.toFloat() + shieldHalfSize.y * 2,
+                        0f, 0f,
+                        shieldImage.width.toFloat(), shieldImage.height.toFloat()
+                )
+            }
         }
 
         for (room in rooms)

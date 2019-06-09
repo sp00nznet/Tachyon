@@ -37,6 +37,14 @@ public class Constants {
     public static final Color WEAPONS_ITEM_ENERGY_CHARGED = WEAPONS_ITEM_CHARGED;
     public static final Color WEAPONS_ITEM_ENERGY_ZOLTAN = new Color(255, 250, 90);
 
+    // These numbers took quite some work to obtain
+    // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
+    // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level
+    // three (I didn't have the patience to get Level 4 shields, or to install a savefile editor)
+    // These ones are close enough and add up
+    public static final float SHIELD_OPACITY_BASE = 0.4f;
+    public static final float SHIELD_OPACITY_LEVEL = (1 - SHIELD_OPACITY_BASE) / 4;
+
     private Constants() {
     }
 }
