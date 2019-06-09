@@ -6,6 +6,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.Point
 
 abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val speed: Float) {
     // The angle we are approaching the target at, in radians
@@ -24,6 +25,12 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
     private var missed: Boolean? = null
 
+    private var passedShields: Boolean = false
+
+    // Helper for maths
+    val Int.f get() = toFloat()
+    val Float.squared get() = this * this
+
     /**
      * The position of this projectile on the screen, relative to the target ship
      */
@@ -40,13 +47,30 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     fun update(dt: Float) {
         distance -= speed * dt
 
-        if (distance <= 0) {
-            if (missed == null) {
-                missed = Math.random() * 100 < target.ship.evasion
-            }
+        if (!passedShields) {
+            // Check if we're inside the target ships shields
+            val s = ship
+            val p = position
 
+            val shieldOrigin = Point(s.hullImage.width, s.hullImage.height)
+            shieldOrigin.divide(2)
+            if (s.isPlayerShip)
+                shieldOrigin += s.shieldOffset
+
+            val rel = Point(p)
+            rel -= shieldOrigin
+
+            val shieldSize = s.shieldHalfSize
+
+            if (rel.x.f.squared / shieldSize.x.f.squared + rel.y.f.squared / shieldSize.y.f.squared < 1)
+                crossedShieldLine()
+        }
+
+        if (distance <= 0) {
             if (missed == true)
                 return
+
+            resolveMissed()
 
             distance = 0f
 
@@ -58,6 +82,29 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
             renderHit()
         }
+    }
+
+    private fun resolveMissed() {
+        missed = missed ?: (Math.random() * 100 < target.ship.evasion)
+    }
+
+    private fun crossedShieldLine() {
+        // We're inside the shield!
+        passedShields = true
+
+        val shields = ship.shields
+
+        if (shields == null || shields.activeShields == 0)
+            return
+
+        resolveMissed()
+
+        if (missed == true)
+            return
+
+        shields.activeShields--
+
+        ship.inboundProjectiles.remove(this)
     }
 
     protected open fun renderHit() {

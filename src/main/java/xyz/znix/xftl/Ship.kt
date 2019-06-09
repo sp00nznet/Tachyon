@@ -41,9 +41,15 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val shieldImage: Image = base.readImage(if (isPlayerShip) base["img/ship/${shipNode.getChildTextTrim("shieldImage")
             ?: imageName}_shields1.png"] else base["img/ship/enemy_shields.png"])
 
-    val shieldPoint: ConstPoint
+    val shieldOffset: ConstPoint
+
+    val selectedShieldHalfSize: ConstPoint
 
     val shieldHalfSize: ConstPoint
+        get() = if (isPlayerShip)
+            ConstPoint(shieldImage.width / 2, shieldImage.height / 2)
+        else
+            selectedShieldHalfSize
 
     val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
 
@@ -166,8 +172,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         if (found_ellipse == null)
             throw IllegalStateException("Shield ellipse not specified!")
 
-        shieldPoint = ConstPoint(found_ellipse.x, found_ellipse.y)
-        shieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
+        shieldOffset = ConstPoint(found_ellipse.x, found_ellipse.y)
+        selectedShieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
 
         for (node in shipNode.getChild("systemList").children) {
             if (node.name == "clonebay") {
@@ -283,7 +289,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 val shieldPos = Point(hullImage.width, hullImage.height)
                 shieldPos.sub(shieldImage.width, shieldImage.height)
                 shieldPos.divide(2)
-                shieldPos += shieldPoint
+                shieldPos += shieldOffset
                 g.drawImage(shieldImage, shieldPos.x.toFloat(), shieldPos.y.toFloat())
             }
             else -> {
@@ -294,7 +300,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
                 // FIXME the pirate interceptor has a shield point of 0,-130 which clearly makes
                 // no sense. Are we just supposed to ignore this?
-                // shieldPos += shieldPoint
+                // shieldPos += shieldOffset
 
                 g.drawImage(shieldImage,
                         shieldPos.x.toFloat(), shieldPos.y.toFloat(),
