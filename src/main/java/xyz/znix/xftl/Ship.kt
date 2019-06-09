@@ -38,6 +38,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
     val hullImage: Image = base.readImage(base["img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png"])
 
+    val shieldImage: Image = base.readImage(if (isPlayerShip) base["img/ship/${shipNode.getChildTextTrim("shieldImage")
+            ?: imageName}_shields1.png"] else base["img/ship/enemy_shields.png"])
+
+    val shieldPoint: ConstPoint
+
+    val shieldHalfSize: ConstPoint
+
     val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
 
     val crew: MutableList<AbstractCrew> = ArrayList()
@@ -113,7 +120,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         var found_horizontal = 0
 
         // TODO use our own class, not AWT's!
-        var found_ellipse: Rectangle?
+        var found_ellipse: Rectangle? = null
 
         while (i < l.size) {
             val line = l[i++]
@@ -122,7 +129,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 "Y_OFFSET" -> found_offset_y = l[i++].toInt()
                 "HORIZONTAL" -> found_horizontal = l[i++].toInt()
                 "VERTICAL" -> found_vertical = l[i++].toInt()
-                "ELLIPSE" -> found_ellipse = Rectangle(l[i++].toInt(), l[i++].toInt(), l[i++].toInt(), l[i++].toInt())
+                "ELLIPSE" -> {
+                    found_ellipse = Rectangle()
+                    found_ellipse.width = l[i++].toInt()
+                    found_ellipse.height = l[i++].toInt()
+                    found_ellipse.x = l[i++].toInt()
+                    found_ellipse.y = l[i++].toInt()
+                }
                 "ROOM" -> {
                     val id = l[i++].toInt()
                     check(id == rooms.size)
@@ -149,6 +162,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         }
 
         offset = ConstPoint(found_offset_x, found_offset_y)
+
+        if (found_ellipse == null)
+            throw IllegalStateException("Shield ellipse not specified!")
+
+        shieldPoint = ConstPoint(found_ellipse.x, found_ellipse.y)
+        shieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
 
         for (node in shipNode.getChild("systemList").children) {
             if (node.name == "clonebay") {
@@ -251,6 +270,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     }
 
     fun render(g: Graphics, selected: Room?) {
+        // Draw the shield
+        if (isPlayerShip) {
+            // This is centerpointOfHull - centerpointOfShield + shieldPos
+            val shieldPos = Point(hullImage.width, hullImage.height)
+            shieldPos.sub(shieldImage.width, shieldImage.height)
+            shieldPos.divide(2)
+            shieldPos += shieldPoint
+            g.drawImage(shieldImage, shieldPos.x.toFloat(), shieldPos.y.toFloat())
+        }
+
         for (room in rooms)
             room.system?.drawBackground(g)
 
