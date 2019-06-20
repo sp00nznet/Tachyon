@@ -26,6 +26,7 @@ public class Constants {
     public static final Color SYS_ENERGY_ACTIVE = new Color(100, 255, 100);
     public static final Color SYS_ENERGY_DEPOWERED = new Color(251, 251, 251);
     public static final Color SYS_ENERGY_BROKEN = new Color(255, 50, 50);
+    public static final Color SYS_ENERGY_REPAIR = new Color(255, 255, 50);
 
     public static final Color WEAPONS_ITEM_DESELECTED = new Color(150, 150, 150);
     public static final Color WEAPONS_ITEM_SELECTED = UI_BACKGROUND_GLOW_COLOUR;
@@ -44,6 +45,10 @@ public class Constants {
     // These ones are close enough and add up
     public static final float SHIELD_OPACITY_BASE = 0.4f;
     public static final float SHIELD_OPACITY_LEVEL = (1 - SHIELD_OPACITY_BASE) / 4;
+
+    // Time in seconds it takes a single human to repair one bar of a system
+    // TODO measure more accurately
+    public static final float BASE_REPAIR_TIME = 13.0f;
 
     private Constants() {
     }

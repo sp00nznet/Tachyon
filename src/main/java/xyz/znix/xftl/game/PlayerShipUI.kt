@@ -225,6 +225,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                         g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
                     }
                 }
+
+                if (i == sys.energyLevels - sys.damagedEnergyLevels) {
+                    g.color = SYS_ENERGY_REPAIR
+                    val width = (16 * sys.repairProgress).toInt()
+                    g.fillRect((x + 24 + 16 - width).f, y.f, width.f, 6f)
+                }
             }
 
             systemCount++

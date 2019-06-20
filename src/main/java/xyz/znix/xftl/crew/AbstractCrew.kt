@@ -2,6 +2,7 @@ package xyz.znix.xftl.crew
 
 import org.newdawn.slick.Animation
 import xyz.znix.xftl.Animations
+import xyz.znix.xftl.Constants.BASE_REPAIR_TIME
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
@@ -15,6 +16,8 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     // The cell position in the current room
     var position: Point = Point(0, 0)
     val roomPosition: RoomPoint get() = RoomPoint(room, position)
+
+    var roomWasDamaged: Boolean = false
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
@@ -110,6 +113,15 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
                 // Calculate the next movement
                 actionComplete()
             }
+            return
+        }
+
+        room.system?.let { sys ->
+            if (sys.damaged)
+                sys.repair(dt / BASE_REPAIR_TIME)
+            if (roomWasDamaged != sys.damaged)
+                updateAnimation()
+            roomWasDamaged = sys.damaged
         }
     }
 
@@ -143,6 +155,11 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     private fun updateAnimation() {
         if (movement != null) {
             icon = anims["${codename}_walk_${dirAsString(movement!!)}"].start()
+            return
+        }
+
+        if (room.system?.damaged == true) {
+            icon = anims["${codename}_repair"].start()
             return
         }
 

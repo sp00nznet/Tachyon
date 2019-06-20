@@ -13,8 +13,16 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
 
     var energyLevels: Int = 1
     var damagedEnergyLevels: Int = 0
+    val damaged: Boolean get() = damagedEnergyLevels > 0
+
+    var repairProgress: Float = 0f
+        private set(value) {
+            field = if (damaged) value else 0f
+        }
 
     open fun update(dt: Float) {
+        if (!damaged || room?.reservedPlayerSlots?.all { it == null } == true)
+            repairProgress = 0f
     }
 
     open fun drawBackground(g: Graphics) {
@@ -50,6 +58,17 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
     // Systems should generally override this rather than dealDamage, to include stuff like ionisation or
     // a Zoltan leaving the room.
     protected open fun powerStateChanged() {
+    }
+
+    fun repair(progress: Float) {
+        repairProgress += progress
+
+        if (repairProgress < 1f)
+            return
+
+        repairProgress = 0f
+
+        damagedEnergyLevels--
     }
 
     open val icon: String = "img/icons/s_${codename}_overlay.png"
