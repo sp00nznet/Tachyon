@@ -208,6 +208,19 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             var compDir: Direction? = null
             var compPoint: ConstPoint? = null
 
+            // Load defaults
+            // TODO what is this for? Kestrel seems to work fine, and I wrote this ages ago and forgot
+            when (system) {
+                is Weapons -> {
+                    compPoint = ConstPoint(1, 0)
+                    compDir = Direction.UP
+                }
+                is Engines -> {
+                    compPoint = ConstPoint(0, 1)
+                    compDir = Direction.DOWN
+                }
+            }
+
             if (slotElems.size == 1) {
                 val elem: Element = slotElems[0]
 
