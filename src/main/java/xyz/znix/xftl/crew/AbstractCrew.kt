@@ -209,7 +209,10 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     }
 
     private fun setTargetRoom(value: Room, slot: Int, slots: Array<AbstractCrew?>): Boolean {
-        if (slots[slot] != null)
+        // If this slot is neither empty nor consumed by us (since we're moving anyway), then
+        // it's consumed and we should skip it.
+        val current = slots[slot]
+        if (current != null && current != this)
             return false
 
         val pos = value.slotToPoint(slot)
