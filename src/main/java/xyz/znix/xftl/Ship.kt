@@ -158,7 +158,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 }
                 "" -> {
                 }
-                else -> throw IllegalStateException("Unknown line '$line'")
+                else -> error("Unknown line '$line'")
             }
         }
 
@@ -169,8 +169,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         offset = ConstPoint(found_offset_x, found_offset_y)
 
-        if (found_ellipse == null)
-            throw IllegalStateException("Shield ellipse not specified!")
+        checkNotNull(found_ellipse) { "Shield ellipse not specified!" }
 
         shieldOffset = ConstPoint(found_ellipse.x, found_ellipse.y)
         selectedShieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
@@ -236,7 +235,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                         "1" -> ConstPoint(1, 0)
                         "2" -> ConstPoint(0, 1)
                         "3" -> ConstPoint(1, 1)
-                        else -> throw IllegalStateException("Invalid point value '${idx[0].textTrim}'")
+                        else -> error("Invalid point value '${idx[0].textTrim}'")
                     }
 
                 check(dir.size <= 1)

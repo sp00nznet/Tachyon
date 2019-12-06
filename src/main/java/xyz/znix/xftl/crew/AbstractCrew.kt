@@ -65,8 +65,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             if (room.containsRelative(target))
                 return
 
-            if (value.isDiagonal)
-                throw IllegalArgumentException("Cannot move diagonally through a doorway")
+            require(!value.isDiagonal) { "Cannot move diagonally through a doorway" }
 
             targetDoor = null
             for (door in room.doors) {
@@ -79,11 +78,9 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
                 }
             }
 
-            if (targetDoor == null)
-                throw IllegalArgumentException("Cannot walk outside room")
+            requireNotNull(targetDoor) { "Cannot walk outside room" }
 
-            if (targetDoor!!.other(room) == null)
-                throw IllegalArgumentException("Cannot walk through airlock door")
+            requireNotNull(targetDoor!!.other(room)) { "Cannot walk through airlock door" }
         }
 
     var movementProgress: Float = 0F

@@ -67,7 +67,7 @@ class Animations(df: Datafile) {
             if (sheetName == "explosion_big1")
                 continue
 
-            val sheet = this.sheets[sheetName] ?: throw IllegalStateException("Unknown sheet $sheetName")
+            val sheet = this.sheets[sheetName] ?: error("Unknown sheet $sheetName")
 
             val desc = xml.getChild("desc")
 
@@ -94,7 +94,7 @@ class Animations(df: Datafile) {
             if (sheetName == "explosion_big1")
                 continue
 
-            val sheet = this.sheets[sheetName] ?: throw IllegalStateException("Unknown sheet $sheetName")
+            val sheet = this.sheets[sheetName] ?: error("Unknown sheet $sheetName")
 
             val desc = xml.getChild("desc")
 

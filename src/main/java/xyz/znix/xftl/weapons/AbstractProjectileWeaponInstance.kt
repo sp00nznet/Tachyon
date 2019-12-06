@@ -59,8 +59,7 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
     }
 
     fun fire(weapons: Weapons, target: Room) {
-        if (isFiring)
-            throw IllegalStateException("Cannot file while already firing!")
+        check(!isFiring) { "Cannot file while already firing!" }
 
         this.weapons = weapons
         this.target = target

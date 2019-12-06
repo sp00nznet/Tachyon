@@ -120,7 +120,7 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
     override fun drawString(x: Float, y: Float, text: String, col: Color) {
         var next = x
         for (ch in text) {
-            val info = chars[ch] ?: throw IllegalStateException("Unknown char $ch")
+            val info = chars[ch] ?: error("Unknown char $ch")
             val cy = y + (scale * (height - info.h - baseline)).roundToInt()
             next += (info.prekern * scale).roundToInt()
             val cx = next.roundToInt()
@@ -140,7 +140,7 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
     override fun getWidth(str: String): Int {
         var next = 0
         for (ch in str) {
-            val info = chars[ch] ?: throw IllegalStateException("Unknown char $ch")
+            val info = chars[ch] ?: error("Unknown char $ch")
             next += (info.prekern * scale).roundToInt()
             next += ((info.w + info.postkern) * scale).roundToInt()
         }

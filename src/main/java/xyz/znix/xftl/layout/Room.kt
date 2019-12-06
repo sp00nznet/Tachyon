@@ -22,7 +22,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     private var _doors: List<Door>? = null
     val doors: List<Door>
         get() {
-            return _doors ?: throw IllegalStateException("Doors are not yet initialised")
+            return _doors ?: error("Doors are not yet initialised")
         }
 
     // Oxygen level in percent
@@ -40,8 +40,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val obstructions = HashSet<ConstPoint>()
 
     fun initialise(doors: List<Door>) {
-        if (_doors != null)
-            throw IllegalStateException("Cannot reinitialise room")
+        check(_doors == null) { "Cannot reinitialise room" }
 
         _doors = doors
     }
