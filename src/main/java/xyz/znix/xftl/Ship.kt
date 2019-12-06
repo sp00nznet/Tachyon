@@ -230,7 +230,21 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 check(idx.size <= 1)
             }
 
-            rooms[node.getAttributeValue("room").toInt()].setSystem(system, compPoint, compDir)
+            val room = rooms[node.getAttributeValue("room").toInt()]
+
+            // The medbay at least (and maybe other systems, TODO check) use the
+            // computer to represent a cell that is obstructed.
+            val computerIsObstruction = when (system) {
+                is Medbay -> true
+                else -> false
+            }
+
+            if (computerIsObstruction && compPoint != null) {
+                room.obstructions.add(compPoint)
+                compPoint = null
+            }
+
+            room.setSystem(system, compPoint, compDir)
         }
 
         val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"])

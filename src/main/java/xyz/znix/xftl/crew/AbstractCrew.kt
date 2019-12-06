@@ -192,8 +192,14 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         if (slots[slot] != null)
             return false
 
+        val pos = value.slotToPoint(slot)
+
+        // Skip obstructed cells - eg, healer in the medbay
+        if (value.obstructions.contains(pos))
+            return false
+
         slots[slot] = this
-        pathingTarget = RoomPoint(value, value.slotToPoint(slot))
+        pathingTarget = RoomPoint(value, pos)
         return true
     }
 }

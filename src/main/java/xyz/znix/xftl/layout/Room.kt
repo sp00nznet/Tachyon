@@ -37,6 +37,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val reservedPlayerSlots: Array<AbstractCrew?> = Array(width * height) { null }
     val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
 
+    val obstructions = HashSet<ConstPoint>()
+
     fun initialise(doors: List<Door>) {
         if (_doors != null)
             throw IllegalStateException("Cannot reinitialise room")
