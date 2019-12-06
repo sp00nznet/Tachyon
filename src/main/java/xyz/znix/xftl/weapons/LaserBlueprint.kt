@@ -3,6 +3,7 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 
 class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
@@ -24,7 +25,7 @@ class LaserBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             g.translate(x, y)
             g.rotate(0f, 0f, rotation)
 
-            g.translate(-spr.width.toFloat(), -spr.height.toFloat() / 2)
+            g.translate(-spr.width.f, -spr.height.f / 2)
             spr.draw(0f, 0f)
 
             g.popTransform()

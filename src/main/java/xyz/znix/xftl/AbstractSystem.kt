@@ -43,8 +43,8 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
         }
 
         g.drawImage(img,
-                (room.offsetX + (room.width * ROOM_SIZE / 2f - img.width / 2f).toInt()).toFloat(),
-                (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).toFloat(),
+                (room.offsetX + (room.width * ROOM_SIZE / 2f - img.width / 2f).toInt()).f,
+                (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).f,
                 colour
         )
     }

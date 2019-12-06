@@ -125,10 +125,10 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
             next += (info.prekern * scale).roundToInt()
             val cx = next.roundToInt()
             picture.draw(
-                    cx.toFloat(), cy,
-                    cx.toFloat() + info.w * scale, cy + info.h * scale,
-                    info.x.toFloat(), info.y.toFloat(),
-                    (info.x + info.w).toFloat(), (info.y + info.h).toFloat(), col)
+                    cx.f, cy,
+                    cx.f + info.w * scale, cy + info.h * scale,
+                    info.x.f, info.y.f,
+                    (info.x + info.w).f, (info.y + info.h).f, col)
             next += ((info.w + info.postkern) * scale).roundToInt()
         }
     }

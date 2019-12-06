@@ -3,6 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
@@ -34,7 +35,7 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
             val dist = shot.initialDistance - shot.projectile.distance
             g.pushTransform()
             translateHardpoint(g, shot.hardpoint)
-            g.translate(shot.offset.x.toFloat(), shot.offset.y.toFloat())
+            g.translate(shot.offset.x.f, shot.offset.y.f)
             shot.projectile.render(g, 0f, -dist, -90f)
             g.popTransform()
         }
@@ -60,7 +61,7 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
                 // We are now in image space - any given XY value here will line up to the pixel
                 // with the same XY on the launcher image.
 
-                g.translate(-anim.mountPoint.x.toFloat(), -anim.mountPoint.y.toFloat())
+                g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
 
                 // TODO how much are the weapons retracted by?
 
@@ -96,7 +97,7 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
     }
 
     private fun translateHardpoint(g: Graphics, hp: Ship.Hardpoint) {
-        g.translate(hp.x.toFloat(), hp.y.toFloat())
+        g.translate(hp.x.f, hp.y.f)
 
         // We are now in hardpoint-xy space - x and y are relative to the hardpoint's xy,
         // but rotation is independant

@@ -5,6 +5,7 @@ import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -56,33 +57,33 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         g.color = FLOOR_COLOUR
         g.fillRect(
-                x.toFloat(),
-                y.toFloat(),
-                w.toFloat(),
-                h.toFloat())
+                x.f,
+                y.f,
+                w.f,
+                h.f)
 
         g.color = FLOOR_GRID_COLOUR
         for (i in 1 until width) {
             g.drawLine(
-                    (x + i * ROOM_SIZE).toFloat(),
-                    y.toFloat(),
-                    (x + i * ROOM_SIZE).toFloat(),
-                    (y + h - 1).toFloat())
+                    (x + i * ROOM_SIZE).f,
+                    y.f,
+                    (x + i * ROOM_SIZE).f,
+                    (y + h - 1).f)
         }
 
         for (i in 1 until height) {
             g.drawLine(
-                    x.toFloat(),
-                    (y + ROOM_SIZE * i).toFloat(),
-                    (x + w - 1).toFloat(),
-                    (y + ROOM_SIZE * i).toFloat())
+                    x.f,
+                    (y + ROOM_SIZE * i).f,
+                    (x + w - 1).f,
+                    (y + ROOM_SIZE * i).f)
         }
 
         val system = system
         if (system?.img != null) {
             // Render the interior decals
             val bg = ship.sys.getImg(system.img)
-            g.drawImage(bg, x.toFloat(), y.toFloat())
+            g.drawImage(bg, x.f, y.f)
         }
 
         // Draw two one-pixel lines around the room, as it's too much of a hassle to
@@ -96,9 +97,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
                 g.color = ROOM_BORDER_COLOUR_SELECTED
             else
                 g.color = ROOM_BORDER_COLOUR_SELECTED_INNER
-            g.drawRect((x + i).toFloat(), (y + i).toFloat(),
-                    (w - 1 - i * 2).toFloat(),
-                    (h - 1 - i * 2).toFloat())
+            g.drawRect((x + i).f, (y + i).f,
+                    (w - 1 - i * 2).f,
+                    (h - 1 - i * 2).f)
         }
 
         // Draw the system icon

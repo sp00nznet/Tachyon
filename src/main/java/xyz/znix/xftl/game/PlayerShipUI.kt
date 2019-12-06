@@ -5,11 +5,8 @@ import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
 import org.newdawn.slick.Input.MOUSE_RIGHT_BUTTON
+import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
-import xyz.znix.xftl.Datafile
-import xyz.znix.xftl.SILFontLoader
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.Translator
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
@@ -21,9 +18,6 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
-    // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
-    private val Int.f: Float get() = this.toFloat()
-
     private val font = SILFontLoader(df, df["fonts/HL2.font"])
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])

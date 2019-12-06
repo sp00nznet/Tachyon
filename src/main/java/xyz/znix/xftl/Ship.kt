@@ -290,7 +290,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 shieldPos.sub(shieldImage.width, shieldImage.height)
                 shieldPos.divide(2)
                 shieldPos += shieldOffset
-                g.drawImage(shieldImage, shieldPos.x.toFloat(), shieldPos.y.toFloat())
+                g.drawImage(shieldImage, shieldPos.x.f, shieldPos.y.f)
             }
             else -> {
                 // This is centerpointOfHull - centerpointOfShield + shieldPos
@@ -303,10 +303,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 // shieldPos += shieldOffset
 
                 g.drawImage(shieldImage,
-                        shieldPos.x.toFloat(), shieldPos.y.toFloat(),
-                        shieldPos.x.toFloat() + shieldHalfSize.x * 2, shieldPos.y.toFloat() + shieldHalfSize.y * 2,
+                        shieldPos.x.f, shieldPos.y.f,
+                        shieldPos.x.f + shieldHalfSize.x * 2, shieldPos.y.f + shieldHalfSize.y * 2,
                         0f, 0f,
-                        shieldImage.width.toFloat(), shieldImage.height.toFloat()
+                        shieldImage.width.f, shieldImage.height.f
                 )
             }
         }
@@ -317,7 +317,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         g.drawImage(hullImage, 0f, 0f)
 
         if (floorImage != null)
-            g.drawImage(floorImage, floorOffset.x.toFloat(), floorOffset.y.toFloat())
+            g.drawImage(floorImage, floorOffset.x.f, floorOffset.y.f)
 
         // Draw the rooms
         for (room in rooms)
@@ -332,31 +332,31 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 val y = door.offsetY + 8
 
                 g.color = Color.black
-                g.fillRect(x.toFloat(), y.toFloat(), 6f, 21f)
+                g.fillRect(x.f, y.f, 6f, 21f)
 
                 g.color = Constants.DOOR_COLOUR_1
-                g.fillRect((x + 1).toFloat(), (y + 1).toFloat(), 4f, (21 - 2).toFloat())
+                g.fillRect(x.f + 1, y.f + 1, 4f, 21f - 2f)
 
                 g.color = Color.black
-                g.drawLine((x + 1).toFloat(), (y + 10).toFloat(), (x + 5).toFloat(), (y + 10).toFloat())
+                g.drawLine(x.f + 1, y.f + 10, x.f + 5, y.f + 10)
             } else {
                 val x = door.offsetX + 8
                 val y = door.offsetY - 3
 
                 g.color = Color.black
-                g.fillRect(x.toFloat(), y.toFloat(), 21f, 6f)
+                g.fillRect(x.f, y.f, 21f, 6f)
 
                 g.color = Constants.DOOR_COLOUR_1
-                g.fillRect((x + 1).toFloat(), (y + 1).toFloat(), (21 - 2).toFloat(), 4f)
+                g.fillRect(x.f + 1, y.f + 1, 21f - 2f, 4f)
 
                 g.color = Color.black
-                g.drawLine((x + 10).toFloat(), (y + 1).toFloat(), (x + 10).toFloat(), (y + 5).toFloat())
+                g.drawLine(x.f + 10, y.f + 1, x.f + 10, y.f + 5)
             }
         }
 
         // Draw the crew
         for (crew in crew) {
-            crew.icon.draw(crew.screenX.toFloat(), crew.screenY.toFloat())
+            crew.icon.draw(crew.screenX.f, crew.screenY.f)
         }
 
         // Draw the system foregrounds
@@ -367,7 +367,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         for (proj in inboundProjectiles) {
             val pos = proj.position
             val angle = (proj.projectileAngle * 180 / Math.PI).toFloat()
-            proj.render(g, pos.x.toFloat(), pos.y.toFloat(), angle)
+            proj.render(g, pos.x.f, pos.y.f, angle)
         }
 
         // Draw the floating animations (eg, from projectile explosions)
@@ -445,7 +445,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         }
 
         fun render() {
-            animation.draw(pos.x.toFloat(), pos.y.toFloat())
+            animation.draw(pos.x.f, pos.y.f)
         }
 
         fun update(dt: Float) {

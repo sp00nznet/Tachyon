@@ -3,6 +3,7 @@ package xyz.znix.xftl.weapons
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -28,7 +29,6 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     private var passedShields: Boolean = false
 
     // Helper for maths
-    val Int.f get() = toFloat()
     val Float.squared get() = this * this
 
     /**

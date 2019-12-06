@@ -3,6 +3,7 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 
 class MissileBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
@@ -25,7 +26,7 @@ class MissileBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             g.rotate(0f, 0f, rotation + 90f)
 
             // TODO is the quarter length translation the same as vanilla FTL?
-            g.translate(-spr.width.toFloat() / 2, -spr.height.toFloat() / 4)
+            g.translate(-spr.width.f / 2, -spr.height.f / 4)
             spr.draw(0f, 0f)
 
             g.popTransform()
