@@ -142,6 +142,10 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         }
     }
 
+    /**
+     * Recalculate (via pathfinding) the player's current [movement] to get to
+     * their desired target.
+     */
     private fun updateMovement() {
         if (pathingTarget == roomPosition)
             pathingTarget = null
@@ -197,12 +201,12 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             if (setTargetRoom(value, value.pointToSlot(value.computerPoint!!), slots))
                 return
 
-        for (i in 0 until slots.size) {
+        for (i in slots.indices) {
             if (setTargetRoom(value, i, slots))
                 return
         }
 
-        throw IllegalStateException("No spare slot in room")
+        error("No spare slot in room")
     }
 
     private fun setTargetRoom(value: Room, slot: Int, slots: Array<AbstractCrew?>): Boolean {

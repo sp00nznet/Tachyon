@@ -50,7 +50,9 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
     }
 
     open fun dealDamage(damage: Int) {
-        damagedEnergyLevels = Math.min(energyLevels, damagedEnergyLevels + damage)
+        // Add the specified amount of damage, but avoid having more damage than we have power (which
+        // would come to a negative amount of available power)
+        damagedEnergyLevels = (damagedEnergyLevels + damage).coerceAtMost(energyLevels)
         powerStateChanged()
     }
 

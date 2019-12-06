@@ -360,7 +360,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 g.color = Color.black
                 g.fillRect(x.f, y.f, 6f, 21f)
 
-                g.color = Constants.DOOR_COLOUR_1
+                g.color = DOOR_COLOUR_1
                 g.fillRect(x.f + 1, y.f + 1, 4f, 21f - 2f)
 
                 g.color = Color.black
@@ -372,7 +372,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                 g.color = Color.black
                 g.fillRect(x.f, y.f, 21f, 6f)
 
-                g.color = Constants.DOOR_COLOUR_1
+                g.color = DOOR_COLOUR_1
                 g.fillRect(x.f + 1, y.f + 1, 21f - 2f, 4f)
 
                 g.color = Color.black
