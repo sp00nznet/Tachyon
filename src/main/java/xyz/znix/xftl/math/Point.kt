@@ -42,6 +42,8 @@ data class Point(override var x: Int, override var y: Int) : IPoint {
         y *= v
     }
 
+    operator fun timesAssign(v: Int) = mult(v)
+
     fun divide(v: Int) {
         x /= v
         y /= v

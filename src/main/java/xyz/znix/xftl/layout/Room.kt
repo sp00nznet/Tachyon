@@ -9,6 +9,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.Point
 
 data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: Int, val height: Int) {
 
@@ -85,6 +86,33 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             // Render the interior decals
             val bg = ship.sys.getImg(system.img)
             g.drawImage(bg, x.f, y.f)
+        }
+
+        // Draw the pathing-to boxes, if required
+        reservedPlayerSlots.forEachIndexed draw@{ i, crew ->
+            if (crew == null)
+                return@draw
+
+            val slot = slotToPoint(i)
+
+            // If the crewmember is in their assigned position, don't draw the box
+            if (crew.position == slot && crew.room == this)
+                return@draw
+
+            val point = Point(slot)
+            point *= ROOM_SIZE
+            point.x += offsetX
+            point.y += offsetY
+
+            for (px in ROOM_SELECTION_COLOURS.indices) {
+                val size = ROOM_SIZE - px * 2
+
+                g.color = ROOM_SELECTION_COLOURS[px]
+
+                g.drawRect(point.x.f, point.y.f, size.f, size.f)
+                point.x++
+                point.y++
+            }
         }
 
         // Draw two one-pixel lines around the room, as it's too much of a hassle to

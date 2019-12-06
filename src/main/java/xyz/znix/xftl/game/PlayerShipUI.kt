@@ -7,7 +7,9 @@ import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
 import org.newdawn.slick.Input.MOUSE_RIGHT_BUTTON
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
@@ -26,6 +28,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private var targetingSelectedWeapon: Int? = null
 
     private val selectedTargets: MutableMap<AbstractWeaponInstance, SelectedTarget> = HashMap()
+    private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
 
     // Set by render
     private var height: Int = 500
@@ -74,6 +77,37 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             }
 
             i++
+        }
+
+        // Select players
+        // TODO ship offset
+        for (crew in ship.crew) {
+            if (x < crew.screenX || y < crew.screenY)
+                continue
+            if (x >= crew.screenX + crew.icon.width || y >= crew.screenY + crew.icon.height)
+                continue
+
+            if (button == MOUSE_LEFT_BUTTON) {
+                selectedCrew.clear()
+                selectedCrew += crew
+                return
+            }
+        }
+
+        val roomPoint = Point(x, y)
+        roomPoint += ship.hullOffset
+        roomPoint.divideFloor(ROOM_SIZE)
+        roomPoint -= ship.offset
+        for (room in ship.rooms) {
+            if (!room.containsAbsolute(roomPoint))
+                continue
+
+            if (button == MOUSE_RIGHT_BUTTON) {
+                for (crew in selectedCrew)
+                    crew.setTargetRoom(room)
+
+                return
+            }
         }
     }
 
