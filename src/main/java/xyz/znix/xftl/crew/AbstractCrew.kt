@@ -24,7 +24,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             val old = field
             field = value
             if (old == null)
-                actionComplete()
+                updateMovement()
         }
 
     var movement: Direction? = null
@@ -111,7 +111,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
                 }
 
                 // Calculate the next movement
-                actionComplete()
+                updateMovement()
             }
             return
         }
@@ -125,7 +125,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         }
     }
 
-    private fun actionComplete() {
+    private fun updateMovement() {
         if (pathingTarget == roomPosition)
             pathingTarget = null
 
