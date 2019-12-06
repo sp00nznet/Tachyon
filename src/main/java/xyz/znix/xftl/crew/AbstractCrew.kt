@@ -25,6 +25,26 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             field = value
             if (old == null)
                 updateMovement()
+
+            // If we're leaving a room, reset it's reserved slots so we don't keep taking up space there
+            // The way it works in FTL (and should here) is that as soon as a crewmember starts walking, their
+            // space is free and another crewmember can start pathing there
+            //
+            // Likewise, if we start pathing to a room, mark that slot as taken
+
+            // Which room are we coming from. If we were stationary then it's our current room, if we changed
+            // destination then it was our previous destination.
+            val from = old ?: roomPosition
+
+            // Even if we're becoming stationary, free up the space - we'll fill it in later
+            clearFromRoomSlots(from.room.reservedPlayerSlots)
+
+            // Now mark the slot we're taking up
+            val dest = value ?: roomPosition
+            val slot = dest.room.pointToSlot(dest)
+            val slots = dest.room.reservedPlayerSlots
+            check(slots[slot] == null)
+            slots[slot] = this
         }
 
     var movement: Direction? = null
@@ -198,8 +218,14 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         if (value.obstructions.contains(pos))
             return false
 
-        slots[slot] = this
         pathingTarget = RoomPoint(value, pos)
         return true
+    }
+
+    private fun clearFromRoomSlots(slots: Array<AbstractCrew?>) {
+        slots.forEachIndexed { index, crew ->
+            if (crew == this)
+                slots[index] = null
+        }
     }
 }
