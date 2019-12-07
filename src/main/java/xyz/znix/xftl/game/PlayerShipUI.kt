@@ -20,11 +20,13 @@ import java.util.function.Consumer
 import java.util.stream.Stream
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.math.ceil
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
     private val font = SILFontLoader(df, df["fonts/HL2.font"])
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])
+    private val numberFont = SILFontLoader(df, df["fonts/num_font.font"])
 
     private var selectWeaponClickEvent: Consumer<Room>? = null
     private var targetingSelectedWeapon: Int? = null
@@ -425,21 +427,30 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         game.getImg("img/statusUI/top_shields4_on.png").draw(0f, shieldY)
         // TODO shield bubble indicators
 
-        fun drawSmallCounter(name: String, x: Int, count: Int) {
+        fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int) {
             game.getImg("img/statusUI/top_${name}_on.png").draw(x.f, shieldY)
-            // TODO draw count
+
+            val areaWidth = 35
+            val areaStart = x.f + 33 + numAreaOffset
+
+            val textWidth = numberFont.getWidth(count.toString())
+            val textInternalX = ceil((areaWidth - textWidth) / 2f).toInt()
+
+            g.font = numberFont
+            g.color = Color.white
+            g.drawString(count.toString(), areaStart + textInternalX, shieldY + 23)
         }
 
         val shieldsEndX = 122
 
         // TODO use correct fuel quantity
-        drawSmallCounter("fuel", shieldsEndX, 0)
+        drawSmallCounter("fuel", shieldsEndX, 0, 0)
 
         // TODO missiles number
-        drawSmallCounter("missiles", shieldsEndX + 66, 0)
+        drawSmallCounter("missiles", shieldsEndX + 66, 1, 16)
 
         // TODO missiles number
-        drawSmallCounter("drones", shieldsEndX + 66 + 70, 0)
+        drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, 0)
     }
 
     /**
