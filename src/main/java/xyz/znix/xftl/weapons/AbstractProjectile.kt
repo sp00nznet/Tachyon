@@ -5,9 +5,10 @@ import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import kotlin.math.cos
+import kotlin.math.sin
 
 abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val speed: Float) {
     // The angle we are approaching the target at, in radians
@@ -31,21 +32,17 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     // Helper for maths
     val Float.squared get() = this * this
 
+    private val mutablePosition = Point(0, 0)
+
     /**
      * The position of this projectile on the screen, relative to the target ship
      */
-    val position: IPoint
-        get() {
-            val offX = Math.cos(angle.toDouble()) * distance
-            val offY = Math.sin(angle.toDouble()) * distance
-            return ConstPoint(
-                    offX.toInt() + target.offsetX + target.width * ROOM_SIZE / 2,
-                    offY.toInt() + target.offsetY + target.height * ROOM_SIZE / 2
-            )
-        }
+    val position: IPoint get() = mutablePosition
 
     fun update(dt: Float) {
         distance -= speed * dt
+
+        calculatePositionFor(distance, mutablePosition)
 
         if (!passedShields) {
             // Check if we're inside the target ships shields
@@ -108,9 +105,18 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     }
 
     protected open fun renderHit() {
+        val pos = Point(0, 0)
+        calculatePositionFor(0f, pos)
         val animation = ship.sys.animations[type.explosion ?: error("Default explosion not set")]
-        ship.animations += Ship.FloatingAnimation.centered(animation.start(), position)
+        ship.animations += Ship.FloatingAnimation.centered(animation.start(), pos)
     }
 
     abstract fun render(g: Graphics, x: Float, y: Float, rotation: Float)
+
+    private fun calculatePositionFor(dist: Float, output: Point) {
+        val offX = cos(angle.toDouble()) * dist
+        val offY = sin(angle.toDouble()) * dist
+        output.x = offX.toInt() + target.offsetX + target.width * ROOM_SIZE / 2
+        output.y = offY.toInt() + target.offsetY + target.height * ROOM_SIZE / 2
+    }
 }
