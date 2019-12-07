@@ -81,6 +81,17 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         }
     }
 
+    /**
+     * Is this projectile 'dead' and can be safely removed?
+     */
+    fun isDead(): Boolean {
+        // If we missed and ran off the screen, get removed
+        // TODO use the actual screen size for this - for now just assume that 10 000 px is when the user won't see them
+        if (distance < -5_000) return true
+
+        return false
+    }
+
     private fun resolveMissed() {
         missed = missed ?: (Math.random() * 100 < target.ship.evasion)
     }

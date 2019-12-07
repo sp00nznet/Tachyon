@@ -431,12 +431,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         for (crew in crew)
             crew.update(dt)
 
-        val ib = inboundProjectiles
-
         // Walk backwards, since missiles remove themselves when they hit
-        for (i in ib.size - 1 downTo 0) {
-            ib[i].update(dt)
+        for (i in inboundProjectiles.size - 1 downTo 0) {
+            inboundProjectiles[i].update(dt)
         }
+
+        // Remove any projectiles that are now off-screen
+        inboundProjectiles.removeIf { it.isDead() }
 
         // Update the animations
         for (a in animations)
