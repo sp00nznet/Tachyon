@@ -414,6 +414,32 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val mask = game.getImg("img/statusUI/top_hull_bar_mask.png")
         val hpH = mask.height.f
         mask.draw(11f, 0f, 11f + hpW, hpH, 0f, 0f, hpW, hpH, healthColour)
+
+        // Draw the scrap indicator
+        game.getImg("img/statusUI/top_scrap.png").draw(374f + 8 - 5, 0f)
+        // TODO scrap number
+
+        val shieldY = 43f;
+
+        // Draw the shields indicator
+        game.getImg("img/statusUI/top_shields4_on.png").draw(0f, shieldY)
+        // TODO shield bubble indicators
+
+        fun drawSmallCounter(name: String, x: Int, count: Int) {
+            game.getImg("img/statusUI/top_${name}_on.png").draw(x.f, shieldY)
+            // TODO draw count
+        }
+
+        val shieldsEndX = 122
+
+        // TODO use correct fuel quantity
+        drawSmallCounter("fuel", shieldsEndX, 0)
+
+        // TODO missiles number
+        drawSmallCounter("missiles", shieldsEndX + 66, 0)
+
+        // TODO missiles number
+        drawSmallCounter("drones", shieldsEndX + 66 + 70, 0)
     }
 
     /**
