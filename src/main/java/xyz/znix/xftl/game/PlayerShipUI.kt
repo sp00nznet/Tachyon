@@ -1,8 +1,10 @@
 package xyz.znix.xftl.game
 
 import org.lwjgl.opengl.GL11
+import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.Image
 import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
 import org.newdawn.slick.Input.MOUSE_RIGHT_BUTTON
 import xyz.znix.xftl.*
@@ -160,6 +162,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     fun render(gc: GameContainer, g: Graphics) {
         height = gc.height
+
+        drawTopBar(g)
 
         font.scale = 2f
         g.font = font
@@ -382,6 +386,60 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 g.fillRect((wx + 4).f, y.f, 16f, 7f)
             }
         }
+    }
+
+    private fun drawTopBar(g: Graphics) {
+        game.getImg("img/statusUI/top_hull.png").draw(0f, 0f)
+
+        val labelImg = game.getImg("img/statusUI/top_hull_label.png")
+        val txt = "HULL"
+        drawTab(txt, labelImg, 0f, 0f, 10f, 30f, 7f)
+
+        g.font = font
+        g.color = UI_TEXT_COLOUR_1
+        g.drawString("HULL", 9f, 21f)
+
+        // Draw the hull bar
+
+        // TODO add to ship
+        val hp = 22
+
+        // TODO use the correct colours
+        val hpW = 12f * hp
+        val healthColour = when (hp / 30f) {
+            in 0f..0.33f -> Color.red
+            in 0.33f..0.66f -> Color.yellow
+            else -> Color.green
+        }
+        val mask = game.getImg("img/statusUI/top_hull_bar_mask.png")
+        val hpH = mask.height.f
+        mask.draw(11f, 0f, 11f + hpW, hpH, 0f, 0f, hpW, hpH, healthColour)
+    }
+
+    /**
+     * Draws a text tab. In the images these are thin tabs that get expanded to correctly fit the localised
+     * string at runtime. The image consists of what you might call three regions:
+     *
+     * - The start region, drawn before the text
+     * - The text region, which is stretched to match the width of the text (which is drawn onto it)
+     * - The end region, which is drawn after the text region
+     *
+     * Also note that the text region is slightly smaller than the text - this is to accomidate letters
+     * like 'L' on down-sloping edges - it gets squeezed in a little. Currently this is just manually
+     * counted for English, but it'd be ideal to figure out how this is handled by the game.
+     */
+    private fun drawTab(text: String, img: Image, x: Float, y: Float, startWidth: Float, endWidth: Float, endOffset: Float) {
+        val textWidth = font.getWidth(text).f
+        val scrBase = y + img.height
+
+        // Screen X coordinates
+        val sx1 = x + startWidth // Between the start and text areas
+        val sx2 = sx1 + textWidth - endOffset // Between the text and end areas
+        val sx3 = sx2 + endWidth // The end X position
+
+        img.draw(x, y, sx1, scrBase, 0f, 0f, startWidth, img.height.f)
+        img.draw(sx1, y, sx2, scrBase, startWidth, 0f, img.width.f - endWidth, img.height.f)
+        img.draw(sx2, y, sx3, scrBase, img.width.f - endWidth, 0f, img.width.f, img.height.f)
     }
 
     private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()

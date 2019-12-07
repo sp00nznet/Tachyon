@@ -154,7 +154,10 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
+        // Get the player's ship away from the top UI
+        g.translate(50, 150);
         player.render(g, hoveredRoom);
+        g.resetTransform();
 
         g.translate(container.getWidth() - enemy.getHullImage().getWidth(), 0);
         enemy.render(g, hoveredRoom);
