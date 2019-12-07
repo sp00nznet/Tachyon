@@ -427,8 +427,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         game.getImg("img/statusUI/top_shields4_on.png").draw(0f, shieldY)
         // TODO shield bubble indicators
 
-        fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int) {
-            game.getImg("img/statusUI/top_${name}_on.png").draw(x.f, shieldY)
+        fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int, redThreshold: Int = 0) {
+            val suffix = when {
+                count <= redThreshold -> "_red"
+                else -> ""
+            }
+            game.getImg("img/statusUI/top_${name}_on$suffix.png").draw(x.f, shieldY)
 
             val areaWidth = 35
             val areaStart = x.f + 33 + numAreaOffset
@@ -444,6 +448,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val shieldsEndX = 122
 
         // TODO use correct fuel quantity
+        // TODO correctly set the red threshold?
         drawSmallCounter("fuel", shieldsEndX, 0, 0)
 
         // TODO missiles number
