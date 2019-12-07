@@ -6,4 +6,31 @@ import xyz.znix.xftl.AbstractSystem
 class Piloting(elem: Element) : AbstractSystem("pilot", elem) {
     // TODO add crew evasion
     val evasion: Int get() = 0
+
+    private val computerSlot by lazy { room?.computerPoint?.let { room!!.pointToSlot(it) } }
+
+    val evasionMultiplier: Float
+        get() {
+            // If piloting is broken, you get no evasion
+            if (undamagedEnergy == 0) return 0f
+
+            val room = this.room!!
+
+            // Find the pilot at the computer slot, or slot 0 if the computer slot is not defined
+            val pilot = room.reservedPlayerSlots[computerSlot ?: 0]
+
+            // If a pilot is present (not just walking there), we get 100% of our original piloting
+            if (pilot != null && pilot.position == room.computerPoint && pilot.room == room)
+                return 1f
+
+            // At this point, the system is not broken and we don't have a pilot. Use the evasion
+            // multipliers for the autopilot.
+            // We're using the AE numbers for this, taken from: https://ftl.fandom.com/wiki/Piloting
+            return when (undamagedEnergy) {
+                1 -> 0f
+                2 -> 0.5f
+                3 -> 0.8f
+                else -> error("Unsupported power level for piloting: $undamagedEnergy")
+            }
+        }
 }

@@ -15,6 +15,11 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
     var damagedEnergyLevels: Int = 0
     val damaged: Boolean get() = damagedEnergyLevels > 0
 
+    /**
+     * The number of intact energy bars in the system
+     */
+    open val undamagedEnergy get() = energyLevels - damagedEnergyLevels
+
     var repairProgress: Float = 0f
         private set(value) {
             field = if (damaged) value else 0f

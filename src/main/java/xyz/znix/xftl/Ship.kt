@@ -110,7 +110,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         }
 
     // The ship's evasion, in percent
-    val evasion: Int get() = piloting!!.evasion + engines!!.evasion
+    val evasion: Int get() = (piloting!!.evasionMultiplier * (piloting!!.evasion + engines!!.evasion)).toInt()
 
     init {
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
