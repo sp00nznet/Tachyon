@@ -20,7 +20,8 @@ public class App {
         Datafile df = new Datafile(new File("/home/znix/Static/Games/FTL-linux/data/ftl.dat"));
 
         // TODO automatic extraction
-        System.setProperty("org.lwjgl.librarypath", new File("natives").getAbsolutePath());
+        if (System.getProperty("org.lwjgl.librarypath") == null)
+            System.setProperty("org.lwjgl.librarypath", new File("natives").getAbsolutePath());
 
         // Enable stenciling support
         GameContainer.enableStencil();
