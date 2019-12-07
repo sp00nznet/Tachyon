@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class SlickGame extends BasicGame {
+    private static ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(50, 150);
+
     private Ship player;
     private Ship enemy; // temporary, TODO handle this properly
     private ShipAI enemyAI;
@@ -117,7 +119,7 @@ public class SlickGame extends BasicGame {
                     clickEvent = null;
                 }
 
-                shipUI.mouseClick(i, in.getMouseX(), in.getMouseY());
+                shipUI.mouseClick(i, in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
             }
         }
 
@@ -155,7 +157,7 @@ public class SlickGame extends BasicGame {
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
         // Get the player's ship away from the top UI
-        g.translate(50, 150);
+        g.translate(PLAYER_SHIP_POSITION.getX(), PLAYER_SHIP_POSITION.getY());
         player.render(g, hoveredRoom);
         g.resetTransform();
 

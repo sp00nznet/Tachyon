@@ -11,6 +11,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
@@ -49,7 +50,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
 
-    fun mouseClick(button: Int, x: Int, y: Int) {
+    fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
         for (i in 0 until ship.weaponSlots!!) {
             val wx = weaponBoxX(i)
             val wy = weaponBoxY(i)
@@ -84,11 +85,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
 
         // Select players
-        // TODO ship offset
+        val shipMousePos = Point(x, y)
+        shipMousePos -= playerShipPosition
         for (crew in ship.crew) {
-            if (x < crew.screenX || y < crew.screenY)
+            if (shipMousePos.x < crew.screenX || shipMousePos.y < crew.screenY)
                 continue
-            if (x >= crew.screenX + crew.icon.width || y >= crew.screenY + crew.icon.height)
+            if (shipMousePos.x >= crew.screenX + crew.icon.width || shipMousePos.y >= crew.screenY + crew.icon.height)
                 continue
 
             if (button == MOUSE_LEFT_BUTTON) {
@@ -98,7 +100,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             }
         }
 
-        val roomPoint = Point(x, y)
+        val roomPoint = Point(shipMousePos)
         roomPoint += ship.hullOffset
         roomPoint.divideFloor(ROOM_SIZE)
         roomPoint -= ship.offset
