@@ -139,10 +139,13 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
 
     override fun getWidth(str: String): Int {
         var next = 0
-        for (ch in str) {
+        for ((i, ch) in str.withIndex()) {
             val info = chars[ch] ?: error("Unknown char $ch")
             next += (info.prekern * scale).roundToInt()
-            next += ((info.w + info.postkern) * scale).roundToInt()
+
+            val last = i == str.length - 1
+            val postKern = if (last) 0f else info.postkern
+            next += ((info.w + postKern) * scale).roundToInt()
         }
         return next
     }
