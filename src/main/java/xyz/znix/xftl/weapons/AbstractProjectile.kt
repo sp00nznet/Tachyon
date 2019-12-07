@@ -64,10 +64,10 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         }
 
         if (distance <= 0) {
+            resolveMissed()
+
             if (missed == true)
                 return
-
-            resolveMissed()
 
             distance = 0f
 
