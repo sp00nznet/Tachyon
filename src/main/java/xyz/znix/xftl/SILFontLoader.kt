@@ -133,6 +133,10 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
         }
     }
 
+    fun drawStringLeftAligned(x: Float, y: Float, text: String, colour: Color) {
+        drawString(x - getWidth(text), y, text, colour)
+    }
+
     override fun drawString(x: Float, y: Float, text: String?, col: Color?, startIndex: Int, endIndex: Int) {
         TODO("not implemented")
     }

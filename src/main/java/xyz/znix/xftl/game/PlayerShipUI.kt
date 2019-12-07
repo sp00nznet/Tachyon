@@ -28,6 +28,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])
     private val numberFont = SILFontLoader(df, df["fonts/num_font.font"])
+    private val oxygenEvadeFont = SILFontLoader(df, df["fonts/JustinFont10.font"])
 
     private var selectWeaponClickEvent: Consumer<Room>? = null
     private var targetingSelectedWeapon: Int? = null
@@ -458,6 +459,19 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         // TODO missiles number
         drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, 0)
+
+        // Oxygen and evasion indicator
+        val oxyY = 96f;
+        game.getImg("img/statusUI/top_evade_oxygen.png").draw(1f, oxyY - 7)
+
+        val evadeBoxLeft = 92f
+
+        // Evade
+        oxygenEvadeFont.drawStringLeftAligned(evadeBoxLeft, oxyY + 8, "${ship.evasion}%", Color.white)
+
+        // Oxygen
+        // TODO use correct numbers once oxygen is implemented
+        oxygenEvadeFont.drawStringLeftAligned(evadeBoxLeft, oxyY + 8 + 22, "100%", Color.white)
     }
 
     /**
