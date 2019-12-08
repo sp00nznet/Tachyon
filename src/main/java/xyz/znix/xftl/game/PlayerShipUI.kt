@@ -1,6 +1,5 @@
 package xyz.znix.xftl.game
 
-import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
@@ -189,26 +188,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val powerTreeY = gc.height - 21 - 302
         val powerTreeMaskY = powerTreeY + 27 - (ship.purchasedReactorPower - 1) * 9
 
-        // Draw the power tree, using OpenGL stenciling
-        GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT)
-        GL11.glStencilMask(0xff)
-        GL11.glEnable(GL11.GL_STENCIL_TEST)
-
-        // Draw the mask into the stencil buffer
-        GL11.glEnable(GL11.GL_ALPHA_TEST)
-        GL11.glAlphaFunc(GL11.GL_GREATER, 0.1f)
-        GL11.glStencilFunc(GL11.GL_NEVER, 1, 0xFF)
-        GL11.glStencilOp(GL11.GL_REPLACE, GL11.GL_KEEP, GL11.GL_KEEP)
-        game.getImg("img/wire_left_mask.png").draw(powerTreeX.f + 4, powerTreeMaskY.f)
-        GL11.glDisable(GL11.GL_ALPHA_TEST)
-
-        // Draw the wire image with the stencil in place
-        GL11.glStencilFunc(GL11.GL_EQUAL, 0, 0xFF)
-        GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP)
-        game.getImg("img/wireUI/wire_full.png").draw(powerTreeX.f, powerTreeY.f)
-
-        // Don't break anything else
-        GL11.glDisable(GL11.GL_STENCIL_TEST)
+        Utils.drawStenciled(Utils.StencilMode.BLOCKING, {
+            game.getImg("img/wire_left_mask.png").draw(powerTreeX.f + 4, powerTreeMaskY.f)
+        }) {
+            game.getImg("img/wireUI/wire_full.png").draw(powerTreeX.f, powerTreeY.f)
+        }
 
         // Draw the power tree's energy bars
         val availablePower = ship.powerAvailable
