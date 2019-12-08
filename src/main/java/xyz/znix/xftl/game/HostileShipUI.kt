@@ -20,7 +20,10 @@ class HostileShipUI(private val game: SlickGame, private val enemy: Ship) {
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
             game.getImg("img/combatUI/box_hostiles_mask.png").draw(boxX, boxY)
         }) {
-            g.translate(gc.width - enemy.hullImage.width.f, 0f)
+            // It's not quite the same as FTL, but works well enough for now
+            val shipX = boxX + (box.width - enemy.hullImage.width) / 2
+            val shipY = boxY + (box.height - enemy.hullImage.height) / 2
+            g.translate(shipX.f, shipY.f)
             enemy.render(g, hoveredRoom)
             g.resetTransform()
         }
