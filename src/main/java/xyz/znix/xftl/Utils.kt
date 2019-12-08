@@ -1,9 +1,12 @@
 package xyz.znix.xftl
 
 import org.lwjgl.opengl.GL11
+import org.newdawn.slick.Image
 
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
+
+fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
 
 object Utils {
     /**

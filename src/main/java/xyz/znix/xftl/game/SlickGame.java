@@ -39,6 +39,7 @@ public class SlickGame extends BasicGame {
     private Consumer<Room> clickEvent;
 
     private PlayerShipUI shipUI;
+    private HostileShipUI hostileShipUI;
 
     private boolean paused;
 
@@ -60,6 +61,7 @@ public class SlickGame extends BasicGame {
         translator = new Translator(df, "en");
 
         shipUI = new PlayerShipUI(df, translator, player, this);
+        hostileShipUI = new HostileShipUI(this, enemy);
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
@@ -161,12 +163,8 @@ public class SlickGame extends BasicGame {
         player.render(g, hoveredRoom);
         g.resetTransform();
 
-        g.translate(container.getWidth() - enemy.getHullImage().getWidth(), 0);
-        enemy.render(g, hoveredRoom);
-
-        g.resetTransform();
-
         shipUI.render(container, g);
+        hostileShipUI.render(container, g, hoveredRoom);
 
         if (paused) {
             Image pauseImg = getImg("img/Text_pause2.png");
