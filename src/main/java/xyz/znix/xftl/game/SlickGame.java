@@ -129,10 +129,9 @@ public class SlickGame extends BasicGame {
             return;
 
         // Hovering over the enemy
-        int enemyX = container.getWidth() - enemy.getHullImage().getWidth();
         tempPoint.setX(container.getInput().getMouseX());
         tempPoint.setY(container.getInput().getMouseY());
-        tempPoint.add(-enemyX, 0);
+        tempPoint.minusAssign(hostileShipUI.getShipPos());
         enemy.screenPosToShipPos(tempPoint);
 
         RoomPoint rp = enemy.shipToRoomPos(tempPoint);
