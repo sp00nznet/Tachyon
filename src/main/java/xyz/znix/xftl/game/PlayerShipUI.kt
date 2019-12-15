@@ -410,9 +410,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         val shieldY = 43
 
-        // Draw the shields indicator
-        game.getImg("img/statusUI/top_shields4_on.png").draw(0f, shieldY)
-        // TODO shield bubble indicators
+        ship.shields?.let { shields ->
+            // Draw the shields indicator
+            game.getImg("img/statusUI/top_shields4_on.png").draw(0, shieldY)
+            // TODO shield bubble indicators
+
+            val shieldImg = game.getImg("img/statusUI/top_shieldsquare1_on.png")
+            for (i in 0 until shields.activeShields) {
+                shieldImg.draw(30 + 23 * i, shieldY + 4)
+            }
+        }
 
         fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int, redThreshold: Int = 0) {
             val suffix = when {
