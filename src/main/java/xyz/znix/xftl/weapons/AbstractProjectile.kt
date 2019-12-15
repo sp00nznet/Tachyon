@@ -73,7 +73,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
             // TODO shields
 
-            target.system?.dealDamage(type.sysDamage)
+            ship.damage(target, type)
 
             ship.inboundProjectiles.remove(this)
 
