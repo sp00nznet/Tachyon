@@ -141,6 +141,7 @@ public class SlickGame extends BasicGame {
         // Hovering over the player
         tempPoint.setX(container.getInput().getMouseX());
         tempPoint.setY(container.getInput().getMouseY());
+        tempPoint.minusAssign(PLAYER_SHIP_POSITION);
         player.screenPosToShipPos(tempPoint);
 
         rp = player.shipToRoomPos(tempPoint);
