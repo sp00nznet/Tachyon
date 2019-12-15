@@ -390,12 +390,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         // Draw the hull bar
 
-        // TODO add to ship
-        val hp = 22
+        // TODO support ships with more or less health
+        check(ship.maxHealth == 30)
 
         // TODO use the correct colours
-        val hpW = 12f * hp
-        val healthColour = when (hp / 30f) {
+        val hpW = 12f * ship.health
+        val healthColour = when (ship.health.f / ship.maxHealth) {
             in 0f..0.33f -> Color.red
             in 0.33f..0.66f -> Color.yellow
             else -> Color.green

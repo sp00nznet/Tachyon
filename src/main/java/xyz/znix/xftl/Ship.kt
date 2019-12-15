@@ -14,6 +14,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.AbstractProjectile
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.awt.Rectangle
@@ -70,6 +71,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     // The amount of unused reactor power
     val powerAvailable: Int get() = reactorPower - powerConsumed
+
+    val maxHealth = shipNode.getChild("health").getAttributeValue("amount").toInt()
+    var health = maxHealth
+        set(value) {
+            field = value.coerceAtLeast(0).coerceAtMost(maxHealth)
+        }
 
     // The amount of power currently used by the ship's systems
     val powerConsumed: Int
@@ -442,6 +449,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         // Update the animations
         for (a in animations)
             a.update(dt)
+    }
+
+    fun damage(target: Room, type: AbstractWeaponBlueprint) = damage(target, type.damage, type.sysDamage)
+
+    fun damage(target: Room, damage: Int, systemDamage: Int) {
+        health -= damage
+        target.system?.dealDamage(systemDamage)
     }
 
     companion object {
