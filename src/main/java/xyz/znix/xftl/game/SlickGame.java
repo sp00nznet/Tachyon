@@ -61,7 +61,7 @@ public class SlickGame extends BasicGame {
         translator = new Translator(df, "en");
 
         shipUI = new PlayerShipUI(df, translator, player, this);
-        hostileShipUI = new HostileShipUI(this, enemy);
+        hostileShipUI = new HostileShipUI(this, df, enemy);
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
