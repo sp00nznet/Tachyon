@@ -408,7 +408,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         game.getImg("img/statusUI/top_scrap.png").draw(374f + 8 - 5, 0f)
         // TODO scrap number
 
-        val shieldY = 43f;
+        val shieldY = 43
 
         // Draw the shields indicator
         game.getImg("img/statusUI/top_shields4_on.png").draw(0f, shieldY)
@@ -419,7 +419,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 count <= redThreshold -> "_red"
                 else -> ""
             }
-            game.getImg("img/statusUI/top_${name}_on$suffix.png").draw(x.f, shieldY)
+            game.getImg("img/statusUI/top_${name}_on$suffix.png").draw(x, shieldY)
 
             val areaWidth = 35
             val areaStart = x.f + 33 + numAreaOffset
@@ -429,7 +429,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             g.font = numberFont
             g.color = Color.white
-            g.drawString(count.toString(), areaStart + textInternalX, shieldY + 23)
+            g.drawString(count.toString(), areaStart + textInternalX, shieldY + 23f)
         }
 
         val shieldsEndX = 122

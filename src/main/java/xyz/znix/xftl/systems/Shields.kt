@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import kotlin.math.min
 
 class Shields(elem: Element) : MainSystem("shields", elem) {
     override val sortingType: SortingType get() = SortingType.SHIELD
@@ -9,15 +10,13 @@ class Shields(elem: Element) : MainSystem("shields", elem) {
 
     var activeShields: Int = 0
         set(value) {
-            field = Math.min(selectedShieldBars, value)
+            field = min(selectedShieldBars, value)
         }
 
     override val powerSelected: Int get() = selectedShieldBars * 2
 
     var rechargeTimer: Float = 0f
-        private set(value) {
-            field = value
-        }
+        private set
 
     val rechargeDelay: Float get() = 2f
 
