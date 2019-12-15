@@ -40,7 +40,13 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
         // Draw the hull level
         val hullY = boxY + 29 + 4
         renderSmallbar(textX, hullY, "HULL")
-        // TODO hull bar
+        val hpWidth = 11 * enemy.health
+        val hpX = textX + 5
+        val hpY = hullY + 12
+        val hull = game.getImg("img/combatUI/box_hostiles_hull2.png")
+        // TODO colour
+        hull.draw(hpX.f, hpY.f, hpX.f + hpWidth, hpY.f + hull.height,
+                0f, 0f, hpWidth.f, hull.height.f)
 
         // Draw the shield bubbles
         val shieldsY = hullY + 27
