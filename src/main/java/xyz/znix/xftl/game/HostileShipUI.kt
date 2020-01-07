@@ -15,6 +15,11 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
 
     private val font = SILFontLoader(df, df["fonts/HL2.font"])
 
+    private val shieldIconStandard = df.readImage("img/combatUI/box_hostiles_shield1.png")
+    private val shieldIconBroken = df.readImage("img/combatUI/box_hostiles_shield2.png")
+    private val shieldIconStandardHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked_charged.png")
+    private val shieldIconBrokenHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked.png")
+
     fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?) {
         val box = game.getImg("img/combatUI/box_hostiles2.png")
 
@@ -48,10 +53,23 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
         hull.draw(hpX.f, hpY.f, hpX.f + hpWidth, hpY.f + hull.height,
                 0f, 0f, hpWidth.f, hull.height.f)
 
-        // Draw the shield bubbles
-        val shieldsY = hullY + 27
-        renderSmallbar(textX, shieldsY, "SHIELDS")
-        // TODO render shield bubbles
+        enemy.shields?.let { shields ->
+            // Draw the shield bubbles
+            val shieldsY = hullY + 27
+            renderSmallbar(textX, shieldsY, "SHIELDS")
+
+            for (i in 0 until shields.selectedShieldBars) {
+                val intact = i < shields.activeShields
+                val hacked = false
+                val img = when {
+                    hacked && intact -> shieldIconStandardHacked
+                    hacked && !intact -> shieldIconBrokenHacked
+                    intact -> shieldIconStandard
+                    else -> shieldIconBroken
+                }
+                img.draw(textX + 8 + i * 35, shieldsY + 15)
+            }
+        }
     }
 
     private fun renderSmallbar(x: Int, y: Int, text: String) {
