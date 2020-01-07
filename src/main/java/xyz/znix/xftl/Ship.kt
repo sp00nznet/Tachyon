@@ -251,6 +251,39 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
             val room = rooms[node.getAttributeValue("room").toInt()]
 
+            // Pick a room with the invalid computer formula if it's a mannable system
+            // and the computer is not set.
+            compPoint = compPoint ?: when (system) {
+                is Piloting, is Engines, is Shields, is Weapons, is Doors, is Sensors -> ConstPoint(999, 999)
+                else -> null
+            }
+
+            // If the computer position is invalid (outside the room), just find a point
+            // that makes sense (doesn't overlap a door).
+            if (compPoint != null && !room.containsRelative(compPoint)) {
+                // Take a range of the valid X values
+                val validPlaces = (0 until room.width).asSequence().flatMap { x ->
+                    // Flatmap each of them to the valid positions in that column
+                    (0 until room.height).asSequence().map { y -> ConstPoint(x, y) }
+                }.flatMap {
+                    // Expand each position into two valid edges
+                    // Note that in a 1x2/2x1 room this doesn't cover all edges - close enough though
+                    val horizontal = if (it.x == 0) Direction.LEFT else Direction.RIGHT
+                    val vertical = if (it.y == 0) Direction.UP else Direction.DOWN
+                    sequenceOf(Pair(it, horizontal), Pair(it, vertical))
+                }.filter { pos ->
+                    // Filter out anything that intersects with a door
+                    room.doors.none { it.roomPos(room) posEq pos.first && it.isVertical == pos.second.isVertical }
+                }.sortedBy { pos ->
+                    // Prefer things that aren't on the same tile as a door
+                    if (room.doors.none { it.roomPos(room) posEq pos.first }) 0 else 1
+                }.filterNotNull()
+
+                val place = validPlaces.first()
+                compPoint = place.first
+                compDir = place.second
+            }
+
             // The medbay at least (and maybe other systems, TODO check) use the
             // computer to represent a cell that is obstructed.
             val computerIsObstruction = when (system) {
