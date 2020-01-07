@@ -33,7 +33,7 @@ class Animations(df: Datafile) {
                 continue
 
             // The filename is the text inside the element
-            val img = df.readImage(df["img/${elem.textTrim}"])
+            val img = df.readImage("img/${elem.textTrim}")
 
             run {
                 // Don't verify the small bomb, since it's image is two pixels short
@@ -108,7 +108,7 @@ class Animations(df: Datafile) {
             val mountPoint = parsePosElem(xml.getChild("mountPoint"))
             val firePoint = parsePosElem(xml.getChild("firePoint"))
 
-            val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage(df["img/$i"]) }
+            val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage("img/$i") }
 
             weaponAnimations[name] = WeaponAnimationSpec(sheet, x, y, length, chargedFrame, fireFrame, mountPoint, firePoint, chargeImage)
             System.out.println(name)

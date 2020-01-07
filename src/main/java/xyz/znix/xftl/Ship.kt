@@ -37,10 +37,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val isPlayerShip: Boolean = name.startsWith("PLAYER_SHIP_")
 
     val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
-    val hullImage: Image = base.readImage(base["img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png"])
+    val hullImage: Image = base.readImage("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
 
-    val shieldImage: Image = base.readImage(if (isPlayerShip) base["img/ship/${shipNode.getChildTextTrim("shieldImage")
-            ?: imageName}_shields1.png"] else base["img/ship/enemy_shields.png"])
+    val shieldImage: Image = base.readImage(if (isPlayerShip) "img/ship/${shipNode.getChildTextTrim("shieldImage")
+            ?: imageName}_shields1.png" else "img/ship/enemy_shields.png")
 
     val shieldOffset: ConstPoint
 

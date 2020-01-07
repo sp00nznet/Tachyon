@@ -126,4 +126,6 @@ constructor(private val data_file: File) {
     fun readImage(file: FTLFile): Image {
         return Image(open(file), file.name, false)
     }
+
+    fun readImage(path: String) = readImage(this[path])
 }

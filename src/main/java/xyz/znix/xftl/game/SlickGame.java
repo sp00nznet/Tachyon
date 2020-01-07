@@ -186,7 +186,7 @@ public class SlickGame extends BasicGame {
         if (img != null)
             return img;
 
-        img = df.readImage(df.get(name));
+        img = df.readImage(name);
         images.put(name, img);
         return img;
     }
