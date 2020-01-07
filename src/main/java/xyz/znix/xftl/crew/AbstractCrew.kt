@@ -90,6 +90,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         }
 
     var movementProgress: Float = 0F
+        private set
 
     // The door we're walking through
     private var targetDoor: Door? = null

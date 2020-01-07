@@ -8,7 +8,7 @@ import xyz.znix.xftl.weapons.MissileBlueprint
 
 class ShipAI(val ship: Ship, val player: Ship) {
     fun update(dt: Float) {
-        val weapons = findWeapons() ?: return
+        val weapons = ship.weapons ?: return
 
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
@@ -25,13 +25,6 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 }
             }
         }
-    }
-
-    private fun findWeapons(): Weapons? {
-        for (room in ship.rooms)
-            return room.system as? Weapons ?: continue
-
-        return null
     }
 
     private fun pickTarget(): Room {

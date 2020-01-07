@@ -7,6 +7,7 @@ class Shields(elem: Element) : MainSystem("shields", elem) {
     override val sortingType: SortingType get() = SortingType.SHIELD
 
     var selectedShieldBars: Int = 0
+        private set
 
     var activeShields: Int = 0
         set(value) {
