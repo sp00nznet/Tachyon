@@ -75,7 +75,7 @@ public class SlickGame extends BasicGame {
                 getImg(img);
         }
 
-        HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0));
+        HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0), HumanCrew.SlotType.CREW);
         player.getCrew().add(crew);
         crew.setTargetRoom(player.shipToRoomPos(new ConstPoint(1, 1)).getRoom());
 

@@ -10,7 +10,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.RoomPoint
 
-abstract class AbstractCrew(private val codename: String, private val anims: Animations, var room: Room) {
+abstract class AbstractCrew(private val codename: String, private val anims: Animations, var room: Room, mode: SlotType) {
     var icon: Animation
 
     // The cell position in the current room
@@ -37,12 +37,12 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             val from = old ?: roomPosition
 
             // Even if we're becoming stationary, free up the space - we'll fill it in later
-            clearFromRoomSlots(from.room.reservedPlayerSlots)
+            clearFromRoomSlots(slotsFor(from.room))
 
             // Now mark the slot we're taking up
             val dest = value ?: roomPosition
             val slot = dest.room.pointToSlot(dest)
-            val slots = dest.room.reservedPlayerSlots
+            val slots = slotsFor(dest.room)
             check(slots[slot] == null)
             slots[slot] = this
         }
@@ -83,6 +83,12 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             requireNotNull(targetDoor!!.other(room)) { "Cannot walk through airlock door" }
         }
 
+    var mode: SlotType = mode
+        set(value) {
+            field = value // Suppress warning
+            TODO()
+        }
+
     var movementProgress: Float = 0F
 
     // The door we're walking through
@@ -98,6 +104,8 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         icon = anims["${codename}_portrait"].start()
         updateAnimation()
     }
+
+    fun slotsFor(room: Room) = mode.slotsFor(room)
 
     fun update(dt: Float) {
         icon.update((dt * 1000).toLong())
@@ -194,8 +202,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     }
 
     fun setTargetRoom(value: Room) {
-        // TODO enemy support
-        val slots = value.reservedPlayerSlots
+        val slots = slotsFor(value)
 
         if (value.computerPoint != null)
             if (setTargetRoom(value, value.pointToSlot(value.computerPoint!!), slots))
@@ -230,6 +237,16 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         slots.forEachIndexed { index, crew ->
             if (crew == this)
                 slots[index] = null
+        }
+    }
+
+    enum class SlotType {
+        CREW,
+        INTRUDER;
+
+        fun slotsFor(room: Room): Array<AbstractCrew?> = when (this) {
+            CREW -> room.reservedPlayerSlots
+            INTRUDER -> room.reservedEnemySlots
         }
     }
 }
