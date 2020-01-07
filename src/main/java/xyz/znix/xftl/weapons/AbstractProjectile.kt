@@ -113,11 +113,16 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         shields.activeShields--
 
         ship.inboundProjectiles.remove(this)
+        renderHit(position)
     }
 
     protected open fun renderHit() {
         val pos = Point(0, 0)
         calculatePositionFor(0f, pos)
+        renderHit(pos)
+    }
+
+    protected open fun renderHit(pos: IPoint) {
         val animation = ship.sys.animations[type.explosion ?: error("Default explosion not set")]
         ship.animations += Ship.FloatingAnimation.centered(animation.start(), pos)
     }
