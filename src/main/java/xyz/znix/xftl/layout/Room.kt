@@ -86,6 +86,17 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             // Render the interior decals
             val bg = ship.sys.getImg(system.img)
             g.drawImage(bg, x.f, y.f)
+        } else if (system != null && computerPoint != null) {
+            // AI ships rarely (never?) use proper room textures. For systems like
+            // engines and piloting that can be manned, draw a standard computer image
+            // on instead.
+            val comp = ship.sys.getImg("img/ship/interior/computer1.png")
+            val imgX = x.f + computerPoint!!.x * ROOM_SIZE
+            val imgY = y.f + computerPoint!!.y * ROOM_SIZE
+            g.pushTransform()
+            g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, computerDirection!!.angle.f)
+            g.drawImage(comp, imgX, imgY)
+            g.popTransform()
         }
 
         // Draw the pathing-to boxes, if required
