@@ -8,6 +8,7 @@ import xyz.znix.xftl.layout.Room
 
 class MissileBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_random"
+    override val shieldPiercing: Boolean get() = true
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return MissileInstance(ship)

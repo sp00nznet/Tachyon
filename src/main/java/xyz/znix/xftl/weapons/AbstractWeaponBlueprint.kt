@@ -10,6 +10,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) {
     val shots = xml.getChildTextTrim("shots")?.toInt() ?: 1
     val damage = xml.getChildTextTrim("damage").toInt()
     val sysDamage = xml.getChildTextTrim("sysDamage")?.toInt() ?: damage
+    open val shieldPiercing: Boolean get() = false
 
     val titleKey = xml.getChild("title").getAttributeValue("id")
     val shortKey = xml.getChild("short").getAttributeValue("id")

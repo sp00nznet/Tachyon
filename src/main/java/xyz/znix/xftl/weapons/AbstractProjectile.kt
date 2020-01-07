@@ -44,7 +44,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
         calculatePositionFor(distance, mutablePosition)
 
-        if (!passedShields) {
+        if (!passedShields && !type.shieldPiercing) {
             // Check if we're inside the target ships shields
             val s = ship
             val p = position
