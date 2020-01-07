@@ -67,7 +67,7 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
                     intact -> shieldIconStandard
                     else -> shieldIconBroken
                 }
-                img.draw(textX + 8 + i * 35, shieldsY + 15)
+                img.draw(textX + 7 + i * 23, shieldsY + 15)
             }
         }
     }
