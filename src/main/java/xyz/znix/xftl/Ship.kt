@@ -225,6 +225,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                     compPoint = ConstPoint(0, 1)
                     compDir = Direction.DOWN
                 }
+                is Shields -> {
+                    compPoint = ConstPoint(0, 0)
+                    compDir = Direction.LEFT
+                }
             }
 
             if (slotElems.size == 1) {
