@@ -79,6 +79,9 @@ public class SlickGame extends BasicGame {
         player.getCrew().add(crew);
         crew.setTargetRoom(player.shipToRoomPos(new ConstPoint(1, 1)).getRoom());
 
+        HumanCrew enemyCrew = new HumanCrew(animations, enemy.getRooms().get(0), HumanCrew.SlotType.CREW);
+        enemy.getCrew().add(enemyCrew);
+
         for (Room r : player.getRooms()) {
             AbstractSystem system = r.getSystem();
             if (system == null)
