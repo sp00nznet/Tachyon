@@ -14,7 +14,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
             val weapon = hp.weapon ?: continue
 
             if (!weapon.isCharged)
-                return
+                continue
 
             when (weapon) {
                 is LaserBlueprint.LaserInstance -> {
