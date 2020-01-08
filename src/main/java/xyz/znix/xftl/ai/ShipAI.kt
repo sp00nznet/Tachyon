@@ -11,6 +11,10 @@ class ShipAI(val ship: Ship, val player: Ship) {
     fun update(dt: Float) {
         val weapons = ship.weapons ?: return
 
+        ship.shields?.let {
+            for (i in 1..it.energyLevels) it.increasePower()
+        }
+
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
 
