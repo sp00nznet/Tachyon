@@ -10,6 +10,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.systems.MainSystem
@@ -35,6 +36,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private val selectedTargets: MutableMap<AbstractWeaponInstance, SelectedTarget> = HashMap()
     private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
 
+    private val buttons = ArrayList<Button>()
+
     // Set by render
     private var height: Int = 500
 
@@ -49,6 +52,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponBoxX(i: Int): Int = boxX + 12 + 12 + 97 * i
 
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
+
+    init {
+        buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game, font)
+    }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
         for (i in 0 until ship.weaponSlots!!) {
@@ -375,6 +382,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 g.fillRect((wx + 4).f, y.f, 16f, 7f)
             }
         }
+
+        for (button in buttons) {
+            button.draw(g)
+        }
     }
 
     private fun drawTopBar(g: Graphics) {
@@ -407,29 +418,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // Draw the scrap indicator
         game.getImg("img/statusUI/top_scrap.png").draw(374f + 8 - 5, 0f)
         // TODO scrap number
-
-        val ftlX = 524 + 13
-        val ftlY = 38 + 11
-        game.getImg("img/buttons/FTL/FTL_base.png").draw(ftlX - 13f, ftlY - 11f)
-
-        val engineOn = ship.engines!!.powerSelected > 0
-        if (ship.isFtlReady) {
-            g.color = if (engineOn) JUMP_READY else JUMP_DISABLED
-            g.fillRect(ftlX + 2f, ftlY + 2f, 68f, 1f)
-            g.fillRect(ftlX + 1f, ftlY + 3f, 70f, 1f)
-            g.fillRect(ftlX + 0f, ftlY + 4f, 72f, 1f)
-            g.fillRect(ftlX - 1f, ftlY + 5f, 74f, 23f)
-            g.fillRect(ftlX + 0f, ftlY + 5f + 23 + 0, 72f, 1f)
-            g.fillRect(ftlX + 1f, ftlY + 5f + 23 + 1, 70f, 1f)
-            g.fillRect(ftlX + 2f, ftlY + 5f + 23 + 2, 68f, 1f)
-
-            val textColour = if (engineOn) JUMP_READY_TEXT else JUMP_DISABLED_TEXT
-            font.drawString(ftlX + 8f, ftlY + 18f, "JUMP", textColour)
-        } else {
-            val suffix = if (engineOn) "" else "_off"
-            val width = (ship.ftlChargeProgress * 74).toInt().coerceAtMost(74)
-            game.getImg("img/buttons/FTL/FTL_loadingbars$suffix.png").drawSection(ftlX - 1, ftlY + 2, width, 29)
-        }
 
         // Going down the side, for the shields/oxygen
         val shieldY = 43

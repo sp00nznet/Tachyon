@@ -2,11 +2,13 @@ package xyz.znix.xftl
 
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Image
+import xyz.znix.xftl.math.IPoint
 
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
 
 fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
+fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
 
 fun Image.drawSection(x: Int, y: Int, width: Int, height: Int) {
     draw(x.f, y.f, x.f + width, y.f + height, 0f, 0f, width.f, height.f)
