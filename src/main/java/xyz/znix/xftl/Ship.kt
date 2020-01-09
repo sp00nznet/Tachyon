@@ -63,6 +63,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
+    // How far through charging the FTL drive, 1=fully charged
+    var ftlChargeProgress: Float = 0f
+    val isFtlReady get() = ftlChargeProgress >= 1f
+
     // The raw amount of reactor power purchased by the player
     var purchasedReactorPower: Int = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()
 
@@ -486,6 +490,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         // Update the animations
         for (a in animations)
             a.update(dt)
+
+        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68
     }
 
     fun damage(target: Room, type: AbstractWeaponBlueprint) = damage(target, type.damage, type.sysDamage)

@@ -41,6 +41,11 @@ public class Constants {
     public static final Color WEAPONS_ITEM_ENERGY_CHARGED = WEAPONS_ITEM_CHARGED;
     public static final Color WEAPONS_ITEM_ENERGY_ZOLTAN = new Color(255, 250, 90);
 
+    public static final Color JUMP_READY = new Color(235, 245, 0);
+    public static final Color JUMP_READY_TEXT = new Color(37, 74, 77);
+    public static final Color JUMP_DISABLED = new Color(164, 171, 160);
+    public static final Color JUMP_DISABLED_TEXT = new Color(25, 49, 51);
+
     // These numbers took quite some work to obtain
     // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
     // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level

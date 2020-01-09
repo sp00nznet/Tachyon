@@ -408,6 +408,30 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         game.getImg("img/statusUI/top_scrap.png").draw(374f + 8 - 5, 0f)
         // TODO scrap number
 
+        val ftlX = 524 + 13
+        val ftlY = 38 + 11
+        game.getImg("img/buttons/FTL/FTL_base.png").draw(ftlX - 13f, ftlY - 11f)
+
+        val engineOn = ship.engines!!.powerSelected > 0
+        if (ship.isFtlReady) {
+            g.color = if (engineOn) JUMP_READY else JUMP_DISABLED
+            g.fillRect(ftlX + 2f, ftlY + 2f, 68f, 1f)
+            g.fillRect(ftlX + 1f, ftlY + 3f, 70f, 1f)
+            g.fillRect(ftlX + 0f, ftlY + 4f, 72f, 1f)
+            g.fillRect(ftlX - 1f, ftlY + 5f, 74f, 23f)
+            g.fillRect(ftlX + 0f, ftlY + 5f + 23 + 0, 72f, 1f)
+            g.fillRect(ftlX + 1f, ftlY + 5f + 23 + 1, 70f, 1f)
+            g.fillRect(ftlX + 2f, ftlY + 5f + 23 + 2, 68f, 1f)
+
+            val textColour = if (engineOn) JUMP_READY_TEXT else JUMP_DISABLED_TEXT
+            font.drawString(ftlX + 8f, ftlY + 18f, "JUMP", textColour)
+        } else {
+            val suffix = if (engineOn) "" else "_off"
+            val width = (ship.ftlChargeProgress * 74).toInt().coerceAtMost(74)
+            game.getImg("img/buttons/FTL/FTL_loadingbars$suffix.png").drawSection(ftlX - 1, ftlY + 2, width, 29)
+        }
+
+        // Going down the side, for the shields/oxygen
         val shieldY = 43
 
         ship.shields?.let { shields ->

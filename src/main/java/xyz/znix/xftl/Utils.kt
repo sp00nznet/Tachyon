@@ -8,6 +8,10 @@ val Int.f get() = toFloat()
 
 fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
 
+fun Image.drawSection(x: Int, y: Int, width: Int, height: Int) {
+    draw(x.f, y.f, x.f + width, y.f + height, 0f, 0f, width.f, height.f)
+}
+
 object Utils {
     /**
      * Draw something with stenciling.
