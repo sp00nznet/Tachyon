@@ -122,6 +122,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 return
             }
         }
+
+        for (btn in buttons) {
+            btn.mouseDown(button, x, y)
+        }
     }
 
     fun weaponHotkeyPressed(id: Int) {
@@ -514,6 +518,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         for (line in str.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
             g.drawString(line, x.f, y.f)
             y += 15
+        }
+    }
+
+    fun updateUI(x: Int, y: Int) {
+        for (button in buttons) {
+            button.update(x, y)
         }
     }
 

@@ -65,7 +65,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     // How far through charging the FTL drive, 1=fully charged
     var ftlChargeProgress: Float = 0f
-    val isFtlReady get() = ftlChargeProgress >= 1f
+    val isFtlCharged get() = ftlChargeProgress >= 1f
+    val isFtlReady get() = isFtlCharged && engines!!.powerSelected > 0
 
     // The raw amount of reactor power purchased by the player
     var purchasedReactorPower: Int = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()

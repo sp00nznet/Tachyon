@@ -43,6 +43,7 @@ public class Constants {
 
     public static final Color JUMP_READY = new Color(235, 245, 0);
     public static final Color JUMP_READY_TEXT = new Color(37, 74, 77);
+    public static final Color JUMP_READY_TEXT_HOVER = new Color(62, 125, 131);
     public static final Color JUMP_DISABLED = new Color(164, 171, 160);
     public static final Color JUMP_DISABLED_TEXT = new Color(25, 49, 51);
 

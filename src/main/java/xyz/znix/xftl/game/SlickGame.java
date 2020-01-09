@@ -128,6 +128,8 @@ public class SlickGame extends BasicGame {
             }
         }
 
+        shipUI.updateUI(in.getMouseX(), in.getMouseY());
+
         if (clickEvent == null)
             return;
 
