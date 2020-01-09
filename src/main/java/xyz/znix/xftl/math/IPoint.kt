@@ -9,6 +9,8 @@ interface IPoint {
     val isZero: Boolean get() = x == 0 && y == 0
     val isDiagonal: Boolean get() = x != 0 && y != 0
 
+    open val const: ConstPoint get() = ConstPoint(this)
+
     operator fun plus(other: IPoint): ConstPoint {
         return ConstPoint(x + other.x, y + other.y)
     }

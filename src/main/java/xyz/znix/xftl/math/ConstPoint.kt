@@ -23,4 +23,6 @@ class ConstPoint(override val x: Int, override val y: Int) : IPoint {
         result = 31 * result + y
         return result
     }
+
+    override val const: ConstPoint get() = this
 }
