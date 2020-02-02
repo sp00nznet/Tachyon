@@ -397,7 +397,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         val labelImg = game.getImg("img/statusUI/top_hull_label.png")
         val txt = "HULL"
-        drawTab(txt, labelImg, 0f, 0f, 10f, 30f, 7f)
+        drawTab(txt, labelImg, 0f, 0f, 10f, 30f)
 
         g.font = font
         g.color = UI_TEXT_COLOUR_1
@@ -488,18 +488,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
      * - The start region, drawn before the text
      * - The text region, which is stretched to match the width of the text (which is drawn onto it)
      * - The end region, which is drawn after the text region
-     *
-     * Also note that the text region is slightly smaller than the text - this is to accomidate letters
-     * like 'L' on down-sloping edges - it gets squeezed in a little. Currently this is just manually
-     * counted for English, but it'd be ideal to figure out how this is handled by the game.
      */
-    private fun drawTab(text: String, img: Image, x: Float, y: Float, startWidth: Float, endWidth: Float, endOffset: Float) {
+    private fun drawTab(text: String, img: Image, x: Float, y: Float, startWidth: Float, endWidth: Float): Float {
         val textWidth = font.getWidth(text).f
         val scrBase = y + img.height
 
         // Screen X coordinates
         val sx1 = x + startWidth // Between the start and text areas
-        val sx2 = sx1 + textWidth - endOffset // Between the text and end areas
+        val sx2 = sx1 + textWidth // Between the text and end areas
         val sx3 = sx2 + endWidth // The end X position
 
         img.draw(x, y, sx1, scrBase, 0f, 0f, startWidth, img.height.f)
