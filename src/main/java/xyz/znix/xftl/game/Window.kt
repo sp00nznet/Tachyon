@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
+import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.drawSection
 import xyz.znix.xftl.f
@@ -80,6 +81,7 @@ class Windows {
         private val titleTab = game.getImg("img/map/side_beaconmap.png")
         private val font = game.getFont("HL2", 3f)
         private val cancelButton = game.getImg("img/main_menus/button_cancel_base.png")
+        private val sectorInfoFont = game.getFont("c&cnew", 2f)
 
         override fun draw(g: Graphics) {
             // Draw the top-left map label tab
@@ -111,7 +113,29 @@ class Windows {
 
             // Draw the sector info
             sectorInfoTab.draw(position.x, position.y + size.y - 27)
-            // TODO put all the information in
+
+            // Cutouts for text
+            fun drawCutout(x: Int, y: Int, width: Int, text: String) {
+                g.color = SECTOR_CUTOUT
+                g.fillRect(x + 3f, y.f, width - 6f, 2f)
+                g.fillRect(x + 2f, y + 1f, width - 4f, 2f)
+                g.fillRect(x + 1f, y + 2f, width - 2f, 2f)
+                g.fillRect(x.f, y + 3f, width.f, 20f)
+                g.fillRect(x + 1f, y + 22f + 0f, width - 2f, 2f)
+                g.fillRect(x + 2f, y + 22f + 1f, width - 4f, 2f)
+                g.fillRect(x + 3f, y + 22f + 2f, width - 6f, 2f)
+
+                val txtFont = sectorInfoFont
+                val textWidth = txtFont.getWidth(text)
+                val tx = width / 2 - textWidth / 2
+                txtFont.drawString(x + tx.f, y + 6f, text, SECTOR_CUTOUT_TEXT)
+            }
+
+            font.drawString(position.x + 13f, position.y + size.y + 8f, "SECTOR", JUMP_DISABLED_TEXT)
+
+            // TODO use real values when sectors are implemented
+            drawCutout(position.x + 141, position.y + size.y - 8, 38, "1")
+            drawCutout(position.x + 190, position.y + size.y - 8, 276, "Civilian Sector")
 
             // The top and bottom tabs are slightly different sizes, this compensates for them
             drawSide(Direction.LEFT, 45, size.y - 27)
