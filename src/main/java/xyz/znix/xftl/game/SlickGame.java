@@ -173,6 +173,8 @@ public class SlickGame extends BasicGame {
         shipUI.render(container, g);
         hostileShipUI.render(container, g, hoveredRoom);
 
+        shipUI.renderMenus(container, g);
+
         if (paused) {
             Image pauseImg = getImg("img/Text_pause2.png");
             int imgY = shipUI.getBoxY() - 80;

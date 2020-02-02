@@ -405,7 +405,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         for (button in buttons) {
             button.draw(g)
         }
+    }
 
+    fun renderMenus(container: GameContainer, g: Graphics) {
         currentWindow?.draw(g)
     }
 
