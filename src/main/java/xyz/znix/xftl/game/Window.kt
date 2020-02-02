@@ -85,7 +85,7 @@ class Windows {
     // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
     // for us atm.
     class JumpWindow(game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(0 /* 340 */, 83)) {
-        override val size = ConstPoint(752, 580)
+        override val size = ConstPoint(752, 548)
         override val outlineImage = game.getImg("img/window_outline.png")
 
         private val sectorInfoTab = game.getImg("img/map/side_sector.png")
