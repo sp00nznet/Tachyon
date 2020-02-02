@@ -97,11 +97,19 @@ class Windows {
         val cancelButton = Buttons.BasicButton(position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
                 ConstPoint(124, 30), "CANCEL", game, ::cancelClicked)
 
+        val background = game.getImg("img/map/zone_1.png")
+
         init {
             buttons += cancelButton
         }
 
         override fun draw(g: Graphics) {
+            // Draw the background image
+            // TODO use a stencil to cut off the bits poking outside the window
+            background.draw(position.x + 11, position.y + 11)
+
+            // TODO draw the beacons
+
             // Draw the top-left map label tab
             val tab = "BEACON MAP"
             val tabWidth = UIUtils.drawTab(font, tab, titleTab, position.x.f, position.y.f, 20f, 38f)
@@ -154,8 +162,6 @@ class Windows {
 
             // The top and bottom tabs are slightly different sizes, this compensates for them
             drawSide(Direction.LEFT, 45, size.y - 27)
-
-            // TODO draw the background and stars
         }
 
         private fun cancelClicked() {
