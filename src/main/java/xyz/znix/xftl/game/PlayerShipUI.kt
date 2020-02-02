@@ -488,6 +488,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
      * - The start region, drawn before the text
      * - The text region, which is stretched to match the width of the text (which is drawn onto it)
      * - The end region, which is drawn after the text region
+     *
+     * @return The end position of the tab
      */
     private fun drawTab(text: String, img: Image, x: Float, y: Float, startWidth: Float, endWidth: Float): Float {
         val textWidth = font.getWidth(text).f
@@ -501,6 +503,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         img.draw(x, y, sx1, scrBase, 0f, 0f, startWidth, img.height.f)
         img.draw(sx1, y, sx2, scrBase, startWidth, 0f, img.width.f - endWidth, img.height.f)
         img.draw(sx2, y, sx3, scrBase, img.width.f - endWidth, 0f, img.width.f, img.height.f)
+
+        return sx3
     }
 
     private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()
