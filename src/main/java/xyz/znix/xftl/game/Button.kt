@@ -93,4 +93,22 @@ object Buttons {
             callback()
         }
     }
+
+    class BasicButton(pos: IPoint, size: IPoint, val label: String, game: SlickGame,
+                      private val cb: () -> Unit) : Button(pos, size) {
+
+        private val font = game.getFont("HL2", 3f)
+
+        override fun draw(g: Graphics) {
+            // TODO mouseover highlight
+            g.color = Constants.SECTOR_CUTOUT_TEXT
+            drawRounded(g, pos.x, pos.y, size.x, size.y)
+            font.drawString(pos.x + 6f, pos.y + 18f, label, Constants.JUMP_DISABLED_TEXT)
+        }
+
+        override fun click(button: Int) {
+            if (button == Input.MOUSE_LEFT_BUTTON)
+                cb()
+        }
+    }
 }

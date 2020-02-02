@@ -62,7 +62,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     init {
         buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game) {
-            currentWindow = Windows.JumpWindow(game)
+            currentWindow = Windows.JumpWindow(game) {
+                currentWindow = null
+            }
         }
     }
 
@@ -515,6 +517,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun updateUI(x: Int, y: Int) {
+        currentWindow?.let { win ->
+            win.updateUI(x, y)
+            return
+        }
+
         for (button in buttons) {
             button.update(x, y)
         }

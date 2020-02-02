@@ -16,9 +16,14 @@ abstract class Window(position: IPoint) {
     abstract val size: IPoint
     abstract val outlineImage: Image
 
+    val buttons = ArrayList<Button>()
+
     abstract fun draw(g: Graphics)
 
     open fun mouseClick(button: Int, x: Int, y: Int) {
+        for (btn in buttons) {
+            btn.mouseDown(button, x, y)
+        }
     }
 
     protected fun drawCorner(edge: Direction) {
@@ -67,21 +72,34 @@ abstract class Window(position: IPoint) {
 
         outlineImage.draw(x.f, y.f, x.f + drawSize.x, y.f + drawSize.y, texPos.x.f, texPos.y.f, texPos.x.f + texSize.x, texPos.y.f + texSize.y)
     }
+
+    open fun updateUI(x: Int, y: Int) {
+        for (button in buttons) {
+            button.update(x, y)
+        }
+    }
 }
 
 class Windows {
     // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
     // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
     // for us atm.
-    class JumpWindow(game: SlickGame) : Window(ConstPoint(0 /* 340 */, 83)) {
+    class JumpWindow(game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(0 /* 340 */, 83)) {
         override val size = ConstPoint(752, 580)
         override val outlineImage = game.getImg("img/window_outline.png")
 
         private val sectorInfoTab = game.getImg("img/map/side_sector.png")
         private val titleTab = game.getImg("img/map/side_beaconmap.png")
         private val font = game.getFont("HL2", 3f)
-        private val cancelButton = game.getImg("img/main_menus/button_cancel_base.png")
+        private val cancelButtonOutline = game.getImg("img/main_menus/button_cancel_base.png")
         private val sectorInfoFont = game.getFont("c&cnew", 2f)
+
+        val cancelButton = Buttons.BasicButton(position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
+                ConstPoint(124, 30), "CANCEL", game, ::cancelClicked)
+
+        init {
+            buttons += cancelButton
+        }
 
         override fun draw(g: Graphics) {
             // Draw the top-left map label tab
@@ -105,11 +123,8 @@ class Windows {
             // of the cancel button image are modified specially to fit the glow of the line, so it looks
             // seamless. Note that this must be done after the lines are drawn, otherwise their glow would overlap
             // the cancel button frame.
-            // TODO use a real button object
-            cancelButton.draw(position.x + size.x - cancelButton.width - 14, position.y + size.y - 7)
-            g.color = Constants.SECTOR_CUTOUT_TEXT
-            Buttons.drawRounded(g, position.x + size.x - cancelButton.width + 10, position.y + size.y + 1, 124, 30)
-            font.drawString(position.x + size.x - cancelButton.width + 16f, position.y + size.y + 19f, "CANCEL", Constants.JUMP_DISABLED_TEXT)
+            cancelButtonOutline.draw(position.x + size.x - cancelButtonOutline.width - 14, position.y + size.y - 7)
+            cancelButton.draw(g)
 
             // Draw the sector info
             sectorInfoTab.draw(position.x, position.y + size.y - 27)
@@ -141,6 +156,10 @@ class Windows {
             drawSide(Direction.LEFT, 45, size.y - 27)
 
             // TODO draw the background and stars
+        }
+
+        private fun cancelClicked() {
+            jump()
         }
     }
 }
