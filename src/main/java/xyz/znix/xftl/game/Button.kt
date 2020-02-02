@@ -57,7 +57,7 @@ object Buttons {
         g.fillRect(x + 3f, y + height - 1f, width - 6f, 1f)
     }
 
-    class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame)
+    class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame, private val callback: () -> Unit)
         : Button(pos, ConstPoint(74, 29)) {
 
         private val font = game.getFont("HL2", 2f)
@@ -90,7 +90,7 @@ object Buttons {
             if (button != Input.MOUSE_LEFT_BUTTON) return
             if (!ship.isFtlReady) return
 
-            println("Clicked $this")
+            callback()
         }
     }
 }

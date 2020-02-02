@@ -47,6 +47,9 @@ public class Constants {
     public static final Color JUMP_DISABLED = new Color(164, 171, 160);
     public static final Color JUMP_DISABLED_TEXT = new Color(25, 49, 51);
 
+    public static final Color SECTOR_CUTOUT = new Color(53, 75, 89);
+    public static final Color SECTOR_CUTOUT_TEXT = new Color(235, 245, 229);
+
     // These numbers took quite some work to obtain
     // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
     // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level

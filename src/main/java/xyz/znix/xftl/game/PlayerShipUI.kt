@@ -37,6 +37,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     private val buttons = ArrayList<Button>()
 
+    /**
+     * The currently shown window. When a window is shown, the main UI is darkened, buttons are locked
+     * and all input is sent to the window.
+     *
+     * TODO pause the game when a window is present
+     */
+    private var currentWindow: Window? = null
+
     // Set by render
     private var height: Int = 500
 
@@ -53,10 +61,17 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
 
     init {
-        buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game)
+        buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game) {
+            currentWindow = Windows.JumpWindow(game)
+        }
     }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
+        currentWindow?.let { win ->
+            win.mouseClick(button, x, y)
+            return
+        }
+
         for (i in 0 until ship.weaponSlots!!) {
             val wx = weaponBoxX(i)
             val wy = weaponBoxY(i)
@@ -128,6 +143,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun weaponHotkeyPressed(id: Int) {
+        if (currentWindow != null) return
+
         val weapon = ship.hardpoints[id].weapon ?: return
 
         if (!weapon.isPowered) {
@@ -388,6 +405,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         for (button in buttons) {
             button.draw(g)
         }
+
+        currentWindow?.draw(g)
     }
 
     private fun drawTopBar(g: Graphics) {
