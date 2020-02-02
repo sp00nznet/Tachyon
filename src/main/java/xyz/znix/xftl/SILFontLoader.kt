@@ -33,21 +33,21 @@ class SILFontLoader : Font {
         // Pad
         bytes.read()
 
-        val charinfo_offset = bytes.readInt()
+        val charinfoOffset = bytes.readInt()
 
-        val charinfo_count = bytes.readUnsignedShort()
-        val charinfo_size = bytes.readUnsignedShort()
+        val charinfoCount = bytes.readUnsignedShort()
+        val charinfoSize = bytes.readUnsignedShort()
 
-        chars = HashMap(charinfo_count)
+        chars = HashMap(charinfoCount)
 
-        val texture_offset = bytes.readInt()
-        val texture_size = bytes.readInt()
+        val textureOffset = bytes.readInt()
+        @Suppress("UNUSED_VARIABLE") val textureSize = bytes.readInt()
 
         check(version == 1)
 
-        seeking.position = charinfo_offset
+        seeking.position = charinfoOffset
 
-        for (i in 1..charinfo_count) {
+        for (i in 1..charinfoCount) {
             val ch = bytes.readInt()
 
             val x = bytes.readShort().toInt()
@@ -67,16 +67,16 @@ class SILFontLoader : Font {
             chars[ch.toChar()] = Charinfo(ch.toChar(), x, y, w, h, accent, prekern / 256f, postkern / 256f)
         }
 
-        check(seeking.position == charinfo_offset + charinfo_size * charinfo_count)
+        check(seeking.position == charinfoOffset + charinfoSize * charinfoCount)
 
         // Read the texture
 
-        seeking.position = texture_offset
+        seeking.position = textureOffset
         val magic = bytes.readNBytes(4)
         check(Arrays.equals(magic, "TEX\u000a".toByteArray()))
 
-        val tex_version = bytes.read()
-        check(tex_version == 2)
+        val texVersion = bytes.read()
+        check(texVersion == 2)
 
         val format = bytes.read()
         check(format == 64)
@@ -84,27 +84,27 @@ class SILFontLoader : Font {
         val mipmaps = bytes.read()
         check(mipmaps == 0)
 
-        val opaque_bitmap = bytes.read()
-        check(opaque_bitmap == 0)
+        val opaqueBitmap = bytes.read()
+        check(opaqueBitmap == 0)
 
-        val tex_width = bytes.readUnsignedShort()
-        val tex_height = bytes.readUnsignedShort()
+        val texWidth = bytes.readUnsignedShort()
+        val texHeight = bytes.readUnsignedShort()
 
         // Throw away four bytes
         bytes.readInt()
 
-        val pixel_offsets = bytes.readInt()
-        val pixel_size = bytes.readInt()
+        val pixelOffsets = bytes.readInt()
+        val pixelSize = bytes.readInt()
 
-        val bitmap_offset = bytes.readInt()
-        val bitmap_size = bytes.readInt()
+        @Suppress("UNUSED_VARIABLE") val bitmapOffset = bytes.readInt()
+        @Suppress("UNUSED_VARIABLE") val bitmapSize = bytes.readInt()
 
-        seeking.position = pixel_offsets + texture_offset
+        seeking.position = pixelOffsets + textureOffset
 
-        val data = ByteArray(pixel_size)
+        val data = ByteArray(pixelSize)
         bytes.read(data)
 
-        val img = MonochromeImage(tex_width, tex_height, data)
+        val img = MonochromeImage(texWidth, texHeight, data)
 
         picture = Image(img, Image.FILTER_NEAREST)
     }
@@ -170,6 +170,7 @@ class SILFontLoader : Font {
         TODO("not implemented")
     }
 
+    @Suppress("unused")
     private class Charinfo(val ch: Char, val x: Int, val y: Int, val w: Int, val h: Int, val ascent: Int,
                            val prekern: Float, val postkern: Float)
 
@@ -185,15 +186,16 @@ class SILFontLoader : Font {
         val data: ByteBuffer = ByteBuffer.allocateDirect(load.size * 4)
 
         init {
-            for (i in 0 until load.size) {
-                val b = load[i]
-
+            // Image is stored as RGBA, and our font should be 0xfff with the alpha loaded
+            // from the file. This way we can easily control the colour of the rendered
+            // text by applying a filter.
+            for (element in load) {
                 // Java uses two's complement, so -1 is 0xff
                 for (j in 1..3)
                     data.put(-1)
 
                 // Copy over the alpha
-                data.put(b)
+                data.put(element)
             }
 
             data.position(0)
