@@ -29,6 +29,6 @@ object UIUtils {
         img.draw(sx1, y, sx2, scrBase, startWidth, 0f, img.width.f - endWidth, img.height.f)
         img.draw(sx2, y, sx3, scrBase, img.width.f - endWidth, 0f, img.width.f, img.height.f)
 
-        return sx3
+        return startWidth + textWidth + endWidth
     }
 }
