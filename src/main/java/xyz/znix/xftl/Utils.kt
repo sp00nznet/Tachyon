@@ -10,8 +10,8 @@ val Int.f get() = toFloat()
 fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
 fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
 
-fun Image.drawSection(x: Int, y: Int, width: Int, height: Int) {
-    draw(x.f, y.f, x.f + width, y.f + height, 0f, 0f, width.f, height.f)
+fun Image.drawSection(x: Int, y: Int, width: Int, height: Int, offsetX: Int = 0, offsetY: Int = 0) {
+    draw(x.f, y.f, x.f + width, y.f + height, offsetX.f, offsetY.f, offsetX + width.f, offsetY + height.f)
 }
 
 object Utils {
