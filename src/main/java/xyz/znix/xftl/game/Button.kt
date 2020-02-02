@@ -47,8 +47,11 @@ class SimpleButton(pos: IPoint, size: IPoint, imgOffset: IPoint, val normal: Ima
 }
 
 object Buttons {
-    class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame, private val font: SILFontLoader)
+    class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame)
         : Button(pos, ConstPoint(74, 29)) {
+
+        private val font = game.getFont("HL2", 2f)
+
         override fun draw(g: Graphics) {
             val ftlX = pos.x + 6
             val ftlY = pos.y + 4

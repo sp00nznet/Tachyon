@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game;
 
+import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.*;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
@@ -27,6 +28,7 @@ public class SlickGame extends BasicGame {
     private Image outside;
 
     private Map<String, Image> images = new HashMap<>();
+    private Map<String, SILFontLoader> fonts = new HashMap<>();
     private Animations animations;
     private WeaponDict weapons;
     private ShipGenerator generator;
@@ -194,6 +196,36 @@ public class SlickGame extends BasicGame {
         img = df.readImage(name);
         images.put(name, img);
         return img;
+    }
+
+    /**
+     * Creates a new {@link SILFontLoader} for a given font. This caches the bitmap and character
+     * data, but the scale of each returned fontloader is completely independent.
+     *
+     * @param name The name of the font - the font at 'fonts/$name.font' is loaded
+     * @return The new {@link SILFontLoader} instance
+     */
+    @NotNull
+    public SILFontLoader getFont(String name) {
+        SILFontLoader font = fonts.get(name);
+        if (font != null) {
+            // Make a new instance sharing the font data
+            return new SILFontLoader(font);
+        }
+
+        font = new SILFontLoader(df, df.get("fonts/" + name + ".font"));
+        fonts.put(name, font);
+        return font;
+    }
+
+    /**
+     * Create a new {@link SILFontLoader} (see {@link #getFont(String)}), and also set the font's scale
+     */
+    @NotNull
+    public SILFontLoader getFont(String name, float scale) {
+        SILFontLoader font = getFont(name);
+        font.setScale(scale);
+        return font;
     }
 
     public Animations getAnimations() {

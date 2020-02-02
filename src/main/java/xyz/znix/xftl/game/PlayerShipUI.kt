@@ -23,7 +23,7 @@ import kotlin.collections.HashMap
 import kotlin.math.ceil
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
-    private val font = SILFontLoader(df, df["fonts/HL2.font"])
+    private val font = game.getFont("HL2", 2f)
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])
     private val numberFont = SILFontLoader(df, df["fonts/num_font.font"])
@@ -53,7 +53,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
 
     init {
-        buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game, font)
+        buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game)
     }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
@@ -179,7 +179,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         drawTopBar(g)
 
-        font.scale = 2f
         g.font = font
 
         game.getImg("img/box_weapons_bottom" + ship.weaponSlots + ".png").draw(boxX.f, boxY.f)

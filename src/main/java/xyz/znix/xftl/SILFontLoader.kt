@@ -11,7 +11,7 @@ import java.util.*
 import kotlin.collections.HashMap
 import kotlin.math.roundToInt
 
-class SILFontLoader(df: Datafile, file: FTLFile) : Font {
+class SILFontLoader : Font {
     private val chars: Map<Char, Charinfo>
     private val picture: Image
 
@@ -20,7 +20,7 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
 
     var scale: Float = 1f
 
-    init {
+    constructor(df: Datafile, file: FTLFile) {
         val seeking = SeekingInputStream(df.read(file))
         val bytes = DataInputStream(seeking)
 
@@ -107,6 +107,18 @@ class SILFontLoader(df: Datafile, file: FTLFile) : Font {
         val img = MonochromeImage(tex_width, tex_height, data)
 
         picture = Image(img, Image.FILTER_NEAREST)
+    }
+
+    /**
+     * Create a new [SILFontLoader] representing the same font as the supplied instance. This shares
+     * the image and character data (thus making clones like this is cheap), but the scale (and any other
+     * later adjustable properties) are kept separate.
+     */
+    constructor(other: SILFontLoader) {
+        chars = other.chars
+        picture = other.picture
+        height = other.height
+        baseline = other.baseline
     }
 
     override fun getHeight(str: String?): Int {
