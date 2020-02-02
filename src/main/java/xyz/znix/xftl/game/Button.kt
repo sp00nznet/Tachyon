@@ -47,6 +47,16 @@ class SimpleButton(pos: IPoint, size: IPoint, imgOffset: IPoint, val normal: Ima
 }
 
 object Buttons {
+    fun drawRounded(g: Graphics, x: Int, y: Int, width: Int, height: Int) {
+        g.fillRect(x + 3f, y + 0f, width - 6f, 1f)
+        g.fillRect(x + 2f, y + 1f, width - 4f, 1f)
+        g.fillRect(x + 1f, y + 2f, width - 2f, 1f)
+        g.fillRect(x.f, y + 3f, width.f, height - 6f)
+        g.fillRect(x + 1f, y + height - 3f, width - 2f, 1f)
+        g.fillRect(x + 2f, y + height - 2f, width - 4f, 1f)
+        g.fillRect(x + 3f, y + height - 1f, width - 6f, 1f)
+    }
+
     class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame)
         : Button(pos, ConstPoint(74, 29)) {
 
@@ -61,13 +71,7 @@ object Buttons {
             val engineOn = ship.engines!!.powerSelected > 0
             if (ship.isFtlCharged) {
                 g.color = if (engineOn) Constants.JUMP_READY else Constants.JUMP_DISABLED
-                g.fillRect(ftlX + 2f, ftlY + 2f, 68f, 1f)
-                g.fillRect(ftlX + 1f, ftlY + 3f, 70f, 1f)
-                g.fillRect(ftlX + 0f, ftlY + 4f, 72f, 1f)
-                g.fillRect(ftlX - 1f, ftlY + 5f, 74f, 23f)
-                g.fillRect(ftlX + 0f, ftlY + 5f + 23 + 0, 72f, 1f)
-                g.fillRect(ftlX + 1f, ftlY + 5f + 23 + 1, 70f, 1f)
-                g.fillRect(ftlX + 2f, ftlY + 5f + 23 + 2, 68f, 1f)
+                drawRounded(g, pos.x + 5, pos.y + 6, size.x, size.y)
 
                 val textColour = when {
                     !engineOn -> Constants.JUMP_DISABLED_TEXT
