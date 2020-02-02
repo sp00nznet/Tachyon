@@ -188,6 +188,7 @@ public class SlickGame extends BasicGame {
         enemyAI.update(dt);
     }
 
+    @NotNull
     public Image getImg(String name) {
         Image img = images.get(name);
         if (img != null)
