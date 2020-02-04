@@ -1,5 +1,6 @@
 package xyz.znix.xftl
 
+import org.jdom2.Element
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Image
 import xyz.znix.xftl.math.IPoint
@@ -12,6 +13,22 @@ fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
 
 fun Image.drawSection(x: Int, y: Int, width: Int, height: Int, offsetX: Int = 0, offsetY: Int = 0) {
     draw(x.f, y.f, x.f + width, y.f + height, offsetX.f, offsetY.f, offsetX + width.f, offsetY + height.f)
+}
+
+fun Element.requireAttributeValue(name: String): String {
+    return getAttributeValue(name) ?: error("Missing mandatory attribute $name on element ${this.name}")
+}
+
+fun Element.requireAttributeValueInt(name: String): Int {
+    return requireAttributeValue(name).toIntOrNull() ?: error("Could not parse attribute $name as int on ${this.name}")
+}
+
+fun Element.mapChildrenText(childName: String): List<String> {
+    return children.map {
+        check(it.name == childName) { "Mapping child nodes to text, found unknown child ${it.name}" }
+        check(it.attributes.isEmpty()) { "Mapping child nodes to text, child ${it.name} contains attributes" }
+        it.textTrim
+    }
 }
 
 object Utils {
