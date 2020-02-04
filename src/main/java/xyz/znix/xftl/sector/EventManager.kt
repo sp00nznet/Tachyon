@@ -1,0 +1,135 @@
+package xyz.znix.xftl.sector
+
+import org.jdom2.Document
+import org.jdom2.Element
+import xyz.znix.xftl.Datafile
+import xyz.znix.xftl.Translator
+import xyz.znix.xftl.requireAttributeValue
+
+class EventManager(df: Datafile, private val translator: Translator) {
+    private val events = HashMap<String, IEvent>()
+    private val textLists = HashMap<String, TextList>()
+
+    init {
+        for (event in FILE_NAMES) {
+            loadEvents(df.parseXML(df["data/$event.xml"]), true)
+        }
+        for (event in FILE_NAMES) {
+            loadEvents(df.parseXML(df["data/$event.xml"]), false)
+        }
+    }
+
+    operator fun get(name: String): IEvent = events[name] ?: error("Missing event $name")
+
+    private fun loadEvents(doc: Document, resourcePass: Boolean) {
+        val root = doc.rootElement
+        check(root.name == "FTL")
+
+        for (elem in root.children) {
+            // Everything is loaded in two passes: once for the textlists/images (later is not yet implemented), and
+            // a second time to load the events (which reference the resources).
+            if (resourcePass) {
+                when (elem.name) {
+                    "textList" -> loadTextList(elem)
+                }
+            } else {
+                when (elem.name) {
+                    "textList" -> Unit // Handled in the resource pass
+                    "eventList" -> loadEventList(elem)
+                    "ship" -> loadShip(elem)
+                    "eventCounts" -> loadEventCounts(elem)
+                    "event" -> {
+                        val name = elem.requireAttributeValue("name")
+                        events[name] = loadEvent(elem, name).value
+                    }
+                    else -> error("Unknown eventfile item ${elem.name}")
+                }
+            }
+        }
+    }
+
+    private fun loadEventList(elem: Element) {
+        check(elem.name == "eventList")
+        val name = elem.requireAttributeValue("name")
+        val events = elem.children.withIndex().map { loadEvent(it.value, "$name.${it.index}") }
+        this.events[name] = EventList(name, events)
+    }
+
+    private fun loadTextList(elem: Element) {
+        check(elem.name == "textList")
+        val name = elem.requireAttributeValue("name")
+        val texts = elem.children.map { loadText(it) }
+        textLists[name] = TextList(name, texts)
+    }
+
+    private fun loadEventCounts(elem: Element) {
+        check(elem.name == "eventCounts")
+
+        // It appears this element is unused. It does not appear in the game binary. It looks
+        // like it used to hold the the likelihood of events per sector (1..7), but that's now
+        // stored in the sector type definitions (so a sector 4 nebula will have different contents
+        // to an engi-controlled sector 4)
+    }
+
+    private fun loadShip(elem: Element) {
+        check(elem.name == "ship")
+        // TODO - appears to define a ship that can later be loaded into a fight via a script
+    }
+
+    private fun loadEvent(elem: Element, debugId: String): Lazy<IEvent> {
+        check(elem.name == "event")
+
+        elem.getAttributeValue("load")?.let {
+            return lazy { events[it]!! }
+        }
+
+        val text = elem.getChild("text")?.let(::loadText)
+        val choices = elem.getChildren("choice").map(::loadChoice)
+        return lazyOf(Event(text, choices, elem, debugId))
+    }
+
+    private fun loadChoice(elem: Element): Choice {
+        check(elem.name == "choice")
+        val text = elem.getChild("text").let(::loadText)
+        val event = loadEvent(elem.getChild("event"), "choice.ukn")
+        return Choice(text, event)
+    }
+
+    private fun loadText(elem: Element): IEventText {
+        check(elem.name == "text")
+        elem.getAttributeValue("load")?.let {
+            return textLists[it] ?: error("Missing textList $it")
+        }
+        elem.getAttributeValue("id")?.let {
+            return EventText(translator[it])
+        }
+        val text = elem.textTrim
+        check(text.isNotEmpty())
+        return EventText(text)
+    }
+
+    companion object {
+        private val FILE_NAMES = listOf(
+                "events",
+                "events_boss",
+                "events_crystal",
+                "events_engi",
+                "events_fuel",
+                // "events_imageList",
+                "events_mantis",
+                "events_nebula",
+                "events_pirate",
+                "events_rebel",
+                "events_rock",
+                "events_ships",
+                "events_slug",
+                "events_zoltan",
+                "nameEvents",
+                "newEvents",
+
+                "dlcEvents_anaerobic",
+                // "dlcEventsOverwrite", // TODO set up overwrite support
+                "dlcEvents"
+        )
+    }
+}

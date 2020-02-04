@@ -9,6 +9,7 @@ import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
+import xyz.znix.xftl.sector.EventManager;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.MainSystem;
 import xyz.znix.xftl.weapons.WeaponDict;
@@ -20,6 +21,7 @@ import java.util.function.Consumer;
 public class SlickGame extends BasicGame {
     private static ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(50, 150);
 
+    private EventManager eventManager;
     private Ship player;
     private Ship enemy; // temporary, TODO handle this properly
     private ShipAI enemyAI;
@@ -56,11 +58,12 @@ public class SlickGame extends BasicGame {
         weapons = new WeaponDict(df);
         generator = new ShipGenerator(df);
 
+        translator = new Translator(df, "en");
+        eventManager = new EventManager(df, translator);
+
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
         enemy = generator.buildShip(this, "REBEL_FAT");
         enemyAI = new ShipAI(enemy, player);
-
-        translator = new Translator(df, "en");
 
         shipUI = new PlayerShipUI(df, translator, player, this);
         hostileShipUI = new HostileShipUI(this, df, enemy);
