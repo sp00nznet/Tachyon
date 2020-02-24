@@ -25,7 +25,7 @@ abstract class Button(pos: IPoint, size: IPoint) {
 
     fun contains(point: IPoint) = contains(point.x, point.y)
 
-    fun contains(x: Int, y: Int): Boolean {
+    open fun contains(x: Int, y: Int): Boolean {
         return pos.x <= x && x < pos.x + size.x && pos.y <= y && y < pos.y + size.y
     }
 
@@ -92,6 +92,11 @@ object Buttons {
 
             callback()
         }
+
+        // Apply an offset to make the hoverable area the big yellow centre region - by default the hoverable
+        // section starts at the button's 0,0, and the main region is offset. Thus translate the mouse coordinates
+        // back so 0,0 becomes the origin of the yellow area.
+        override fun contains(x: Int, y: Int) = super.contains(x - 5, y - 7)
     }
 
     class BasicButton(pos: IPoint, size: IPoint, val label: String, game: SlickGame,
