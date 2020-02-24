@@ -29,4 +29,10 @@ interface IPoint {
     infix fun posEq(other: IPoint): Boolean {
         return x == other.x && y == other.y
     }
+
+    fun distToSq(other: IPoint): Int {
+        val dx = other.x - x
+        val dy = other.y - y
+        return dx * dx + dy * dy
+    }
 }
