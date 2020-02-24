@@ -253,6 +253,10 @@ public class SlickGame extends BasicGame {
         this.clickEvent = clickEvent;
     }
 
+    public Translator getTranslator() {
+        return translator;
+    }
+
     public GameMap getGameMap() {
         return gameMap;
     }

@@ -84,15 +84,28 @@ class Windows {
     // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
     // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
     // for us atm.
-    class JumpWindow(game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(0 /* 340 */, 83)) {
+    class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(0 /* 340 */, 83)) {
         override val size = ConstPoint(752, 548)
         override val outlineImage = game.getImg("img/window_outline.png")
+
+        // TODO handle the map/sectors properly
+        private val sector = game.gameMap.sectors.first()
 
         private val sectorInfoTab = game.getImg("img/map/side_sector.png")
         private val titleTab = game.getImg("img/map/side_beaconmap.png")
         private val font = game.getFont("HL2", 3f)
         private val cancelButtonOutline = game.getImg("img/main_menus/button_cancel_base.png")
         private val sectorInfoFont = game.getFont("c&cnew", 2f)
+        private val beaconLabelFont = game.getFont("HL1")
+
+        private val beaconShadow = game.getImg("img/map/map_icon_diamond_shadow.png")
+        private val beaconYellow = game.getImg("img/map/map_icon_diamond_yellow.png")
+
+        private val labelWhite = (1..3).map { "img/map/map_box_white_$it.png" }.map {
+            game.getImg(it).copy().apply {
+                filter = Image.FILTER_NEAREST
+            }
+        }
 
         val cancelButton = Buttons.BasicButton(position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
                 ConstPoint(124, 30), "CANCEL", game, ::cancelClicked)
@@ -108,7 +121,18 @@ class Windows {
             // TODO use a stencil to cut off the bits poking outside the window
             background.draw(position.x + 11, position.y + 11)
 
-            // TODO draw the beacons
+            // Draw the beacons
+            for (beacon in sector.beacons) {
+                val pos = position + beacon.pos
+                beaconShadow.draw(pos)
+                beaconYellow.draw(pos)
+
+                if (beacon.event.isDistressBeacon)
+                    drawBeaconLabel(pos, game.translator["map_icon_distress"])
+
+                if (beacon.event.isStore)
+                    drawBeaconLabel(pos, game.translator["map_icon_store"])
+            }
 
             // Draw the top-left map label tab
             val tab = "BEACON MAP"
@@ -162,6 +186,18 @@ class Windows {
 
             // The top and bottom tabs are slightly different sizes, this compensates for them
             drawSide(Direction.LEFT, 45, size.y - 27)
+        }
+
+        private fun drawBeaconLabel(pos: IPoint, text: String) {
+            // AFAIK the labels in FTL are drawn with alpha=204, TODO use that
+
+            val strWidth = beaconLabelFont.getWidth(text)
+
+            labelWhite[0].draw(pos.x + 15, pos.y - 17)
+            labelWhite[1].draw(pos.x + 34f, pos.y - 17f, strWidth - 8f, 32f)
+            labelWhite[2].draw(pos.x + 26 + strWidth, pos.y - 17)
+
+            beaconLabelFont.drawString(pos.x + 30f, pos.y - 4f, text, SECTOR_CUTOUT_TEXT)
         }
 
         private fun cancelClicked() {

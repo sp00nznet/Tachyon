@@ -13,7 +13,8 @@ interface IEvent {
 }
 
 class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val debugId: String) : IEvent {
-    val distressBeacon: Boolean = elem.getChild("distressBeacon") != null
+    val isDistressBeacon: Boolean = elem.getChild("distressBeacon") != null
+    val isStore: Boolean = elem.getChild("store") != null
 
     override fun resolve() = this
 }
