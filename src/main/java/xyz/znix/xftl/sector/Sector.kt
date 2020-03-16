@@ -60,6 +60,11 @@ class Sector(val type: SectorType,
             val event = eventPool.pollFirst() ?: filler.resolve()
             beacons += Beacon(pos, event)
         }
+
+        for (b in beacons) {
+            val neighbours = findNeighboursFor(b.pos).map { it.first }.filter { it != b }
+            b.bindSector(this, neighbours)
+        }
     }
 
     /**
@@ -96,11 +101,11 @@ class Sector(val type: SectorType,
                 continue
 
             // Find all the 'neighbours' - these are any beacons within MAX_BEACON_REACH
-            val neighbours = beacons.asSequence().map { pos.distToSq(it.pos) }.filter { it < limitSq }.toList()
+            val neighbours = findNeighboursFor(pos)
 
             // We then have a minimum distance, within which it's impossible to have multiple beacons - this stops
             // them from clipping into each other.
-            if (neighbours.any { it < minSq })
+            if (neighbours.any { it.second < minSq })
                 continue
 
             // And apply a 1 in neighbourCount² change to successfully place this beacon - one neighbour means
@@ -115,9 +120,14 @@ class Sector(val type: SectorType,
         }
     }
 
+    private fun findNeighboursFor(pos: IPoint): List<Pair<Beacon, Int>> {
+        val maxDist = MAX_BEACON_REACH * MAX_BEACON_REACH
+        return beacons.map { Pair(it, pos.distToSq(it.pos)) }.filter { it.second < maxDist }.toList()
+    }
+
     companion object {
-        val MAX_BEACON_REACH = 350
-        val MIN_BEACON_REACH = 35
+        const val MAX_BEACON_REACH = 350
+        const val MIN_BEACON_REACH = 35
         val STARMAP_SIZE = ConstPoint(752, 548) // TODO does this need resizing?
     }
 }

@@ -27,6 +27,28 @@ class Beacon(
 
     var environmentType = EnvironmentType.NORMAL
 
+    /**
+     * The sector this beacon resides within.
+     *
+     * It can only be set once, via [bindSector], and will throw an exception if used before it is set.
+     */
+    lateinit var sector: Sector
+        private set
+
+    /**
+     * The beacons connected this beacon on the star map, to which the player can jump from here.
+     */
+    lateinit var neighbours: List<Beacon>
+        private set
+
+    fun bindSector(sector: Sector, neighbours: List<Beacon>) {
+        synchronized(this) {
+            check(!this::sector.isInitialized) { "Sector already set!" }
+            this.sector = sector
+            this.neighbours = neighbours
+        }
+    }
+
     enum class State {
         UNKNOWN,
         VISITED_CLEAR,
