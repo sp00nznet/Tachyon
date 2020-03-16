@@ -55,7 +55,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         background.draw(position.x + 11, position.y + 11)
 
         // Test drawing the beacon path
-        drawBeaconLine(sector.beacons.first(), sector.beacons.last(), Constants.WEAPONS_ITEM_CHARGED)
+        drawBeaconLinesTo(game.currentBeacon, Constants.WEAPONS_ITEM_CHARGED) { true }
 
         // Draw the beacons
         for (beacon in game.currentBeacon.sector.beacons) {
@@ -122,6 +122,15 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
         // The top and bottom tabs are slightly different sizes, this compensates for them
         drawSide(Direction.LEFT, 45, size.y - 27)
+    }
+
+    private fun drawBeaconLinesTo(beacon: Beacon, colour: Color, predicate: (Beacon) -> Boolean) {
+        for (neighbour in beacon.neighbours) {
+            if (!predicate(neighbour))
+                continue
+
+            drawBeaconLine(beacon, neighbour, colour)
+        }
     }
 
     private fun drawBeaconLine(from: Beacon, to: Beacon, colour: Color) {
