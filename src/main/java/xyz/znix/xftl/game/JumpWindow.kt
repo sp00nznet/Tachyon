@@ -22,9 +22,6 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
     override val size = ConstPoint(752, 548)
     override val outlineImage = game.getImg("img/window_outline.png")
 
-    // TODO handle the map/sectors properly
-    private val sector = game.gameMap.sectors.first()
-
     private val sectorInfoTab = game.getImg("img/map/side_sector.png")
     private val titleTab = game.getImg("img/map/side_beaconmap.png")
     private val font = game.getFont("HL2", 3f)
@@ -61,7 +58,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         drawBeaconLine(sector.beacons.first(), sector.beacons.last(), Constants.WEAPONS_ITEM_CHARGED)
 
         // Draw the beacons
-        for (beacon in sector.beacons) {
+        for (beacon in game.currentBeacon.sector.beacons) {
             val pos = position + beacon.pos
             beaconShadow.draw(pos)
             beaconYellow.draw(pos)

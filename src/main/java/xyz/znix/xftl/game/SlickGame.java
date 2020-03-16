@@ -9,6 +9,7 @@ import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
+import xyz.znix.xftl.sector.Beacon;
 import xyz.znix.xftl.sector.EventManager;
 import xyz.znix.xftl.sector.GameMap;
 import xyz.znix.xftl.shipgen.ShipGenerator;
@@ -47,6 +48,7 @@ public class SlickGame extends BasicGame {
     private PlayerShipUI shipUI;
     private HostileShipUI hostileShipUI;
 
+    private Beacon currentBeacon;
     private boolean paused;
 
     public SlickGame(Datafile df) throws SlickException {
@@ -63,6 +65,9 @@ public class SlickGame extends BasicGame {
         translator = new Translator(df, "en");
         eventManager = new EventManager(df, translator);
         gameMap = new GameMap(df, eventManager);
+
+        // Start at the first beacon of the first sector
+        currentBeacon = gameMap.getSectors()[0].getBeacons().get(0);
 
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
         enemy = generator.buildShip(this, "REBEL_FAT");
@@ -259,5 +264,13 @@ public class SlickGame extends BasicGame {
 
     public GameMap getGameMap() {
         return gameMap;
+    }
+
+    public Beacon getCurrentBeacon() {
+        return currentBeacon;
+    }
+
+    public void setCurrentBeacon(Beacon currentBeacon) {
+        this.currentBeacon = currentBeacon;
     }
 }
