@@ -1,13 +1,19 @@
 package xyz.znix.xftl.game
 
+import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.draw
+import xyz.znix.xftl.drawSection
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.sector.Beacon
+import kotlin.math.atan2
+import kotlin.math.sqrt
 
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
 // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
@@ -25,6 +31,8 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
     private val cancelButtonOutline = game.getImg("img/main_menus/button_cancel_base.png")
     private val sectorInfoFont = game.getFont("c&cnew", 2f)
     private val beaconLabelFont = game.getFont("HL1")
+
+    private val lineImg = game.getImg("img/map/dotted_line.png")
 
     private val beaconShadow = game.getImg("img/map/map_icon_diamond_shadow.png")
     private val beaconYellow = game.getImg("img/map/map_icon_diamond_yellow.png")
@@ -48,6 +56,9 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         // Draw the background image
         // TODO use a stencil to cut off the bits poking outside the window
         background.draw(position.x + 11, position.y + 11)
+
+        // Test drawing the beacon path
+        drawBeaconLine(sector.beacons.first(), sector.beacons.last(), Constants.WEAPONS_ITEM_CHARGED)
 
         // Draw the beacons
         for (beacon in sector.beacons) {
@@ -114,6 +125,38 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
         // The top and bottom tabs are slightly different sizes, this compensates for them
         drawSide(Direction.LEFT, 45, size.y - 27)
+    }
+
+    private fun drawBeaconLine(from: Beacon, to: Beacon, colour: Color) {
+        val fromPos = from.pos + position
+        val toPos = to.pos + position
+
+        // Find the delta vector between the two points we're drawing between, and the length of said vector
+        val delta = toPos - fromPos
+        val dist = sqrt(delta.distToSq(ConstPoint.ZERO).f).toInt()
+
+        // Setup the rotation settings of the line segment, so it runs along the delta vector
+        lineImg.setCenterOfRotation(0f, 1.5f)
+        lineImg.rotation = atan2(delta.y.f, delta.x.f) * 180 / Math.PI.toFloat()
+
+        val segmentWidth = 10
+
+        // Step along the path of the vector, drawing images in each place
+        for (i in 6..(dist - 5) step segmentWidth) {
+            // Find the proportion of how far along we are
+            val factor = 1f * i / dist
+
+            // ... and use that to find the position along the lien
+            val lPos = Point(fromPos)
+            lPos.x += (delta.x * factor).toInt()
+            lPos.y += (delta.y * factor).toInt()
+
+            // The beacons are drawn at their image origins, and they're 32px²
+            lPos += ConstPoint(16, 16)
+
+            // Draw the line itself
+            lineImg.drawSection(lPos.x, lPos.y, segmentWidth, 4, 1, 0, colour)
+        }
     }
 
     private fun drawBeaconLabel(pos: IPoint, text: String) {

@@ -2,6 +2,7 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
+import org.newdawn.slick.Color
 import org.newdawn.slick.Image
 import xyz.znix.xftl.math.IPoint
 
@@ -11,8 +12,9 @@ val Int.f get() = toFloat()
 fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
 fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
 
-fun Image.drawSection(x: Int, y: Int, width: Int, height: Int, offsetX: Int = 0, offsetY: Int = 0) {
-    draw(x.f, y.f, x.f + width, y.f + height, offsetX.f, offsetY.f, offsetX + width.f, offsetY + height.f)
+fun Image.drawSection(x: Int, y: Int, width: Int, height: Int, offsetX: Int = 0, offsetY: Int = 0, colour: Color? = null) {
+    draw(x.f, y.f, x.f + width, y.f + height, offsetX.f, offsetY.f,
+            offsetX + width.f, offsetY + height.f, colour ?: Color.white)
 }
 
 fun Element.requireAttributeValue(name: String): String {
