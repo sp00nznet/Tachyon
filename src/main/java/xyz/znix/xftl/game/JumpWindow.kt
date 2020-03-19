@@ -33,6 +33,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
     private val beaconShadow = game.getImg("img/map/map_icon_diamond_shadow.png")
     private val beaconYellow = game.getImg("img/map/map_icon_diamond_yellow.png")
+    private val beaconOffset = Point(11, 11) - Point(beaconYellow.width / 2, beaconYellow.height / 2)
 
     private val labelWhite = (1..3).map { "img/map/map_box_white_$it.png" }.map {
         game.getImg(it).copy().apply {
@@ -59,7 +60,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
         // Draw the beacons
         for (beacon in game.currentBeacon.sector.beacons) {
-            val pos = position + beacon.pos
+            val pos = position + beacon.pos + beaconOffset
             beaconShadow.draw(pos)
             beaconYellow.draw(pos)
 
@@ -134,8 +135,8 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
     }
 
     private fun drawBeaconLine(from: Beacon, to: Beacon, colour: Color) {
-        val fromPos = from.pos + position
-        val toPos = to.pos + position
+        val fromPos = from.pos + position + beaconOffset
+        val toPos = to.pos + position + beaconOffset
 
         // Find the delta vector between the two points we're drawing between, and the length of said vector
         val delta = toPos - fromPos
