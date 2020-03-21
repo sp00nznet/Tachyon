@@ -13,6 +13,8 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Beacon
 import kotlin.math.atan2
+import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
@@ -30,6 +32,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
     private val beaconLabelFont = game.getFont("HL1")
 
     private val lineImg = game.getImg("img/map/dotted_line.png")
+    private val targetBox = game.getImg("img/map/map_targetbox.png")
 
     private val beaconShadow = game.getImg("img/map/map_icon_diamond_shadow.png")
     private val beaconYellow = game.getImg("img/map/map_icon_diamond_yellow.png")
@@ -46,6 +49,8 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
     val background = game.getImg("img/map/zone_1.png")
 
+    var hovered: Beacon? = null
+
     init {
         buttons += cancelButton
     }
@@ -58,6 +63,9 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         // Test drawing the beacon path
         drawBeaconLinesTo(game.currentBeacon, Constants.WEAPONS_ITEM_CHARGED) { true }
 
+        // Make a local immutable copy to avoid nullability errors
+        val hovered = hovered
+
         // Draw the beacons
         for (beacon in game.currentBeacon.sector.beacons) {
             val pos = position + beacon.pos + beaconOffset
@@ -69,6 +77,10 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
             if (beacon.event.isStore)
                 drawBeaconLabel(pos, game.translator["map_icon_store"])
+
+            if (beacon == hovered && beacon != game.currentBeacon && game.currentBeacon.neighbours.contains(hovered)) {
+                drawTargetBox(pos)
+            }
         }
 
         // Draw the top-left map label tab
@@ -123,6 +135,40 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
         // The top and bottom tabs are slightly different sizes, this compensates for them
         drawSide(Direction.LEFT, 45, size.y - 27)
+    }
+
+    override fun updateUI(x: Int, y: Int) {
+        super.updateUI(x, y)
+
+        hovered = null
+
+        val closest = game.currentBeacon.sector.beacons.map {
+            val bp = it.pos + position + beaconOffset + ConstPoint(16, 16)
+            val dist = bp.distToSq(ConstPoint(x, y))
+            Pair(it, dist)
+        }.minBy { it.second } ?: return
+
+        val hoverDist = 12
+        if (closest.second > hoverDist * hoverDist)
+            return
+
+        hovered = closest.first
+    }
+
+    private fun drawTargetBox(pos: IPoint) {
+        val secs = System.nanoTime() / 1_000_000_000f
+        val timePoint = 6 * secs
+        val distFactor = (1 + sin(timePoint % (Math.PI * 2))) / 2
+        val spacing = (distFactor * 4).roundToInt()
+
+        targetBox.rotation = 0f
+        targetBox.draw(pos.x - spacing, pos.y - spacing)
+        targetBox.rotation = 90f
+        targetBox.draw(pos.x + spacing, pos.y - spacing)
+        targetBox.rotation = 180f
+        targetBox.draw(pos.x + spacing, pos.y + spacing)
+        targetBox.rotation = 270f
+        targetBox.draw(pos.x - spacing, pos.y + spacing)
     }
 
     private fun drawBeaconLinesTo(beacon: Beacon, colour: Color, predicate: (Beacon) -> Boolean) {
