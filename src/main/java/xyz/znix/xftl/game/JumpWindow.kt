@@ -66,6 +66,12 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         // Make a local immutable copy to avoid nullability errors
         val hovered = hovered
 
+        if (hovered != null && hovered != game.currentBeacon) {
+            // Draw the lines between the hovered beacon and it's neighbours
+            // TODO set colour
+            drawBeaconLinesTo(hovered, Color.yellow) { it != game.currentBeacon }
+        }
+
         // Draw the beacons
         for (beacon in game.currentBeacon.sector.beacons) {
             val pos = position + beacon.pos + beaconOffset
