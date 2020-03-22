@@ -66,15 +66,14 @@ public class SlickGame extends BasicGame {
         eventManager = new EventManager(df, translator);
         gameMap = new GameMap(df, eventManager);
 
-        // Start at the first beacon of the first sector
-        currentBeacon = gameMap.getSectors()[0].getBeacons().get(0);
-
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
         enemy = generator.buildShip(this, "REBEL_FAT");
-        enemyAI = new ShipAI(enemy, player);
 
         shipUI = new PlayerShipUI(df, translator, player, this);
-        hostileShipUI = new HostileShipUI(this, df, enemy);
+
+        // Start at the first beacon of the first sector
+        // Be sure we do this after creating the player ship, it's used by the enemy AI
+        setCurrentBeacon(gameMap.getSectors()[0].getBeacons().get(0));
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
@@ -147,14 +146,16 @@ public class SlickGame extends BasicGame {
             return;
 
         // Hovering over the enemy
-        tempPoint.setX(container.getInput().getMouseX());
-        tempPoint.setY(container.getInput().getMouseY());
-        tempPoint.minusAssign(hostileShipUI.getShipPos());
-        enemy.screenPosToShipPos(tempPoint);
+        if (enemy != null) {
+            tempPoint.setX(container.getInput().getMouseX());
+            tempPoint.setY(container.getInput().getMouseY());
+            tempPoint.minusAssign(hostileShipUI.getShipPos());
+            enemy.screenPosToShipPos(tempPoint);
 
-        RoomPoint rp = enemy.shipToRoomPos(tempPoint);
-        if (rp != null)
-            hoveredRoom = rp.getRoom();
+            RoomPoint rp = enemy.shipToRoomPos(tempPoint);
+            if (rp != null)
+                hoveredRoom = rp.getRoom();
+        }
 
         // Hovering over the player
         tempPoint.setX(container.getInput().getMouseX());
@@ -162,7 +163,7 @@ public class SlickGame extends BasicGame {
         tempPoint.minusAssign(PLAYER_SHIP_POSITION);
         player.screenPosToShipPos(tempPoint);
 
-        rp = player.shipToRoomPos(tempPoint);
+        RoomPoint rp = player.shipToRoomPos(tempPoint);
         if (rp != null)
             hoveredRoom = rp.getRoom();
 
@@ -182,7 +183,10 @@ public class SlickGame extends BasicGame {
         g.resetTransform();
 
         shipUI.render(container, g);
-        hostileShipUI.render(container, g, hoveredRoom);
+
+        if (enemy != null) {
+            hostileShipUI.render(container, g, hoveredRoom);
+        }
 
         shipUI.renderMenus(container, g);
 
@@ -197,8 +201,20 @@ public class SlickGame extends BasicGame {
     private void updateGameState(float dt) {
         shipUI.update(dt);
         player.update(dt);
-        enemy.update(dt);
-        enemyAI.update(dt);
+
+        if (enemy != null) {
+            enemy.update(dt);
+            enemyAI.update(dt);
+        }
+    }
+
+    public void setCurrentBeacon(Beacon currentBeacon) {
+        this.currentBeacon = currentBeacon;
+
+        // TODO setup the enemy ship here, rather than in init where it's currently located for testing
+
+        enemyAI = new ShipAI(enemy, player);
+        hostileShipUI = new HostileShipUI(this, df, enemy);
     }
 
     @NotNull
@@ -268,9 +284,5 @@ public class SlickGame extends BasicGame {
 
     public Beacon getCurrentBeacon() {
         return currentBeacon;
-    }
-
-    public void setCurrentBeacon(Beacon currentBeacon) {
-        this.currentBeacon = currentBeacon;
     }
 }
