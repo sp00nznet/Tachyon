@@ -73,7 +73,7 @@ class Sector(val type: SectorType,
         }
 
         for (b in beacons) {
-            val neighbours = beacons.filter { cells[it]!!.distToSq(cells[b]!!) <= 2 }
+            val neighbours = beacons.filter { cells[it]!!.distToSq(cells[b]!!) <= 2 && it != b }
             b.bindSector(this, neighbours)
         }
     }
