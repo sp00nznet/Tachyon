@@ -25,7 +25,7 @@ class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {
     override fun resolve() = events.random().resolve()
 }
 
-class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>) {
+class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, val blue: Boolean) {
     val event by lazyEvent
 }
 

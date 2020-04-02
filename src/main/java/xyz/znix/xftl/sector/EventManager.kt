@@ -110,7 +110,9 @@ class EventManager(df: Datafile, private val translator: Translator) {
         check(elem.name == "choice")
         val text = elem.getChild("text").let(::loadText)
         val event = loadEvent(elem.getChild("event"), "choice.ukn")
-        return Choice(text, event)
+        val req = elem.getAttributeValue("req")
+        val blue = elem.getAttributeValue("blue")?.toBoolean() ?: req != null
+        return Choice(text, event, blue)
     }
 
     private fun loadText(elem: Element): IEventText {
