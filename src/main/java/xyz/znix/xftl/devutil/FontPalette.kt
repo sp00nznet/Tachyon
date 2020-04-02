@@ -37,7 +37,7 @@ object FontPalette {
 
     val DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog"
     val HELP_MSG = "Press F1 to clear the string, F2 for sample, F3 and arrow keys to view rawfonts, F4 for" +
-            " baseline, type to edit"
+            " baseline, F5 for legacy mode, type to edit"
 
     val BASELINE_COLOUR = Color(255, 0, 0, 128)
 
@@ -50,6 +50,7 @@ object FontPalette {
         private var rawFontIdx: Int = 0
 
         private var baseline = false
+        private var legacyMode = false
 
         override fun update(container: GameContainer, delta: Int) {}
 
@@ -68,6 +69,8 @@ object FontPalette {
                 return
             }
 
+            utilFont.drawString(50f, 35f, "Legacy: $legacyMode", Color.black)
+
             val drawStr = when {
                 text.endsWith(' ') || text.startsWith(' ') -> "'$text'"
                 else -> text
@@ -77,9 +80,12 @@ object FontPalette {
                 val fnt = fonts[name]!!
                 val y = 50f + 25 * i
                 utilFont.drawString(20f, y, name, Color.black)
-                fnt.drawString(150f, y, drawStr, Color.black)
 
-                if(baseline) {
+                @Suppress("DEPRECATION")
+                val drawFunc = if (legacyMode) fnt::drawStringLegacy else fnt::drawString
+                drawFunc(150f, y, drawStr, Color.black)
+
+                if (baseline) {
                     g.color = BASELINE_COLOUR
                     g.drawLine(150f, y, 150f + fnt.getWidth(drawStr), y)
                 }
@@ -99,31 +105,27 @@ object FontPalette {
         }
 
         override fun keyPressed(key: Int, c: Char) {
+            var handled = true
             when (key) {
                 Input.KEY_BACK -> {
                     if (text.isNotEmpty())
                         text = text.substring(0, text.length - 1)
-                    return
                 }
                 Input.KEY_F1 -> {
                     text = ""
                     rawFontMode = false
-                    return
                 }
                 Input.KEY_F2 -> {
                     text = DEFAULT_TEXT
                     rawFontMode = false
-                    return
                 }
-                Input.KEY_F3 -> {
-                    rawFontMode = !rawFontMode
-                    return
-                }
-                Input.KEY_F4 -> {
-                    baseline = !baseline
-                    return
-                }
+                Input.KEY_F3 -> rawFontMode = !rawFontMode
+                Input.KEY_F4 -> baseline = !baseline
+                Input.KEY_F5 -> legacyMode = !legacyMode
+                else -> handled = false
             }
+
+            if (handled) return
 
             if (rawFontMode) {
                 when (key) {
