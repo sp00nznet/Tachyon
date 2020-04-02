@@ -211,6 +211,7 @@ public class SlickGame extends BasicGame {
 
     public void setCurrentBeacon(Beacon currentBeacon) {
         this.currentBeacon = currentBeacon;
+        currentBeacon.setState(Beacon.State.VISITED_DANGER);
 
         // TODO setup the enemy ship here, rather than in init where it's currently located for testing
 

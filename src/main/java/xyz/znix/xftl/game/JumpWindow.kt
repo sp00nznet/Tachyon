@@ -36,6 +36,8 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
 
     private val beaconShadow = game.getImg("img/map/map_icon_diamond_shadow.png")
     private val beaconYellow = game.getImg("img/map/map_icon_diamond_yellow.png")
+    private val beaconBlue = game.getImg("img/map/map_icon_diamond_blue.png")
+    private val beaconDanger = game.getImg("img/map/map_icon_triangle_red.png")
     private val beaconOffset = Point(11, 11) - Point(beaconYellow.width / 2, beaconYellow.height / 2)
 
     private val labelWhite = (1..3).map { "img/map/map_box_white_$it.png" }.map {
@@ -76,7 +78,13 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         for (beacon in game.currentBeacon.sector.beacons) {
             val pos = position + beacon.pos + beaconOffset
             beaconShadow.draw(pos)
-            beaconYellow.draw(pos)
+
+            val beaconImg = when(beacon.state) {
+                Beacon.State.UNKNOWN -> beaconYellow
+                Beacon.State.VISITED_CLEAR -> beaconBlue
+                Beacon.State.VISITED_DANGER -> beaconDanger
+            }
+            beaconImg.draw(pos)
 
             if (beacon.event.isDistressBeacon)
                 drawBeaconLabel(pos, game.translator["map_icon_distress"])
