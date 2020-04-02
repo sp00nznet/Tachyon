@@ -29,8 +29,16 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     }
 
     private fun loadEvent(event: Event) {
+        // Events that have no text are valid, usually they are the result of a choice
+        // Eg, to give the player some items and close the menu
+        if (event.text == null) {
+            require(event.choices.isEmpty())
+            close()
+            return
+        }
+
         currentEvent = event
-        currentEventText = event.text?.resolve() ?: error("Textless event!")
+        currentEventText = event.text.resolve()
         optionsText = event.choices.map { it.text.resolve() }
 
         if (optionsText.isEmpty()) {
