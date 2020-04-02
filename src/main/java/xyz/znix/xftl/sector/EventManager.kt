@@ -40,7 +40,8 @@ class EventManager(df: Datafile, private val translator: Translator) {
                     "eventCounts" -> loadEventCounts(elem)
                     "event" -> {
                         val name = elem.requireAttributeValue("name")
-                        events[name] = loadEvent(elem, name).value
+                        if (eventCheck(name, false))
+                            events[name] = loadEvent(elem, name).value
                     }
                     else -> error("Unknown eventfile item ${elem.name}")
                 }
@@ -52,7 +53,24 @@ class EventManager(df: Datafile, private val translator: Translator) {
         check(elem.name == "eventList")
         val name = elem.requireAttributeValue("name")
         val events = elem.children.withIndex().map { loadEvent(it.value, "$name.${it.index}") }
+        if (!eventCheck(name, true)) return
         this.events[name] = EventList(name, events)
+    }
+
+    private fun eventCheck(name: String, eventList: Boolean): Boolean {
+        if (this.events.containsKey(name))
+            println("Found duplicate event $name")
+
+        // TODO make sure I've set these up right - I'm not completely sure about this, we could be losing events
+        when (name) {
+            "NEBULA_PIRATE" -> return !eventList // The individual event for this is definitely a testing event
+            "BOARDERS_PIRATE" -> return eventList
+            "NEBULA_REBEL" -> return !eventList
+        }
+
+        check(!this.events.containsKey(name))
+
+        return true
     }
 
     private fun loadTextList(elem: Element) {
