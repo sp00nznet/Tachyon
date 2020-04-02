@@ -51,6 +51,7 @@ public class Constants {
     public static final Color SECTOR_CUTOUT_TEXT = new Color(235, 245, 229);
 
     public static final Color TEXT_OPTION_BLUE = new Color(0, 195, 255);
+    public static final Color TEXT_OPTION_HOVER = new Color(243, 255, 80);
 
     // These numbers took quite some work to obtain
     // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything

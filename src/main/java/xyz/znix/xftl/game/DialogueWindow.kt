@@ -2,6 +2,7 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
@@ -19,6 +20,9 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     private lateinit var currentEventText: String
     private lateinit var optionsText: List<String>
 
+    private val optionBoundingBoxes = ArrayList<Rectangle>()
+    private var hoveredOption: Int? = null
+
     init {
         loadEvent(currentEvent)
     }
@@ -27,6 +31,12 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         currentEvent = event
         currentEventText = event.text?.resolve() ?: error("Textless event!")
         optionsText = event.choices.map { it.text.resolve() }
+
+        if (optionsText.isEmpty()) {
+            optionsText = listOf(game.translator["continue"])
+        }
+
+        optionBoundingBoxes.clear()
     }
 
     override fun draw(g: Graphics) {
@@ -51,22 +61,23 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         textY += 60
 
-        for ((i, choice) in currentEvent.choices.withIndex()) {
+        val rebuildBBs = optionBoundingBoxes.isEmpty()
+
+        for ((i, text) in optionsText.withIndex()) {
+            val choice = if (currentEvent.choices.isNotEmpty()) currentEvent.choices[i] else null
             val colour = when {
+                hoveredOption == i -> Constants.TEXT_OPTION_HOVER
+                choice == null -> Color.white
                 choice.blue -> Constants.TEXT_OPTION_BLUE
                 else -> Color.white
             }
             val prefix = "${i + 1}. "
-            textY = drawText(textY, prefix + optionsText[i], colour)
+            textY = drawText(textY, prefix + text, colour, rebuildBBs)
             textY += 32
-        }
-
-        if (currentEvent.choices.isEmpty()) {
-            drawText(textY, "1. " + game.translator["continue"])
         }
     }
 
-    private fun drawText(y: Int, msg: String, colour: Color = Color.white): Int {
+    private fun drawText(y: Int, msg: String, colour: Color = Color.white, addOption: Boolean = false): Int {
         val textX = position.x + 25f
         val textFarX = position.x + size.x - 25f
 
@@ -83,7 +94,24 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         }
         font.drawString(textX, textY.f, lineText, colour)
 
+        if (addOption) {
+            // Assume it's one line long
+            val width = font.getWidth(lineText).f
+            optionBoundingBoxes += Rectangle(textX, y.f - 11, width, 14f)
+        }
+
         return textY
+    }
+
+    override fun updateUI(x: Int, y: Int) {
+        super.updateUI(x, y)
+
+        hoveredOption = null
+        for ((i, bb) in optionBoundingBoxes.withIndex()) {
+            if (bb.contains(x.f, y.f)) {
+                hoveredOption = i
+            }
+        }
     }
 
     override fun mouseClick(button: Int, x: Int, y: Int) {
