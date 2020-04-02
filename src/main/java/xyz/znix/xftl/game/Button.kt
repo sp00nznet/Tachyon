@@ -78,7 +78,7 @@ object Buttons {
                     hovered -> Constants.JUMP_READY_TEXT_HOVER
                     else -> Constants.JUMP_READY_TEXT
                 }
-                font.drawString(ftlX + 8f, ftlY + 18f, "JUMP", textColour)
+                font.drawStringLegacy(ftlX + 8f, ftlY + 18f, "JUMP", textColour)
             } else {
                 val suffix = if (engineOn) "" else "_off"
                 val width = (ship.ftlChargeProgress * 74).toInt().coerceAtMost(74)
@@ -108,7 +108,7 @@ object Buttons {
             // TODO mouseover highlight
             g.color = Constants.SECTOR_CUTOUT_TEXT
             drawRounded(g, pos.x, pos.y, size.x, size.y)
-            font.drawString(pos.x + 6f, pos.y + 18f, label, Constants.JUMP_DISABLED_TEXT)
+            font.drawStringLegacy(pos.x + 6f, pos.y + 18f, label, Constants.JUMP_DISABLED_TEXT)
         }
 
         override fun click(button: Int) {

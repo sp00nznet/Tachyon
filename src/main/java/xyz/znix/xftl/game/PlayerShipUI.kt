@@ -209,8 +209,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         g.fillRect(tx.f, ty.f, (tw - 13).f, 20f)
         game.getImg("img/box_weapons_bottom_label.png").draw((tx + tw - 13).f, ty.f)
 
-        g.color = UI_TEXT_COLOUR_1
-        g.drawString("WEAPONS", (tx + 1).f, (ty + 11).f)
+        font.drawStringLegacy((tx + 1).f, (ty + 11).f, "WEAPONS", UI_TEXT_COLOUR_1)
 
         val powerTreeX = 86 - 53
         val powerTreeY = gc.height - 21 - 302
@@ -375,10 +374,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             g.lineWidth = 1f
 
             // Draw the weapon number itself
-            g.font = weaponNumberFont
             val weaponNumber = Integer.toString(i + 1)
             val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
-            g.drawString(weaponNumber, (wx + 77 + 1 + (8 - weaponNumberWidth) / 2).f, (wy + 30).f)
+            weaponNumberFont.drawStringLegacy((wx + 77 + 1 + (8 - weaponNumberWidth) / 2).f, (wy + 30).f, weaponNumber, g.color)
 
             val shortName = translator[weapon.type.shortKey].replaceFirst(" ".toRegex(), "\n")
             drawWeaponString(g, shortName, wx + 26, wy + 8)
@@ -420,9 +418,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val txt = "HULL"
         UIUtils.drawTab(font, txt, labelImg, 0f, 0f, 10f, 30f)
 
-        g.font = font
-        g.color = UI_TEXT_COLOUR_1
-        g.drawString("HULL", 9f, 21f)
+        font.drawStringLegacy(9f, 21f, "HULL", UI_TEXT_COLOUR_1)
 
         // Draw the hull bar
 
@@ -471,9 +467,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val textWidth = numberFont.getWidth(count.toString())
             val textInternalX = ceil((areaWidth - textWidth) / 2f).toInt()
 
-            g.font = numberFont
-            g.color = Color.white
-            g.drawString(count.toString(), areaStart + textInternalX, shieldY + 23f)
+            numberFont.drawStringLegacy(areaStart + textInternalX, shieldY + 23f, count.toString(), Color.white)
         }
 
         val shieldsEndX = 122
@@ -495,11 +489,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val evadeBoxLeft = 92f
 
         // Evade
-        oxygenEvadeFont.drawStringLeftAligned(evadeBoxLeft, oxyY + 8, "${ship.evasion}%", Color.white)
+        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8, "${ship.evasion}%", Color.white)
 
         // Oxygen
         // TODO use correct numbers once oxygen is implemented
-        oxygenEvadeFont.drawStringLeftAligned(evadeBoxLeft, oxyY + 8 + 22, "100%", Color.white)
+        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8 + 22, "100%", Color.white)
     }
 
     private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()
@@ -511,7 +505,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private fun drawWeaponString(g: Graphics, str: String, x: Int, y: Int) {
         var y = y
         for (line in str.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-            g.drawString(line, x.f, y.f)
+            val font = g.font as SILFontLoader
+            font.drawStringLegacy(x.f, y.f, line, g.color)
             y += 15
         }
     }

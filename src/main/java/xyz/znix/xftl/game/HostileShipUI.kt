@@ -87,6 +87,6 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
 
         game.getImg("img/combatUI/box_hostiles_smallbar_right.png").draw(x + left.width + midWidth, y)
 
-        font.drawString(x + 2f, y + 7f, text, Color.black)
+        font.drawStringLegacy(x + 2f, y + 7f, text, Color.black)
     }
 }

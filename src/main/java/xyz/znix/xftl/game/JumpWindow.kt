@@ -92,7 +92,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         // Draw the top-left map label tab
         val tab = "BEACON MAP"
         val tabWidth = UIUtils.drawTab(font, tab, titleTab, position.x.f, position.y.f, 20f, 38f)
-        font.drawString(position.x + 21f, position.y + 26f, tab, Constants.JUMP_DISABLED_TEXT)
+        font.drawStringLegacy(position.x + 21f, position.y + 26f, tab, Constants.JUMP_DISABLED_TEXT)
 
         // Draw the rest of the top, going clockwise to the right side
         drawSide(Direction.UP, tabWidth.toInt())
@@ -130,10 +130,10 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
             val txtFont = sectorInfoFont
             val textWidth = txtFont.getWidth(text)
             val tx = width / 2 - textWidth / 2
-            txtFont.drawString(x + tx.f, y + 6f, text, Constants.SECTOR_CUTOUT_TEXT)
+            txtFont.drawStringLegacy(x + tx.f, y + 6f, text, Constants.SECTOR_CUTOUT_TEXT)
         }
 
-        font.drawString(position.x + 13f, position.y + size.y + 8f, "SECTOR", Constants.JUMP_DISABLED_TEXT)
+        font.drawStringLegacy(position.x + 13f, position.y + size.y + 8f, "SECTOR", Constants.JUMP_DISABLED_TEXT)
 
         // TODO use real values when sectors are implemented
         drawCutout(position.x + 141, position.y + size.y - 8, 38, "1")
@@ -227,7 +227,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         labelWhite[1].draw(pos.x + 34f, pos.y - 17f, strWidth - 8f, 32f)
         labelWhite[2].draw(pos.x + 26 + strWidth, pos.y - 17)
 
-        beaconLabelFont.drawString(pos.x + 30f, pos.y - 4f, text, Constants.SECTOR_CUTOUT_TEXT)
+        beaconLabelFont.drawStringLegacy(pos.x + 30f, pos.y - 4f, text, Constants.SECTOR_CUTOUT_TEXT)
     }
 
     private fun cancelClicked() {
