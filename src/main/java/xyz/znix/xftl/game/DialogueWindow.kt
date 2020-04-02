@@ -2,6 +2,7 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.Input
 import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
@@ -115,6 +116,16 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     }
 
     override fun mouseClick(button: Int, x: Int, y: Int) {
-        close()
+        if (button != Input.MOUSE_LEFT_BUTTON) return
+
+        val idx = hoveredOption ?: return
+
+        if (currentEvent.choices.isEmpty()) {
+            close()
+            return
+        }
+
+        val choice = currentEvent.choices[idx]
+        loadEvent(choice.event.resolve())
     }
 }
