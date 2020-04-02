@@ -12,6 +12,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
@@ -62,14 +63,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     init {
         buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game) {
-            currentWindow = JumpWindow(game) {
+            currentWindow = JumpWindow(game) { beacon ->
                 currentWindow = null
+                beacon?.let { loadBeacon(it) }
             }
         }
 
-        currentWindow = DialogueWindow(game, game.currentBeacon.event) {
-            currentWindow = null
-        }
+        loadBeacon(game.currentBeacon)
     }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
@@ -523,6 +523,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         for (button in buttons) {
             button.update(x, y)
+        }
+    }
+
+    fun loadBeacon(beacon: Beacon) {
+        currentWindow = DialogueWindow(game, beacon.event) {
+            currentWindow = null
         }
     }
 

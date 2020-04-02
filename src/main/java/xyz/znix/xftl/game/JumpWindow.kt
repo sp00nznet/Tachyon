@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
+import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.drawSection
@@ -20,7 +21,7 @@ import kotlin.math.sqrt
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
 // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
 // for us atm.
-class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(0 /* 340 */, 83)) {
+class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window(ConstPoint(0 /* 340 */, 83)) {
     override val size = ConstPoint(766, 548)
     override val outlineImage = game.getImg("img/window_outline.png")
 
@@ -79,7 +80,7 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
             val pos = position + beacon.pos + beaconOffset
             beaconShadow.draw(pos)
 
-            val beaconImg = when(beacon.state) {
+            val beaconImg = when (beacon.state) {
                 Beacon.State.UNKNOWN -> beaconYellow
                 Beacon.State.VISITED_CLEAR -> beaconBlue
                 Beacon.State.VISITED_DANGER -> beaconDanger
@@ -169,6 +170,21 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
         hovered = closest.first
     }
 
+    override fun mouseClick(button: Int, x: Int, y: Int) {
+        super.mouseClick(button, x, y)
+
+        if (button != Input.MOUSE_LEFT_BUTTON)
+            return
+
+        val hovered = hovered ?: return
+
+        if (!game.currentBeacon.neighbours.contains(hovered))
+            return
+
+        game.currentBeacon = hovered
+        jump(hovered)
+    }
+
     private fun drawTargetBox(pos: IPoint) {
         val secs = System.nanoTime() / 1_000_000_000f
         val timePoint = 6 * secs
@@ -239,6 +255,6 @@ class JumpWindow(val game: SlickGame, val jump: () -> Unit) : Window(ConstPoint(
     }
 
     private fun cancelClicked() {
-        jump()
+        jump(null)
     }
 }
