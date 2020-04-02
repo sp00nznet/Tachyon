@@ -69,11 +69,12 @@ public class SlickGame extends BasicGame {
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
         enemy = generator.buildShip(this, "REBEL_FAT");
 
-        shipUI = new PlayerShipUI(df, translator, player, this);
-
         // Start at the first beacon of the first sector
         // Be sure we do this after creating the player ship, it's used by the enemy AI
         setCurrentBeacon(gameMap.getSectors()[0].getBeacons().get(0));
+
+        // moved temporarily
+        shipUI = new PlayerShipUI(df, translator, player, this);
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();

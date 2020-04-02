@@ -66,6 +66,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 currentWindow = null
             }
         }
+
+        currentWindow = DialogueWindow(game, game.currentBeacon.event) {
+            currentWindow = null
+        }
     }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
