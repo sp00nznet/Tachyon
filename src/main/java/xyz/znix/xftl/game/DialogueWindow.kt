@@ -38,7 +38,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     }
 
     private fun loadEvent(event: Event) {
-        resourcesGained = event.itemsModify.mapValues { it.value.random() }
+        resourcesGained = ResourceSet(event.itemsModify.mapValues { it.value.random() })
 
         // Events that have no text are valid, usually they are the result of a choice
         // Eg, to give the player some items and close the menu
