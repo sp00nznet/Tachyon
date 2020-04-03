@@ -53,6 +53,9 @@ public class Constants {
     public static final Color TEXT_OPTION_BLUE = new Color(0, 195, 255);
     public static final Color TEXT_OPTION_HOVER = new Color(243, 255, 80);
 
+    public static final Color REWARDS_ICONS = SYS_ENERGY_ACTIVE;
+    public static final Color REWARDS_BACKGROUND = new Color(0, 0, 0, 128);
+
     // These numbers took quite some work to obtain
     // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
     // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level

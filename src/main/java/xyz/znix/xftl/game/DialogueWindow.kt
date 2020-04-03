@@ -10,11 +10,14 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Event
+import xyz.znix.xftl.sector.Resource
+import xyz.znix.xftl.sector.ResourceSet
 
 class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window(ConstPoint(100, 100)) {
     override val size: IPoint get() = ConstPoint(602, 377)
     override val outlineImage = game.getImg("img/window_base.png")
 
+    private val resourceNumFont = game.getFont("JustinFont10")
     private val font = game.getFont("JustinFont11Bold")
 
     private var currentEvent: Event = startingEvent
@@ -24,11 +27,19 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     private val optionBoundingBoxes = ArrayList<Rectangle>()
     private var hoveredOption: Int? = null
 
+    /**
+     * The resources we've just been given by the event. This should have been added to
+     * the player's stats before the user sees them.
+     */
+    private lateinit var resourcesGained: ResourceSet
+
     init {
         loadEvent(currentEvent)
     }
 
     private fun loadEvent(event: Event) {
+        resourcesGained = event.itemsModify.mapValues { it.value.random() }
+
         // Events that have no text are valid, usually they are the result of a choice
         // Eg, to give the player some items and close the menu
         if (event.text == null) {
@@ -67,6 +78,27 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         var textY = position.y + 42
         textY = drawText(textY, currentEventText)
+
+        if (resourcesGained.isNotEmpty()) {
+            textY += 27
+            val boxWidth = resourcesGained.size * 45 + 10
+            val boxX = position.x.f + (size.x - boxWidth) / 2
+
+            g.color = Constants.REWARDS_BACKGROUND
+            g.fillRect(boxX, textY.f, boxWidth.f, 32f)
+
+            g.color = Color.white
+            g.drawRect(boxX, textY.f, boxWidth - 1f, 31f)
+            g.drawRect(boxX + 1, textY.f + 1, boxWidth - 3f, 29f)
+
+            for ((i, pair) in resourcesGained.toList().sortedBy { it.first.ordinal }.withIndex()) {
+                val x = boxX + 5 + 45 * i
+                pair.first.getIcon(game).draw(x, textY.f, Constants.REWARDS_ICONS)
+                resourceNumFont.drawString(x + 30, textY + 21f, pair.second.toString(), Color.white)
+            }
+
+            textY += 23
+        }
 
         textY += 60
 
