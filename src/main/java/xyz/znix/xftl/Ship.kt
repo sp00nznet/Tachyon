@@ -502,6 +502,14 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         target.system?.dealDamage(systemDamage)
     }
 
+    fun resetAfterJump() {
+        // Recharge the shields
+        shields?.let { it.activeShields = it.selectedShieldBars }
+
+        // And reset the FTL drive
+        ftlChargeProgress = 0f
+    }
+
     companion object {
         private fun findDefaultShipElement(df: Datafile, name: String): Element? {
             val blueprints = df.parseXML(df["data/blueprints.xml"])

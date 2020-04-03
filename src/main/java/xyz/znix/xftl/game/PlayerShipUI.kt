@@ -530,6 +530,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         currentWindow = DialogueWindow(game, beacon.event) {
             currentWindow = null
         }
+        ship.resetAfterJump()
     }
 
     private class SelectedTarget(val room: Room, val weapon: AbstractWeaponInstance)
