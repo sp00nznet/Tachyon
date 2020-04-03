@@ -2,6 +2,8 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Element
 import org.newdawn.slick.Image
+import xyz.znix.xftl.game.RewardTier
+import xyz.znix.xftl.game.RewardType
 import xyz.znix.xftl.game.SlickGame
 
 /**
@@ -20,6 +22,7 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
 
     val itemsModifySteal: Boolean?
     val itemsModify: Map<Resource, IntRange>
+    val autoRewards: Pair<RewardType, RewardTier>?
 
     init {
         val modElem = elem.getChild("item_modify")
@@ -38,6 +41,15 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
         } else {
             itemsModifySteal = null
             itemsModify = emptyMap()
+        }
+
+        val auto = elem.getChild("autoReward")
+        autoRewards = if (auto != null) {
+            val type = RewardType.valueOf(auto.textTrim.toUpperCase())
+            val tier = RewardTier.fromName(auto.getAttributeValue("level"))
+            Pair(type, tier)
+        } else {
+            null
         }
     }
 
