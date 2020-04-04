@@ -53,6 +53,21 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
         }
     }
 
+    val loadShipName: String?
+    val loadShipHostile: Boolean?
+
+    init {
+        val ship = elem.getChild("ship")
+        if (ship != null) {
+            check(ship.children.isEmpty()) { "Inline ship specs not yet supported" }
+            loadShipName = ship.getAttributeValue("load")
+            loadShipHostile = ship.getAttributeValue("hostile")?.toBoolean()
+        } else {
+            loadShipName = null
+            loadShipHostile = null
+        }
+    }
+
     override fun resolve() = this
 }
 
