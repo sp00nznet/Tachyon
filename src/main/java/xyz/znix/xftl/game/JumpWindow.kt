@@ -182,8 +182,11 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window(Cons
         if (!game.currentBeacon.neighbours.contains(hovered))
             return
 
-        game.currentBeacon = hovered
         jump(hovered)
+
+        // Make sure we set the beacon after we've called the jump callback, so that the event
+        // dialogue window doesn't get closed by the callback.
+        game.currentBeacon = hovered
     }
 
     private fun drawTargetBox(pos: IPoint) {
