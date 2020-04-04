@@ -331,7 +331,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         for (node in visualsXML.rootElement.getChild("weaponMounts").children) {
             // In rebel_long.xml the hardpoint direction is missing for some testing stuff.
-            val dir = node.getAttributeValue("slide")?.toUpperCase()?.let(Direction::valueOf)
+            // Artillery (used in the boss and federation cruiser) has slide set to 'no'
+            val dirName = node.getAttributeValue("slide")?.toUpperCase()
+            val dir = if (dirName == "NO") null else dirName?.let(Direction::valueOf)
             val hardpoint = Hardpoint(
                     node.getAttributeValue("x").toInt(),
                     node.getAttributeValue("y").toInt(),
