@@ -206,14 +206,17 @@ public class SlickGame extends BasicGame {
 
     public void setCurrentBeacon(Beacon currentBeacon) {
         this.currentBeacon = currentBeacon;
-        currentBeacon.setVisited(true);
 
         enemy = null;
         enemyAI = null;
         hostileShipUI = null;
 
         player.resetAfterJump();
-        shipUI.showEventDialogue(currentBeacon.getEvent());
+        if (currentBeacon.getState() == Beacon.State.UNVISITED) {
+            shipUI.showEventDialogue(currentBeacon.getEvent());
+        }
+
+        currentBeacon.setVisited(true);
 
         // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
     }
