@@ -68,13 +68,11 @@ public class SlickGame extends BasicGame {
         gameMap = new GameMap(df, eventManager);
 
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
+        shipUI = new PlayerShipUI(df, translator, player, this);
 
         // Start at the first beacon of the first sector
         // Be sure we do this after creating the player ship, it's used by the enemy AI
         setCurrentBeacon(gameMap.getSectors()[0].getBeacons().get(0));
-
-        // moved temporarily
-        shipUI = new PlayerShipUI(df, translator, player, this);
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();
@@ -213,6 +211,9 @@ public class SlickGame extends BasicGame {
         enemy = null;
         enemyAI = null;
         hostileShipUI = null;
+
+        player.resetAfterJump();
+        shipUI.showEventDialogue(currentBeacon.getEvent());
 
         // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
     }

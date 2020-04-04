@@ -10,7 +10,6 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Event
-import xyz.znix.xftl.sector.Resource
 import xyz.znix.xftl.sector.ResourceSet
 
 class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window(ConstPoint(100, 100)) {
