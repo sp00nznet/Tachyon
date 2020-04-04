@@ -328,13 +328,15 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         hardpoints = ArrayList()
 
         for (node in visualsXML.rootElement.getChild("weaponMounts").children) {
+            // In rebel_long.xml the hardpoint direction is missing for some testing stuff.
+            val dir = node.getAttributeValue("slide")?.toUpperCase()?.let(Direction::valueOf)
             val hardpoint = Hardpoint(
                     node.getAttributeValue("x").toInt(),
                     node.getAttributeValue("y").toInt(),
                     node.getAttributeValue("rotate")!!.toBoolean(),
                     node.getAttributeValue("mirror")!!.toBoolean(),
                     node.getAttributeValue("gib").toInt(),
-                    Direction.valueOf(node.getAttributeValue("slide").toUpperCase())
+                    dir
             )
             hardpoints += hardpoint
         }
@@ -525,7 +527,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         }
     }
 
-    data class Hardpoint(val x: Int, val y: Int, val rotate: Boolean, val mirror: Boolean, val gib: Int, val slide: Direction) {
+    data class Hardpoint(val x: Int, val y: Int, val rotate: Boolean, val mirror: Boolean, val gib: Int, val slide: Direction?) {
         var weapon: AbstractWeaponInstance? = null
     }
 
