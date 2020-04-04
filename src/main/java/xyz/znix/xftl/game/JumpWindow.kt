@@ -81,7 +81,7 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window(Cons
             beaconShadow.draw(pos)
 
             val beaconImg = when (beacon.state) {
-                Beacon.State.UNKNOWN -> beaconYellow
+                Beacon.State.UNVISITED -> beaconYellow
                 Beacon.State.VISITED_CLEAR -> beaconBlue
                 Beacon.State.VISITED_DANGER -> beaconDanger
             }

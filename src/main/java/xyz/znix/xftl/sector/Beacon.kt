@@ -26,7 +26,7 @@ class Beacon(
      */
     val state: State
         get() = when {
-            !visited -> State.UNKNOWN
+            !visited -> State.UNVISITED
             ship != null -> State.VISITED_DANGER
             else -> State.VISITED_CLEAR
         }
@@ -68,7 +68,7 @@ class Beacon(
     }
 
     enum class State {
-        UNKNOWN,
+        UNVISITED,
         VISITED_CLEAR,
         VISITED_DANGER,
     }
