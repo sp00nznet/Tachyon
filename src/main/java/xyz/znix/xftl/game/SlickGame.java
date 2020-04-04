@@ -207,9 +207,7 @@ public class SlickGame extends BasicGame {
     public void setCurrentBeacon(Beacon currentBeacon) {
         this.currentBeacon = currentBeacon;
 
-        enemy = null;
-        enemyAI = null;
-        hostileShipUI = null;
+        setEnemy(currentBeacon.getShip());
 
         player.resetAfterJump();
         if (currentBeacon.getState() == Beacon.State.UNVISITED) {
@@ -224,16 +222,25 @@ public class SlickGame extends BasicGame {
     public void loadEventShip(Event event) {
         if (event.getLoadShipName() != null) {
             EnemyShipSpec spec = eventManager.getShip(event.getLoadShipName());
-            enemy = generator.buildShip(this, spec);
+            setEnemy(generator.buildShip(this, spec));
 
             HumanCrew enemyCrew = new HumanCrew(animations, enemy.getRooms().get(0), HumanCrew.SlotType.CREW);
             enemy.getCrew().add(enemyCrew);
-
-            enemyAI = new ShipAI(enemy, player);
-            hostileShipUI = new HostileShipUI(this, df, enemy);
         }
         if (event.getLoadShipHostile() == Boolean.TRUE) {
             this.currentBeacon.setShip(enemy);
+        }
+    }
+
+    private void setEnemy(Ship enemy) {
+        this.enemy = enemy;
+
+        if (enemy != null) {
+            enemyAI = new ShipAI(enemy, player);
+            hostileShipUI = new HostileShipUI(this, df, enemy);
+        } else {
+            enemyAI = null;
+            hostileShipUI = null;
         }
     }
 
