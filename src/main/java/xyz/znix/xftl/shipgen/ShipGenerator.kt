@@ -23,5 +23,9 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
 class EnemyShipSpec(elem: Element, bp: BlueprintManager) {
     val name = elem.requireAttributeValue("name")
-    val autoBlueprint = bp[elem.requireAttributeValue("auto_blueprint")]
+
+    // Two ships (TUTORIAL_PIRATE and IMPOSSIBLE_PIRATE) have 'blueprint' attributes instead. While it's
+    // unlikely we'll care about them for a long time (if ever), it's nice to load all the ships without
+    // having to carry around a list of exceptions.
+    val autoBlueprint = bp[elem.getAttributeValue("blueprint") ?: elem.requireAttributeValue("auto_blueprint")]
 }

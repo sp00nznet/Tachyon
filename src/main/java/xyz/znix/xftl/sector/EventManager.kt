@@ -20,6 +20,17 @@ class EventManager(df: Datafile, private val translator: Translator, private val
         for (event in FILE_NAMES) {
             loadEvents(df.parseXML(df["data/$event.xml"]), false)
         }
+
+        // Make sure all the referenced ships do exist
+        for (ev in events.values) {
+            if (ev is Event) {
+                check(ev.loadShipName == null || ships.containsKey(ev.loadShipName))
+            } else if (ev is EventList) {
+                // Load the lazy-loadable events list, to make sure we're not going
+                // to crash at runtime because one an event doesn't exist.
+                ev.events.toString()
+            }
+        }
     }
 
     operator fun get(name: String): IEvent = events[name] ?: error("Missing event $name")
@@ -96,11 +107,6 @@ class EventManager(df: Datafile, private val translator: Translator, private val
 
     private fun loadShip(elem: Element) {
         check(elem.name == "ship")
-
-        // These two are weird and don't have autoBlueprint attributes
-        when (elem.getAttributeValue("name")) {
-            "TUTORIAL_PIRATE", "IMPOSSIBLE_PIRATE" -> return
-        }
 
         val ship = EnemyShipSpec(elem, bp)
         ships[ship.name] = ship
