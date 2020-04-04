@@ -309,9 +309,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         }
 
         val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"])
+
+        // The stage-2 and stage-3 boss layouts don't have an offsets tag, but everything else does
         val offsets = visualsXML.rootElement.getChildren("offsets")
-        check(offsets.size == 1)
-        val floors = offsets[0].getChildren("floor")
+        check(offsets.size <= 1)
+        val floors = offsets.firstOrNull()?.getChildren("floor") ?: emptyList()
         check(floors.size <= 1)
         floorOffset = if (floors.size == 1) {
             ConstPoint(floors[0].getAttributeValue("x").toInt(), floors[0].getAttributeValue("y").toInt())
