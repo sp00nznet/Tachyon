@@ -131,8 +131,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         var lineText = ""
         var textY = y
+        var longestLine = 0
         for (word in msg.split(" ")) {
             if (font.getWidth(lineText + word) + textX > textFarX) {
+                longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
                 font.drawString(textX, textY.f, lineText, colour)
                 lineText = ""
                 textY += 20
@@ -140,12 +142,11 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
             lineText += "$word "
         }
+        longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
         font.drawString(textX, textY.f, lineText, colour)
 
         if (addOption) {
-            // Assume it's one line long
-            val width = font.getWidth(lineText).f
-            optionBoundingBoxes += Rectangle(textX, y.f - 11, width, 14f)
+            optionBoundingBoxes += Rectangle(textX, y.f - 11, longestLine.f, textY - y + 14f)
         }
 
         return textY
