@@ -229,6 +229,12 @@ public class SlickGame extends BasicGame {
         background = eventManager.getImageList("BACKGROUND").get(this);
         planet = eventManager.getImageList("PLANET").get(this);
 
+        String environmentBg = currentBeacon.getEnvironmentType().getBackgroundName();
+        if (environmentBg != null) {
+            background = getImg("img/stars/" + environmentBg + ".png");
+            planet = null;
+        }
+
         ImageList planetList = currentBeacon.getEvent().getPlanetImg();
         if (planetList != null)
             planet = planetList.get(this);
