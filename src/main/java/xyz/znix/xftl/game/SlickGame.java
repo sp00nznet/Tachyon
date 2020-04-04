@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 public class SlickGame extends BasicGame {
     private static ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(50, 150);
 
+    private BlueprintManager blueprintManager;
     private EventManager eventManager;
     private GameMap gameMap;
     private Ship player;
@@ -58,6 +59,7 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void init(GameContainer container) throws SlickException {
+        blueprintManager = new BlueprintManager(df);
         animations = new Animations(df);
         weapons = new WeaponDict(df);
         generator = new ShipGenerator(df);
