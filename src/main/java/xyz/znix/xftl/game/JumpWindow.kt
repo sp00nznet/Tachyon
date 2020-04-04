@@ -139,7 +139,7 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window(Cons
             val txtFont = sectorInfoFont
             val textWidth = txtFont.getWidth(text)
             val tx = width / 2 - textWidth / 2
-            txtFont.drawStringLegacy(x + tx.f, y + 6f, text, Constants.SECTOR_CUTOUT_TEXT)
+            txtFont.drawString(x + tx.f, y + 20f, text, Constants.SECTOR_CUTOUT_TEXT)
         }
 
         font.drawStringLegacy(position.x + 13f, position.y + size.y + 8f, "SECTOR", Constants.JUMP_DISABLED_TEXT)
