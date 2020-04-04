@@ -3,6 +3,7 @@ package xyz.znix.xftl.layout
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
 
@@ -58,5 +59,15 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
             if (room.x == position.x) ConstPoint.ZERO else ConstPoint(-1, 0)
         else
             if (room.y == position.y) ConstPoint.ZERO else ConstPoint(0, -1)
+    }
+
+    /**
+     * Find the direction you would have to walk to go through this door, if standing inside [room].
+     */
+    fun dirFor(room: Room): Direction {
+        return if (isVertical)
+            if (room.x == position.x) Direction.LEFT else Direction.RIGHT
+        else
+            if (room.y == position.y) Direction.UP else Direction.DOWN
     }
 }

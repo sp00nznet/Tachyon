@@ -282,7 +282,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
                     sequenceOf(Pair(it, horizontal), Pair(it, vertical))
                 }.filter { pos ->
                     // Filter out anything that intersects with a door
-                    room.doors.none { it.roomPos(room) posEq pos.first && it.isVertical == pos.second.isVertical }
+                    room.doors.none { it.roomPos(room) posEq pos.first && it.dirFor(room) == pos.second }
                 }.sortedBy { pos ->
                     // Prefer things that aren't on the same tile as a door
                     if (room.doors.none { it.roomPos(room) posEq pos.first }) 0 else 1
