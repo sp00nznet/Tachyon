@@ -9,11 +9,18 @@ import xyz.znix.xftl.weapons.MissileBlueprint
 
 class ShipAI(val ship: Ship, val player: Ship) {
     fun update(dt: Float) {
-        val weapons = ship.weapons ?: return
-
         ship.shields?.let {
             for (i in 1..it.energyLevels) it.increasePower()
         }
+
+        updateWeapons()
+
+        // TODO only run when something significant happens
+        updateTasks()
+    }
+
+    private fun updateWeapons() {
+        val weapons = ship.weapons ?: return
 
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
@@ -30,9 +37,6 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 }
             }
         }
-
-        // TODO only run when something significant happens
-        updateTasks()
     }
 
     private fun pickTarget(): Room {
