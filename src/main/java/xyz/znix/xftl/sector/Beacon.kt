@@ -1,5 +1,6 @@
 package xyz.znix.xftl.sector
 
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.math.ConstPoint
 
 /**
@@ -23,7 +24,12 @@ class Beacon(
      * This stores the state of the beacon as the player left it, so they can see if they've previously visited
      * a beacon and if so whether they jumped out of a fight.
      */
-    var state = State.UNKNOWN
+    val state: State
+        get() = when {
+            !visited -> State.UNKNOWN
+            ship != null -> State.VISITED_DANGER
+            else -> State.VISITED_CLEAR
+        }
 
     var environmentType = EnvironmentType.NORMAL
 
@@ -40,6 +46,18 @@ class Beacon(
      */
     lateinit var neighbours: List<Beacon>
         private set
+
+    /**
+     * The ship remaining here. Either the player jumped off while fighting it, or it was/became
+     * neutral from an event. Currently only the former is supported, when coming back the ship
+     * will be gone.
+     */
+    var ship: Ship? = null
+
+    /**
+     * Has this beacon been previously visited?
+     */
+    var visited: Boolean = false
 
     fun bindSector(sector: Sector, neighbours: List<Beacon>) {
         synchronized(this) {

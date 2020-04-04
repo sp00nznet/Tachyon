@@ -208,7 +208,7 @@ public class SlickGame extends BasicGame {
 
     public void setCurrentBeacon(Beacon currentBeacon) {
         this.currentBeacon = currentBeacon;
-        currentBeacon.setState(Beacon.State.VISITED_DANGER);
+        currentBeacon.setVisited(true);
 
         enemy = null;
         enemyAI = null;
@@ -227,6 +227,9 @@ public class SlickGame extends BasicGame {
 
             enemyAI = new ShipAI(enemy, player);
             hostileShipUI = new HostileShipUI(this, df, enemy);
+        }
+        if (event.getLoadShipHostile() == Boolean.TRUE) {
+            this.currentBeacon.setShip(enemy);
         }
     }
 
