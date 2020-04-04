@@ -144,9 +144,10 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window(Cons
 
         font.drawStringLegacy(position.x + 13f, position.y + size.y + 8f, "SECTOR", Constants.JUMP_DISABLED_TEXT)
 
-        // TODO use real values when sectors are implemented
+        // TODO use the real sector number once multiple sectors are implemented
+        val sectorName = game.translator["sectorname_" + game.currentBeacon.sector.type.name]
         drawCutout(position.x + 141, position.y + size.y - 8, 38, "1")
-        drawCutout(position.x + 190, position.y + size.y - 8, 276, "Civilian Sector")
+        drawCutout(position.x + 190, position.y + size.y - 8, 276, sectorName)
 
         // The top and bottom tabs are slightly different sizes, this compensates for them
         drawSide(Direction.LEFT, 45, size.y - 27)
