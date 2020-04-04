@@ -6,6 +6,7 @@ import xyz.znix.xftl.Constants.BASE_REPAIR_TIME
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.RoomPoint
@@ -202,19 +203,22 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         return
     }
 
-    fun setTargetRoom(value: Room) {
+    fun setTargetRoom(value: Room): Boolean {
+        if (value == room)
+            return true
+
         val slots = slotsFor(value)
 
         if (value.computerPoint != null)
             if (setTargetRoom(value, value.pointToSlot(value.computerPoint!!), slots))
-                return
+                return true
 
         for (i in slots.indices) {
             if (setTargetRoom(value, i, slots))
-                return
+                return true
         }
 
-        error("No spare slot in room")
+        return false
     }
 
     private fun setTargetRoom(value: Room, slot: Int, slots: Array<AbstractCrew?>): Boolean {
@@ -228,6 +232,13 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
 
         // Skip obstructed cells - eg, healer in the medbay
         if (value.obstructions.contains(pos))
+            return false
+
+        // Verify we have a path to this room
+        val pf = room.ship.pathFinder
+        pf.path(RoomPoint(value, ConstPoint.ZERO))
+        val pNode = pf.nodes.getValue(roomPosition)
+        if (pNode.next == null)
             return false
 
         pathingTarget = RoomPoint(value, pos)
