@@ -2,13 +2,16 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Document
 import org.jdom2.Element
+import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.requireAttributeValue
+import xyz.znix.xftl.shipgen.EnemyShipSpec
 
-class EventManager(df: Datafile, private val translator: Translator) {
+class EventManager(df: Datafile, private val translator: Translator, private val bp: BlueprintManager) {
     private val events = HashMap<String, IEvent>()
     private val textLists = HashMap<String, TextList>()
+    private val ships = HashMap<String, EnemyShipSpec>()
 
     init {
         for (event in FILE_NAMES) {
@@ -20,6 +23,8 @@ class EventManager(df: Datafile, private val translator: Translator) {
     }
 
     operator fun get(name: String): IEvent = events[name] ?: error("Missing event $name")
+
+    fun getShip(name: String): EnemyShipSpec = ships[name] ?: error("Missing enemy ship spec '$name'")
 
     private fun loadEvents(doc: Document, resourcePass: Boolean) {
         val root = doc.rootElement
@@ -91,7 +96,14 @@ class EventManager(df: Datafile, private val translator: Translator) {
 
     private fun loadShip(elem: Element) {
         check(elem.name == "ship")
-        // TODO - appears to define a ship that can later be loaded into a fight via a script
+
+        // These two are weird and don't have autoBlueprint attributes
+        when (elem.getAttributeValue("name")) {
+            "TUTORIAL_PIRATE", "IMPOSSIBLE_PIRATE" -> return
+        }
+
+        val ship = EnemyShipSpec(elem, bp)
+        ships[ship.name] = ship
     }
 
     private fun loadEvent(elem: Element, debugId: String): Lazy<IEvent> {

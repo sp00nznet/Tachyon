@@ -65,7 +65,7 @@ public class SlickGame extends BasicGame {
         generator = new ShipGenerator(df, blueprintManager);
 
         translator = new Translator(df, "en");
-        eventManager = new EventManager(df, translator);
+        eventManager = new EventManager(df, translator, blueprintManager);
         gameMap = new GameMap(df, eventManager);
 
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral

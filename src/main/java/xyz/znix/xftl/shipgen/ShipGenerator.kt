@@ -1,9 +1,7 @@
 package xyz.znix.xftl.shipgen
 
 import org.jdom2.Element
-import xyz.znix.xftl.BlueprintManager
-import xyz.znix.xftl.Datafile
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.SlickGame
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
@@ -21,4 +19,9 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
         return Ship(df, elem, sys)
     }
+}
+
+class EnemyShipSpec(elem: Element, bp: BlueprintManager) {
+    val name = elem.requireAttributeValue("name")
+    val autoBlueprint = bp[elem.requireAttributeValue("auto_blueprint")]
 }
