@@ -62,7 +62,7 @@ public class SlickGame extends BasicGame {
         blueprintManager = new BlueprintManager(df);
         animations = new Animations(df);
         weapons = new WeaponDict(df);
-        generator = new ShipGenerator(df);
+        generator = new ShipGenerator(df, blueprintManager);
 
         translator = new Translator(df, "en");
         eventManager = new EventManager(df, translator);
