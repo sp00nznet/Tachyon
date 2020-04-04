@@ -22,6 +22,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
     private fun updateWeapons() {
         val weapons = ship.weapons ?: return
 
+        // Does nothing if already fully powered
+        weapons.increasePower()
+
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
 
