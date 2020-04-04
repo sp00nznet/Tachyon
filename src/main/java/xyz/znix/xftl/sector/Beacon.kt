@@ -31,7 +31,7 @@ class Beacon(
             else -> State.VISITED_CLEAR
         }
 
-    var environmentType = EnvironmentType.NORMAL
+    val environmentType: EnvironmentType get() = event.environment ?: EnvironmentType.NORMAL
 
     /**
      * The sector this beacon resides within.

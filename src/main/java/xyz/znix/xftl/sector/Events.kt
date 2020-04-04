@@ -5,6 +5,7 @@ import org.newdawn.slick.Image
 import xyz.znix.xftl.game.RewardTier
 import xyz.znix.xftl.game.RewardType
 import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.requireAttributeValue
 
 /**
  * Represents something that can be used as an event. This is either an Event or
@@ -76,6 +77,21 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
         val img = elem.getChild("img")
         backImg = img?.getAttributeValue("back")?.let(imageFinder)
         planetImg = img?.getAttributeValue("planet")?.let(imageFinder)
+    }
+
+    val environment: Beacon.EnvironmentType?
+
+    init {
+        environment = when (val env = elem.getChild("environment")?.requireAttributeValue("type")) {
+            "asteroid" -> Beacon.EnvironmentType.ASTEROID
+            "nebula" -> Beacon.EnvironmentType.NEBULA
+            "pulsar" -> Beacon.EnvironmentType.PULSAR
+            "storm" -> Beacon.EnvironmentType.ION_STORM
+            "sun" -> Beacon.EnvironmentType.SUN
+            "PDS" -> null // TODO implement PDS/ASBs
+            null -> null
+            else -> error("Unknown environment $env")
+        }
     }
 
     override fun resolve() = this
