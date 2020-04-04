@@ -16,7 +16,8 @@ interface IEvent {
     fun resolve(): Event
 }
 
-class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val debugId: String) : IEvent {
+class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val debugId: String,
+            imageFinder: (String) -> ImageList) : IEvent {
     val isDistressBeacon: Boolean = elem.getChild("distressBeacon") != null
     val isStore: Boolean = elem.getChild("store") != null
 
@@ -66,6 +67,15 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
             loadShipName = null
             loadShipHostile = null
         }
+    }
+
+    val backImg: ImageList?
+    val planetImg: ImageList?
+
+    init {
+        val img = elem.getChild("img")
+        backImg = img?.getAttributeValue("back")?.let(imageFinder)
+        planetImg = img?.getAttributeValue("planet")?.let(imageFinder)
     }
 
     override fun resolve() = this

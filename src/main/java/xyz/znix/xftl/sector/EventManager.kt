@@ -127,7 +127,7 @@ class EventManager(val df: Datafile, private val translator: Translator, private
 
         val text = elem.getChild("text")?.let(::loadText)
         val choices = elem.getChildren("choice").map(::loadChoice)
-        return lazyOf(Event(text, choices, elem, debugId))
+        return lazyOf(Event(text, choices, elem, debugId, ::getImageList))
     }
 
     private fun loadChoice(elem: Element): Choice {

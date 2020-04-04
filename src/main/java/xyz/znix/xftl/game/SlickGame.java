@@ -51,6 +51,9 @@ public class SlickGame extends BasicGame {
     private Beacon currentBeacon;
     private boolean paused;
 
+    private Image background;
+    private Image planet;
+
     public SlickGame(Datafile df) throws SlickException {
         super("Subluminal");
         this.df = df;
@@ -173,6 +176,13 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
+        if (background != null) {
+            background.draw();
+        }
+        if (planet != null) {
+            planet.draw();
+        }
+
         // Get the player's ship away from the top UI
         g.translate(PLAYER_SHIP_POSITION.getX(), PLAYER_SHIP_POSITION.getY());
         player.render(g, hoveredRoom);
@@ -215,6 +225,19 @@ public class SlickGame extends BasicGame {
         }
 
         currentBeacon.setVisited(true);
+
+        background = eventManager.getImageList("BACKGROUND").get(this);
+        planet = eventManager.getImageList("PLANET").get(this);
+
+        ImageList planetList = currentBeacon.getEvent().getPlanetImg();
+        if (planetList != null)
+            planet = planetList.get(this);
+
+        ImageList backList = currentBeacon.getEvent().getBackImg();
+        if (backList != null)
+            background = backList.get(this);
+
+        // TODO load image settings from text tags
 
         // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
     }
