@@ -9,9 +9,8 @@ import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
-import xyz.znix.xftl.sector.Beacon;
-import xyz.znix.xftl.sector.EventManager;
-import xyz.znix.xftl.sector.GameMap;
+import xyz.znix.xftl.sector.*;
+import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.MainSystem;
 import xyz.znix.xftl.weapons.WeaponDict;
@@ -27,7 +26,7 @@ public class SlickGame extends BasicGame {
     private EventManager eventManager;
     private GameMap gameMap;
     private Ship player;
-    private Ship enemy; // temporary, TODO handle this properly
+    private Ship enemy;
     private ShipAI enemyAI;
     private final Datafile df;
     private Image floorPlan;
@@ -69,7 +68,6 @@ public class SlickGame extends BasicGame {
         gameMap = new GameMap(df, eventManager);
 
         player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
-        enemy = generator.buildShip(this, "REBEL_FAT");
 
         // Start at the first beacon of the first sector
         // Be sure we do this after creating the player ship, it's used by the enemy AI
@@ -93,9 +91,6 @@ public class SlickGame extends BasicGame {
         HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0), HumanCrew.SlotType.CREW);
         player.getCrew().add(crew);
         crew.setTargetRoom(player.shipToRoomPos(new ConstPoint(1, 1)).getRoom());
-
-        HumanCrew enemyCrew = new HumanCrew(animations, enemy.getRooms().get(0), HumanCrew.SlotType.CREW);
-        enemy.getCrew().add(enemyCrew);
 
         for (Room r : player.getRooms()) {
             AbstractSystem system = r.getSystem();
@@ -215,10 +210,24 @@ public class SlickGame extends BasicGame {
         this.currentBeacon = currentBeacon;
         currentBeacon.setState(Beacon.State.VISITED_DANGER);
 
-        // TODO setup the enemy ship here, rather than in init where it's currently located for testing
+        enemy = null;
+        enemyAI = null;
+        hostileShipUI = null;
 
-        enemyAI = new ShipAI(enemy, player);
-        hostileShipUI = new HostileShipUI(this, df, enemy);
+        // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
+    }
+
+    public void loadEventShip(Event event) {
+        if (event.getLoadShipName() != null) {
+            EnemyShipSpec spec = eventManager.getShip(event.getLoadShipName());
+            enemy = generator.buildShip(this, spec);
+
+            HumanCrew enemyCrew = new HumanCrew(animations, enemy.getRooms().get(0), HumanCrew.SlotType.CREW);
+            enemy.getCrew().add(enemyCrew);
+
+            enemyAI = new ShipAI(enemy, player);
+            hostileShipUI = new HostileShipUI(this, df, enemy);
+        }
     }
 
     @NotNull

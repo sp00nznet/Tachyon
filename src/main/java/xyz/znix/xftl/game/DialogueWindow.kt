@@ -47,6 +47,8 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             resourcesGained.plusAssign(rewards)
         }
 
+        game.loadEventShip(event)
+
         // Events that have no text are valid, usually they are the result of a choice
         // Eg, to give the player some items and close the menu
         if (event.text == null) {

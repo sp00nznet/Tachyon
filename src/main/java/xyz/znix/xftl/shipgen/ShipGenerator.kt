@@ -5,8 +5,8 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.game.SlickGame
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
-    fun buildShip(sys: SlickGame, name: String): Ship {
-        val elem = bp[name].resolve().loadElem(df)
+    fun buildShip(sys: SlickGame, spec: EnemyShipSpec): Ship {
+        val elem = spec.autoBlueprint.resolve().loadElem(df)
 
         val weaponList = elem.getChild("weaponList")
         weaponList?.getAttributeValue("load")?.let { listName ->
