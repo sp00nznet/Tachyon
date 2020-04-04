@@ -176,12 +176,7 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
-        if (background != null) {
-            background.draw();
-        }
-        if (planet != null) {
-            planet.draw();
-        }
+        renderBackground(container, g);
 
         // Get the player's ship away from the top UI
         g.translate(PLAYER_SHIP_POSITION.getX(), PLAYER_SHIP_POSITION.getY());
@@ -201,6 +196,39 @@ public class SlickGame extends BasicGame {
             int imgY = shipUI.getBoxY() - 80;
             int imgX = container.getWidth() / 2 - pauseImg.getWidth() / 2;
             pauseImg.draw(imgX, imgY);
+        }
+    }
+
+    private void renderBackground(GameContainer gc, Graphics g) throws SlickException {
+        if (currentBeacon.getEnvironmentType() == Beacon.EnvironmentType.ASTEROID) {
+            // The actual background
+            getImg("img/stars/bg_dullstars.png").draw();
+
+            // Rough speeds measured from FTL
+            // back img = ~13sec to traverse weapons bar (~400px)
+            // middle img = ~10sec
+            // foreground img = ~8sec
+            renderAsteroid(gc, getImg("img/asteroids/asteroid_back1.png"), 400f / 13);
+            renderAsteroid(gc, getImg("img/asteroids/asteroid_back2.png"), 400f / 10);
+            renderAsteroid(gc, getImg("img/asteroids/asteroid_back3.png"), 400f / 8);
+
+            return;
+        }
+
+        if (background != null) {
+            background.draw();
+        }
+        if (planet != null) {
+            planet.draw();
+        }
+    }
+
+    private void renderAsteroid(GameContainer gc, Image img, float speed) {
+        int offset = (int) (System.nanoTime() / 1_000_000_000f * speed) % img.getWidth();
+        for (int x = -offset; x < gc.getWidth(); x += img.getWidth()) {
+            for (int y = 0; y < gc.getHeight(); y += img.getHeight()) {
+                img.draw(x, y);
+            }
         }
     }
 
