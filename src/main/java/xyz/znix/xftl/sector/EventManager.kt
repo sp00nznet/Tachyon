@@ -2,18 +2,22 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Document
 import org.jdom2.Element
+import org.newdawn.slick.Image
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.requireAttributeValue
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 
-class EventManager(df: Datafile, private val translator: Translator, private val bp: BlueprintManager) {
+class EventManager(val df: Datafile, private val translator: Translator, private val bp: BlueprintManager) {
     private val events = HashMap<String, IEvent>()
     private val textLists = HashMap<String, TextList>()
+    private val imageLists = HashMap<String, ImageList>()
     private val ships = HashMap<String, EnemyShipSpec>()
 
     init {
+        imageLists[ImageList.NONE.name] = ImageList.NONE
+
         for (event in FILE_NAMES) {
             loadEvents(df.parseXML(df["data/$event.xml"]), true)
         }
@@ -36,6 +40,7 @@ class EventManager(df: Datafile, private val translator: Translator, private val
     operator fun get(name: String): IEvent = events[name] ?: error("Missing event $name")
 
     fun getShip(name: String): EnemyShipSpec = ships[name] ?: error("Missing enemy ship spec '$name'")
+    fun getImageList(name: String): ImageList = imageLists[name] ?: error("Missing image list '$name'")
 
     private fun loadEvents(doc: Document, resourcePass: Boolean) {
         val root = doc.rootElement
@@ -47,10 +52,11 @@ class EventManager(df: Datafile, private val translator: Translator, private val
             if (resourcePass) {
                 when (elem.name) {
                     "textList" -> loadTextList(elem)
+                    "imageList" -> loadImageList(elem)
                 }
             } else {
                 when (elem.name) {
-                    "textList" -> Unit // Handled in the resource pass
+                    "textList", "imageList" -> Unit // Handled in the resource pass
                     "eventList" -> loadEventList(elem)
                     "ship" -> loadShip(elem)
                     "eventCounts" -> loadEventCounts(elem)
@@ -146,6 +152,20 @@ class EventManager(df: Datafile, private val translator: Translator, private val
         return EventText(text)
     }
 
+    private fun loadImageList(elem: Element) {
+        if (elem.getAttributeValue("ui") == "ipad") return
+
+        val name = elem.requireAttributeValue("name")
+        val images = ArrayList<String>()
+        for (child in elem.children) {
+            check(child.name == "img")
+            val path = "img/" + child.textTrim
+            check(df.getOrNull(path) != null)
+            images += path
+        }
+        imageLists[name] = ImageList(name, images)
+    }
+
     companion object {
         private val FILE_NAMES = listOf(
                 "events",
@@ -153,7 +173,7 @@ class EventManager(df: Datafile, private val translator: Translator, private val
                 "events_crystal",
                 "events_engi",
                 "events_fuel",
-                // "events_imageList",
+                "events_imageList",
                 "events_mantis",
                 "events_nebula",
                 "events_pirate",

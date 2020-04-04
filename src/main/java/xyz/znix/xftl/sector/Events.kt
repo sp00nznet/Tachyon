@@ -93,6 +93,18 @@ class EventText(val localised: String) : IEventText {
     override fun resolve(): String = localised
 }
 
+class ImageList(val name: String, val images: List<String>) {
+    fun get(game: SlickGame): Image? {
+        if (this == NONE) return null
+        return game.getImg(images.random())
+    }
+
+    companion object {
+        // The special image list 'NONE' can be specified to remove an inhertied image
+        val NONE = ImageList("NONE", emptyList())
+    }
+}
+
 enum class Resource {
     FUEL,
     MISSILES,
