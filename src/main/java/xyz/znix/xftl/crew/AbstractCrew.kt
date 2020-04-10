@@ -238,7 +238,7 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         val pf = room.ship.pathFinder
         pf.path(RoomPoint(value, ConstPoint.ZERO))
         val pNode = pf.nodes.getValue(roomPosition)
-        if (pNode.next == null)
+        if (pNode.next == null && value != room)
             return false
 
         pathingTarget = RoomPoint(value, pos)
