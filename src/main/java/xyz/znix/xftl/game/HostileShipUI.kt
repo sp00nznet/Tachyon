@@ -8,6 +8,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.systems.MainSystem
 
 class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy: Ship) {
     private val mutableShipPos = Point(0, 0)
@@ -69,6 +70,24 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
                 }
                 img.draw(textX + 7 + i * 23, shieldsY + 15)
             }
+        }
+
+        // Draw the enemy's systems
+        // TODO sorting
+        for ((i, sys) in enemy.rooms.asSequence().mapNotNull { it.system }.withIndex()) {
+            val y = boxY + box.height - 85
+            val x = boxX + i * 30 + 40
+
+            // TODO move the duplicated drawing code out of the hostile/player ship UIs
+            val colour = when {
+                sys.damagedEnergyLevels == sys.energyLevels -> "red"
+                sys.damagedEnergyLevels > 0 -> "orange"
+                // Note: unlike the player, there is no depowered colour - maybe with high level sensors?
+                else -> "green"
+            }
+
+            val img = game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png")
+            img.draw(x.f, y.f)
         }
     }
 
