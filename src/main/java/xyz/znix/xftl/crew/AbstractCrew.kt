@@ -141,6 +141,12 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
                 updateMovement()
             }
             return
+        } else {
+            // Update ourselves to move to the computer
+            val cp = room.computerPoint?.let(room::pointToSlot)
+            if (cp != null && room.reservedPlayerSlots[cp] == null) {
+                setTargetRoom(room)
+            }
         }
 
         room.system?.let { sys ->
@@ -204,14 +210,14 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     }
 
     fun setTargetRoom(value: Room): Boolean {
-        if (value == room)
-            return true
-
         val slots = slotsFor(value)
 
         if (value.computerPoint != null)
             if (setTargetRoom(value, value.pointToSlot(value.computerPoint!!), slots))
                 return true
+
+        if (value == room)
+            return true
 
         for (i in slots.indices) {
             if (setTargetRoom(value, i, slots))
