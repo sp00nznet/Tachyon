@@ -2,6 +2,8 @@ package xyz.znix.xftl.shipgen
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
+import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.HumanCrew
 import xyz.znix.xftl.game.SlickGame
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
@@ -17,7 +19,24 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             weaponList.addContent(weapon)
         }
 
-        return Ship(df, elem, sys)
+        val ship = Ship(df, elem, sys)
+
+        val crewCount = elem.getChild("crewCount")
+        crewCount?.let {
+            // TODO crew types
+            @Suppress("UNUSED_VARIABLE")
+            val type = crewCount.getAttributeValue("class") ?: "human"
+
+            // TODO crew count randomisation, accounting for the sector
+            val amount = crewCount.requireAttributeValueInt("amount")
+
+            for (i in 1..amount) {
+                val enemyCrew = HumanCrew(sys.animations, ship.rooms.random(), AbstractCrew.SlotType.CREW)
+                ship.crew.add(enemyCrew)
+            }
+        }
+
+        return ship
     }
 }
 

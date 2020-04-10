@@ -280,9 +280,6 @@ public class SlickGame extends BasicGame {
         if (event.getLoadShipName() != null) {
             EnemyShipSpec spec = eventManager.getShip(event.getLoadShipName());
             setEnemy(generator.buildShip(this, spec));
-
-            HumanCrew enemyCrew = new HumanCrew(animations, enemy.getRooms().get(0), HumanCrew.SlotType.CREW);
-            enemy.getCrew().add(enemyCrew);
         }
         if (event.getLoadShipHostile() == Boolean.TRUE) {
             this.currentBeacon.setShip(enemy);
