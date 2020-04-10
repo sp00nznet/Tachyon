@@ -48,6 +48,15 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
     private val assignments = HashMap<AbstractCrew, AITask?>()
     private val repairTasks = HashMap<Room, RepairTask>()
+    private val manningTasks = ArrayList<ManningTask>()
+
+    init {
+        val tasks = manningTasks
+        ship.piloting?.let { tasks += ManningTask(it.room!!) }
+        ship.engines?.let { tasks += ManningTask(it.room!!) }
+        ship.shields?.let { tasks += ManningTask(it.room!!) }
+        ship.weapons?.let { tasks += ManningTask(it.room!!) }
+    }
 
     private fun updateTasks() {
         for (room in repairTasks.keys.toList()) {
@@ -57,7 +66,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 repairTasks.remove(room)
         }
 
-        val tasks = ArrayList<AITask>()
+        val tasks = ArrayList<AITask>(manningTasks)
 
         for (room in ship.rooms) {
             val sys = room.system ?: continue
@@ -66,15 +75,10 @@ class ShipAI(val ship: Ship, val player: Ship) {
             tasks += task
         }
 
-        ship.piloting?.let { tasks += ManningTask(it.room!!) }
-        ship.engines?.let { tasks += ManningTask(it.room!!) }
-        ship.shields?.let { tasks += ManningTask(it.room!!) }
-        ship.weapons?.let { tasks += ManningTask(it.room!!) }
-
         val allTasks = tasks.toHashSet()
 
         // Exclude tasks that are already in progress
-        tasks.filter { it.assignee == null }
+        tasks.removeIf { it.assignee != null }
 
         // Tasks in increasing order of importance. Use this order since removing the last
         // element of an ArrayList is very fast.
@@ -90,6 +94,13 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 if (!assignments.containsKey(crew))
                     assignments[crew] = null
             }
+        }
+
+        // Make sure the tasks and assignments match
+        for ((crew, task) in assignments) {
+            if (task == null) continue
+            if (!allTasks.contains(task)) assignments[crew] = null
+            task.assignee = crew
         }
 
         // Now find which crew are most suitable
@@ -165,5 +176,13 @@ class ManningTask(val room: Room) : AITask() {
         val crew = assignee ?: return
         if (crew.pathingTarget?.room == room) return
         crew.setTargetRoom(room)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is ManningTask && other.room == room
+    }
+
+    override fun hashCode(): Int {
+        return room.hashCode()
     }
 }
