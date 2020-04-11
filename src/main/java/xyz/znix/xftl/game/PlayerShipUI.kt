@@ -12,7 +12,6 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
@@ -243,46 +242,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         var systemCount = 0
 
         for (sys in sortedMainSystems()) {
-            val colour = when {
-                sys.damagedEnergyLevels == sys.energyLevels -> "red"
-                sys.damagedEnergyLevels > 0 -> "orange"
-                sys.powerSelected == 0 -> "grey"
-                else -> "green"
-            }
-
-            val x = sysImgX(systemCount)
-
-            game.getImg("img/icons/s_" + sys.codename + "_" + colour + "1.png").draw(x.f, sysImgY(systemCount).f)
-
-            for (i in 0 until sys.energyLevels) {
-                val y = sysImgY(systemCount) + 8 - i * 8
-
-                when {
-                    i >= sys.energyLevels - sys.damagedEnergyLevels -> {
-                        // System damaged/broken
-                        g.color = SYS_ENERGY_BROKEN
-                        g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
-                        g.drawLine((x + 24).f, (y + 6).f, (x + 24 + 16).f, y.f)
-                    }
-                    i < sys.powerSelected -> {
-                        // System powered
-                        g.color = SYS_ENERGY_ACTIVE
-                        g.fillRect((x + 24).f, y.f, 16f, 6f)
-                    }
-                    else -> {
-                        // System depowered
-                        g.color = SYS_ENERGY_DEPOWERED
-                        g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
-                    }
-                }
-
-                if (i == sys.energyLevels - sys.damagedEnergyLevels) {
-                    g.color = SYS_ENERGY_REPAIR
-                    val width = (16 * sys.repairProgress).toInt()
-                    g.fillRect((x + 24 + 16 - width).f, y.f, width.f, 6f)
-                }
-            }
-
+            sys.drawIconAndPower(game, g, sysImgX(systemCount), sysImgY(systemCount))
             systemCount++
         }
 
