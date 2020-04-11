@@ -28,8 +28,15 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             @Suppress("UNUSED_VARIABLE")
             val type = crewCount.getAttributeValue("class") ?: "human"
 
-            // TODO crew count randomisation, accounting for the sector
-            val amount = crewCount.requireAttributeValueInt("amount")
+            // See the link to the guide below, calculated same as system power
+            val min = crewCount.requireAttributeValueInt("amount")
+            val max = crewCount.requireAttributeValueInt("max")
+
+            val maxExtra = if (sector < 2) 1 else 2
+            val range = max - min
+            val softMin = (range * sector / 8f).toInt()
+            val softMax = min(softMin + maxExtra, max)
+            val amount = (softMin..softMax).random()
 
             for (i in 1..amount) {
                 val enemyCrew = HumanCrew(sys.animations, ship.rooms.random(), AbstractCrew.SlotType.CREW)
@@ -55,7 +62,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         for (system in ship.rooms.mapNotNull { it.system }) {
             checkNotNull(system.aiMaxPower)
             val range = system.aiMaxPower - system.energyLevels
-            val offset = range * (sector / 8)
+            val offset = (range * sector / 8f).toInt()
 
             val maxExtra = if (sector < 2) 1 else 2
 
