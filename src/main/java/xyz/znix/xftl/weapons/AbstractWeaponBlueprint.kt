@@ -1,9 +1,9 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import xyz.znix.xftl.Blueprint
 
-abstract class AbstractWeaponBlueprint(xml: Element) {
-    val name: String = xml.getAttributeValue("name")!!
+abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val launcher: String
     val projectile: String
     open val explosion: String? = xml.getChildTextTrim("explosion")

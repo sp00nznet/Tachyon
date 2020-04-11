@@ -1,6 +1,7 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import xyz.znix.xftl.weapons.*
 
 class BlueprintManager(df: Datafile) {
     val blueprints: Map<String, IBlueprint>
@@ -30,8 +31,9 @@ class BlueprintManager(df: Datafile) {
         for (elem in parseXML.rootElement.children) {
             val bp = when (elem.name) {
                 "blueprintList" -> buildList(elem)
+                "weaponBlueprint" -> buildWeaponBlueprint(elem)
                 else -> buildBlueprint(elem, file)
-            }
+            } ?: continue
 
             val bpName = elem.requireAttributeValue("name")
             mutableBlueprints[bpName] = bp
@@ -50,7 +52,23 @@ class BlueprintManager(df: Datafile) {
     }
 
     private fun buildBlueprint(elem: Element, file: FTLFile): IBlueprint {
-        return Blueprint(elem, file)
+        return MiscBlueprint(elem, file)
+    }
+
+    private fun buildWeaponBlueprint(elem: Element): IBlueprint? {
+        val type = elem.getChildTextTrim("type")
+
+        // Anything without a cooldown is a drone weapon, skip it
+        if (elem.getChild("cooldown") == null)
+            return null
+
+        return when (type) {
+            "LASER" -> LaserBlueprint(elem)
+            "MISSILES" -> MissileBlueprint(elem)
+            "BEAM" -> BeamBlueprint(elem)
+            "BOMB" -> BombBlueprint(elem)
+            else -> null
+        }
     }
 }
 
@@ -71,11 +89,13 @@ class BlueprintList(private val blueprints: ArrayList<String>, private val manag
     }
 }
 
-class Blueprint(elem: Element, val file: FTLFile) : IBlueprint {
+open class Blueprint(elem: Element) : IBlueprint {
     val name = elem.requireAttributeValue("name")
 
     override fun resolve(): Blueprint = this
+}
 
+class MiscBlueprint(elem: Element, val file: FTLFile) : Blueprint(elem) {
     fun loadElem(df: Datafile): Element {
         val rootXml = df.parseXML(file)
 

@@ -347,7 +347,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         for ((nextHardpoint, node) in shipNode.getChild("weaponList").children.withIndex()) {
             val name = node.getAttributeValue("name")
-            val weapon = sys.weapons.blueprints.getValue(name) as ShipWeaponBlueprint
+            val weapon = sys.blueprintManager[name] as ShipWeaponBlueprint
 
             hardpoints[nextHardpoint].weapon = weapon.buildInstance(this)
         }

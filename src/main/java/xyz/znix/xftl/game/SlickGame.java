@@ -13,7 +13,6 @@ import xyz.znix.xftl.sector.*;
 import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.MainSystem;
-import xyz.znix.xftl.weapons.WeaponDict;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +34,6 @@ public class SlickGame extends BasicGame {
     private Map<String, Image> images = new HashMap<>();
     private Map<String, SILFontLoader> fonts = new HashMap<>();
     private Animations animations;
-    private WeaponDict weapons;
     private ShipGenerator generator;
 
     private Translator translator;
@@ -63,7 +61,6 @@ public class SlickGame extends BasicGame {
     public void init(GameContainer container) throws SlickException {
         blueprintManager = new BlueprintManager(df);
         animations = new Animations(df);
-        weapons = new WeaponDict(df);
         generator = new ShipGenerator(df, blueprintManager);
 
         translator = new Translator(df, "en");
@@ -344,10 +341,6 @@ public class SlickGame extends BasicGame {
         return animations;
     }
 
-    public WeaponDict getWeapons() {
-        return weapons;
-    }
-
     public Consumer<Room> getClickEvent() {
         return clickEvent;
     }
@@ -366,5 +359,9 @@ public class SlickGame extends BasicGame {
 
     public Beacon getCurrentBeacon() {
         return currentBeacon;
+    }
+
+    public BlueprintManager getBlueprintManager() {
+        return blueprintManager;
     }
 }

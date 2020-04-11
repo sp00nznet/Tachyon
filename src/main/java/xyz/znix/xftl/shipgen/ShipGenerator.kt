@@ -9,7 +9,7 @@ import kotlin.math.min
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int): Ship {
-        val elem = spec.autoBlueprint.resolve().loadElem(df)
+        val elem = spec.autoBlueprint.resolve().let { it as MiscBlueprint }.loadElem(df)
 
         val weaponList = elem.getChild("weaponList")
         weaponList?.getAttributeValue("load")?.let { listName ->
