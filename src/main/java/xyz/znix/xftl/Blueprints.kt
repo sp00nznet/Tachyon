@@ -74,10 +74,12 @@ class BlueprintManager(df: Datafile) {
 
 interface IBlueprint {
     fun resolve(): Blueprint
+    fun list(): List<Blueprint>
 }
 
 class BlueprintList(private val blueprints: ArrayList<String>, private val manager: BlueprintManager) : IBlueprint {
     override fun resolve(): Blueprint = manager[blueprints.random()].resolve()
+    override fun list(): List<Blueprint> = blueprints.flatMap { manager[it].list() }
 
     fun cleanup() {
         val toRemove = blueprints.filter { !manager.blueprints.containsKey(it) }
@@ -93,6 +95,7 @@ open class Blueprint(elem: Element) : IBlueprint {
     val name = elem.requireAttributeValue("name")
 
     override fun resolve(): Blueprint = this
+    override fun list(): List<Blueprint> = listOf(this)
 }
 
 class MiscBlueprint(elem: Element, val file: FTLFile) : Blueprint(elem) {
