@@ -5,20 +5,13 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.HumanCrew
 import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.systems.Weapons
+import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.min
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int): Ship {
         val elem = spec.autoBlueprint.resolve().let { it as MiscBlueprint }.loadElem(df)
-
-        val weaponList = elem.getChild("weaponList")
-        weaponList?.getAttributeValue("load")?.let { listName ->
-            val blueprint = bp[listName].resolve()
-
-            val weapon = Element("weapon")
-            weapon.setAttribute("name", blueprint.name)
-            weaponList.addContent(weapon)
-        }
 
         val ship = Ship(df, elem, sys)
 
@@ -84,9 +77,59 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             system.energyLevels++
         }
 
-        // TODO generate weapons to match the power use
+        // Build a list of all the weapons the ship is allowed to use
+        val weaponBlueprints = ArrayList<ShipWeaponBlueprint>()
+        val weaponList = elem.getChild("weaponList")
+        weaponList?.getAttributeValue("load")?.let { listName ->
+            weaponBlueprints += bp[listName].list().map { it as ShipWeaponBlueprint }
+        }
+
+        for (node in weaponList.children) {
+            val name = node.getAttributeValue("name")
+            weaponBlueprints += bp[name] as ShipWeaponBlueprint
+        }
+
+        // Build the random weapons
+        ship.weapons?.let { system ->
+            val weapons = generateWeapons(weaponBlueprints, ship.hardpoints.size, system.energyLevels)
+            check(weapons.size <= ship.hardpoints.size)
+            for ((weapon, hp) in weapons.zip(ship.hardpoints)) {
+                hp.weapon = weapon.buildInstance(ship)
+            }
+        }
 
         return ship
+    }
+
+    private fun generateWeapons(list: List<ShipWeaponBlueprint>, slots: Int, targetPower: Int): List<ShipWeaponBlueprint> {
+        for (i in 1..1000) {
+            val weapons = ArrayList<ShipWeaponBlueprint>()
+            var remainingPower = targetPower
+
+            // While we have >1 slots remaining, and still have power remaining, select another weapon
+            while (weapons.size < slots - 1 && remainingPower > 1) {
+                val w = list.filter { it.power <= remainingPower }.random()
+                weapons += w
+                remainingPower -= w.power
+            }
+
+            // If we've run out of power to assign, yay we're done
+            check(targetPower >= 0)
+            if (targetPower == 0)
+                return weapons
+
+            // Otherwise pick one weapon to fill in the remaining power. If we can't find one, just
+            // start the generation fresh.
+            val candidates = list.filter { it.power == remainingPower }
+            if (candidates.isEmpty()) continue
+
+            weapons += candidates.random()
+
+            check(targetPower >= 0)
+            return weapons
+        }
+
+        error("Failed to generate weapon set")
     }
 
     companion object {
