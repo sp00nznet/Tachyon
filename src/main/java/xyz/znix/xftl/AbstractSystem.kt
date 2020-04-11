@@ -17,6 +17,9 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
     var damagedEnergyLevels: Int = 0
     val damaged: Boolean get() = damagedEnergyLevels > 0
 
+    // Used for calculations by the ship generator.
+    val aiMaxPower: Int? = elem.getAttributeValue("max")?.toInt()
+
     /**
      * The number of intact energy bars in the system
      */
