@@ -105,15 +105,15 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
                     g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
                     g.drawLine((x + 24).f, (y + 6).f, (x + 24 + 16).f, y.f)
                 }
-                this is MainSystem && i < powerSelected -> {
-                    // System powered
-                    g.color = Constants.SYS_ENERGY_ACTIVE
-                    g.fillRect((x + 24).f, y.f, 16f, 6f)
-                }
-                else -> {
+                this is MainSystem && i >= powerSelected -> {
                     // System depowered
                     g.color = Constants.SYS_ENERGY_DEPOWERED
                     g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
+                }
+                else -> {
+                    // System powered, or a subsystem that doesn't need powering
+                    g.color = Constants.SYS_ENERGY_ACTIVE
+                    g.fillRect((x + 24).f, y.f, 16f, 6f)
                 }
             }
 
