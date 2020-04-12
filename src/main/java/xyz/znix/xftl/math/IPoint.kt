@@ -23,6 +23,14 @@ interface IPoint {
         return ConstPoint(-x, -y)
     }
 
+    operator fun times(other: IPoint): ConstPoint {
+        return ConstPoint(x * other.x, y * other.y)
+    }
+
+    operator fun times(other: Int): ConstPoint {
+        return ConstPoint(x * other, y * other)
+    }
+
     /**
      * Compare two points, matching if they have the same X or Y, regardless of their type
      */
