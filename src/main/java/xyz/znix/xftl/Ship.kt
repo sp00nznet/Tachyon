@@ -514,6 +514,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         // And reset the FTL drive
         ftlChargeProgress = 0f
+
+        // Remove all incoming projectiles
+        inboundProjectiles.clear()
     }
 
     companion object {
