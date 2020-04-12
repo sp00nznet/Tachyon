@@ -107,7 +107,7 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void update(GameContainer container, int delta) throws SlickException {
-        if (!paused)
+        if (!isPaused())
             updateGameState(delta / 1000f);
 
         hoveredRoom = null;
@@ -363,5 +363,9 @@ public class SlickGame extends BasicGame {
 
     public BlueprintManager getBlueprintManager() {
         return blueprintManager;
+    }
+
+    public boolean isPaused() {
+        return paused || shipUI.isWindowOpen();
     }
 }

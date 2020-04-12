@@ -46,6 +46,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
      */
     private var currentWindow: Window? = null
 
+    val isWindowOpen: Boolean get() = currentWindow != null
+
     // Set by render
     private var height: Int = 500
 
