@@ -7,13 +7,24 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
+import kotlin.math.roundToInt
 
 class Weapons(elem: Element) : MainSystem("weapons", elem) {
     override val sortingType: SortingType get() = SortingType.WEAPONS
 
     override fun update(dt: Float) {
-        for (hp in ship.hardpoints)
-            hp.weapon?.update(dt)
+        for (hp in ship.hardpoints) {
+            val weapon = hp.weapon ?: continue
+            weapon.update(dt)
+
+            // Update the weapon slide
+            val slideSpeed = dt * 2
+            if (weapon.isPowered) {
+                weapon.slide = (weapon.slide + slideSpeed).coerceAtMost(1f)
+            } else {
+                weapon.slide = (weapon.slide - slideSpeed).coerceAtLeast(0f)
+            }
+        }
     }
 
     private val departing: MutableList<DepartingShot> = ArrayList()
@@ -45,14 +56,18 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
         departing.removeIf { p -> !p.projectile.target.ship.inboundProjectiles.contains(p.projectile) }
 
         for (hp in ship.hardpoints) {
-            val blueprint = hp.weapon ?: continue
-
-            val weaponAnimations = ship.sys.animations.weaponAnimations
+            val weapon = hp.weapon ?: continue
 
             g.pushTransform()
 
             run {
-                val anim = blueprint.animation
+                val anim = weapon.animation
+
+                // Apply the slide
+                if (hp.slide != null) {
+                    val dist = (12 * (weapon.slide - 1)).roundToInt()
+                    g.translate(hp.slide.x * dist.f, hp.slide.y * dist.f)
+                }
 
                 // We start in ship space - x and y are relative to the hull
 
@@ -65,13 +80,13 @@ class Weapons(elem: Element) : MainSystem("weapons", elem) {
 
                 // TODO how much are the weapons retracted by?
 
-                blueprint.render(g)
+                weapon.render(g)
 
                 // Draw the charging glow, if present
-                if (blueprint.isCharged) return@run
+                if (weapon.isCharged) return@run
                 val glow = anim.chargeImage ?: return@run
 
-                glow.alpha = blueprint.chargeProgress
+                glow.alpha = weapon.chargeProgress
                 glow.draw(0f, 0f)
             }
 

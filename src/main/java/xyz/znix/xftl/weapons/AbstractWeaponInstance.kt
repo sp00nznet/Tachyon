@@ -10,6 +10,10 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
     // Is this weapon selected as powered
     var isPowered: Boolean = false
 
+    // How far out is this weapon, on a scale of 0-1. Used for making weapons slide in and out when
+    // powered up and down.
+    var slide: Float = 0f
+
     val isCharged: Boolean get() = timeCharged >= type.chargeTime
     val chargeProgress: Float get() = timeCharged / type.chargeTime
 
