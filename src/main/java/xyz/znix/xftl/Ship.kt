@@ -7,6 +7,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
@@ -38,6 +39,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
     val hullImage: Image = base.readImage("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
+    val gibs: List<ShipGib>
 
     val shieldImage: Image = base.readImage(if (isPlayerShip) "img/ship/${shipNode.getChildTextTrim("shieldImage")
             ?: imageName}_shields1.png" else "img/ship/enemy_shields.png")
@@ -87,6 +89,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
      * Returns true if this ship has ran out of health
      */
     val isDead: Boolean get() = health == 0
+
+    /**
+     * Returns true if this ship is dead, and either it doesn't have any gibs or their animation has finished.
+     */
+    val isGone: Boolean get() = isDead && gibs.firstOrNull()?.isFinished != false
 
     // The amount of power currently used by the ship's systems
     val powerConsumed: Int
@@ -350,6 +357,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             hardpoints += hardpoint
         }
 
+        gibs = ArrayList()
+        for (node in visualsXML.rootElement.getChild("explosion").children) {
+            gibs += ShipGib(sys, this, node)
+        }
+
         for ((nextHardpoint, node) in shipNode.getChild("weaponList").children.withIndex()) {
             val name = node.getAttributeValue("name")
             val weapon = sys.blueprintManager[name] as ShipWeaponBlueprint
@@ -400,8 +412,36 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         for (room in rooms)
             room.system?.drawBackground(g)
 
-        g.drawImage(hullImage, 0f, 0f)
+        // If the ship is exploding, draw no further
+        if (isDead) {
+            if (isGone) {
+                //health++ // testing
+                //gibs.forEach { it.reset() }
+                return
+            }
+            for (gib in gibs.asReversed()) {
+                gib.draw(g, ConstPoint.ZERO)
+            }
+        } else {
+            g.drawImage(hullImage, 0f, 0f)
+            drawInterior(g, selected)
+        }
 
+        // Draw the projectiles
+        for (proj in inboundProjectiles) {
+            val pos = proj.position
+            val angle = (proj.projectileAngle * 180 / Math.PI).toFloat()
+            proj.render(g, pos.x.f, pos.y.f, angle)
+        }
+
+        // Draw the floating animations (eg, from projectile explosions)
+        for (a in animations)
+            a.render()
+
+        animations.removeIf { a -> a.isFinished }
+    }
+
+    private fun drawInterior(g: Graphics, selected: Room?) {
         if (floorImage != null)
             g.drawImage(floorImage, floorOffset.x.f, floorOffset.y.f)
 
@@ -448,19 +488,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         // Draw the system foregrounds
         for (room in rooms)
             room.system?.drawForeground(g)
-
-        // Draw the projectiles
-        for (proj in inboundProjectiles) {
-            val pos = proj.position
-            val angle = (proj.projectileAngle * 180 / Math.PI).toFloat()
-            proj.render(g, pos.x.f, pos.y.f, angle)
-        }
-
-        // Draw the floating animations (eg, from projectile explosions)
-        for (a in animations)
-            a.render()
-
-        animations.removeIf { a -> a.isFinished }
     }
 
     fun screenPosToShipPos(point: Point) {
@@ -485,12 +512,24 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     }
 
     fun update(dt: Float) {
+        updateExterior(dt)
+
+        if (isDead) {
+            for (gib in gibs)
+                gib.update(dt)
+            return
+        }
+
         for (room in rooms)
             room.update(dt)
 
         for (crew in crew)
             crew.update(dt)
 
+        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 1.68f
+    }
+
+    private fun updateExterior(dt: Float) {
         // Walk backwards, since missiles remove themselves when they hit
         for (i in inboundProjectiles.size - 1 downTo 0) {
             inboundProjectiles[i].update(dt)
@@ -502,8 +541,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         // Update the animations
         for (a in animations)
             a.update(dt)
-
-        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68
     }
 
     fun damage(target: Room, type: AbstractWeaponBlueprint) = damage(target, type.damage, type.sysDamage)
