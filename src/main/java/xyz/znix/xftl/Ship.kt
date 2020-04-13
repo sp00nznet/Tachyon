@@ -543,7 +543,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             a.update(dt)
     }
 
-    fun damage(target: Room, type: AbstractWeaponBlueprint) = damage(target, type.damage, type.sysDamage)
+    fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
+        damage(target, type.damage, type.sysDamage)
+
+        if (!vfx) return
+
+        val centreX = target.offsetX + target.width * ROOM_SIZE / 2
+        val centreY = target.offsetY + target.height * ROOM_SIZE / 2
+        val animation = sys.animations[type.explosion ?: error("Default explosion not set")]
+        animations += FloatingAnimation.centered(animation.start(), ConstPoint(centreX, centreY))
+    }
 
     fun damage(target: Room, damage: Int, systemDamage: Int) {
         health -= damage
