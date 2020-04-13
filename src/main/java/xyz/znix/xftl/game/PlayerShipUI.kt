@@ -14,7 +14,6 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.systems.MainSystem
-import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*

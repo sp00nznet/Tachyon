@@ -2,9 +2,6 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Constants.*
-import xyz.znix.xftl.draw
 import xyz.znix.xftl.drawSection
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
