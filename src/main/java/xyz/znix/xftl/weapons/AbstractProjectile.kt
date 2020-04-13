@@ -10,7 +10,7 @@ import xyz.znix.xftl.math.Point
 import kotlin.math.cos
 import kotlin.math.sin
 
-abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val speed: Float) {
+abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val travelTime: Float) {
     // The angle we are approaching the target at, in radians
     var angle: Float = (Math.random() * Math.PI * 2).toFloat()
 
@@ -23,7 +23,9 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
     val ship: Ship get() = target.ship
 
-    var distance: Float = 1500f
+    var timeInFlight: Float = 0f
+
+    val distance: Float get() = 1000f * (1 - timeInFlight / travelTime)
 
     private var missed: Boolean? = null
 
@@ -40,7 +42,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     val position: IPoint get() = mutablePosition
 
     fun update(dt: Float) {
-        distance -= speed * dt
+        timeInFlight += dt
 
         calculatePositionFor(distance, mutablePosition)
 
@@ -67,8 +69,6 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
             if (missed == true)
                 return
-
-            distance = 0f
 
             // TODO shields
 
