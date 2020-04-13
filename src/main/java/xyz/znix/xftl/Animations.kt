@@ -45,10 +45,13 @@ class Animations(df: Datafile) {
                 check(elem.getAttributeValue("h").toInt() == img.height)
             }
 
-            val frame_width = elem.getAttributeValue("fw").toInt()
-            val frame_height = elem.getAttributeValue("fh").toInt()
+            // Some images, most notably some bombs, have frame heights in the XML set that are greater than
+            // the image height. This was causing all sorts of trouble, most notably that bombs were shifted
+            // down a bit and the bottom part of their images were cut off.
+            val frameWidth = elem.getAttributeValue("fw").toInt()
+            val frameHeight = elem.getAttributeValue("fh").toInt().coerceAtMost(img.height)
 
-            val sheet = SpriteSheet(img, frame_width, frame_height)
+            val sheet = SpriteSheet(img, frameWidth, frameHeight)
 
             mutableSheets[name] = sheet
         }
