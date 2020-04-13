@@ -5,7 +5,6 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.HumanCrew
 import xyz.znix.xftl.game.SlickGame
-import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.min
 
@@ -27,7 +26,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
             val maxExtra = if (sector < 2) 1 else 2
             val range = max - min
-            val softMin = (range * sector / 8f).toInt()
+            val softMin = min + (range * sector / 8f).toInt()
             val softMax = min(softMin + maxExtra, max)
             val amount = (softMin..softMax).random()
 
