@@ -53,6 +53,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
     val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
 
+    val isAutoScout = shipNode.getChild("crewCount")?.getAttributeValue("amount")?.trim() == "0"
     val crew: MutableList<AbstractCrew> = ArrayList()
 
     val pathFinder: PathFinder

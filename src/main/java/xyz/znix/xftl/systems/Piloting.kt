@@ -14,6 +14,11 @@ class Piloting(elem: Element) : AbstractSystem("pilot", elem) {
             // If piloting is broken, you get no evasion
             if (undamagedEnergy == 0) return 0f
 
+            // It seems there's a fake crewmember in every room?
+            // https://www.reddit.com/r/ftlgame/comments/2e30zc/question_re_autoscouts/
+            // TODO make some way to query crew skill that takes that into account for everything else
+            if (ship.isAutoScout) return 1.05f
+
             val room = this.room!!
 
             // Find the pilot at the computer slot, or slot 0 if the computer slot is not defined
