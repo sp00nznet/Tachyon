@@ -29,7 +29,7 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
         // Don't charge while firing
         timeCharged = 0f
 
-        if (fa.frame == animation.fireFrame - animation.chargedFrame && !hasFired) {
+        if (fa.frame >= animation.fireFrame - animation.chargedFrame && !hasFired) {
             hasFired = true
             fireFrameHit()
         }
