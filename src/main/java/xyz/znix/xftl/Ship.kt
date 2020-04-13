@@ -555,8 +555,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         val centreX = target.offsetX + target.width * ROOM_SIZE / 2
         val centreY = target.offsetY + target.height * ROOM_SIZE / 2
+        playDamageEffect(type, ConstPoint(centreX, centreY))
+    }
+
+    fun playDamageEffect(type: AbstractWeaponBlueprint, position: IPoint) {
         val animation = sys.animations[type.explosion ?: error("Default explosion not set")]
-        animations += FloatingAnimation.centered(animation.start(), ConstPoint(centreX, centreY))
+        animations += FloatingAnimation.centered(animation.start(), position)
     }
 
     fun damage(target: Room, damage: Int, systemDamage: Int) {
