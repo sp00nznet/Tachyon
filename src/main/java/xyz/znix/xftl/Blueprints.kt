@@ -67,7 +67,7 @@ class BlueprintManager(df: Datafile) {
             "MISSILES" -> MissileBlueprint(elem)
             "BEAM" -> BeamBlueprint(elem)
             "BOMB" -> BombBlueprint(elem)
-            else -> null
+            else -> UknShipWeaponBlueprint(elem)
         }
     }
 }

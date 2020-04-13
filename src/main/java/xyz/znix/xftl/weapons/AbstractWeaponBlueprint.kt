@@ -4,8 +4,8 @@ import org.jdom2.Element
 import xyz.znix.xftl.Blueprint
 
 abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
-    val launcher: String
-    val projectile: String
+    val launcher: String = xml.getChildTextTrim("weaponArt")
+    val projectile: String? = xml.getChildTextTrim("image")
     open val explosion: String? = xml.getChildTextTrim("explosion")
     val shots = xml.getChildTextTrim("shots")?.toInt() ?: 1
     val damage = xml.getChildTextTrim("damage").toInt()
@@ -17,15 +17,4 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val descKey = xml.getChild("desc").getAttributeValue("id")
 
     val power = xml.getChildTextTrim("power").toInt()
-
-    init {
-        launcher = tag(xml, "weaponArt")
-        projectile = tag(xml, "image")
-    }
-
-    private fun tag(elem: Element, name: String): String {
-        val tags = elem.getChildren(name)
-        check(tags.size == 1)
-        return tags[0].textTrim
-    }
 }

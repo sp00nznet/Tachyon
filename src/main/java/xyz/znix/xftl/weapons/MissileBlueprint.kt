@@ -20,7 +20,7 @@ class MissileBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
 
     inner class MissileProjectile(room: Room) : AbstractProjectile(this, room, 500f) {
         override fun render(g: Graphics, x: Float, y: Float, rotation: Float) {
-            val img = target.ship.sys.animations[projectile]
+            val img = target.ship.sys.animations[projectile!!]
             val spr = img.spriteAt(0)
             g.pushTransform()
             g.translate(x, y)
