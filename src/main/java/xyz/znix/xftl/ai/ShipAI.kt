@@ -10,8 +10,10 @@ import xyz.znix.xftl.weapons.MissileBlueprint
 
 class ShipAI(val ship: Ship, val player: Ship) {
     fun update(dt: Float) {
-        ship.shields?.let {
-            for (i in 1..it.energyLevels) it.increasePower()
+        // Power up all the systems
+        for (room in ship.rooms) {
+            val sys = room.system as? MainSystem ?: continue
+            for (i in 1..sys.energyLevels) sys.increasePower()
         }
 
         updateWeapons()
