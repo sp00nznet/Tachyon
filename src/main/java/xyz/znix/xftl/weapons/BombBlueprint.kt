@@ -7,6 +7,7 @@ import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.Weapons
 
 class BombBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
@@ -65,6 +66,25 @@ class BombBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     }
 
     class FiredBomb(val type: BombBlueprint, val target: Room, val animation: Animation) {
+        val missed = Math.random() * 100 < target.ship.evasion
+        val position: ConstPoint
+
+        init {
+            position = if (missed) {
+                // Currently just pick anywhere in a rectangle around their shield
+                // TODO implement this in some better way, and find out how FTL does it
+                val halfSize = target.ship.shieldHalfSize
+                val size = halfSize * 2
+                val rand = ConstPoint((Math.random() * size.x).toInt(), (Math.random() * size.y).toInt())
+                val shipCentre = target.ship.hullImage.let { ConstPoint(it.width / 2, it.height / 2) }
+                shipCentre + rand - halfSize
+            } else {
+                val centreX = target.offsetX + target.width * Constants.ROOM_SIZE / 2
+                val centreY = target.offsetY + target.height * Constants.ROOM_SIZE / 2
+                ConstPoint(centreX, centreY)
+            }
+        }
+
         init {
             animation.setLooping(false)
         }
@@ -74,15 +94,17 @@ class BombBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
 
             if (animation.isStopped) {
                 target.ship.inboundBombs.remove(this)
-                target.ship.damage(target, type)
+
+                if (missed) {
+                    target.ship.playDamageEffect(type, position)
+                } else {
+                    target.ship.damage(target, type)
+                }
             }
         }
 
         fun render() {
-            val centreX = target.offsetX + target.width * Constants.ROOM_SIZE / 2
-            val centreY = target.offsetY + target.height * Constants.ROOM_SIZE / 2
-
-            animation.draw(centreX.f - animation.width / 2, centreY.f - animation.height / 2)
+            animation.draw(position.x.f - animation.width / 2, position.y.f - animation.height / 2)
         }
     }
 }
