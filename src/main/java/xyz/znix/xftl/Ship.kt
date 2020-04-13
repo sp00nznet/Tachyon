@@ -517,6 +517,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         // Remove all incoming projectiles
         inboundProjectiles.clear()
+
+        // Reset the weapon charge times
+        for (hp in hardpoints) {
+            hp.weapon?.timeCharged = 0f
+        }
     }
 
     companion object {
