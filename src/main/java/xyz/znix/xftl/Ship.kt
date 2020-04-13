@@ -83,6 +83,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             field = value.coerceAtLeast(0).coerceAtMost(maxHealth)
         }
 
+    /**
+     * Returns true if this ship has ran out of health
+     */
+    val isDead: Boolean get() = health == 0
+
     // The amount of power currently used by the ship's systems
     val powerConsumed: Int
         get() {

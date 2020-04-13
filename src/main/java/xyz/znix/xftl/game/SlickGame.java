@@ -236,6 +236,11 @@ public class SlickGame extends BasicGame {
         if (enemy != null) {
             enemy.update(dt);
             enemyAI.update(dt);
+
+            if (enemy.isDead()) {
+                setEnemy(null);
+                currentBeacon.setShip(null);
+            }
         }
     }
 
