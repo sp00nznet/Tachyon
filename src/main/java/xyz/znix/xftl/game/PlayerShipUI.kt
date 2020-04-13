@@ -174,6 +174,19 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         game.clickEvent = selectWeaponClickEvent
     }
 
+    fun systemPowerHotkeyPressed(type: Class<*>, powerUp: Boolean) {
+        for (room in ship.rooms) {
+            val sys = room.system as? MainSystem ?: continue
+            if (sys.javaClass != type) continue
+
+            if (powerUp) {
+                sys.increasePower()
+            } else {
+                sys.decreasePower()
+            }
+        }
+    }
+
     // Dispatch actions from the UI - this is only called when the game is not paused, so dispatch
     // everything from here so a player can cancel their actions if they remain paused.
     fun update(dt: Float) {

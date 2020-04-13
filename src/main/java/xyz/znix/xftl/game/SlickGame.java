@@ -12,7 +12,7 @@ import xyz.znix.xftl.math.RoomPoint;
 import xyz.znix.xftl.sector.*;
 import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
-import xyz.znix.xftl.systems.MainSystem;
+import xyz.znix.xftl.systems.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -125,6 +125,16 @@ public class SlickGame extends BasicGame {
             shipUI.weaponHotkeyPressed(2);
         if (in.isKeyPressed(Input.KEY_4))
             shipUI.weaponHotkeyPressed(3);
+
+        boolean powerUp = !in.isKeyDown(Input.KEY_LSHIFT);
+        if (in.isKeyPressed(Input.KEY_A))
+            shipUI.systemPowerHotkeyPressed(Shields.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_S))
+            shipUI.systemPowerHotkeyPressed(Engines.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_F))
+            shipUI.systemPowerHotkeyPressed(Oxygen.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_D))
+            shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
 
         for (int i = 0; i < 3; i++) {
             if (in.isMousePressed(i)) {
