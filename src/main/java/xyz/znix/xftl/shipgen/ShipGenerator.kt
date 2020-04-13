@@ -58,10 +58,11 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
             val maxExtra = if (sector < 2) 1 else 2
 
-            val softMin = offset + system.energyLevels
-            val softMax = min(softMin + maxExtra, system.aiMaxPower)
+            // Note the count we come up with at the end is to be added to the existing system
+            // power, hence we don't take the current power into account
+            val softMax = min(offset + maxExtra, system.aiMaxPower)
 
-            val count = (softMin..softMax).random()
+            val count = (offset..softMax).random()
             for (i in 1..count) {
                 possiblePoints += system
             }
