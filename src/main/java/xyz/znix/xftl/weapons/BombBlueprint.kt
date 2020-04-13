@@ -1,7 +1,13 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import org.newdawn.slick.Animation
+import org.newdawn.slick.Graphics
+import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.f
+import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.systems.Weapons
 
 class BombBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_random"
@@ -10,5 +16,73 @@ class BombBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
         return BombInstance(ship)
     }
 
-    inner class BombInstance(ship: Ship) : AbstractWeaponInstance(this, ship)
+    inner class BombInstance(ship: Ship) : AbstractWeaponInstance(this, ship), IRoomTargetingWeapon {
+        private var firingAnimation: Animation? = null
+        private var target: Room? = null
+        private var hasFired = false
+
+        override fun render(g: Graphics) {
+            val fa = firingAnimation
+            if (fa != null) {
+                fa.draw()
+            } else {
+                super.render(g)
+            }
+        }
+
+        override fun update(dt: Float) {
+            super.update(dt)
+
+            val firingAnimation = firingAnimation ?: return
+
+            timeCharged = 0f
+            firingAnimation.update((1000 * dt).toLong())
+
+            if (firingAnimation.frame >= animation.chargedFrame && !hasFired) {
+                val target = target ?: error("Ended teleport animation without target set - what happened?")
+                val animation = target.ship.sys.animations[projectile!!].start(2f, true)
+                animation.setLooping(false)
+                val fb = FiredBomb(this@BombBlueprint, target, animation)
+                target.ship.inboundBombs += fb
+
+                hasFired = true
+                this.target = null
+            }
+
+            if (firingAnimation.isStopped) {
+                this.firingAnimation = null
+                hasFired = false
+            }
+        }
+
+        override fun fire(weapons: Weapons, target: Room) {
+            fire()
+            this.target = target
+            val fa = this.animation.shoot()
+            firingAnimation = fa
+            fa.setLooping(false)
+        }
+    }
+
+    class FiredBomb(val type: BombBlueprint, val target: Room, val animation: Animation) {
+        init {
+            animation.setLooping(false)
+        }
+
+        fun update(dt: Float) {
+            animation.update((dt * 1000).toLong())
+
+            if (animation.isStopped) {
+                target.ship.inboundBombs.remove(this)
+                target.ship.damage(target, type)
+            }
+        }
+
+        fun render() {
+            val centreX = target.offsetX + target.width * Constants.ROOM_SIZE / 2
+            val centreY = target.offsetY + target.height * Constants.ROOM_SIZE / 2
+
+            animation.draw(centreX.f - animation.width / 2, centreY.f - animation.height / 2)
+        }
+    }
 }

@@ -14,10 +14,7 @@ import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.systems.*
-import xyz.znix.xftl.weapons.AbstractProjectile
-import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
-import xyz.znix.xftl.weapons.AbstractWeaponInstance
-import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+import xyz.znix.xftl.weapons.*
 import java.awt.Rectangle
 import java.util.stream.Collectors
 
@@ -63,6 +60,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
     val hardpoints: List<Hardpoint>
 
     val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
+    val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
     // How far through charging the FTL drive, 1=fully charged
@@ -434,6 +432,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             proj.render(g, pos.x.f, pos.y.f, angle)
         }
 
+        for (bomb in inboundBombs) {
+            bomb.render()
+        }
+
         // Draw the floating animations (eg, from projectile explosions)
         for (a in animations)
             a.render()
@@ -533,6 +535,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         // Walk backwards, since missiles remove themselves when they hit
         for (i in inboundProjectiles.size - 1 downTo 0) {
             inboundProjectiles[i].update(dt)
+        }
+        for (i in inboundBombs.size - 1 downTo 0) {
+            inboundBombs[i].update(dt)
         }
 
         // Remove any projectiles that are now off-screen
