@@ -148,6 +148,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun weaponHotkeyPressed(id: Int) {
+        // Temporary hack to make the option hotkeys work
+        (currentWindow as? DialogueWindow)?.selectOption(id)
+
         if (currentWindow != null) return
 
         val weapon = ship.hardpoints[id].weapon ?: return

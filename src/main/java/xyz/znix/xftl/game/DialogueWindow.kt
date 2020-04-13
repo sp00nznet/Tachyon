@@ -169,6 +169,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         val idx = hoveredOption ?: return
 
+        selectOption(idx)
+    }
+
+    fun selectOption(idx: Int) {
         if (currentEvent.choices.isEmpty()) {
             close()
             return
