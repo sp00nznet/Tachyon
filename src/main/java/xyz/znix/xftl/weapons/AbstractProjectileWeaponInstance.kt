@@ -6,7 +6,8 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.Weapons
 
-abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship: Ship) : AbstractWeaponInstance(type, ship) {
+abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship: Ship) :
+        AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
     val isFiring: Boolean get() = !(firingAnimation?.isStopped ?: true)
 
     var firingAnimation: Animation? = null
@@ -58,7 +59,7 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
         lastProjectile = projectile
     }
 
-    fun fire(weapons: Weapons, target: Room) {
+    override fun fire(weapons: Weapons, target: Room) {
         check(!isFiring) { "Cannot file while already firing!" }
 
         this.weapons = weapons

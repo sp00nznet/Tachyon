@@ -2,6 +2,8 @@ package xyz.znix.xftl.weapons
 
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.systems.Weapons
 
 abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: Ship) {
     // The time spent charging thus far
@@ -38,4 +40,14 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
         val launcher = animation.spriteAt((animation.chargedFrame * chargeProgress).toInt())
         launcher.draw(0f, 0f)
     }
+
+    fun asWeaponInstance(): AbstractWeaponInstance = this
+}
+
+/**
+ * Represents a weapon that can be fired at a single room. Includes basically everything but beams.
+ */
+interface IRoomTargetingWeapon {
+    fun fire(weapons: Weapons, target: Room)
+    fun asWeaponInstance(): AbstractWeaponInstance
 }

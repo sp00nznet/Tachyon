@@ -16,6 +16,7 @@ import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
+import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
 import java.util.function.Consumer
 import java.util.stream.Stream
@@ -155,6 +156,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         val weapon = ship.hardpoints[id].weapon ?: return
 
+        // TODO support beams
+        check(weapon is IRoomTargetingWeapon)
+
         if (!weapon.isPowered) {
             val weapons = ship.weapons!!
             if (weapon.type.power > weapons.powerUnused) {
@@ -194,7 +198,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         for (tgt in selectedTargets.values) {
             val weapon = tgt.weapon
-            if (!weapon.isCharged)
+            if (!weapon.asWeaponInstance().isCharged)
                 continue
 
             if (fired == null)
@@ -202,8 +206,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             fired.add(tgt)
 
-            val apwi = weapon as AbstractProjectileWeaponInstance
-            apwi.fire(ship.weapons!!, tgt.room)
+            weapon.fire(ship.weapons!!, tgt.room)
         }
 
         fired?.let { selectedTargets.values.removeAll(it) }
@@ -508,5 +511,5 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
     }
 
-    private class SelectedTarget(val room: Room, val weapon: AbstractWeaponInstance)
+    private class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon)
 }
