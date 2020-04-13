@@ -58,27 +58,7 @@ class Animations(df: Datafile) {
 
         for (xml in doc.rootElement.getChildren("anim")) {
             val name = xml.getAttributeValue("name")
-
-            val sheetName = xml.getChild("sheet").textTrim
-
-            // Skip the broken animation files
-            if (sheetName == "artillery_fed")
-                continue
-            if (sheetName == "explosion_big1")
-                continue
-
-            val sheet = this.sheets[sheetName] ?: error("Unknown sheet $sheetName")
-
-            val desc = xml.getChild("desc")
-
-            val length = desc.getAttributeValue("length").toInt()
-            val x = desc.getAttributeValue("x").toInt()
-            val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
-
-            // Convert from per-cycle to per-frame
-            val time = xml.getChild("time").textTrim.toFloat() / length
-
-            animations[name] = AnimationSpec(sheet, x, y, length, time)
+            animations[name] = buildAnimation(xml) ?: continue
         }
 
         weaponAnimations = HashMap()
@@ -86,21 +66,9 @@ class Animations(df: Datafile) {
         for (xml in doc.rootElement.getChildren("weaponAnim")) {
             val name = xml.getAttributeValue("name")
 
-            val sheetName = xml.getChild("sheet").textTrim
-
-            // Skip the broken animation files
-            if (sheetName == "artillery_fed")
-                continue
-            if (sheetName == "explosion_big1")
-                continue
-
-            val sheet = this.sheets[sheetName] ?: error("Unknown sheet $sheetName")
-
-            val desc = xml.getChild("desc")
-
-            val length = desc.getAttributeValue("length").toInt()
-            val x = desc.getAttributeValue("x").toInt()
-            val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
+            // Add this here since weapon animations don't have time elements
+            xml.addContent(Element("time").apply { text = "-1" })
+            val anim = buildAnimation(xml) ?: continue
 
             val chargedFrame = xml.getChild("chargedFrame").textTrim.toInt()
             val fireFrame = xml.getChild("fireFrame").textTrim.toInt()
@@ -110,9 +78,31 @@ class Animations(df: Datafile) {
 
             val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage("img/$i") }
 
-            weaponAnimations[name] = WeaponAnimationSpec(sheet, x, y, length, chargedFrame, fireFrame, mountPoint, firePoint, chargeImage)
-            System.out.println(name)
+            weaponAnimations[name] = WeaponAnimationSpec(anim.sheet, anim.x, anim.y, anim.length, chargedFrame, fireFrame, mountPoint, firePoint, chargeImage)
         }
+    }
+
+    private fun buildAnimation(xml: Element): AnimationSpec? {
+        val sheetName = xml.getChild("sheet").textTrim
+
+        // Skip the broken animation files
+        if (sheetName == "artillery_fed")
+            return null
+        if (sheetName == "explosion_big1")
+            return null
+
+        val sheet = this.sheets[sheetName] ?: error("Unknown sheet $sheetName")
+
+        val desc = xml.getChild("desc")
+
+        val length = desc.getAttributeValue("length").toInt()
+        val x = desc.getAttributeValue("x").toInt()
+        val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
+
+        // Convert from per-cycle to per-frame
+        val time = xml.getChild("time").textTrim.toFloat() / length
+
+        return AnimationSpec(sheet, x, y, length, time)
     }
 
     private fun parsePosElem(elem: Element): ConstPoint {
