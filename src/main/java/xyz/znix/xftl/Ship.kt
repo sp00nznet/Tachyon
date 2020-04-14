@@ -529,7 +529,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         for (crew in crew)
             crew.update(dt)
 
-        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 1.68f
+        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
     }
 
     private fun updateExterior(dt: Float) {
