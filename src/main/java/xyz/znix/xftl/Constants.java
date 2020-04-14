@@ -12,9 +12,6 @@ public class Constants {
     public static final Color ROOM_BORDER_COLOUR_SELECTED = Color.yellow;
     public static final Color ROOM_BORDER_COLOUR_SELECTED_INNER = new Color(255, 188, 0);
 
-    public static final Color ROOM_SELECTION_COLOUR = new Color(106, 169, 102);
-    public static final Color ROOM_SELECTION_COLOURS[];
-
     public static final int ROOM_BORDER_SIZE = 2;
     public static final Color DOOR_COLOUR_1 = new Color(255, 150, 48);
 
@@ -69,22 +66,5 @@ public class Constants {
     public static final float BASE_REPAIR_TIME = 13.0f;
 
     private Constants() {
-    }
-
-    static {
-        float opacities[] = new float[]{
-                1,
-                0.8f, 0.8f, 0.8f,
-                0.6f, 0.6f,
-                0.5f, 0.5f,
-                0.35f
-        };
-        ROOM_SELECTION_COLOURS = new Color[opacities.length];
-
-        for (int i = 0; i < opacities.length; i++) {
-            Color c = new Color(ROOM_SELECTION_COLOUR);
-            c.a = opacities[i];
-            ROOM_SELECTION_COLOURS[i] = c;
-        }
     }
 }

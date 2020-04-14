@@ -115,15 +115,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             point.x += offsetX
             point.y += offsetY
 
-            for (px in ROOM_SELECTION_COLOURS.indices) {
-                val size = ROOM_SIZE - px * 2
-
-                g.color = ROOM_SELECTION_COLOURS[px]
-
-                g.drawRect(point.x.f, point.y.f, size.f, size.f)
-                point.x++
-                point.y++
-            }
+            ship.sys.getImg("img/people/green_destination.png").draw(point.x.f, point.y.f)
         }
 
         // Draw two one-pixel lines around the room, as it's too much of a hassle to
