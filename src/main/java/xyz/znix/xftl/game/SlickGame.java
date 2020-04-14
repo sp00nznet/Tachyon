@@ -251,6 +251,10 @@ public class SlickGame extends BasicGame {
                 setEnemy(null);
                 currentBeacon.setShip(null);
             }
+        } else if (!currentBeacon.getEnvironmentType().isDangerous()) {
+            // If the player isn't fighting a ship, there are no borders (not yet implemented), and they're not
+            // in a dangerous environment (eg, an asteroid field) then let them jump instantly.
+            player.setFtlChargeProgress(1);
         }
     }
 

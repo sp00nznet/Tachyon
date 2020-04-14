@@ -73,13 +73,13 @@ class Beacon(
         VISITED_DANGER,
     }
 
-    enum class EnvironmentType(val backgroundName: String?) {
-        NORMAL(null),
-        ASTEROID("low_asteroid"),
-        SUN("low_sun"),
-        PULSAR("low_pulsar"),
-        NEBULA("low_nebula"),
-        ION_STORM("low_storm");
+    enum class EnvironmentType(val backgroundName: String?, val isDangerous: Boolean) {
+        NORMAL(null, false),
+        ASTEROID("low_asteroid", true),
+        SUN("low_sun", true),
+        PULSAR("low_pulsar", true),
+        NEBULA("low_nebula", false),
+        ION_STORM("low_storm", false);
 
         // TODO how should we represent PDS/ABSes, given they can be targed at the player or enemy (or both?)
     }
