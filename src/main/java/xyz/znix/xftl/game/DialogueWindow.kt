@@ -173,10 +173,13 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     }
 
     fun selectOption(idx: Int) {
-        if (currentEvent.choices.isEmpty()) {
+        if (currentEvent.choices.isEmpty() && idx == 0) {
             close()
             return
         }
+
+        if (idx < 0 || idx >= currentEvent.choices.size)
+            return
 
         val choice = currentEvent.choices[idx]
         loadEvent(choice.event.resolve())
