@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.*;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
-import xyz.znix.xftl.crew.HumanCrew;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.Point;
@@ -46,6 +45,8 @@ public class SlickGame extends BasicGame {
 
     private PlayerShipUI shipUI;
     private HostileShipUI hostileShipUI;
+
+    private boolean enemyIsHostile;
 
     private Beacon currentBeacon;
     private boolean paused;
@@ -255,13 +256,18 @@ public class SlickGame extends BasicGame {
 
         if (enemy != null) {
             enemy.update(dt);
-            enemyAI.update(dt);
+
+            if (enemyIsHostile) {
+                enemyAI.update(dt);
+            }
 
             if (enemy.isGone()) {
                 setEnemy(null);
                 currentBeacon.setShip(null);
             }
-        } else if (!currentBeacon.getEnvironmentType().isDangerous()) {
+        }
+
+        if (!currentBeacon.getEnvironmentType().isDangerous() && (enemy == null || !enemyIsHostile)) {
             // If the player isn't fighting a ship, there are no borders (not yet implemented), and they're not
             // in a dangerous environment (eg, an asteroid field) then let them jump instantly.
             player.setFtlChargeProgress(1);
@@ -271,6 +277,7 @@ public class SlickGame extends BasicGame {
     public void setCurrentBeacon(Beacon currentBeacon) {
         this.currentBeacon = currentBeacon;
 
+        enemyIsHostile = true;
         setEnemy(currentBeacon.getShip());
 
         player.resetAfterJump();
@@ -308,8 +315,10 @@ public class SlickGame extends BasicGame {
             // TODO use the proper sector number
             setEnemy(generator.buildShip(this, spec, 0));
         }
-        if (event.getLoadShipHostile() == Boolean.TRUE) {
-            this.currentBeacon.setShip(enemy);
+        Boolean hostileState = event.getLoadShipHostile();
+        if (hostileState != null) {
+            this.currentBeacon.setShip(hostileState ? enemy : null);
+            this.enemyIsHostile = hostileState;
         }
     }
 
