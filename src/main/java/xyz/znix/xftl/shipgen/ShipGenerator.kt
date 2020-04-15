@@ -5,6 +5,8 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.HumanCrew
 import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.sector.EventManager
+import xyz.znix.xftl.sector.IEvent
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.min
 
@@ -138,11 +140,23 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     }
 }
 
-class EnemyShipSpec(elem: Element, bp: BlueprintManager) {
+class EnemyShipSpec(elem: Element, bp: BlueprintManager, ev: EventManager) {
     val name = elem.requireAttributeValue("name")
+
+    val destroyed: IEvent? by loadEvent(elem, ev, name, "destroyed")
+    val deadCrew: IEvent? by loadEvent(elem, ev, name, "deadCrew")
+    val gotaway: IEvent? by loadEvent(elem, ev, name, "gotaway")
 
     // Two ships (TUTORIAL_PIRATE and IMPOSSIBLE_PIRATE) have 'blueprint' attributes instead. While it's
     // unlikely we'll care about them for a long time (if ever), it's nice to load all the ships without
     // having to carry around a list of exceptions.
     val autoBlueprint = bp[elem.getAttributeValue("blueprint") ?: elem.requireAttributeValue("auto_blueprint")]
+
+    companion object {
+        private fun loadEvent(root: Element, ev: EventManager, name: String, evName: String): Lazy<IEvent?> {
+            // TODO is there a default destroyed/deadCrew/gotaway event we should use if one hasn't been set?
+            val elem = root.getChild(evName) ?: return lazyOf(null)
+            return ev.loadEmbeddedEvent(elem, name)
+        }
+    }
 }

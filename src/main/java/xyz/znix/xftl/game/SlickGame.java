@@ -262,6 +262,12 @@ public class SlickGame extends BasicGame {
             }
 
             if (enemy.isGone()) {
+                if (enemy.getSpec() != null) {
+                    IEvent event = enemy.getSpec().getDestroyed();
+                    if (event != null)
+                        shipUI.showEventDialogue(event.resolve());
+                }
+
                 setEnemy(null);
                 currentBeacon.setShip(null);
             }

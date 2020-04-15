@@ -114,12 +114,17 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     private fun loadShip(elem: Element) {
         check(elem.name == "ship")
 
-        val ship = EnemyShipSpec(elem, bp)
+        val ship = EnemyShipSpec(elem, bp, this)
         ships[ship.name] = ship
     }
 
-    private fun loadEvent(elem: Element, debugId: String): Lazy<IEvent> {
-        check(elem.name == "event")
+    fun loadEmbeddedEvent(elem: Element, debugId: String): Lazy<IEvent> {
+        return loadEvent(elem, "$debugId.${elem.name}", true)
+    }
+
+    private fun loadEvent(elem: Element, debugId: String, embed: Boolean = false): Lazy<IEvent> {
+        if (!embed)
+            check(elem.name == "event")
 
         elem.getAttributeValue("load")?.let {
             return lazy { events[it]!! }
