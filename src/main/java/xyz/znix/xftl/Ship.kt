@@ -7,6 +7,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.HumanCrew
 import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
@@ -583,6 +584,30 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         for (hp in hardpoints) {
             hp.weapon?.timeCharged = 0f
         }
+    }
+
+    fun addCrewMember(race: String): AbstractCrew {
+        var freeSpace: RoomPoint? = null
+
+        for (room in rooms) {
+            for (i in 0 until (room.width * room.height)) {
+                if (room.reservedPlayerSlots[i] != null) continue
+
+                freeSpace = RoomPoint(room, room.slotToPoint(i))
+                break
+            }
+        }
+
+        if (freeSpace == null) {
+            error("No free cells on ship, cannot spawn crew '$race'")
+        }
+
+        val crewMember = HumanCrew(sys.animations, freeSpace.room, AbstractCrew.SlotType.CREW)
+        crewMember.position.set(freeSpace)
+        crew.add(crewMember)
+        freeSpace.room.reservedPlayerSlots[freeSpace.room.pointToSlot(freeSpace)] = crewMember
+
+        return crewMember
     }
 
     companion object {

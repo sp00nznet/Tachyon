@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game;
 
+import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.*;
 import xyz.znix.xftl.*;
@@ -67,7 +68,7 @@ public class SlickGame extends BasicGame {
         eventManager = new EventManager(df, translator, blueprintManager);
         gameMap = new GameMap(df, eventManager);
 
-        player = new Ship(df, "PLAYER_SHIP_HARD", this); // Kestral
+        loadPlayerShip();
         shipUI = new PlayerShipUI(df, translator, player, this);
 
         // Start at the first beacon of the first sector
@@ -86,10 +87,6 @@ public class SlickGame extends BasicGame {
                 getImg(img);
         }
 
-        HumanCrew crew = new HumanCrew(animations, player.getRooms().get(0), HumanCrew.SlotType.CREW);
-        player.getCrew().add(crew);
-        crew.setTargetRoom(player.shipToRoomPos(new ConstPoint(1, 1)).getRoom());
-
         for (Room r : player.getRooms()) {
             AbstractSystem system = r.getSystem();
             if (system == null)
@@ -102,6 +99,19 @@ public class SlickGame extends BasicGame {
             getImg("img/icons/s_" + system.getCodename() + "_orange1.png");
             getImg("img/icons/s_" + system.getCodename() + "_grey1.png");
             getImg("img/icons/s_" + system.getCodename() + "_green1.png");
+        }
+    }
+
+    private void loadPlayerShip() {
+        Element playerXml = ((MiscBlueprint) blueprintManager.get("PLAYER_SHIP_HARD")).loadElem(df);
+        player = new Ship(df, playerXml, this); // Kestral
+
+        for (Element elem : playerXml.getChildren("crewCount")) {
+            int count = Integer.parseInt(elem.getAttributeValue("amount").strip());
+            String race = elem.getAttributeValue("class");
+            for (int i = 0; i < count; i++) {
+                player.addCrewMember(race);
+            }
         }
     }
 
