@@ -12,7 +12,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int): Ship {
         val elem = spec.autoBlueprint.resolve().let { it as MiscBlueprint }.loadElem(df)
 
-        val ship = Ship(df, elem, sys)
+        val ship = Ship(df, elem, sys, spec)
 
         val crewCount = elem.getChild("crewCount")
         crewCount?.let {

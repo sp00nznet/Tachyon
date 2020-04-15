@@ -105,7 +105,7 @@ public class SlickGame extends BasicGame {
 
     private void loadPlayerShip() {
         Element playerXml = ((MiscBlueprint) blueprintManager.get("PLAYER_SHIP_HARD")).loadElem(df);
-        player = new Ship(df, playerXml, this); // Kestral
+        player = new Ship(df, playerXml, this, null); // Kestral
 
         for (Element elem : playerXml.getChildren("crewCount")) {
             int count = Integer.parseInt(elem.getAttributeValue("amount").strip());

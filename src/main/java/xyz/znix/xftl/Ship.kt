@@ -14,15 +14,13 @@ import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.*
 import java.awt.Rectangle
 import java.util.stream.Collectors
 
-class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
-    constructor(base: Datafile, name: String, sys: SlickGame) : this(base, findDefaultShipElement(base, name)
-            ?: throw IllegalArgumentException("Cannot find ship $name in blueprints"), sys)
-
+class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: EnemyShipSpec?) {
     val name: String = shipNode.getAttributeValue("name")
     val rooms: List<Room>
     val doors: MutableList<Door> = ArrayList()
