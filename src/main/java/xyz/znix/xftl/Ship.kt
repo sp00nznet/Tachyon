@@ -373,7 +373,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
         pathFinder = PathFinder(this)
     }
 
-    fun render(g: Graphics, selected: Room?) {
+    fun render(g: Graphics, interiorVisible: Boolean, selected: Room?) {
         val level = shields?.activeShields ?: 0
         shieldImage.alpha = SHIELD_OPACITY_BASE + SHIELD_OPACITY_LEVEL * level
 
@@ -424,7 +424,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
             }
         } else {
             g.drawImage(hullImage, 0f, 0f)
-            drawInterior(g, selected)
+
+            if (interiorVisible)
+                drawInterior(g, selected)
         }
 
         // Draw the projectiles

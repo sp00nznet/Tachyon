@@ -20,7 +20,7 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
     private val shieldIconStandardHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked_charged.png")
     private val shieldIconBrokenHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked.png")
 
-    fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?) {
+    fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, isHostile: Boolean) {
         val box = game.getImg("img/combatUI/box_hostiles2.png")
 
         val boxX = gc.width - (box.width - 20) - 18
@@ -36,7 +36,7 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
             game.getImg("img/combatUI/box_hostiles_mask.png").draw(boxX, boxY)
         }) {
             g.translate(shipPos.x.f, shipPos.y.f)
-            enemy.render(g, hoveredRoom)
+            enemy.render(g, isHostile, hoveredRoom)
             g.resetTransform()
         }
 

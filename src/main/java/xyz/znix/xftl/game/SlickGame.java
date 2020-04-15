@@ -198,13 +198,13 @@ public class SlickGame extends BasicGame {
 
         // Get the player's ship away from the top UI
         g.translate(PLAYER_SHIP_POSITION.getX(), PLAYER_SHIP_POSITION.getY());
-        player.render(g, hoveredRoom);
+        player.render(g, true, hoveredRoom);
         g.resetTransform();
 
         shipUI.render(container, g);
 
         if (enemy != null) {
-            hostileShipUI.render(container, g, hoveredRoom);
+            hostileShipUI.render(container, g, hoveredRoom, enemyIsHostile);
         }
 
         shipUI.renderMenus(container, g);
