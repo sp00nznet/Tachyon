@@ -510,5 +510,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
     }
 
+    // Hack used to draw the selected crew from the ship, rather than some cleaner solution
+    fun isCrewSelected(crew: AbstractCrew): Boolean {
+        return selectedCrew.contains(crew)
+    }
+
     private class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon)
 }

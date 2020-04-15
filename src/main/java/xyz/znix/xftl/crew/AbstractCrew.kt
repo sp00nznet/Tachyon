@@ -163,6 +163,9 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     }
 
     fun draw() {
+        // Bit of a hack, since we're drawn from the ship
+        val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
+
         // Draw the background image - the coloured hint that changes when you mouse over the crew
         val cf = icon.currentFrame
         val backSubImg = backImg.getSubImage(
@@ -171,7 +174,11 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
                 cf.width,
                 cf.height
         )
-        backSubImg.draw(screenX.f, screenY.f, CREW_DESELECTED_BG)
+        val backColour = when {
+            isSelected -> CREW_SELECTED_BG
+            else -> CREW_DESELECTED_BG
+        }
+        backSubImg.draw(screenX.f, screenY.f, backColour)
 
         // Draw the actual image
         cf.draw(screenX.f, screenY.f)

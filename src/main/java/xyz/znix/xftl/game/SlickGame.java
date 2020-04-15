@@ -397,4 +397,11 @@ public class SlickGame extends BasicGame {
     public boolean isPaused() {
         return paused || shipUI.isWindowOpen();
     }
+
+    /**
+     * Try to avoid using, this is generally indicative of little hacks.
+     */
+    public PlayerShipUI getShipUI() {
+        return shipUI;
+    }
 }
