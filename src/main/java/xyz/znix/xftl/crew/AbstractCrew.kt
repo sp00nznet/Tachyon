@@ -1,9 +1,10 @@
 package xyz.znix.xftl.crew
 
 import org.newdawn.slick.Animation
+import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
-import xyz.znix.xftl.Constants.BASE_REPAIR_TIME
-import xyz.znix.xftl.Constants.ROOM_SIZE
+import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -13,6 +14,7 @@ import xyz.znix.xftl.math.RoomPoint
 
 abstract class AbstractCrew(private val codename: String, private val anims: Animations, var room: Room, mode: SlotType) {
     var icon: Animation
+    val backImg: SpriteSheet
 
     // The cell position in the current room
     var position: Point = Point(0, 0)
@@ -103,7 +105,9 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
     val movementOffsetY: Float get() = movement?.y?.times(movementProgress) ?: 0f
 
     init {
-        icon = anims["${codename}_portrait"].start()
+        val anim = anims["${codename}_portrait"]
+        icon = anim.start()
+        backImg = anim.sheet.secondary!!
         updateAnimation()
     }
 
@@ -158,6 +162,21 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         }
     }
 
+    fun draw() {
+        // Draw the background image - the coloured hint that changes when you mouse over the crew
+        val cf = icon.currentFrame
+        val backSubImg = backImg.getSubImage(
+                (cf.textureOffsetX * cf.texture.textureWidth).toInt(),
+                (cf.textureOffsetY * cf.texture.textureHeight).toInt(),
+                cf.width,
+                cf.height
+        )
+        backSubImg.draw(screenX.f, screenY.f, CREW_DESELECTED_BG)
+
+        // Draw the actual image
+        cf.draw(screenX.f, screenY.f)
+    }
+
     /**
      * Recalculate (via pathfinding) the player's current [movement] to get to
      * their desired target.
@@ -205,7 +224,8 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
             return
         }
 
-        icon = anims["${codename}_portrait"].start()
+        // Since the portrait doesn't have a background colour frame, use the top-left frame.
+        icon = Animation(anims["${codename}_portrait"].sheet.sheet, 0, 0, 0, 0, true, 1, false)
         return
     }
 

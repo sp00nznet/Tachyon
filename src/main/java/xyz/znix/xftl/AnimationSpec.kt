@@ -5,11 +5,11 @@ import org.newdawn.slick.Image
 import org.newdawn.slick.SpriteSheet
 import java.lang.reflect.Field
 
-class AnimationSpec(val sheet: SpriteSheet, val x: Int, val y: Int, val length: Int, val time: Float) {
+class AnimationSpec(val sheet: Animations.SpriteSheetSpec, val x: Int, val y: Int, val length: Int, val time: Float) {
     fun start() = start(1f, false)
 
     fun start(tmult: Float, backwards: Boolean): Animation {
-        val anim = Animation(sheet, x, y, x + length - 1, y, true, (tmult * 1000 * time).toInt(), false)
+        val anim = Animation(sheet.sheet, x, y, x + length - 1, y, true, (tmult * 1000 * time).toInt(), false)
 
         // Horrid solution since this is inaccessible, but what else can we do?
         if (backwards) {
@@ -28,7 +28,7 @@ class AnimationSpec(val sheet: SpriteSheet, val x: Int, val y: Int, val length: 
 
     fun spriteAt(i: Int): Image {
         if (i >= length) throw IndexOutOfBoundsException(i)
-        return sheet.getSprite(x + i, y)
+        return sheet.sheet.getSprite(x + i, y)
     }
 
     companion object {

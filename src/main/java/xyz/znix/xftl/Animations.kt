@@ -5,14 +5,15 @@ import org.newdawn.slick.Animation
 import org.newdawn.slick.Image
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.math.ConstPoint
+import java.util.regex.Pattern
 
 class Animations(df: Datafile) {
-    private val sheets: Map<String, SpriteSheet>
+    private val sheets: Map<String, SpriteSheetSpec>
     val animations: Map<String, AnimationSpec>
     val weaponAnimations: Map<String, WeaponAnimationSpec>
 
     init {
-        val mutableSheets: MutableMap<String, SpriteSheet> = HashMap()
+        val mutableSheets: MutableMap<String, SpriteSheetSpec> = HashMap()
         sheets = mutableSheets
 
         val doc = df.parseXML(df["data/animations.xml"])
@@ -33,7 +34,8 @@ class Animations(df: Datafile) {
                 continue
 
             // The filename is the text inside the element
-            val img = df.readImage("img/${elem.textTrim}")
+            val path = "img/${elem.textTrim}"
+            val img = df.readImage(path)
 
             run {
                 // Don't verify the small bomb, since it's image is two pixels short
@@ -53,7 +55,18 @@ class Animations(df: Datafile) {
 
             val sheet = SpriteSheet(img, frameWidth, frameHeight)
 
-            mutableSheets[name] = sheet
+            // The background images for crewmembers. I couldn't find any references to them in the XML
+            // though so I suspect they're hard-coded.
+            val match = PLAYER_BASE_REGEX.matcher(path)
+            val alt: SpriteSheet? = if (match.matches()) {
+                val backName = match.group(1) + "_color.png"
+                val backImg = df.getOrNull(backName)?.let(df::readImage)
+                backImg?.let { SpriteSheet(it, frameWidth, frameHeight) }
+            } else {
+                null
+            }
+
+            mutableSheets[name] = SpriteSheetSpec(sheet, alt)
         }
 
         val mutableAnimations: MutableMap<String, AnimationSpec> = HashMap()
@@ -81,7 +94,7 @@ class Animations(df: Datafile) {
 
             val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage("img/$i") }
 
-            weaponAnimations[name] = WeaponAnimationSpec(anim.sheet, anim.x, anim.y, anim.length, chargedFrame, fireFrame, mountPoint, firePoint, chargeImage)
+            weaponAnimations[name] = WeaponAnimationSpec(anim.sheet.sheet, anim.x, anim.y, anim.length, chargedFrame, fireFrame, mountPoint, firePoint, chargeImage)
         }
     }
 
@@ -100,7 +113,7 @@ class Animations(df: Datafile) {
 
         val length = desc.getAttributeValue("length").toInt()
         val x = desc.getAttributeValue("x").toInt()
-        val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
+        val y = sheet.sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
 
         // Convert from per-cycle to per-frame
         val time = xml.getChild("time").textTrim.toFloat() / length
@@ -134,5 +147,11 @@ class Animations(df: Datafile) {
             if (i >= length) throw IndexOutOfBoundsException(i)
             return sheet.getSprite(x + i, y)
         }
+    }
+
+    class SpriteSheetSpec(val sheet: SpriteSheet, val secondary: SpriteSheet?)
+
+    companion object {
+        val PLAYER_BASE_REGEX = Pattern.compile("(img/people/.*)_base.png")
     }
 }

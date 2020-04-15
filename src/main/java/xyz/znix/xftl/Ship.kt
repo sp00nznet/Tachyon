@@ -486,7 +486,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame) {
 
         // Draw the crew
         for (crew in crew) {
-            crew.icon.draw(crew.screenX.f, crew.screenY.f)
+            crew.draw()
         }
 
         // Draw the system foregrounds
