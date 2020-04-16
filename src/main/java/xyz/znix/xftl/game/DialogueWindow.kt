@@ -89,15 +89,16 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         if (resourcesGained.isNotEmpty()) {
             textY += 27
-            val boxWidth = resourcesGained.size * 45 + 10
+            val boxSize = findResourceBoxSize(resourcesGained)
+            val boxWidth = boxSize.x
             val boxX = position.x.f + (size.x - boxWidth) / 2
 
             g.color = Constants.REWARDS_BACKGROUND
-            g.fillRect(boxX, textY.f, boxWidth.f, 32f)
+            g.fillRect(boxX, textY.f, boxWidth.f, boxSize.y.f + 2f)
 
             g.color = Color.white
-            g.drawRect(boxX, textY.f, boxWidth - 1f, 31f)
-            g.drawRect(boxX + 1, textY.f + 1, boxWidth - 3f, 29f)
+            g.drawRect(boxX, textY.f, boxWidth - 1f, boxSize.y + 1f)
+            g.drawRect(boxX + 1, textY.f + 1, boxWidth - 3f, boxSize.y - 1f)
 
             for ((i, pair) in resourcesGained.toList().sortedBy { it.first.ordinal }.withIndex()) {
                 val x = boxX + 5 + 45 * i
@@ -124,6 +125,13 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             textY = drawText(textY, prefix + text, colour, rebuildBBs)
             textY += 32
         }
+    }
+
+    private fun findResourceBoxSize(resourceSet: ResourceSet): IPoint {
+        var width = resourceSet.size * 45 + 10
+        var height = 30
+
+        return ConstPoint(width, height)
     }
 
     private fun drawText(y: Int, msg: String, colour: Color = Color.white, addOption: Boolean = false): Int {
