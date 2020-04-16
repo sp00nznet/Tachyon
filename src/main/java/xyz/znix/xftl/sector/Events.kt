@@ -25,6 +25,7 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
     val itemsModifySteal: Boolean?
     val itemsModify: Map<Resource, IntRange>
     val autoRewards: Pair<RewardType, RewardTier>?
+    val blueprintRewards: List<String>
 
     init {
         val modElem = elem.getChild("item_modify")
@@ -53,6 +54,14 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
         } else {
             null
         }
+
+        blueprintRewards = ArrayList()
+        for (e in listOf("weapon", "drone", "augment").flatMap(elem::getChildren)) {
+            val name = e.requireAttributeValue("name")
+            check(e.children.size == 0)
+            blueprintRewards += if (name == "RANDOM") "xftl_rand_${e.name.toLowerCase()}" else name
+        }
+        blueprintRewards.trimToSize()
     }
 
     val loadShipName: String?
