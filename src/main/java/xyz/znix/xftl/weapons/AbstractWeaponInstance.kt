@@ -19,7 +19,7 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
     val isCharged: Boolean get() = timeCharged >= type.chargeTime
     val chargeProgress: Float get() = timeCharged / type.chargeTime
 
-    val animation = ship.sys.animations.weaponAnimations.getValue(type.launcher)
+    val animation = type.getLauncher(ship.sys)
 
     open fun update(dt: Float) {
         if (isPowered)
