@@ -2,6 +2,7 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Element
 import org.newdawn.slick.Image
+import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.game.RewardTier
 import xyz.znix.xftl.game.RewardType
 import xyz.znix.xftl.game.SlickGame
@@ -176,6 +177,7 @@ class ResourceSet() : Map<Resource, Int> {
     var missiles: Int = 0
     var droneParts: Int = 0
     var scrap: Int = 0
+    val items = ArrayList<Blueprint>()
 
     constructor(basicResources: Map<Resource, Int>) : this() {
         for ((k, v) in basicResources) {
