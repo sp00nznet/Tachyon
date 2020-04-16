@@ -360,7 +360,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
             weaponNumberFont.drawStringLegacy((wx + 77 + 1 + (8 - weaponNumberWidth) / 2).f, (wy + 30).f, weaponNumber, g.color)
 
-            val shortName = translator[weapon.type.shortKey].replaceFirst(" ".toRegex(), "\n")
+            val shortName = translator[weapon.type.short!!].replaceFirst(" ".toRegex(), "\n")
             drawWeaponString(g, shortName, wx + 26, wy + 8)
 
             // TODO make these correct

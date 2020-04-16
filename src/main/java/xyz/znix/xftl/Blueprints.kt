@@ -95,6 +95,10 @@ open class Blueprint(elem: Element) : IBlueprint {
     val name = elem.requireAttributeValue("name")
     val rarity: Int? = elem.getChild("rarity")?.textTrim?.toInt()
 
+    val title = elem.getChild("title")?.getAttributeValue("id")
+    val short = elem.getChild("short")?.getAttributeValue("id")
+    val desc = elem.getChild("desc")?.getAttributeValue("id")
+
     override fun resolve(): Blueprint = this
     override fun list(): List<Blueprint> = listOf(this)
 }
