@@ -93,6 +93,7 @@ class BlueprintList(private val blueprints: ArrayList<String>, private val manag
 
 open class Blueprint(elem: Element) : IBlueprint {
     val name = elem.requireAttributeValue("name")
+    val rarity: Int? = elem.getChild("rarity")?.textTrim?.toInt()
 
     override fun resolve(): Blueprint = this
     override fun list(): List<Blueprint> = listOf(this)

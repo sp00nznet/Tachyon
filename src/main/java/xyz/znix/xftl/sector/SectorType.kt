@@ -17,13 +17,21 @@ class SectorType(private val eventManager: EventManager, elem: Element) {
         EventInfo(name, count, eventManager[name])
     }
 
+    val rarityOverrides: Map<String, Int>
+
     init {
         // TODO store these
         val nameList = elem.getChild("nameList")
         check(nameList.children.size == 1)
-    }
 
-    // TODO rarity list - usually contains crew, seems it can contain weapons (though that's rarely used)
+        // Load the rarity overrides
+        check(elem.getChildren("rarityList").size <= 1)
+        rarityOverrides = elem.getChild("rarityList")?.children?.map { e ->
+            check(e.name == "blueprint")
+            check(e.children.size == 0)
+            Pair(e.requireAttributeValue("name"), e.requireAttributeValueInt("rarity"))
+        }?.toMap() ?: emptyMap()
+    }
 
     class EventInfo(val name: String, val count: IntRange, val event: IEvent)
 }

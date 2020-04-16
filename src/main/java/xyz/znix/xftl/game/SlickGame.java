@@ -35,6 +35,7 @@ public class SlickGame extends BasicGame {
     private Map<String, SILFontLoader> fonts = new HashMap<>();
     private Animations animations;
     private ShipGenerator generator;
+    private LootPool lootPool;
 
     private Translator translator;
 
@@ -281,6 +282,10 @@ public class SlickGame extends BasicGame {
     }
 
     public void setCurrentBeacon(Beacon currentBeacon) {
+        if (this.currentBeacon == null || this.currentBeacon.getSector() != currentBeacon.getSector()) {
+            lootPool = new LootPool(blueprintManager, currentBeacon.getSector().getType());
+        }
+
         this.currentBeacon = currentBeacon;
 
         enemyIsHostile = true;
@@ -418,5 +423,9 @@ public class SlickGame extends BasicGame {
      */
     public PlayerShipUI getShipUI() {
         return shipUI;
+    }
+
+    public LootPool getLootPool() {
+        return lootPool;
     }
 }
