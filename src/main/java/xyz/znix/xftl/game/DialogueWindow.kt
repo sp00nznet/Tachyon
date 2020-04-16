@@ -4,6 +4,7 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import org.newdawn.slick.geom.Rectangle
+import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
@@ -11,6 +12,8 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.sector.ResourceSet
+import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+import kotlin.math.max
 
 class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window(ConstPoint(100, 100)) {
     override val size: IPoint get() = ConstPoint(602, 377)
@@ -95,7 +98,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         var textY = position.y + 42
         textY = drawText(textY, currentEventText)
 
-        if (resourcesGained.isNotEmpty()) {
+        if (resourcesGained.isNotEmpty() || resourcesGained.items.isNotEmpty()) {
             textY += 27
             val boxSize = findResourceBoxSize(resourcesGained)
             val boxWidth = boxSize.x
@@ -114,7 +117,11 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
                 resourceNumFont.drawString(x + 30, textY + 21f, pair.second.toString(), Color.white)
             }
 
-            textY += 23
+            if (resourcesGained.isNotEmpty()) textY += 23
+
+            for (bp in resourcesGained.items) {
+                textY = drawRewardBlueprint(bp, boxX, textY)
+            }
         }
 
         textY += 60
@@ -137,7 +144,25 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
     private fun findResourceBoxSize(resourceSet: ResourceSet): IPoint {
         var width = resourceSet.size * 45 + 10
-        var height = 30
+        var height = 0
+
+        // TODO is this right? Check with a weapon-only reward
+        if (resourceSet.isNotEmpty())
+            height += 30
+
+        for (bp in resourceSet.items) {
+            val bpWidth = when (bp) {
+                is ShipWeaponBlueprint -> {
+                    val nameWidth = resourceNumFont.getWidth(game.translator[bp.title!!])
+                    val img = bp.getLauncher(game).chargedImage
+                    height += img.width + 9
+                    10 + img.height + 10 + nameWidth + 16
+                }
+                else -> TODO()
+            }
+
+            width = max(width, bpWidth)
+        }
 
         return ConstPoint(width, height)
     }
@@ -167,6 +192,31 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         }
 
         return textY
+    }
+
+    private fun drawRewardBlueprint(bp: Blueprint, boxX: Float, textY: Int): Int {
+        when (bp) {
+            is ShipWeaponBlueprint -> {
+                val anim = game.animations.weaponAnimations.getValue(bp.launcher)
+
+                // Flip and rotate the sprite appropriately to make it loop like it's mounted above
+                // a horizontal surface.
+                val spr = anim.spriteAt(anim.chargedFrame).getFlippedCopy(true, false)
+                spr.setCenterOfRotation(0f, 0f)
+                spr.rotate(90f)
+
+                // Note we have to add the width (height, but we've rotated it 90°) to fix
+                // up the offset caused by the rotation
+                spr.draw(boxX + spr.height + 10f, textY + 9f)
+
+                // Draw the name
+                val name = game.translator[bp.title!!]
+                resourceNumFont.drawString(boxX + spr.height + 20f, textY.f + 31, name, Color.white)
+
+                return textY + 44
+            }
+            else -> TODO()
+        }
     }
 
     override fun updateUI(x: Int, y: Int) {
