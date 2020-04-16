@@ -13,10 +13,20 @@ class Animations(df: Datafile) {
     val weaponAnimations: Map<String, WeaponAnimationSpec>
 
     init {
-        val mutableSheets: MutableMap<String, SpriteSheetSpec> = HashMap()
-        sheets = mutableSheets
+        sheets = HashMap()
+        animations = HashMap()
+        weaponAnimations = HashMap()
 
-        val doc = df.parseXML(df["data/animations.xml"])
+        load(df, "data/animations.xml")
+        load(df, "data/dlcAnimations.xml")
+    }
+
+    private fun load(df: Datafile, name: String) {
+        sheets as MutableMap
+        animations as MutableMap
+        weaponAnimations as MutableMap
+
+        val doc = df.parseXML(df[name])
 
         // Parse the sheets
         for (elem in doc.rootElement.getChildren("animSheet")) {
@@ -28,9 +38,7 @@ class Animations(df: Datafile) {
             }
 
             // These have image sizes which don't match the XML, skip verification of them for now
-            if (name == "artillery_fed")
-                continue
-            if (name == "explosion_big1")
+            if (TMP_BROKEN_IMAGES.contains(name))
                 continue
 
             // The filename is the text inside the element
@@ -39,7 +47,7 @@ class Animations(df: Datafile) {
 
             run {
                 // Don't verify the small bomb, since it's image is two pixels short
-                if (name == "bomb_1")
+                if (name == "bomb_1" || name == "bomb_stun")
                     return@run
 
                 // Make sure the texture size is correct
@@ -66,18 +74,13 @@ class Animations(df: Datafile) {
                 null
             }
 
-            mutableSheets[name] = SpriteSheetSpec(sheet, alt)
+            sheets[name] = SpriteSheetSpec(sheet, alt)
         }
-
-        val mutableAnimations: MutableMap<String, AnimationSpec> = HashMap()
-        animations = mutableAnimations
 
         for (xml in doc.rootElement.getChildren("anim")) {
             val name = xml.getAttributeValue("name")
             animations[name] = buildAnimation(xml) ?: continue
         }
-
-        weaponAnimations = HashMap()
 
         for (xml in doc.rootElement.getChildren("weaponAnim")) {
             val name = xml.getAttributeValue("name")
@@ -102,9 +105,7 @@ class Animations(df: Datafile) {
         val sheetName = xml.getChild("sheet").textTrim
 
         // Skip the broken animation files
-        if (sheetName == "artillery_fed")
-            return null
-        if (sheetName == "explosion_big1")
+        if (TMP_BROKEN_IMAGES.contains(sheetName))
             return null
 
         val sheet = this.sheets[sheetName] ?: error("Unknown sheet $sheetName")
@@ -153,5 +154,6 @@ class Animations(df: Datafile) {
 
     companion object {
         val PLAYER_BASE_REGEX = Pattern.compile("(img/people/.*)_base.png")
+        val TMP_BROKEN_IMAGES = setOf("artillery_fed", "explosion_big1", "room_touch2x2", "room_touch2x1")
     }
 }
