@@ -16,9 +16,15 @@ abstract class Button(pos: IPoint, size: IPoint) {
 
     abstract fun draw(g: Graphics)
 
-    open fun mouseDown(button: Int, x: Int, y: Int) {
-        if (!contains(x, y)) return
+    /**
+     * Alert the button that the mouse has been clicked at a specified location.
+     *
+     * @return true if this button absorbed the click, false otherwise
+     */
+    open fun mouseDown(button: Int, x: Int, y: Int): Boolean {
+        if (!contains(x, y)) return false
         click(button)
+        return true
     }
 
     protected abstract fun click(button: Int)

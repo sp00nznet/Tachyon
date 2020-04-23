@@ -110,6 +110,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             i++
         }
 
+        for (btn in buttons) {
+            val hit = btn.mouseDown(button, x, y)
+            if (hit) return
+        }
+
         // Select players
         val shipMousePos = Point(x, y)
         shipMousePos -= playerShipPosition
@@ -140,10 +145,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
                 return
             }
-        }
-
-        for (btn in buttons) {
-            btn.mouseDown(button, x, y)
         }
     }
 
