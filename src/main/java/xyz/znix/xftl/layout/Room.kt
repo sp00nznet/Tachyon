@@ -2,12 +2,9 @@ package xyz.znix.xftl.layout
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
-import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.f
-import xyz.znix.xftl.lerp
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -33,6 +30,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
      * Oxygen level from 1-0.
      */
     var oxygen: Float = 1f
+
+    /**
+     * Is the oxygen level so low the crew will suffocate?
+     */
+    val isOxygenCritical: Boolean get() = oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL
 
     // Offset of this room from the ship's 0,0 screen position
     val offsetX get() = ROOM_SIZE * (x + ship.offset.x) - ship.hullOffset.x
@@ -66,13 +68,18 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val w = width * ROOM_SIZE
         val h = height * ROOM_SIZE
 
-        // TODO draw oxygen stripes when very low (<= 5%) - img/effects/low_o2_stripes_*x*.png
         g.color = FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)
         g.fillRect(
                 x.f,
                 y.f,
                 w.f,
                 h.f)
+
+        if (isOxygenCritical) {
+            val img = ship.sys.getImg("img/effects/low_o2_stripes_${width}x${height}.png")
+            img.alpha = 0.5f
+            img.draw(x.f, y.f)
+        }
 
         g.color = FLOOR_GRID_COLOUR
         for (i in 1 until width) {

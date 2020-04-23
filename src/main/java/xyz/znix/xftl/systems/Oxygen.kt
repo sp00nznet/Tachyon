@@ -14,5 +14,10 @@ class Oxygen(elem: Element) : MainSystem("oxygen", elem) {
     companion object {
         // ~1% per second according to the FTL wiki
         const val ROOM_DRAIN_RATE = 0.01f
+
+        /**
+         * The amount of oxygen below which crew take damage and the warning stripes appear.
+         */
+        const val OXYGEN_CRITICAL_LEVEL = 0.05f
     }
 }
