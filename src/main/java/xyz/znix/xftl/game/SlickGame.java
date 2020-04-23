@@ -43,6 +43,7 @@ public class SlickGame extends BasicGame {
 
     private Room hoveredRoom;
     private Consumer<Room> clickEvent;
+    private boolean mouseDownPrev[] = new boolean[3];
 
     private PlayerShipUI shipUI;
     private HostileShipUI hostileShipUI;
@@ -149,13 +150,18 @@ public class SlickGame extends BasicGame {
             shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
 
         for (int i = 0; i < 3; i++) {
-            if (in.isMousePressed(i)) {
+            boolean prev = mouseDownPrev[i];
+            boolean now = in.isMouseButtonDown(i);
+            if (now && !prev) {
                 if (i == Input.MOUSE_RIGHT_BUTTON) {
                     clickEvent = null;
                 }
 
                 shipUI.mouseClick(i, in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
+            } else if (prev && !now) {
+                shipUI.mouseUp(i, in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
             }
+            mouseDownPrev[i] = now;
         }
 
         shipUI.updateUI(in.getMouseX(), in.getMouseY());

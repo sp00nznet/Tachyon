@@ -142,6 +142,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
     }
 
+    fun mouseUp(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
+    }
+
     fun isCrewHovered(crew: AbstractCrew, shipMousePos: IPoint): Boolean {
         if (shipMousePos.x < crew.screenX || shipMousePos.y < crew.screenY)
             return false
