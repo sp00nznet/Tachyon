@@ -5,6 +5,7 @@ import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
 import org.newdawn.slick.Input.MOUSE_RIGHT_BUTTON
+import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
@@ -22,6 +23,7 @@ import java.util.stream.Stream
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.ceil
+import kotlin.math.pow
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
     private val font = game.getFont("HL2", 2f)
@@ -47,6 +49,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private var currentWindow: Window? = null
 
     val isWindowOpen: Boolean get() = currentWindow != null
+
+    private var crewSelectionRectangle: Pair<ConstPoint, Point>? = null
+    private val isCrewSelectionPoint: Boolean
+        get() = crewSelectionRectangle?.let { it.first.distToSq(it.second) < SELECTION_BOX_SIZE } ?: false
 
     // Set by render
     private var height: Int = 500
@@ -116,14 +122,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
 
         // Select players
+        if (button == MOUSE_LEFT_BUTTON) {
+            crewSelectionRectangle = Pair(ConstPoint(x, y), Point(x, y))
+        }
+
+        // Move players if they're right-clicking somewhere
         val shipMousePos = Point(x, y)
         shipMousePos -= playerShipPosition
-        for (crew in ship.crew) {
-            if (button == MOUSE_LEFT_BUTTON && isCrewHovered(crew, shipMousePos)) {
-                selectedCrew += crew
-                return
-            }
-        }
 
         val roomPoint = Point(shipMousePos)
         roomPoint += ship.hullOffset
@@ -143,6 +148,31 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun mouseUp(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
+        crewSelectionRectangle?.let { csr ->
+            if (button != MOUSE_LEFT_BUTTON) return@let
+
+            selectedCrew.clear()
+
+            // If a rectangle is visible on screen (ie, the player isn't clicking a point) then build a rectangle
+            val rect = if (!isCrewSelectionPoint) {
+                val pos = csr.first.min(csr.second) - playerShipPosition
+                val size = (csr.second - csr.first).abs()
+                Rectangle(pos.x.f, pos.y.f, size.x.f, size.y.f)
+            } else null
+
+            for (crew in ship.crew) {
+                // If we're in rectangle mode, check that it intersects the centre of the player's body
+                val hovered = rect?.contains(crew.screenX + 16f, crew.screenY + 16f)
+                // Otherwise check the point overlaps the player
+                        ?: isCrewHovered(crew, csr.first - playerShipPosition)
+
+                if (hovered) {
+                    selectedCrew += crew
+                }
+            }
+
+            crewSelectionRectangle = null
+        }
     }
 
     fun isCrewHovered(crew: AbstractCrew, shipMousePos: IPoint): Boolean {
@@ -391,6 +421,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             }
         }
 
+        // Draw the crew selection rectangle, if appropriate
+        val csr = crewSelectionRectangle
+        if (csr != null && !isCrewSelectionPoint) {
+            g.color = Color.white
+            val size = csr.second - csr.first
+            g.drawRect(csr.first.x.f, csr.first.y.f, size.x.f, size.y.f)
+            g.drawRect(csr.first.x + 1f, csr.first.y + 1f, size.x - 2f, size.y - 2f)
+        }
+
         for (button in buttons) {
             button.draw(g)
         }
@@ -509,6 +548,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         for (button in buttons) {
             button.update(x, y)
         }
+
+        crewSelectionRectangle?.second?.set(x, y)
     }
 
     fun showEventDialogue(event: Event) {
@@ -523,4 +564,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     private class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon)
+
+    companion object {
+        /**
+         * The diagonal distance (squared) that the crew selection box has to be before it appears. If the
+         * player drags out an area smaller than this, it'll be treated as a click and select whoever is
+         * standing underneath.
+         */
+        val SELECTION_BOX_SIZE = 6f.pow(2f).toInt()
+    }
 }
