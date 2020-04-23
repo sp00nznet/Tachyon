@@ -54,8 +54,10 @@ data class Point(override var x: Int, override var y: Int) : IPoint {
         y = Math.floorDiv(y, v)
     }
 
-    fun set(other: IPoint) {
-        x = other.x
-        y = other.y
+    fun set(other: IPoint) = set(other.x, other.y)
+
+    fun set(x: Int, y: Int) {
+        this.x = x
+        this.y = y
     }
 }

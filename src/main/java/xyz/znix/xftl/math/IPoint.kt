@@ -1,5 +1,7 @@
 package xyz.znix.xftl.math
 
+import kotlin.math.absoluteValue
+
 interface IPoint {
     val x: Int
     val y: Int
@@ -29,6 +31,20 @@ interface IPoint {
 
     operator fun times(other: Int): ConstPoint {
         return ConstPoint(x * other, y * other)
+    }
+
+    /**
+     * Return a point where the X and Y are the minimum value between this and the [other] point.
+     */
+    fun min(other: IPoint): ConstPoint {
+        return ConstPoint(kotlin.math.min(x, other.x), kotlin.math.min(y, other.y))
+    }
+
+    /**
+     * Return this point, but with it's X and Y coordinates each with their sign inverted if they are negative.
+     */
+    fun abs(): ConstPoint {
+        return ConstPoint(x.absoluteValue, y.absoluteValue)
     }
 
     /**
