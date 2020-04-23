@@ -119,13 +119,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val shipMousePos = Point(x, y)
         shipMousePos -= playerShipPosition
         for (crew in ship.crew) {
-            if (shipMousePos.x < crew.screenX || shipMousePos.y < crew.screenY)
-                continue
-            if (shipMousePos.x >= crew.screenX + crew.icon.width || shipMousePos.y >= crew.screenY + crew.icon.height)
-                continue
-
-            if (button == MOUSE_LEFT_BUTTON) {
-                selectedCrew.clear()
+            if (button == MOUSE_LEFT_BUTTON && isCrewHovered(crew, shipMousePos)) {
                 selectedCrew += crew
                 return
             }
@@ -146,6 +140,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 return
             }
         }
+    }
+
+    fun isCrewHovered(crew: AbstractCrew, shipMousePos: IPoint): Boolean {
+        if (shipMousePos.x < crew.screenX || shipMousePos.y < crew.screenY)
+            return false
+        if (shipMousePos.x >= crew.screenX + crew.icon.width || shipMousePos.y >= crew.screenY + crew.icon.height)
+            return false
+
+        return true
     }
 
     fun weaponHotkeyPressed(id: Int) {
