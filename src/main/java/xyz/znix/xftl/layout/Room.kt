@@ -1,15 +1,18 @@
 package xyz.znix.xftl.layout
 
+import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.f
+import xyz.znix.xftl.lerp
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.systems.Oxygen
 
 data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: Int, val height: Int) {
 
@@ -26,8 +29,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             return _doors ?: error("Doors are not yet initialised")
         }
 
-    // Oxygen level in percent
-    var oxygen: Int = 100
+    /**
+     * Oxygen level from 1-0.
+     */
+    var oxygen: Float = 1f
 
     // Offset of this room from the ship's 0,0 screen position
     val offsetX get() = ROOM_SIZE * (x + ship.offset.x) - ship.hullOffset.x
@@ -48,6 +53,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
     fun update(dt: Float) {
         system?.update(dt)
+
+        // On the observation from the FTL wiki that ships loose ~1% oxygen per second
+        val refillRate = (ship.oxygen?.refillRate ?: 0f) - Oxygen.ROOM_DRAIN_RATE
+        oxygen = (oxygen + refillRate * dt).coerceAtLeast(0f).coerceAtMost(1f)
     }
 
     fun render(g: Graphics, selected: Boolean) {
@@ -57,7 +66,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val w = width * ROOM_SIZE
         val h = height * ROOM_SIZE
 
-        g.color = FLOOR_COLOUR
+        // TODO draw oxygen stripes when very low (<= 5%) - img/effects/low_o2_stripes_*x*.png
+        g.color = FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)
         g.fillRect(
                 x.f,
                 y.f,

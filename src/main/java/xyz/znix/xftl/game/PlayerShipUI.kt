@@ -520,8 +520,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8, "${ship.evasion}%", Color.white)
 
         // Oxygen
-        // TODO use correct numbers once oxygen is implemented
-        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8 + 22, "100%", Color.white)
+        val avgOxygen = (ship.rooms.map { it.oxygen }.average() * 100).toInt()
+        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8 + 22, "$avgOxygen%", Color.white)
     }
 
     private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()

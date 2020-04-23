@@ -131,6 +131,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             return null
         }
 
+    val oxygen: Oxygen?
+        get() {
+            for (room in rooms)
+                return room.system as? Oxygen ?: continue
+            return null
+        }
+
     // The ship's evasion, in percent
     val evasion: Int get() = (piloting!!.evasionMultiplier * (piloting!!.evasion + engines!!.evasion)).toInt()
 

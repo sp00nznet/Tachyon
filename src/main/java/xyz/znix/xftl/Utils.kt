@@ -33,6 +33,25 @@ fun Element.mapChildrenText(childName: String): List<String> {
     }
 }
 
+fun Float.lerp(other: Float, proportion: Float): Float {
+    val diff = other - this
+    return this + diff * proportion.coerceAtLeast(0f).coerceAtMost(1f)
+}
+
+/**
+ * Interpolate a colour between [this] and [other]. When [proportion] is 0 it's entirely [this], 1 is entirely [other].
+ */
+fun Color.lerp(other: Color, proportion: Float): Color {
+    if (proportion <= 0f) return this
+    if (proportion >= 1f) return other
+    return Color(
+            r.lerp(other.r, proportion),
+            g.lerp(other.g, proportion),
+            b.lerp(other.b, proportion),
+            a.lerp(other.a, proportion)
+    )
+}
+
 object Utils {
     /**
      * Draw something with stenciling.
