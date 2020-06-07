@@ -29,7 +29,7 @@ public class App {
         AppGameContainer appgc;
         appgc = new AppGameContainer(new SlickGame(df));
         appgc.setTargetFrameRate(120);
-        appgc.setDisplayMode(1024, 768, false);
+        appgc.setDisplayMode(1250, 720, false);
         appgc.setShowFPS(false);
         appgc.start();
     }
