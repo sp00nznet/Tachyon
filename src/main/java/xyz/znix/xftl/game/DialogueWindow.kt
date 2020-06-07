@@ -21,39 +21,29 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     private val resourceNumFont = game.getFont("JustinFont10")
     private val font = game.getFont("JustinFont11Bold")
 
-    private var currentEvent: Event = startingEvent
-    private lateinit var currentEventText: String
+    private lateinit var currentEvent: EvaluatedEvent
     private lateinit var optionsText: List<String>
 
     private val optionBoundingBoxes = ArrayList<Rectangle>()
     private var hoveredOption: Int? = null
 
-    /**
-     * The resources we've just been given by the event. This should have been added to
-     * the player's stats before the user sees them.
-     */
-    private lateinit var resourcesGained: ResourceSet
-
     init {
-        loadEvent(currentEvent)
+        loadEvent(EvaluatedEvent(startingEvent, game))
     }
 
-    private fun loadEvent(event: Event) {
-        resourcesGained = event.resolveResources(game)
-
-        game.loadEventShip(event)
+    private fun loadEvent(event: EvaluatedEvent) {
+        game.loadEventShip(event.event)
 
         // Events that have no text are valid, usually they are the result of a choice
         // Eg, to give the player some items and close the menu
         if (event.text == null) {
-            require(event.choices.isEmpty())
+            require(event.event.choices.isEmpty())
             close()
             return
         }
 
         currentEvent = event
-        currentEventText = event.text.resolve()
-        optionsText = event.choices.map { it.text.resolve() }
+        optionsText = event.event.choices.map { it.text.resolve() }
 
         if (optionsText.isEmpty()) {
             optionsText = listOf(game.translator["continue"])
@@ -80,8 +70,9 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         //val ev = "The space station here has a traveling merchant who shows you his wares."
 
         var textY = position.y + 42
-        textY = drawText(textY, currentEventText)
+        textY = drawText(textY, currentEvent.text!!)
 
+        val resourcesGained = currentEvent.resources
         if (resourcesGained.isNotEmpty() || resourcesGained.items.isNotEmpty()) {
             textY += 27
             val boxSize = findResourceBoxSize(resourcesGained)
@@ -113,7 +104,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         val rebuildBBs = optionBoundingBoxes.isEmpty()
 
         for ((i, text) in optionsText.withIndex()) {
-            val choice = if (currentEvent.choices.isNotEmpty()) currentEvent.choices[i] else null
+            val choice = if (currentEvent.event.choices.isNotEmpty()) currentEvent.event.choices[i] else null
             val colour = when {
                 hoveredOption == i -> Constants.TEXT_OPTION_HOVER
                 choice == null -> Color.white
@@ -223,15 +214,20 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     }
 
     fun selectOption(idx: Int) {
-        if (currentEvent.choices.isEmpty() && idx == 0) {
+        if (currentEvent.event.choices.isEmpty() && idx == 0) {
             close()
             return
         }
 
-        if (idx < 0 || idx >= currentEvent.choices.size)
+        if (idx < 0 || idx >= currentEvent.event.choices.size)
             return
 
-        val choice = currentEvent.choices[idx]
-        loadEvent(choice.event.resolve())
+        val choice = currentEvent.event.choices[idx]
+        loadEvent(EvaluatedEvent(choice.event.resolve(), game))
+    }
+
+    private class EvaluatedEvent(val event: Event, game: SlickGame) {
+        val resources = event.resolveResources(game)
+        val text = event.text?.resolve()
     }
 }
