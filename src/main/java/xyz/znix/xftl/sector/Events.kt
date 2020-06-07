@@ -2,10 +2,7 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Element
 import org.newdawn.slick.Image
-import xyz.znix.xftl.game.Resource
-import xyz.znix.xftl.game.RewardTier
-import xyz.znix.xftl.game.RewardType
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.requireAttributeValue
 
 /**
@@ -105,6 +102,34 @@ class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val
     }
 
     override fun resolve() = this
+
+    /**
+     * Evaluate all the random values in this event's rewards, and pack them into a ResourceSet
+     */
+    fun resolveResources(game: SlickGame): ResourceSet {
+        // The plain resources (fuel, missiles, etc)
+        val resourcesGained = ResourceSet(itemsModify.mapValues { it.value.random() })
+
+        // Add all the blueprints
+        resourcesGained.items += blueprintRewards.map { name ->
+            when (name) {
+                "xftl_rand_weapon" -> game.lootPool.getWeapon()
+                "xftl_rand_drone" -> TODO()
+                "xftl_rand_augment" -> TODO()
+                else -> game.blueprintManager[name].resolve()
+            }
+        }
+
+        // Add the standard type/tier rewards - these are the standard results and most commonly used
+        // eg destroying a ship usually gives STANDARD/MEDIUM rewards.
+        if (autoRewards != null) {
+            val sector = game.currentBeacon.sector.sectorNumber + 1
+            val rewards = LootDropGenerator.generateRewards(autoRewards.second, autoRewards.first, sector)
+            resourcesGained += rewards
+        }
+
+        return resourcesGained
+    }
 }
 
 class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {

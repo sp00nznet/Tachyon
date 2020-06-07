@@ -39,22 +39,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     }
 
     private fun loadEvent(event: Event) {
-        resourcesGained = ResourceSet(event.itemsModify.mapValues { it.value.random() })
-        resourcesGained.items += event.blueprintRewards.map { name ->
-            when (name) {
-                "xftl_rand_weapon" -> game.lootPool.getWeapon()
-                "xftl_rand_drone" -> TODO()
-                "xftl_rand_augment" -> TODO()
-                else -> game.blueprintManager[name].resolve()
-            }
-        }
-
-        val sector = 1 // TODO
-        if (event.autoRewards != null) {
-            val ar = event.autoRewards
-            val rewards = LootDropGenerator.generateRewards(ar.second, ar.first, sector)
-            resourcesGained.plusAssign(rewards)
-        }
+        resourcesGained = event.resolveResources(game)
 
         game.loadEventShip(event)
 
