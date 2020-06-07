@@ -12,6 +12,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+import java.lang.Exception
 import kotlin.math.max
 
 class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window(ConstPoint(100, 100)) {
@@ -22,13 +23,13 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     private val font = game.getFont("JustinFont11Bold")
 
     private lateinit var currentEvent: EvaluatedEvent
-    private lateinit var optionsText: List<String>
+    private lateinit var options: List<EvaluatedEvent>
 
     private val optionBoundingBoxes = ArrayList<Rectangle>()
     private var hoveredOption: Int? = null
 
     init {
-        loadEvent(EvaluatedEvent(startingEvent, game))
+        loadEvent(EvaluatedEvent(startingEvent, game, null))
     }
 
     private fun loadEvent(event: EvaluatedEvent) {
@@ -43,10 +44,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         }
 
         currentEvent = event
-        optionsText = event.event.choices.map { it.text.resolve() }
+        options = event.event.choices.map { EvaluatedEvent(it.event.resolve(), game, it.text.resolve()) }
 
-        if (optionsText.isEmpty()) {
-            optionsText = listOf(game.translator["continue"])
+        if (options.isEmpty()) {
+            options = listOf(EvaluatedEvent(null, game, game.translator["continue"]))
         }
 
         optionBoundingBoxes.clear()
@@ -103,7 +104,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         val rebuildBBs = optionBoundingBoxes.isEmpty()
 
-        for ((i, text) in optionsText.withIndex()) {
+        for ((i, option) in options.withIndex()) {
             val choice = if (currentEvent.event.choices.isNotEmpty()) currentEvent.event.choices[i] else null
             val colour = when {
                 hoveredOption == i -> Constants.TEXT_OPTION_HOVER
@@ -112,7 +113,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
                 else -> Color.white
             }
             val prefix = "${i + 1}. "
-            textY = drawText(textY, prefix + text, colour, rebuildBBs)
+            textY = drawText(textY, prefix + option.choiceText, colour, rebuildBBs)
             textY += 32
         }
     }
@@ -214,20 +215,26 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     }
 
     fun selectOption(idx: Int) {
-        if (currentEvent.event.choices.isEmpty() && idx == 0) {
+        if (idx < 0 || idx >= options.size)
+            return
+
+        val choice = options[idx]
+
+        if (choice.isContinue) {
             close()
             return
         }
 
-        if (idx < 0 || idx >= currentEvent.event.choices.size)
-            return
-
-        val choice = currentEvent.event.choices[idx]
-        loadEvent(EvaluatedEvent(choice.event.resolve(), game))
+        loadEvent(choice)
     }
 
-    private class EvaluatedEvent(val event: Event, game: SlickGame) {
-        val resources = event.resolveResources(game)
-        val text = event.text?.resolve()
+    /**
+     * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)
+     */
+    private class EvaluatedEvent(private val eventInt: Event?, game: SlickGame, val choiceText: String?) {
+        val isContinue: Boolean = eventInt == null
+        val event: Event get() = eventInt ?: throw Exception("Continue does not have an event")
+        val resources by lazy { event.resolveResources(game) }
+        val text by lazy { event.text?.resolve() }
     }
 }
