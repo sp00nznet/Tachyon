@@ -11,7 +11,6 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Event
-import xyz.znix.xftl.sector.ResourceSet
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.max
 

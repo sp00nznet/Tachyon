@@ -1,8 +1,5 @@
 package xyz.znix.xftl.game
 
-import xyz.znix.xftl.sector.Resource
-import xyz.znix.xftl.sector.ResourceSet
-
 object LootDropGenerator {
     fun generateResource(resource: Resource, tier: RewardTier, sector: Int): ResourceSet {
         val count = when (resource) {
