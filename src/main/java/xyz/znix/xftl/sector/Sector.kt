@@ -11,6 +11,12 @@ import kotlin.collections.ArrayList
  */
 class Sector(val type: SectorType,
              /**
+              * The zero-indexed position of this sector in the sector map. Zero is the starting
+              * sector, 7 is the last stand.
+              */
+             val sectorNumber: Int,
+
+             /**
               * The list of events that should be used in this sector. Each beacon will be assigned an event from
               * this list, but no two beacons will share an event (unless that event appears twice in the list).
               *

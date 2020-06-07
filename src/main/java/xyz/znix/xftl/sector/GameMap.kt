@@ -54,7 +54,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
         sectorTypes[name] = sector
     }
 
-    private fun generateSector(): Sector {
+    private fun generateSector(sectorNum: Int): Sector {
         val category = listOf("CIVILIAN", "NEBULA", "OVERRIDE_HOSTILE").random()
         val type = sectorClasses[category]?.random() ?: error("Missing sector category $category")
 
@@ -66,10 +66,10 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
             }
         }
 
-        return Sector(type, eventPool, eventManager["NEUTRAL"])
+        return Sector(type, sectorNum, eventPool, eventManager["NEUTRAL"])
     }
 
     // Temporary, this is just a single linear line of sectors
     // TODO shape them how they are in standard FTL
-    val sectors = Array(7) { generateSector() }
+    val sectors = Array(7) { sectorNum -> generateSector(sectorNum) }
 }
