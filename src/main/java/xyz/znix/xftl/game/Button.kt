@@ -122,4 +122,26 @@ object Buttons {
                 cb()
         }
     }
+
+    class ShipButton(pos: IPoint, val game: SlickGame) : Button(pos, ConstPoint(60, 41)) {
+        private val imgPos = pos - ConstPoint(7, 7)
+
+        private val imgOff = game.getImg("img/statusUI/top_ship_off.png")
+        private val imgOn = game.getImg("img/statusUI/top_ship_on.png")
+        private val imgHighlight = game.getImg("img/statusUI/top_ship_select2.png")
+
+        override fun draw(g: Graphics) {
+            val img = when {
+                game.isInDanger -> imgOff
+                hovered -> imgHighlight
+                else -> imgOn
+            }
+
+            img.draw(imgPos)
+        }
+
+        override fun click(button: Int) {
+            TODO("Not yet implemented")
+        }
+    }
 }

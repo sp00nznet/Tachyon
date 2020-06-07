@@ -70,11 +70,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
 
     init {
-        buttons += Buttons.JumpButton(ConstPoint(531, 29), ship, game) {
+        val jump = Buttons.JumpButton(ConstPoint(531, 29), ship, game) {
             currentWindow = JumpWindow(game) { beacon ->
                 currentWindow = null
             }
         }
+
+        val ship = Buttons.ShipButton(jump.pos + ConstPoint(101, 0), game)
+
+        buttons += jump
+        buttons += ship
     }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
