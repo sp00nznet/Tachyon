@@ -8,7 +8,7 @@ import java.io.File
 object FontPalette {
     @JvmStatic
     fun main(args: Array<String>) {
-        val df = Datafile(File("/home/znix/Static/Games/FTL-linux/data/ftl.dat"))
+        val df = Datafile.createWithDefaultPath()
 
         // TODO automatic extraction
         if (System.getProperty("org.lwjgl.librarypath") == null) System.setProperty(

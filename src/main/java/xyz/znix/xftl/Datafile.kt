@@ -128,4 +128,18 @@ constructor(private val data_file: File) {
     }
 
     fun readImage(path: String) = readImage(this[path])
+
+    companion object {
+        @JvmStatic
+        fun createWithDefaultPath(): Datafile {
+            var path: String? = System.getProperty("xftl.datafile-path")
+            if (path == null) {
+                path = System.getenv("XFTL_DATAFILE")
+            }
+            if (path == null) {
+                error("Datafile path not set!")
+            }
+            return Datafile(File(path))
+        }
+    }
 }

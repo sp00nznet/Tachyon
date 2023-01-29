@@ -17,7 +17,7 @@ public class App {
     }
 
     public static void main(String[] args) throws FileNotFoundException, SlickException {
-        Datafile df = new Datafile(new File("/home/znix/Static/Games/FTL-linux/data/ftl.dat"));
+        Datafile df = Datafile.createWithDefaultPath();
 
         // TODO automatic extraction
         if (System.getProperty("org.lwjgl.librarypath") == null)
