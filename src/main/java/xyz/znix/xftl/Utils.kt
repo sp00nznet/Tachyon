@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL11
 import org.newdawn.slick.*
 import xyz.znix.xftl.math.IPoint
 import java.io.File
+import java.util.*
 
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
@@ -116,9 +117,46 @@ object Utils {
     fun startSlick(builder: (Datafile) -> BasicGame) {
         val df = Datafile.createWithDefaultPath()
 
-        // TODO Automatically extract the LWJGL natives
+        // Automatically extract the LWJGL natives, if required
         if (System.getProperty("org.lwjgl.librarypath") == null) {
-            System.setProperty("org.lwjgl.librarypath", File("natives").absolutePath)
+            val nativesPath = File("natives").absoluteFile
+            System.setProperty("org.lwjgl.librarypath", nativesPath.toString())
+
+            if (!nativesPath.exists()) {
+                if (!nativesPath.mkdir())
+                    error("Failed to create natives directory")
+            }
+
+            val osName = System.getProperty("os.name").toLowerCase(Locale.UK)
+            val libraries: List<String> = if (osName.contains("windows")) {
+                // x86_64 only
+                listOf("lwjgl64.dll", "OpenAL64.dll")
+            } else if (osName.contains("linux")) {
+                listOf("liblwjgl64.so", "libopenal64.so")
+            } else if (osName.contains("mac os")) {
+                listOf("liblwjgl.dylib", "openal.dylib")
+            } else {
+                error("Cannot compute native library list, unknown OS: '$osName'")
+            }
+
+            for (name in libraries) {
+                val libFile = nativesPath.resolve(name)
+                if (libFile.exists())
+                    continue
+
+                // This library doesn't exist, extract it.
+                // First do so to a temporary file then rename it, to
+                // avoid having a corrupted library with the correct name.
+                val tmp = nativesPath.resolve("$name.tmp")
+
+                javaClass.classLoader.getResourceAsStream(name).use { inStream ->
+                    tmp.outputStream().use { out ->
+                        inStream.copyTo(out)
+                    }
+                }
+
+                tmp.renameTo(libFile)
+            }
         }
 
         // Enable stenciling support
