@@ -40,8 +40,10 @@ abstract class Button(pos: IPoint, size: IPoint) {
     }
 }
 
-class SimpleButton(pos: IPoint, size: IPoint, imgOffset: IPoint, val normal: Image, val hover: Image?,
-                   private val callback: (Int) -> Unit) : Button(pos, size) {
+class SimpleButton(
+    pos: IPoint, size: IPoint, imgOffset: IPoint, val normal: Image, val hover: Image?,
+    private val callback: (Int) -> Unit
+) : Button(pos, size) {
     val imgOffset = imgOffset.const
     private val imagePos = pos - imgOffset
 
@@ -63,8 +65,8 @@ object Buttons {
         g.fillRect(x + 3f, y + height - 1f, width - 6f, 1f)
     }
 
-    class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame, private val callback: () -> Unit)
-        : Button(pos, ConstPoint(74, 29)) {
+    class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame, private val callback: () -> Unit) :
+        Button(pos, ConstPoint(74, 29)) {
 
         private val font = game.getFont("HL2", 2f)
 
@@ -105,8 +107,10 @@ object Buttons {
         override fun contains(x: Int, y: Int) = super.contains(x - 5, y - 7)
     }
 
-    class BasicButton(pos: IPoint, size: IPoint, val label: String, game: SlickGame,
-                      private val cb: () -> Unit) : Button(pos, size) {
+    class BasicButton(
+        pos: IPoint, size: IPoint, val label: String, game: SlickGame,
+        private val cb: () -> Unit
+    ) : Button(pos, size) {
 
         private val font = game.getFont("HL2", 3f)
 

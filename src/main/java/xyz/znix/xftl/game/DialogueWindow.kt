@@ -12,7 +12,6 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
-import java.lang.Exception
 import kotlin.math.max
 
 class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window(ConstPoint(100, 100)) {
@@ -64,8 +63,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             }
         }
 
-        outlineImage.draw(position.x + 33f, position.y + 36f, position.x + size.x - 33f, position.y + size.y - 36f,
-                33f, 36f, 34f, 37f)
+        outlineImage.draw(
+            position.x + 33f, position.y + 36f, position.x + size.x - 33f, position.y + size.y - 36f,
+            33f, 36f, 34f, 37f
+        )
 
         // Event text
         //val ev = "The space station here has a traveling merchant who shows you his wares."
@@ -134,6 +135,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
                     height += img.width + 9
                     10 + img.height + 10 + nameWidth + 16
                 }
+
                 else -> TODO()
             }
 
@@ -191,6 +193,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
                 return textY + 44
             }
+
             else -> TODO()
         }
     }

@@ -17,6 +17,7 @@ class Translator(df: Datafile, lang: String) {
                 load("data/text_tooltips.xml")
                 load("data/text_tutorial.xml")
             }
+
             "zh" -> load("data/text-zh-Hans.xml")
             else -> load("data/text-$lang.xml")
         }

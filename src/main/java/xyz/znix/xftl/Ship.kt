@@ -37,8 +37,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val hullImage: Image = base.readImage("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
     val gibs: List<ShipGib>
 
-    val shieldImage: Image = base.readImage(if (isPlayerShip) "img/ship/${shipNode.getChildTextTrim("shieldImage")
-            ?: imageName}_shields1.png" else "img/ship/enemy_shields.png")
+    val shieldImage: Image = base.readImage(
+        if (isPlayerShip) "img/ship/${
+            shipNode.getChildTextTrim("shieldImage")
+                ?: imageName
+        }_shields1.png" else "img/ship/enemy_shields.png"
+    )
 
     val shieldOffset: ConstPoint
 
@@ -171,12 +175,14 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                     found_ellipse.x = l[i++].toInt()
                     found_ellipse.y = l[i++].toInt()
                 }
+
                 "ROOM" -> {
                     val id = l[i++].toInt()
                     check(id == rooms.size)
                     rooms += Room(this, id, l[i++].toInt(), l[i++].toInt(), l[i++].toInt(), l[i++].toInt())
                     check(rooms[id].id == id)
                 }
+
                 "DOOR" -> {
                     val x = l[i++].toInt()
                     val y = l[i++].toInt()
@@ -185,14 +191,17 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                     val vertical = l[i++].toInt() == 1
                     doors += Door(ConstPoint(x, y), left, right, vertical)
                 }
+
                 "" -> {
                 }
+
                 else -> error("Unknown line '$line'")
             }
         }
 
         for (room in rooms) {
-            val roomDoors = doors.stream().filter { d -> d.left == room || d.right == room }.collect(Collectors.toList())
+            val roomDoors =
+                doors.stream().filter { d -> d.left == room || d.right == room }.collect(Collectors.toList())
             room.initialise(roomDoors)
         }
 
@@ -243,10 +252,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                     compPoint = ConstPoint(1, 0)
                     compDir = Direction.UP
                 }
+
                 is Engines -> {
                     compPoint = ConstPoint(0, 1)
                     compDir = Direction.DOWN
                 }
+
                 is Shields -> {
                     compPoint = ConstPoint(0, 0)
                     compDir = Direction.LEFT
@@ -340,8 +351,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         val imgTag = visualsXML.rootElement.getChild("img")
         hullOffset = ConstPoint(
-                imgTag.getAttributeValue("x").toInt() + ROOM_SIZE * offset.x,
-                imgTag.getAttributeValue("y").toInt() + ROOM_SIZE * offset.y)
+            imgTag.getAttributeValue("x").toInt() + ROOM_SIZE * offset.x,
+            imgTag.getAttributeValue("y").toInt() + ROOM_SIZE * offset.y
+        )
 
         // Load the hardpoints
         hardpoints = ArrayList()
@@ -352,12 +364,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             val dirName = node.getAttributeValue("slide")?.toUpperCase() ?: continue
             val dir = if (dirName == "NO") null else dirName.let(Direction::valueOf)
             val hardpoint = Hardpoint(
-                    node.getAttributeValue("x").toInt(),
-                    node.getAttributeValue("y").toInt(),
-                    node.getAttributeValue("rotate")!!.toBoolean(),
-                    node.getAttributeValue("mirror")!!.toBoolean(),
-                    node.getAttributeValue("gib").toInt(),
-                    dir
+                node.getAttributeValue("x").toInt(),
+                node.getAttributeValue("y").toInt(),
+                node.getAttributeValue("rotate")!!.toBoolean(),
+                node.getAttributeValue("mirror")!!.toBoolean(),
+                node.getAttributeValue("gib").toInt(),
+                dir
             )
             hardpoints += hardpoint
         }
@@ -387,6 +399,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             level == 0 -> {
                 // Do nothing, shields disabled
             }
+
             isPlayerShip -> {
                 // This is centerpointOfHull - centerpointOfShield + shieldPos
                 val shieldPos = Point(hullImage.width, hullImage.height)
@@ -395,6 +408,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 shieldPos += shieldOffset
                 g.drawImage(shieldImage, shieldPos.x.f, shieldPos.y.f)
             }
+
             else -> {
                 // This is centerpointOfHull - centerpointOfShield + shieldPos
                 val shieldPos = Point(hullImage.width, hullImage.height)
@@ -405,11 +419,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 // no sense. Are we just supposed to ignore this?
                 // shieldPos += shieldOffset
 
-                g.drawImage(shieldImage,
-                        shieldPos.x.f, shieldPos.y.f,
-                        shieldPos.x.f + shieldHalfSize.x * 2, shieldPos.y.f + shieldHalfSize.y * 2,
-                        0f, 0f,
-                        shieldImage.width.f, shieldImage.height.f
+                g.drawImage(
+                    shieldImage,
+                    shieldPos.x.f, shieldPos.y.f,
+                    shieldPos.x.f + shieldHalfSize.x * 2, shieldPos.y.f + shieldHalfSize.y * 2,
+                    0f, 0f,
+                    shieldImage.width.f, shieldImage.height.f
                 )
             }
         }
@@ -632,7 +647,14 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
     }
 
-    data class Hardpoint(val x: Int, val y: Int, val rotate: Boolean, val mirror: Boolean, val gib: Int, val slide: Direction?) {
+    data class Hardpoint(
+        val x: Int,
+        val y: Int,
+        val rotate: Boolean,
+        val mirror: Boolean,
+        val gib: Int,
+        val slide: Direction?
+    ) {
         var weapon: AbstractWeaponInstance? = null
     }
 

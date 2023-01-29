@@ -59,15 +59,26 @@ abstract class Window(position: IPoint) {
                 y = yb
                 drawSize = ConstPoint((stop ?: size.x - 33) - (start ?: 33), 36)
             }
+
             Direction.LEFT, Direction.RIGHT -> {
                 x = xb
                 y = yb + (start ?: 36)
                 drawSize = ConstPoint(33, (stop ?: size.y - 36) - (start ?: 36))
             }
+
             else -> error("Invalid edge $edge")
         }
 
-        outlineImage.draw(x.f, y.f, x.f + drawSize.x, y.f + drawSize.y, texPos.x.f, texPos.y.f, texPos.x.f + texSize.x, texPos.y.f + texSize.y)
+        outlineImage.draw(
+            x.f,
+            y.f,
+            x.f + drawSize.x,
+            y.f + drawSize.y,
+            texPos.x.f,
+            texPos.y.f,
+            texPos.x.f + texSize.x,
+            texPos.y.f + texSize.y
+        )
     }
 
     open fun updateUI(x: Int, y: Int) {

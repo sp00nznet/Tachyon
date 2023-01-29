@@ -20,8 +20,6 @@ import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
 import java.util.function.Consumer
 import java.util.stream.Stream
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.math.ceil
 import kotlin.math.pow
 
@@ -169,7 +167,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 // If we're in rectangle mode, check that it intersects the centre of the player's body
                 val hovered = rect?.contains(crew.screenX + 16f, crew.screenY + 16f)
                 // Otherwise check the point overlaps the player
-                        ?: isCrewHovered(crew, csr.first - playerShipPosition)
+                    ?: isCrewHovered(crew, csr.first - playerShipPosition)
 
                 if (hovered) {
                     selectedCrew += crew
@@ -332,11 +330,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         // Find the longest charge time of all equipped weapons
         val maxWeaponChargeTime = ship.hardpoints.stream()
-                .map { it.weapon }
-                .filter { Objects.nonNull(it) }
-                .map { it!!.type.chargeTime }
-                .reduce { a, b -> Math.max(a, b) }
-                .orElse(1f)
+            .map { it.weapon }
+            .filter { Objects.nonNull(it) }
+            .map { it!!.type.chargeTime }
+            .reduce { a, b -> Math.max(a, b) }
+            .orElse(1f)
 
         for (i in 0 until ship.weaponSlots!!) {
             val wx = weaponBoxX(i)
@@ -400,7 +398,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             // Draw the weapon number itself
             val weaponNumber = Integer.toString(i + 1)
             val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
-            weaponNumberFont.drawStringLegacy((wx + 77 + 1 + (8 - weaponNumberWidth) / 2).f, (wy + 30).f, weaponNumber, g.color)
+            weaponNumberFont.drawStringLegacy(
+                (wx + 77 + 1 + (8 - weaponNumberWidth) / 2).f,
+                (wy + 30).f,
+                weaponNumber,
+                g.color
+            )
 
             val shortName = translator[weapon.type.short!!].replaceFirst(" ".toRegex(), "\n")
             drawWeaponString(g, shortName, wx + 26, wy + 8)
@@ -530,10 +533,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()
-            .map { it.system }
-            .filter { MainSystem::class.java.isInstance(it) }
-            .map { MainSystem::class.java.cast(it) }
-            .sorted(Comparator.comparing<MainSystem, MainSystem.SortingType> { it.sortingType })
+        .map { it.system }
+        .filter { MainSystem::class.java.isInstance(it) }
+        .map { MainSystem::class.java.cast(it) }
+        .sorted(Comparator.comparing<MainSystem, MainSystem.SortingType> { it.sortingType })
 
     private fun drawWeaponString(g: Graphics, str: String, x: Int, y: Int) {
         var y = y

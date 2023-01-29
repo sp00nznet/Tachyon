@@ -101,7 +101,7 @@ constructor(private val data_file: File) {
     }
 
     operator fun get(name: String): FTLFile =
-            files[Hash.hash(name)] ?: throw IllegalArgumentException("No such file '$name'")
+        files[Hash.hash(name)] ?: throw IllegalArgumentException("No such file '$name'")
 
     fun getOrNull(name: String): FTLFile? = files[Hash.hash(name)]
 

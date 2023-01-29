@@ -12,9 +12,19 @@ val Int.f get() = toFloat()
 fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
 fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
 
-fun Image.drawSection(x: Int, y: Int, width: Int, height: Int, offsetX: Int = 0, offsetY: Int = 0, colour: Color? = null) {
-    draw(x.f, y.f, x.f + width, y.f + height, offsetX.f, offsetY.f,
-            offsetX + width.f, offsetY + height.f, colour ?: Color.white)
+fun Image.drawSection(
+    x: Int,
+    y: Int,
+    width: Int,
+    height: Int,
+    offsetX: Int = 0,
+    offsetY: Int = 0,
+    colour: Color? = null
+) {
+    draw(
+        x.f, y.f, x.f + width, y.f + height, offsetX.f, offsetY.f,
+        offsetX + width.f, offsetY + height.f, colour ?: Color.white
+    )
 }
 
 fun Element.requireAttributeValue(name: String): String {
@@ -45,10 +55,10 @@ fun Color.lerp(other: Color, proportion: Float): Color {
     if (proportion <= 0f) return this
     if (proportion >= 1f) return other
     return Color(
-            r.lerp(other.r, proportion),
-            g.lerp(other.g, proportion),
-            b.lerp(other.b, proportion),
-            a.lerp(other.a, proportion)
+        r.lerp(other.r, proportion),
+        g.lerp(other.g, proportion),
+        b.lerp(other.b, proportion),
+        a.lerp(other.a, proportion)
     )
 }
 

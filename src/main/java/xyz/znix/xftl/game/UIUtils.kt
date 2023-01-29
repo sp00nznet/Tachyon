@@ -15,8 +15,10 @@ object UIUtils {
      *
      * @return The end position of the tab
      */
-    fun drawTab(font: SILFontLoader, text: String, img: Image,
-                x: Float, y: Float, startWidth: Float, endWidth: Float): Float {
+    fun drawTab(
+        font: SILFontLoader, text: String, img: Image,
+        x: Float, y: Float, startWidth: Float, endWidth: Float
+    ): Float {
         val textWidth = font.getWidth(text).f
         val scrBase = y + img.height
 

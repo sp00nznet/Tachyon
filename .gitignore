@@ -10,7 +10,8 @@ hs_err_pid*
 # IntelliJ IDEA files
 /out
 /*.iml
-/.idea
+/.idea/*
+!/.idea/codeStyles
 
 # LWJGL Natives (TODO autoextract these)
 /natives

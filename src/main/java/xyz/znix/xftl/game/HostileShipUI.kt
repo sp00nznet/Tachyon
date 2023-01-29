@@ -50,8 +50,10 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
         val hpY = hullY + 12
         val hull = game.getImg("img/combatUI/box_hostiles_hull2.png")
         // TODO colour
-        hull.draw(hpX.f, hpY.f, hpX.f + hpWidth, hpY.f + hull.height,
-                0f, 0f, hpWidth.f, hull.height.f)
+        hull.draw(
+            hpX.f, hpY.f, hpX.f + hpWidth, hpY.f + hull.height,
+            0f, 0f, hpWidth.f, hull.height.f
+        )
 
         enemy.shields?.let { shields ->
             // Draw the shield bubbles

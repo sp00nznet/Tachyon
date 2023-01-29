@@ -11,7 +11,10 @@ object FontPalette {
         val df = Datafile(File("/home/znix/Static/Games/FTL-linux/data/ftl.dat"))
 
         // TODO automatic extraction
-        if (System.getProperty("org.lwjgl.librarypath") == null) System.setProperty("org.lwjgl.librarypath", File("natives").absolutePath)
+        if (System.getProperty("org.lwjgl.librarypath") == null) System.setProperty(
+            "org.lwjgl.librarypath",
+            File("natives").absolutePath
+        )
 
         // Enable stenciling support
         GameContainer.enableStencil()
@@ -24,15 +27,15 @@ object FontPalette {
     }
 
     val FONT_NAMES = listOf(
-            "c&c",
-            "c&cnew",
-            "HL1",
-            "HL2",
-            "JustinFont8",
-            "JustinFont10",
-            "JustinFont11Bold",
-            "JustinFont12Bold",
-            "num_font"
+        "c&c",
+        "c&cnew",
+        "HL1",
+        "HL2",
+        "JustinFont8",
+        "JustinFont10",
+        "JustinFont11Bold",
+        "JustinFont12Bold",
+        "num_font"
     )
 
     val DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog"
@@ -111,14 +114,17 @@ object FontPalette {
                     if (text.isNotEmpty())
                         text = text.substring(0, text.length - 1)
                 }
+
                 Input.KEY_F1 -> {
                     text = ""
                     rawFontMode = false
                 }
+
                 Input.KEY_F2 -> {
                     text = DEFAULT_TEXT
                     rawFontMode = false
                 }
+
                 Input.KEY_F3 -> rawFontMode = !rawFontMode
                 Input.KEY_F4 -> baseline = !baseline
                 Input.KEY_F5 -> legacyMode = !legacyMode

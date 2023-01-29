@@ -2,7 +2,6 @@ package xyz.znix.xftl
 
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Image
-import org.newdawn.slick.SpriteSheet
 import java.lang.reflect.Field
 
 class AnimationSpec(val sheet: Animations.SpriteSheetSpec, val x: Int, val y: Int, val length: Int, val time: Float) {

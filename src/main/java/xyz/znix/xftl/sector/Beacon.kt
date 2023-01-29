@@ -7,16 +7,17 @@ import xyz.znix.xftl.math.ConstPoint
  * Represents a single beacon on the star map.
  */
 class Beacon(
-        /**
-         * The beacon's position on the sector map
-         */
-        val pos: ConstPoint,
+    /**
+     * The beacon's position on the sector map
+     */
+    val pos: ConstPoint,
 
-        /**
-         * The event at this beacon. Even empty beacons have events, which set stuff like
-         * the background and flavour text.
-         */
-        val event: Event) {
+    /**
+     * The event at this beacon. Even empty beacons have events, which set stuff like
+     * the background and flavour text.
+     */
+    val event: Event
+) {
 
     /**
      * Without long-range scanners, what should this beacon be displayed as?

@@ -5,8 +5,6 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
-import xyz.znix.xftl.weapons.LaserBlueprint
-import xyz.znix.xftl.weapons.MissileBlueprint
 
 class ShipAI(val ship: Ship, val player: Ship) {
     fun update(dt: Float) {

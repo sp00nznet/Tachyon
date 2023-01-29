@@ -97,7 +97,17 @@ class Animations(df: Datafile) {
 
             val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage("img/$i") }
 
-            weaponAnimations[name] = WeaponAnimationSpec(anim.sheet.sheet, anim.x, anim.y, anim.length, chargedFrame, fireFrame, mountPoint, firePoint, chargeImage)
+            weaponAnimations[name] = WeaponAnimationSpec(
+                anim.sheet.sheet,
+                anim.x,
+                anim.y,
+                anim.length,
+                chargedFrame,
+                fireFrame,
+                mountPoint,
+                firePoint,
+                chargeImage
+            )
         }
     }
 
@@ -137,9 +147,11 @@ class Animations(df: Datafile) {
         return animations[name] ?: throw IllegalArgumentException("Cannot find animation $name")
     }
 
-    class WeaponAnimationSpec(val sheet: SpriteSheet, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
-                              val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint,
-                              val chargeImage: Image?) {
+    class WeaponAnimationSpec(
+        val sheet: SpriteSheet, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
+        val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint,
+        val chargeImage: Image?
+    ) {
 
         val chargedImage: Image get() = spriteAt(chargedFrame)
 

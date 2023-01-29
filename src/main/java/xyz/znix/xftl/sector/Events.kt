@@ -15,8 +15,10 @@ interface IEvent {
     fun resolve(): Event
 }
 
-class Event(val text: IEventText?, val choices: List<Choice>, elem: Element, val debugId: String,
-            imageFinder: (String) -> ImageList) : IEvent {
+class Event(
+    val text: IEventText?, val choices: List<Choice>, elem: Element, val debugId: String,
+    imageFinder: (String) -> ImageList
+) : IEvent {
     val isDistressBeacon: Boolean = elem.getChild("distressBeacon") != null
     val isStore: Boolean = elem.getChild("store") != null
 

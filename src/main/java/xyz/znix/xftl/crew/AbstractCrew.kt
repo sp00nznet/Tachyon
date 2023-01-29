@@ -12,7 +12,12 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.RoomPoint
 
-abstract class AbstractCrew(private val codename: String, private val anims: Animations, var room: Room, mode: SlotType) {
+abstract class AbstractCrew(
+    private val codename: String,
+    private val anims: Animations,
+    var room: Room,
+    mode: SlotType
+) {
     var icon: Animation
     val backImg: SpriteSheet
 
@@ -169,10 +174,10 @@ abstract class AbstractCrew(private val codename: String, private val anims: Ani
         // Draw the background image - the coloured hint that changes when you mouse over the crew
         val cf = icon.currentFrame
         val backSubImg = backImg.getSubImage(
-                (cf.textureOffsetX * cf.texture.textureWidth).toInt(),
-                (cf.textureOffsetY * cf.texture.textureHeight).toInt(),
-                cf.width,
-                cf.height
+            (cf.textureOffsetX * cf.texture.textureWidth).toInt(),
+            (cf.textureOffsetY * cf.texture.textureHeight).toInt(),
+            cf.width,
+            cf.height
         )
         val backColour = when {
             isSelected -> CREW_SELECTED_BG

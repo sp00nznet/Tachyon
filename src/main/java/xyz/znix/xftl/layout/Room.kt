@@ -1,10 +1,12 @@
 package xyz.znix.xftl.layout
 
-import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.*
+import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.f
+import xyz.znix.xftl.lerp
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -70,10 +72,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         g.color = FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)
         g.fillRect(
-                x.f,
-                y.f,
-                w.f,
-                h.f)
+            x.f,
+            y.f,
+            w.f,
+            h.f
+        )
 
         if (isOxygenCritical) {
             val img = ship.sys.getImg("img/effects/low_o2_stripes_${width}x${height}.png")
@@ -84,18 +87,20 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         g.color = FLOOR_GRID_COLOUR
         for (i in 1 until width) {
             g.drawLine(
-                    (x + i * ROOM_SIZE).f,
-                    y.f,
-                    (x + i * ROOM_SIZE).f,
-                    (y + h - 1).f)
+                (x + i * ROOM_SIZE).f,
+                y.f,
+                (x + i * ROOM_SIZE).f,
+                (y + h - 1).f
+            )
         }
 
         for (i in 1 until height) {
             g.drawLine(
-                    x.f,
-                    (y + ROOM_SIZE * i).f,
-                    (x + w - 1).f,
-                    (y + ROOM_SIZE * i).f)
+                x.f,
+                (y + ROOM_SIZE * i).f,
+                (x + w - 1).f,
+                (y + ROOM_SIZE * i).f
+            )
         }
 
         val system = system
@@ -146,9 +151,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
                 g.color = ROOM_BORDER_COLOUR_SELECTED
             else
                 g.color = ROOM_BORDER_COLOUR_SELECTED_INNER
-            g.drawRect((x + i).f, (y + i).f,
-                    (w - 1 - i * 2).f,
-                    (h - 1 - i * 2).f)
+            g.drawRect(
+                (x + i).f, (y + i).f,
+                (w - 1 - i * 2).f,
+                (h - 1 - i * 2).f
+            )
         }
 
         // Draw the system icon

@@ -19,7 +19,8 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     val offsetY get() = ROOM_SIZE * (position.y + ship.offset.y) - ship.hullOffset.y
 
     val leftPos: RoomPoint? = if (left == null) null else RoomPoint(left, position - left.position + offsetFor(left))
-    val rightPos: RoomPoint? = if (right == null) null else RoomPoint(right, position - right.position + offsetFor(right))
+    val rightPos: RoomPoint? =
+        if (right == null) null else RoomPoint(right, position - right.position + offsetFor(right))
 
     val isAirlock: Boolean get() = left == null || right == null
 

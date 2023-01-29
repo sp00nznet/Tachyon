@@ -127,10 +127,10 @@ enum class RewardType {
 
     companion object {
         val ONLY_RESOURCE_MAPPINGS = mapOf(
-                Pair(FUEL_ONLY, Resource.FUEL),
-                Pair(MISSILES_ONLY, Resource.MISSILES),
-                Pair(DRONEPARTS_ONLY, Resource.DRONES),
-                Pair(SCRAP_ONLY, Resource.SCRAP)
+            Pair(FUEL_ONLY, Resource.FUEL),
+            Pair(MISSILES_ONLY, Resource.MISSILES),
+            Pair(DRONEPARTS_ONLY, Resource.DRONES),
+            Pair(SCRAP_ONLY, Resource.SCRAP)
         )
 
         val ITEMS = listOf(WEAPON, DRONE, AUGMENT)

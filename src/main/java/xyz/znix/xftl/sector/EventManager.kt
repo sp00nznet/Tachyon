@@ -2,7 +2,6 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Document
 import org.jdom2.Element
-import org.newdawn.slick.Image
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.Translator
@@ -65,6 +64,7 @@ class EventManager(val df: Datafile, private val translator: Translator, private
                         if (eventCheck(name, false))
                             events[name] = loadEvent(elem, name).value
                     }
+
                     else -> error("Unknown eventfile item ${elem.name}")
                 }
             }
@@ -173,26 +173,26 @@ class EventManager(val df: Datafile, private val translator: Translator, private
 
     companion object {
         private val FILE_NAMES = listOf(
-                "events",
-                "events_boss",
-                "events_crystal",
-                "events_engi",
-                "events_fuel",
-                "events_imageList",
-                "events_mantis",
-                "events_nebula",
-                "events_pirate",
-                "events_rebel",
-                "events_rock",
-                "events_ships",
-                "events_slug",
-                "events_zoltan",
-                "nameEvents",
-                "newEvents",
+            "events",
+            "events_boss",
+            "events_crystal",
+            "events_engi",
+            "events_fuel",
+            "events_imageList",
+            "events_mantis",
+            "events_nebula",
+            "events_pirate",
+            "events_rebel",
+            "events_rock",
+            "events_ships",
+            "events_slug",
+            "events_zoltan",
+            "nameEvents",
+            "newEvents",
 
-                "dlcEvents_anaerobic",
-                // "dlcEventsOverwrite", // TODO set up overwrite support
-                "dlcEvents"
+            "dlcEvents_anaerobic",
+            // "dlcEventsOverwrite", // TODO set up overwrite support
+            "dlcEvents"
         )
     }
 }

@@ -8,7 +8,6 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.math.roundToInt
 
 class SILFontLoader : Font {
@@ -145,10 +144,11 @@ class SILFontLoader : Font {
             next += (info.prekern * scale).roundToInt()
             val cx = next.roundToInt()
             picture.draw(
-                    cx.f, cy,
-                    cx.f + info.w * scale, cy + info.h * scale,
-                    info.x.f, info.y.f,
-                    (info.x + info.w).f, (info.y + info.h).f, col)
+                cx.f, cy,
+                cx.f + info.w * scale, cy + info.h * scale,
+                info.x.f, info.y.f,
+                (info.x + info.w).f, (info.y + info.h).f, col
+            )
             next += ((info.w + info.postkern) * scale).roundToInt()
         }
     }
@@ -161,10 +161,11 @@ class SILFontLoader : Font {
             next += (info.prekern * scale).roundToInt()
             val cx = next.roundToInt()
             picture.draw(
-                    cx.f, cy,
-                    cx.f + info.w * scale, cy + info.h * scale,
-                    info.x.f, info.y.f,
-                    (info.x + info.w).f, (info.y + info.h).f, col)
+                cx.f, cy,
+                cx.f + info.w * scale, cy + info.h * scale,
+                info.x.f, info.y.f,
+                (info.x + info.w).f, (info.y + info.h).f, col
+            )
             next += ((info.w + info.postkern) * scale).roundToInt()
         }
     }
@@ -200,8 +201,10 @@ class SILFontLoader : Font {
     }
 
     @Suppress("unused")
-    private class Charinfo(val ch: Char, val x: Int, val y: Int, val w: Int, val h: Int, val ascent: Int,
-                           val prekern: Float, val postkern: Float)
+    private class Charinfo(
+        val ch: Char, val x: Int, val y: Int, val w: Int, val h: Int, val ascent: Int,
+        val prekern: Float, val postkern: Float
+    )
 
     private class SeekingInputStream(ba: ByteArray) : ByteArrayInputStream(ba) {
         var position: Int

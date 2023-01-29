@@ -103,7 +103,11 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         return ship
     }
 
-    private fun generateWeapons(list: List<ShipWeaponBlueprint>, slots: Int, targetPower: Int): List<ShipWeaponBlueprint> {
+    private fun generateWeapons(
+        list: List<ShipWeaponBlueprint>,
+        slots: Int,
+        targetPower: Int
+    ): List<ShipWeaponBlueprint> {
         for (i in 1..1000) {
             val weapons = ArrayList<ShipWeaponBlueprint>()
             var remainingPower = targetPower

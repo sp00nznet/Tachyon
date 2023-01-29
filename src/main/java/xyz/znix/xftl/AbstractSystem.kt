@@ -52,10 +52,11 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
             else -> Constants.SYSTEM_NORMAL
         }
 
-        g.drawImage(img,
-                (room.offsetX + (room.width * ROOM_SIZE / 2f - img.width / 2f).toInt()).f,
-                (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).f,
-                colour
+        g.drawImage(
+            img,
+            (room.offsetX + (room.width * ROOM_SIZE / 2f - img.width / 2f).toInt()).f,
+            (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).f,
+            colour
         )
     }
 
@@ -108,11 +109,13 @@ abstract class AbstractSystem(val codename: String, elem: Element) {
                     g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
                     g.drawLine((x + 24).f, (y + 6).f, (x + 24 + 16).f, y.f)
                 }
+
                 this is MainSystem && i >= powerSelected -> {
                     // System depowered
                     g.color = Constants.SYS_ENERGY_DEPOWERED
                     g.drawRect((x + 24).f, y.f, (16 - 1).f, (6 - 1).f)
                 }
+
                 else -> {
                     // System powered, or a subsystem that doesn't need powering
                     g.color = Constants.SYS_ENERGY_ACTIVE

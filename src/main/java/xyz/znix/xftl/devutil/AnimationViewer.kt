@@ -12,7 +12,10 @@ object AnimationViewer {
         val df = Datafile(File("/home/znix/Static/Games/FTL-linux/data/ftl.dat"))
 
         // TODO automatic extraction
-        if (System.getProperty("org.lwjgl.librarypath") == null) System.setProperty("org.lwjgl.librarypath", File("natives").absolutePath)
+        if (System.getProperty("org.lwjgl.librarypath") == null) System.setProperty(
+            "org.lwjgl.librarypath",
+            File("natives").absolutePath
+        )
 
         // Enable stenciling support
         GameContainer.enableStencil()
@@ -26,7 +29,7 @@ object AnimationViewer {
 
     private class GameImpl(val df: Datafile) : BasicGame("Animation Viewer") {
         val anims by lazy { Animations(df) }
-        val bomb by lazy {anims.weaponAnimations.getValue("bomb_1")}
+        val bomb by lazy { anims.weaponAnimations.getValue("bomb_1") }
         val bombShoot by lazy { bomb.shoot() }
 
         override fun init(container: GameContainer) {
