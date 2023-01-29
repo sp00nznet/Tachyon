@@ -3,34 +3,10 @@
  */
 package xyz.znix.xftl;
 
-import org.newdawn.slick.AppGameContainer;
-import org.newdawn.slick.GameContainer;
-import org.newdawn.slick.SlickException;
 import xyz.znix.xftl.game.SlickGame;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-
 public class App {
-    public String getGreeting() {
-        return "Hello world.";
-    }
-
-    public static void main(String[] args) throws FileNotFoundException, SlickException {
-        Datafile df = Datafile.createWithDefaultPath();
-
-        // TODO automatic extraction
-        if (System.getProperty("org.lwjgl.librarypath") == null)
-            System.setProperty("org.lwjgl.librarypath", new File("natives").getAbsolutePath());
-
-        // Enable stenciling support
-        GameContainer.enableStencil();
-
-        AppGameContainer appgc;
-        appgc = new AppGameContainer(new SlickGame(df));
-        appgc.setTargetFrameRate(120);
-        appgc.setDisplayMode(1250, 720, false);
-        appgc.setShowFPS(false);
-        appgc.start();
+    public static void main(String[] args) {
+        Utils.INSTANCE.startSlick(SlickGame::new);
     }
 }

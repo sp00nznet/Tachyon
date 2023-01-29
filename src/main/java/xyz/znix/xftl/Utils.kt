@@ -2,9 +2,9 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Color
-import org.newdawn.slick.Image
+import org.newdawn.slick.*
 import xyz.znix.xftl.math.IPoint
+import java.io.File
 
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
@@ -111,6 +111,26 @@ object Utils {
 
         // Don't break anything else
         GL11.glDisable(GL11.GL_STENCIL_TEST)
+    }
+
+    fun startSlick(builder: (Datafile) -> BasicGame) {
+        val df = Datafile.createWithDefaultPath()
+
+        // TODO Automatically extract the LWJGL natives
+        if (System.getProperty("org.lwjgl.librarypath") == null) {
+            System.setProperty("org.lwjgl.librarypath", File("natives").absolutePath)
+        }
+
+        // Enable stenciling support
+        GameContainer.enableStencil()
+
+        val game = builder(df)
+
+        val gc = AppGameContainer(game)
+        gc.setTargetFrameRate(120)
+        gc.setDisplayMode(1250, 720, false)
+        gc.setShowFPS(false)
+        gc.start()
     }
 
     enum class StencilMode {

@@ -3,27 +3,12 @@ package xyz.znix.xftl.devutil
 import org.newdawn.slick.*
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.SILFontLoader
-import java.io.File
+import xyz.znix.xftl.Utils
 
 object FontPalette {
     @JvmStatic
     fun main(args: Array<String>) {
-        val df = Datafile.createWithDefaultPath()
-
-        // TODO automatic extraction
-        if (System.getProperty("org.lwjgl.librarypath") == null) System.setProperty(
-            "org.lwjgl.librarypath",
-            File("natives").absolutePath
-        )
-
-        // Enable stenciling support
-        GameContainer.enableStencil()
-
-        val gc = AppGameContainer(GameImpl(df))
-        gc.setTargetFrameRate(120)
-        gc.setDisplayMode(1024, 768, false)
-        gc.setShowFPS(false)
-        gc.start()
+        Utils.startSlick { GameImpl(it) }
     }
 
     val FONT_NAMES = listOf(

@@ -56,7 +56,7 @@ public class SlickGame extends BasicGame {
     private Image background;
     private Image planet;
 
-    public SlickGame(Datafile df) throws SlickException {
+    public SlickGame(Datafile df) {
         super("Subluminal");
         this.df = df;
     }
