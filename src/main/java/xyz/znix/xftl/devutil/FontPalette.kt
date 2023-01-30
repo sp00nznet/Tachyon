@@ -4,6 +4,8 @@ import org.newdawn.slick.*
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils
+import kotlin.math.max
+import kotlin.math.min
 
 object FontPalette {
     @JvmStatic
@@ -25,7 +27,7 @@ object FontPalette {
 
     val DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog"
     val HELP_MSG = "Press F1 to clear the string, F2 for sample, F3 and arrow keys to view rawfonts, F4 for" +
-            " baseline, F5 for legacy mode, type to edit"
+            " baseline, F5 for legacy mode, type to edit, and up/down to scale the font"
 
     val BASELINE_COLOUR = Color(255, 0, 0, 128)
 
@@ -34,8 +36,12 @@ object FontPalette {
         private val pictures = HashMap<String, Image>()
         private var text = DEFAULT_TEXT
 
+        // Store the utility font separately,
+        private lateinit var utilFont: SILFontLoader
+
         private var rawFontMode = false
         private var rawFontIdx: Int = 0
+        private var fontSize: Int = 1
 
         private var baseline = false
         private var legacyMode = false
@@ -45,8 +51,6 @@ object FontPalette {
         override fun render(container: GameContainer, g: Graphics) {
             g.background = Color.white
             g.clear()
-
-            val utilFont = fonts["JustinFont8"]!!
 
             utilFont.drawString(50f, 20f, HELP_MSG, Color.black)
 
@@ -66,8 +70,10 @@ object FontPalette {
 
             for ((i, name) in FONT_NAMES.withIndex()) {
                 val fnt = fonts[name]!!
-                val y = 50f + 25 * i
+                val y = 25f + (10 + 15 * fontSize) * (i + 1)
                 utilFont.drawString(20f, y, name, Color.black)
+
+                fnt.scale = fontSize.toFloat()
 
                 @Suppress("DEPRECATION")
                 val drawFunc = if (legacyMode) fnt::drawStringLegacy else fnt::drawString
@@ -90,6 +96,8 @@ object FontPalette {
                 fonts[name] = font
                 pictures[name] = field.get(font) as Image
             }
+
+            utilFont = SILFontLoader(fonts["JustinFont8"]!!)
         }
 
         override fun keyPressed(key: Int, c: Char) {
@@ -113,6 +121,8 @@ object FontPalette {
                 Input.KEY_F3 -> rawFontMode = !rawFontMode
                 Input.KEY_F4 -> baseline = !baseline
                 Input.KEY_F5 -> legacyMode = !legacyMode
+                Input.KEY_UP -> fontSize = min(fontSize + 1, 5)
+                Input.KEY_DOWN -> fontSize = max(fontSize - 1, 1)
                 else -> handled = false
             }
 
