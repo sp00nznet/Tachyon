@@ -139,6 +139,9 @@ public class SlickGame extends BasicGame {
         if (in.isKeyPressed(Input.KEY_4))
             shipUI.weaponHotkeyPressed(3);
 
+        if (in.isKeyPressed(Input.KEY_ESCAPE))
+            shipUI.escapePressed();
+
         boolean powerUp = !in.isKeyDown(Input.KEY_LSHIFT);
         if (in.isKeyPressed(Input.KEY_A))
             shipUI.systemPowerHotkeyPressed(Shields.class, powerUp);

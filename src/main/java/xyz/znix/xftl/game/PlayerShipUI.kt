@@ -77,7 +77,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val ship = Buttons.ShipButton(jump.pos + ConstPoint(101, 0), game)
 
         // TODO shift over the settings button when the store is unavailable
-        val store = Buttons.StoreButton(ship.pos + ConstPoint(ship.size.x + 17, 0), game)
+        val store = Buttons.StoreButton(ship.pos + ConstPoint(ship.size.x + 17, 0), game) {
+            showStoreWindow()
+        }
 
         val settings = SimpleButton(
             store.pos + ConstPoint(store.size.x + 17, 0), ConstPoint(41, 41), ConstPoint(7, 7),
@@ -574,7 +576,20 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun showEventDialogue(event: Event) {
+        val storeWasAvailable = game.currentBeacon.hasStore
+
         currentWindow = DialogueWindow(game, event) {
+            currentWindow = null
+
+            // If a store was made available by the dialogue, open it
+            if (game.currentBeacon.hasStore && !storeWasAvailable) {
+                showStoreWindow()
+            }
+        }
+    }
+
+    private fun showStoreWindow() {
+        currentWindow = StoreWindow(game) {
             currentWindow = null
         }
     }
@@ -582,6 +597,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     // Hack used to draw the selected crew from the ship, rather than some cleaner solution
     fun isCrewSelected(crew: AbstractCrew): Boolean {
         return selectedCrew.contains(crew)
+    }
+
+    fun escapePressed() {
+        currentWindow?.let { win ->
+            win.escapePressed()
+            return
+        }
+
+        // TODO open settings menu
     }
 
     private class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon)

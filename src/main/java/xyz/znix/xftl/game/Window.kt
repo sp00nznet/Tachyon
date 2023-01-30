@@ -23,6 +23,10 @@ abstract class Window(position: IPoint) {
         }
     }
 
+    open fun escapePressed() {
+        // Subclasses may close the window
+    }
+
     protected fun drawCorner(edge: Direction) {
         val x = position.x + edge.x.coerceAtLeast(0) * (size.x - 33)
         val y = position.y + edge.y.coerceAtLeast(0) * (size.y - 36)

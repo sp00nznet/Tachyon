@@ -60,6 +60,14 @@ class Beacon(
      */
     var visited: Boolean = false
 
+    /**
+     * Is a store available at this beacon? This isn't the same as event.isStore, as events
+     * where a store becomes available as a result of player actions (eg a quest to save
+     * a store from the rebels, or saving a merchant that was under attack by pirates) can
+     * reveal a store.
+     */
+    var hasStore: Boolean = event.isStore
+
     fun bindSector(sector: Sector, neighbours: List<Beacon>) {
         synchronized(this) {
             check(!this::sector.isInitialized) { "Sector already set!" }

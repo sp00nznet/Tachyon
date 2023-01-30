@@ -49,7 +49,7 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window(Cons
 
     val cancelButton = Buttons.BasicButton(
         position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
-        ConstPoint(124, 30), "CANCEL", game, ::cancelClicked
+        ConstPoint(124, 30), "CANCEL", game, 6, ::cancelClicked
     )
 
     val background = game.getImg("img/map/zone_1.png")
@@ -92,7 +92,7 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window(Cons
             if (beacon.event.isDistressBeacon)
                 drawBeaconLabel(pos, game.translator["map_icon_distress"])
 
-            if (beacon.event.isStore)
+            if (beacon.hasStore)
                 drawBeaconLabel(pos, game.translator["map_icon_store"])
 
             if (beacon == hovered && beacon != game.currentBeacon && game.currentBeacon.neighbours.contains(hovered)) {

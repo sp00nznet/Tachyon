@@ -111,7 +111,7 @@ object Buttons {
     }
 
     class BasicButton(
-        pos: IPoint, size: IPoint, val label: String, game: SlickGame,
+        pos: IPoint, size: IPoint, val label: String, game: SlickGame, private val buttonOffsetX: Int,
         private val cb: () -> Unit
     ) : Button(pos, size) {
 
@@ -121,7 +121,7 @@ object Buttons {
             // TODO mouseover highlight
             g.color = Constants.SECTOR_CUTOUT_TEXT
             drawRounded(g, pos.x, pos.y, size.x, size.y)
-            font.drawStringLegacy(pos.x + 6f, pos.y + 18f, label, Constants.JUMP_DISABLED_TEXT)
+            font.drawStringLegacy(pos.x + buttonOffsetX.toFloat(), pos.y + 18f, label, Constants.JUMP_DISABLED_TEXT)
         }
 
         override fun click(button: Int) {
@@ -152,7 +152,9 @@ object Buttons {
         }
     }
 
-    class StoreButton(pos: IPoint, val game: SlickGame) : Button(pos, ConstPoint(88, 41)) {
+    class StoreButton(pos: IPoint, val game: SlickGame, private val callback: () -> Unit) :
+        Button(pos, ConstPoint(88, 41)) {
+
         private val imgPos = pos - ConstPoint(7, 7)
 
         private val imgBase = game.getImg("img/statusUI/top_store_base.png")
@@ -165,7 +167,8 @@ object Buttons {
         }
 
         override fun click(button: Int) {
-            TODO("Not yet implemented")
+            if (button == Input.MOUSE_LEFT_BUTTON)
+                callback()
         }
     }
 }
