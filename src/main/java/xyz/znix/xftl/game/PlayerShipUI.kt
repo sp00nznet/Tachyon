@@ -76,8 +76,21 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         val ship = Buttons.ShipButton(jump.pos + ConstPoint(101, 0), game)
 
+        // TODO shift over the settings button when the store is unavailable
+        val store = Buttons.StoreButton(ship.pos + ConstPoint(ship.size.x + 17, 0), game)
+
+        val settings = SimpleButton(
+            store.pos + ConstPoint(store.size.x + 17, 0), ConstPoint(41, 41), ConstPoint(7, 7),
+            game.getImg("img/statusUI/top_optionswrench_on.png"),
+            game.getImg("img/statusUI/top_optionswrench_select2.png")
+        ) {
+            TODO("Settings menu not implemented")
+        }
+
         buttons += jump
         buttons += ship
+        buttons += store
+        buttons += settings
     }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {

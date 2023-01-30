@@ -48,7 +48,10 @@ class SimpleButton(
     private val imagePos = pos - imgOffset
 
     override fun draw(g: Graphics) {
-        normal.draw(imagePos)
+        var image = normal
+        if (hovered && hover != null)
+            image = hover
+        image.draw(imagePos)
     }
 
     override fun click(button: Int) = callback(button)
@@ -142,6 +145,23 @@ object Buttons {
             }
 
             img.draw(imgPos)
+        }
+
+        override fun click(button: Int) {
+            TODO("Not yet implemented")
+        }
+    }
+
+    class StoreButton(pos: IPoint, val game: SlickGame) : Button(pos, ConstPoint(88, 41)) {
+        private val imgPos = pos - ConstPoint(7, 7)
+
+        private val imgBase = game.getImg("img/statusUI/top_store_base.png")
+
+        private val font = game.getFont("HL2", 2f)
+
+        override fun draw(g: Graphics) {
+            imgBase.draw(imgPos)
+            font.drawString(pos.x + 11f, pos.y + 26f, "STORE", Constants.JUMP_DISABLED_TEXT)
         }
 
         override fun click(button: Int) {
