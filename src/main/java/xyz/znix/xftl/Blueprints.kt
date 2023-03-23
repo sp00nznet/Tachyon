@@ -1,6 +1,7 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
 
 class BlueprintManager(df: Datafile) {
@@ -32,10 +33,21 @@ class BlueprintManager(df: Datafile) {
             val bp = when (elem.name) {
                 "blueprintList" -> buildList(elem)
                 "weaponBlueprint" -> buildWeaponBlueprint(elem)
+                "systemBlueprint" -> buildSystemBlueprint(elem)
+
+                // Intentionally ignore itemBlueprint - this contains fuel, drones, and missiles.
+                // The name 'drones' conflicts with the drones system, and it's the only such name
+                // conflict. Since there's very little of value in those blueprints, we can just
+                // ignore them.
+                "itemBlueprint" -> null
+
                 else -> buildBlueprint(elem, file)
             } ?: continue
 
             val bpName = elem.requireAttributeValue("name")
+            if (mutableBlueprints.containsKey(bpName)) {
+                println("Warning: duplicate blueprint name '$bpName'")
+            }
             mutableBlueprints[bpName] = bp
         }
     }
@@ -69,6 +81,10 @@ class BlueprintManager(df: Datafile) {
             "BOMB" -> BombBlueprint(elem)
             else -> UknShipWeaponBlueprint(elem)
         }
+    }
+
+    private fun buildSystemBlueprint(elem: Element): IBlueprint {
+        return SystemBlueprint(elem)
     }
 }
 
