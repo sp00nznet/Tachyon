@@ -55,6 +55,18 @@ class SimpleButton(
     }
 
     override fun click(button: Int) = callback(button)
+
+    companion object {
+        // Create a new button by specifying the clickable region within it,
+        // rather than using pos and imgOffset to achive it.
+        fun byRegion(
+            pos: IPoint, buttonOffset: IPoint, buttonSize: IPoint,
+            normal: Image, hover: Image?,
+            callback: (Int) -> Unit
+        ): SimpleButton {
+            return SimpleButton(pos + buttonOffset, buttonSize, buttonOffset, normal, hover, callback)
+        }
+    }
 }
 
 object Buttons {

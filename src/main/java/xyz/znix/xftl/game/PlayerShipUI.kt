@@ -68,21 +68,27 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
 
     init {
-        val jump = Buttons.JumpButton(ConstPoint(531, 29), ship, game) {
+        var nextPos = ConstPoint(531, 29)
+
+        val jump = Buttons.JumpButton(nextPos, ship, game) {
             currentWindow = JumpWindow(game) { beacon ->
                 currentWindow = null
             }
         }
+        nextPos += ConstPoint(101, 0)
 
-        val ship = Buttons.ShipButton(jump.pos + ConstPoint(101, 0), game)
+        val ship = Buttons.ShipButton(nextPos, game)
+        nextPos += ConstPoint(ship.size.x + 17, 0)
 
         // TODO shift over the settings button when the store is unavailable
-        val store = Buttons.StoreButton(ship.pos + ConstPoint(ship.size.x + 17, 0), game) {
+        val store = Buttons.StoreButton(nextPos, game) {
             showStoreWindow()
         }
+        nextPos += ConstPoint(store.size.x + 17, 0)
+        buttons += store
 
         val settings = SimpleButton(
-            store.pos + ConstPoint(store.size.x + 17, 0), ConstPoint(41, 41), ConstPoint(7, 7),
+            nextPos, ConstPoint(41, 41), ConstPoint(7, 7),
             game.getImg("img/statusUI/top_optionswrench_on.png"),
             game.getImg("img/statusUI/top_optionswrench_select2.png")
         ) {
@@ -91,7 +97,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         buttons += jump
         buttons += ship
-        buttons += store
         buttons += settings
     }
 

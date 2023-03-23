@@ -2,7 +2,6 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
@@ -42,6 +41,23 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         sellTab = true
     }
 
+    private val buySubTab1Button = SimpleButton.byRegion(
+        position + ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
+        ConstPoint(5, 5), ConstPoint(111, 24),
+        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_on.png"),
+        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_select2.png")
+    ) {
+        secondBuyTab = false
+    }
+    private val buySubTab2Button = SimpleButton.byRegion(
+        position + ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
+        ConstPoint(119, 5), ConstPoint(111, 24),
+        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_on.png"),
+        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_select2.png")
+    ) {
+        secondBuyTab = true
+    }
+
     private val fuelButton = ResourceButton(ConstPoint(GLOW_WIDTH + 11, GLOW_WIDTH + 76), Resource.FUEL)
     private val missilesButton = ResourceButton(ConstPoint(GLOW_WIDTH + 11, GLOW_WIDTH + 126), Resource.MISSILES)
     private val dronesButton = ResourceButton(ConstPoint(GLOW_WIDTH + 11, GLOW_WIDTH + 175), Resource.DRONES)
@@ -65,6 +81,13 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             updateButtons()
         }
 
+    // If there's two pages of stuff to buy, this is true if the second one is selected.
+    private var secondBuyTab: Boolean = false
+        set(value) {
+            field = value
+            updateButtons()
+        }
+
     init {
         updateButtons()
     }
@@ -80,6 +103,10 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             buttons.add(fuelButton)
             buttons.add(missilesButton)
             buttons.add(dronesButton)
+
+            if (store.sections.size > 2) {
+                buttons.add(if (secondBuyTab) buySubTab1Button else buySubTab2Button)
+            }
 
             // Re-add the top and bottom buttons next draw
             updatingBuyButtons = true
@@ -139,9 +166,29 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             Constants.JUMP_DISABLED_TEXT
         )
 
+        // If there's more than two sections, show the tab buttons to swap between them.
+        if (store.sections.size > 2) {
+            val swapButton = if (secondBuyTab) buySubTab1Button else buySubTab2Button
+            swapButton.draw(g)
+
+            sectionFont.drawString(
+                position.x + GLOW_WIDTH + 374f,
+                position.y + GLOW_WIDTH + 27f,
+                game.translator["store_tab_page1"],
+                Constants.JUMP_DISABLED_TEXT
+            )
+            sectionFont.drawString(
+                position.x + GLOW_WIDTH + 374f + 104f,
+                position.y + GLOW_WIDTH + 27f,
+                game.translator["store_tab_page2"],
+                Constants.JUMP_DISABLED_TEXT
+            )
+        }
+
         // Draw the two (top and bottom) main purchase sections
-        drawBuySection(g, store.sections[0], 59, buyButtonsUpper)
-        drawBuySection(g, store.sections[1], 268, buyButtonsLower)
+        val sectionOffset = if (secondBuyTab) 2 else 0
+        drawBuySection(g, store.sections[sectionOffset + 0], 59, buyButtonsUpper)
+        drawBuySection(g, store.sections[sectionOffset + 1], 268, buyButtonsLower)
 
         // We've just drawn both buy sections, so if we're supposed to
         // re-add the buy buttons, that's now done.
@@ -162,11 +209,11 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             buyButtons.clear()
 
         when (section) {
-            StoreData.Section.AUGMENTS -> TODO()
+            StoreData.Section.AUGMENTS -> drawBuyAugments(pos, buyButtons)
             StoreData.Section.CREW -> drawBuyCrew(pos, buyButtons)
             StoreData.Section.DRONES -> TODO()
             StoreData.Section.SYSTEMS -> drawBuySystems(pos, buyButtons)
-            StoreData.Section.WEAPONS -> TODO()
+            StoreData.Section.WEAPONS -> drawBuyWeapons(pos, buyButtons)
         }
 
         for (button in buyButtons) {
@@ -220,7 +267,15 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private fun drawBuyCrew(pos: IPoint, buttons: ArrayList<BuyButton>) {
+        // TODO implement
+    }
 
+    private fun drawBuyWeapons(pos: ConstPoint, buyButtons: ArrayList<BuyButton>) {
+        // TODO implement
+    }
+
+    private fun drawBuyAugments(pos: ConstPoint, buyButtons: ArrayList<BuyButton>) {
+        // TODO implement
     }
 
     private fun drawSell(g: Graphics) {

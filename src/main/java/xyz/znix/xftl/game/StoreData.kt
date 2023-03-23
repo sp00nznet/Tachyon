@@ -22,7 +22,7 @@ class StoreData(game: SlickGame) {
         availableResources[Resource.MISSILES] = 5
         availableResources[Resource.DRONES] = 5
 
-        sections = listOf(Section.SYSTEMS, Section.CREW)
+        sections = listOf(Section.SYSTEMS, Section.CREW, Section.AUGMENTS, Section.WEAPONS)
 
         val systemNames = listOf("teleporter", "cloaking", "drones")
         systems = ArrayList(systemNames.map { game.blueprintManager[it] as SystemBlueprint })
