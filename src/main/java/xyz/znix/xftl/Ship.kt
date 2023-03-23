@@ -67,6 +67,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
+    // The number of fuel, missiles and drones this ship has - TODO set proper default values.
+    var fuelCount: Int = 10
+    var missilesCount: Int = 10
+    var dronesCount: Int = 10
+
     // How far through charging the FTL drive, 1=fully charged
     var ftlChargeProgress: Float = 0f
     val isFtlCharged get() = ftlChargeProgress >= 1f

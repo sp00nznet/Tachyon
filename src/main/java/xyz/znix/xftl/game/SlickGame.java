@@ -444,4 +444,12 @@ public class SlickGame extends BasicGame {
     public LootPool getLootPool() {
         return lootPool;
     }
+
+    public void givePlayerResources(@NotNull ResourceSet resources) {
+        player.setFuelCount(player.getFuelCount() + resources.getFuel());
+        player.setDronesCount(player.getDronesCount() + resources.getDroneParts());
+        player.setMissilesCount(player.getMissilesCount() + resources.getMissiles());
+        // TODO give player scrap
+        // TODO give player items
+    }
 }

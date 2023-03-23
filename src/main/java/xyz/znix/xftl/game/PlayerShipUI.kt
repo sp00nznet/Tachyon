@@ -523,15 +523,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         val shieldsEndX = 122
 
-        // TODO use correct fuel quantity
-        // TODO correctly set the red threshold?
-        drawSmallCounter("fuel", shieldsEndX, 0, 0)
+        // Fuel shows as red when there's three or less left.
+        drawSmallCounter("fuel", shieldsEndX, 0, ship.fuelCount, 3)
 
-        // TODO missiles number
-        drawSmallCounter("missiles", shieldsEndX + 66, 1, 16)
+        // Missiles only show as red when there's none left.
+        drawSmallCounter("missiles", shieldsEndX + 66, 1, ship.missilesCount)
 
-        // TODO missiles number
-        drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, 0)
+        // TODO drone red threshold.
+        drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, ship.dronesCount)
 
         // Oxygen and evasion indicator
         val oxyY = 96f;

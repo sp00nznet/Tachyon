@@ -43,6 +43,12 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         // Events that have no text are valid, usually they are the result of a choice
         // Eg, to give the player some items and close the menu
         if (event.text == null) {
+            // Events that have text and give resources don't add the resources
+            // until they're closed. That means the addResources call is made
+            // when an option is selected. For these events that'll never happen,
+            // so add the resources now.
+            addResources(event)
+
             close()
             return
         }
@@ -226,6 +232,9 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         if (idx < 0 || idx >= options.size)
             return
 
+        // Add any resources the currently-visible event dropped.
+        addResources(currentEvent)
+
         val choice = options[idx]
 
         if (choice.isContinue) {
@@ -234,6 +243,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         }
 
         loadEvent(choice)
+    }
+
+    private fun addResources(event: EvaluatedEvent) {
+        game.givePlayerResources(event.resources)
     }
 
     /**
