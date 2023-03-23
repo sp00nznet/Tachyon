@@ -34,10 +34,11 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     private fun loadEvent(event: EvaluatedEvent) {
         game.loadEventShip(event.event)
 
-        if (event.event.isStore) {
+        if (event.event.isStore && !game.currentBeacon.hasStore) {
             // This does a few things: show the store on the map, enable the store button
             // and cause the store window to open when this window is closed.
-            game.currentBeacon.hasStore = true
+            // Don't do this though if a store is already open, since we'd reset its contents.
+            game.currentBeacon.store = StoreData()
         }
 
         // Events that have no text are valid, usually they are the result of a choice

@@ -3,6 +3,7 @@ package xyz.znix.xftl
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.*
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import java.io.File
 import java.util.*
@@ -12,6 +13,7 @@ val Int.f get() = toFloat()
 
 fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
 fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
+val Image.imageSize: IPoint get() = ConstPoint(width, height)
 
 fun Image.drawSection(
     x: Int,

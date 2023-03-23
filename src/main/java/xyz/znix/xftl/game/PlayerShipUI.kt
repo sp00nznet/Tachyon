@@ -588,7 +588,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     private fun showStoreWindow() {
-        currentWindow = StoreWindow(game) {
+        currentWindow = StoreWindow(game, ship, game.currentBeacon.store!!) {
             currentWindow = null
         }
     }

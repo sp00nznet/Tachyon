@@ -1,6 +1,7 @@
 package xyz.znix.xftl.sector
 
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
 
 /**
@@ -66,7 +67,9 @@ class Beacon(
      * a store from the rebels, or saving a merchant that was under attack by pirates) can
      * reveal a store.
      */
-    var hasStore: Boolean = event.isStore
+    val hasStore: Boolean get() = store != null
+
+    var store: StoreData? = if (event.isStore) StoreData() else null
 
     fun bindSector(sector: Sector, neighbours: List<Beacon>) {
         synchronized(this) {

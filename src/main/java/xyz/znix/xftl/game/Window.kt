@@ -18,7 +18,9 @@ abstract class Window(position: IPoint) {
     abstract fun draw(g: Graphics)
 
     open fun mouseClick(button: Int, x: Int, y: Int) {
-        for (btn in buttons) {
+        // Mouse clicking may change the buttons array (eg in the store
+        // window when switching tabs), so copy it.
+        for (btn in ArrayList(buttons)) {
             btn.mouseDown(button, x, y)
         }
     }
