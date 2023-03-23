@@ -19,4 +19,22 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     fun getLauncher(game: SlickGame): Animations.WeaponAnimationSpec {
         return game.animations.weaponAnimations.getValue(launcher)
     }
+
+    /**
+     * Draw the weapon's launcher image as it should be shown in UIs, for example
+     * quest rewards or in a store.
+     */
+    fun drawLauncherUI(game: SlickGame, x: Float, y: Float) {
+        val anim = getLauncher(game)
+
+        // Flip and rotate the sprite appropriately to make it loop like it's mounted above
+        // a horizontal surface.
+        val spr = anim.chargedImage.getFlippedCopy(true, false)
+        spr.setCenterOfRotation(0f, 0f)
+        spr.rotate(90f)
+
+        // Note we have to add the width (height, but we've rotated it 90°) to fix
+        // up the offset caused by the rotation
+        spr.draw(x + spr.height, y)
+    }
 }

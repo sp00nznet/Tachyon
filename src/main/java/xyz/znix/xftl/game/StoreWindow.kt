@@ -23,7 +23,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val buySellTabFont = game.getFont("HL2", 3f)
     private val sectionFont = game.getFont("HL2", 2f)
     private val numberFont = game.getFont("num_font")
-    private val nameFont = game.getFont("c&c", 2f)
+    private val systemNameFont = game.getFont("c&c", 2f)
+    private val weaponNameFont = game.getFont("JustinFont8")
 
     private val buyTabButton = SimpleButton(
         position + ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
@@ -251,7 +252,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                     if (!available)
                         return
 
-                    nameFont.drawString(
+                    systemNameFont.drawString(
                         this.pos.x + 48f,
                         this.pos.y + 26f,
                         game.translator[system!!.title!!],
@@ -271,7 +272,53 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private fun drawBuyWeapons(pos: ConstPoint, buyButtons: ArrayList<BuyButton>) {
-        // TODO implement
+        // We only need to add buy buttons, no custom drawing.
+        if (!updatingBuyButtons)
+            return
+
+        for ((i, weapon) in store.weapons.withIndex()) {
+            val buttonPos = pos + ConstPoint(10 + i * 125, 37)
+            buyButtons.add(object : BuyButton(buttonPos, "store_buy_weapons", ConstPoint(42, 98)) {
+                override var available: Boolean = weapon != null
+                override val price: Int get() = weapon?.cost ?: 0
+
+                override fun buy() {
+                    available = false
+
+                    // TODO add it to the ship
+                }
+
+                override fun draw(g: Graphics) {
+                    super.draw(g)
+
+                    if (!available)
+                        return
+
+                    // Draw the weapon name
+                    val name = game.translator[weapon!!.short!!]
+                    val nameWindowWidth = 96
+                    val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2
+
+                    weaponNameFont.drawString(
+                        this.pos.x + 11f + nameX,
+                        this.pos.y + 70f,
+                        name,
+                        textColour
+                    )
+
+                    // Draw the weapon icon
+                    val iconWindowWidth = 96
+                    val iconWindowHeight = 45
+                    val icon = weapon.getLauncher(game).chargedImage
+
+                    // The sprite is rotated 90°, so swap the width and height.
+                    val iconX = (iconWindowWidth - icon.height) / 2;
+                    val iconY = (iconWindowHeight - icon.width) / 2;
+
+                    weapon.drawLauncherUI(game, this.pos.x + iconX + 11f, this.pos.y + iconY + 11f)
+                }
+            })
+        }
     }
 
     private fun drawBuyAugments(pos: ConstPoint, buyButtons: ArrayList<BuyButton>) {

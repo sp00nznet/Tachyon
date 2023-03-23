@@ -1,6 +1,7 @@
 package xyz.znix.xftl.game
 
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.util.*
 
 /**
@@ -16,6 +17,11 @@ class StoreData(game: SlickGame) {
      */
     val systems: MutableList<SystemBlueprint?>
 
+    /**
+     * If this store has a weapons section, this contains the weapons, or null if they're sold out.
+     */
+    val weapons: MutableList<ShipWeaponBlueprint?>
+
     init {
         // TODO initialise with proper values
         availableResources[Resource.FUEL] = 5
@@ -26,6 +32,9 @@ class StoreData(game: SlickGame) {
 
         val systemNames = listOf("teleporter", "cloaking", "drones")
         systems = ArrayList(systemNames.map { game.blueprintManager[it] as SystemBlueprint })
+
+        val weaponNames = listOf("BEAM_1", "BEAM_2", "BOMB_BREACH_2")
+        weapons = ArrayList(weaponNames.map { game.blueprintManager[it] as ShipWeaponBlueprint })
     }
 
     enum class Section {

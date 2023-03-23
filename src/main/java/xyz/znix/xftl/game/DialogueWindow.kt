@@ -186,21 +186,13 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     private fun drawRewardBlueprint(bp: Blueprint, boxX: Float, textY: Int): Int {
         when (bp) {
             is ShipWeaponBlueprint -> {
-                val anim = game.animations.weaponAnimations.getValue(bp.launcher)
+                val anim = bp.getLauncher(game)
 
-                // Flip and rotate the sprite appropriately to make it loop like it's mounted above
-                // a horizontal surface.
-                val spr = anim.spriteAt(anim.chargedFrame).getFlippedCopy(true, false)
-                spr.setCenterOfRotation(0f, 0f)
-                spr.rotate(90f)
-
-                // Note we have to add the width (height, but we've rotated it 90°) to fix
-                // up the offset caused by the rotation
-                spr.draw(boxX + spr.height + 10f, textY + 9f)
+                bp.drawLauncherUI(game, boxX + 10f, textY + 9f)
 
                 // Draw the name
                 val name = game.translator[bp.title!!]
-                resourceNumFont.drawString(boxX + spr.height + 20f, textY.f + 31, name, Color.white)
+                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY.f + 31, name, Color.white)
 
                 return textY + 44
             }
