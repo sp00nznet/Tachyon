@@ -1,6 +1,7 @@
 package xyz.znix.xftl.sector
 
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
 
@@ -67,9 +68,19 @@ class Beacon(
      * a store from the rebels, or saving a merchant that was under attack by pirates) can
      * reveal a store.
      */
-    val hasStore: Boolean get() = store != null
+    var hasStore: Boolean = event.isStore
 
-    var store: StoreData? = if (event.isStore) StoreData() else null
+    private var internalStore: StoreData? = null
+
+    fun getStore(game: SlickGame): StoreData? {
+        if (!hasStore)
+            return null
+        if (internalStore != null)
+            return internalStore
+
+        internalStore = StoreData(game)
+        return internalStore
+    }
 
     fun bindSector(sector: Sector, neighbours: List<Beacon>) {
         synchronized(this) {
