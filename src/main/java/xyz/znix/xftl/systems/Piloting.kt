@@ -3,11 +3,13 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 
-class Piloting(blueprint: SystemBlueprint, elem: Element) : AbstractSystem(blueprint, elem) {
+class Piloting(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint, elem) {
     // TODO add crew evasion
     val evasion: Int get() = 0
 
     private val computerSlot by lazy { room?.computerPoint?.let { room!!.pointToSlot(it) } }
+
+    override val sortingType = SortingType.PILOTING
 
     val evasionMultiplier: Float
         get() {
