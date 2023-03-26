@@ -3,7 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 
-abstract class MainSystem(codename: String, elem: Element) : AbstractSystem(codename, elem) {
+abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractSystem(blueprint, elem) {
     private var simpleSelectedEnergyLevel: Int = 1
     open val powerSelected: Int get() = simpleSelectedEnergyLevel
 

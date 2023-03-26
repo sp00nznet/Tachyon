@@ -2,7 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 
-class Engines(elem: Element) : MainSystem("engines", elem) {
+class Engines(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
     override val sortingType: SortingType get() = SortingType.ENGINES
 
     // TODO add crew evasion and charge bonus

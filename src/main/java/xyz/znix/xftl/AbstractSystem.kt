@@ -6,8 +6,11 @@ import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.MainSystem
+import xyz.znix.xftl.systems.SystemBlueprint
 
-abstract class AbstractSystem(val codename: String, elem: Element) {
+abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
+    val codename: String get() = blueprint.name
+
     // TODO handle this properly
     var room: Room? = null
 

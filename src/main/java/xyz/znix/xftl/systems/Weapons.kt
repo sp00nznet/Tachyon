@@ -9,7 +9,7 @@ import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import kotlin.math.roundToInt
 
-class Weapons(elem: Element) : MainSystem("weapons", elem) {
+class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
     override val sortingType: SortingType get() = SortingType.WEAPONS
 
     override fun update(dt: Float) {

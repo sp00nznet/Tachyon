@@ -224,15 +224,17 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 continue
             }
 
+            val blueprint = sys.blueprintManager[node.name] as SystemBlueprint
+
             val system: AbstractSystem = when (node.name) {
-                "doors" -> Doors(node)
-                "engines" -> Engines(node)
-                "medbay" -> Medbay(node)
-                "oxygen" -> Oxygen(node)
-                "pilot" -> Piloting(node)
-                "sensors" -> Sensors(node)
-                "shields" -> Shields(node)
-                "weapons" -> Weapons(node)
+                "doors" -> Doors(blueprint, node)
+                "engines" -> Engines(blueprint, node)
+                "medbay" -> Medbay(blueprint, node)
+                "oxygen" -> Oxygen(blueprint, node)
+                "pilot" -> Piloting(blueprint, node)
+                "sensors" -> Sensors(blueprint, node)
+                "shields" -> Shields(blueprint, node)
+                "weapons" -> Weapons(blueprint, node)
                 else -> {
                     // TODO throw exception when all systems are implemented
                     System.out.println("Warning: unimplemented system ${node.name}")
