@@ -466,6 +466,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun renderMenus(container: GameContainer, g: Graphics) {
         val window = currentWindow ?: return
 
+        // Add the tint over all the regular game stuff to make the window clearer.
+        g.color = Color(0f, 0f, 0f, 0.65f)
+        g.fillRect(0f, 0f, container.width.f, container.height.f)
+
         // Centre the window.
         window.position = ConstPoint(
             (container.width - window.size.x) / 2,
