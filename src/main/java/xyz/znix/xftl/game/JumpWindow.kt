@@ -191,6 +191,10 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window() {
         game.currentBeacon = hovered
     }
 
+    override fun escapePressed() {
+        cancelClicked()
+    }
+
     private fun drawTargetBox(pos: IPoint) {
         val secs = System.nanoTime() / 1_000_000_000f
         val timePoint = 6 * secs
