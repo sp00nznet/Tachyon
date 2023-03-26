@@ -8,7 +8,15 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
 abstract class Button(pos: IPoint, size: IPoint) {
-    val pos = pos.const
+    val basePos = pos.const
+    var windowOffset: IPoint = ConstPoint.ZERO
+        set(value) {
+            field = value
+            positionUpdated()
+        }
+
+    var pos = basePos
+        private set
     val size = size.const
 
     var hovered: Boolean = false
@@ -38,6 +46,10 @@ abstract class Button(pos: IPoint, size: IPoint) {
     fun update(x: Int, y: Int) {
         hovered = contains(x, y)
     }
+
+    protected open fun positionUpdated() {
+        pos = basePos + windowOffset
+    }
 }
 
 class SimpleButton(
@@ -45,13 +57,18 @@ class SimpleButton(
     private val callback: (Int) -> Unit
 ) : Button(pos, size) {
     val imgOffset = imgOffset.const
-    private val imagePos = pos - imgOffset
+    private var imagePos = pos - imgOffset
 
     override fun draw(g: Graphics) {
         var image = normal
         if (hovered && hover != null)
             image = hover
         image.draw(imagePos)
+    }
+
+    override fun positionUpdated() {
+        super.positionUpdated()
+        imagePos = pos - imgOffset
     }
 
     override fun click(button: Int) = callback(button)

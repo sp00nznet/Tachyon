@@ -8,8 +8,17 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 
-abstract class Window(position: IPoint) {
-    val position = position.const
+abstract class Window {
+    var position: IPoint = ConstPoint.ZERO
+        set(value) {
+            // Don't run positionUpdated if nothing changed
+            if (value == field)
+                return
+
+            field = value
+            positionUpdated()
+        }
+
     abstract val size: IPoint
     abstract val outlineImage: Image
 
@@ -27,6 +36,12 @@ abstract class Window(position: IPoint) {
 
     open fun escapePressed() {
         // Subclasses may close the window
+    }
+
+    protected open fun positionUpdated() {
+        for (button in buttons) {
+            button.windowOffset = position
+        }
     }
 
     protected fun drawCorner(edge: Direction) {

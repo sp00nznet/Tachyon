@@ -10,8 +10,7 @@ import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
-class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, private val close: () -> Unit) :
-    Window(ConstPoint(100, 130)) {
+class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, private val close: () -> Unit) : Window() {
 
     override val size = ConstPoint(587, 423)
     override val outlineImage get() = error("Store uses a pre-made background image")
@@ -27,7 +26,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val weaponNameFont = game.getFont("JustinFont8")
 
     private val buyTabButton = SimpleButton(
-        position + ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
+        ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
         game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_select2.png")
     ) {
@@ -35,7 +34,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private val sellTabButton = SimpleButton(
-        position + ConstPoint(163, 0), ConstPoint(179, 46), ConstPoint(0, 0),
+        ConstPoint(163, 0), ConstPoint(179, 46), ConstPoint(0, 0),
         game.getImg("img/upgradeUI/Equipment/tabButtons/buy_sell_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/buy_sell_select2.png")
     ) {
@@ -43,7 +42,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private val buySubTab1Button = SimpleButton.byRegion(
-        position + ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
+        ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
         ConstPoint(5, 5), ConstPoint(111, 24),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_select2.png")
@@ -51,7 +50,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         secondBuyTab = false
     }
     private val buySubTab2Button = SimpleButton.byRegion(
-        position + ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
+        ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
         ConstPoint(119, 5), ConstPoint(111, 24),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_select2.png")
@@ -112,6 +111,9 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             // Re-add the top and bottom buttons next draw
             updatingBuyButtons = true
         }
+
+        // Re-position all the buttons
+        positionUpdated()
     }
 
     override fun draw(g: Graphics) {
@@ -197,11 +199,11 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private fun drawBuySection(g: Graphics, section: StoreData.Section, y: Int, buyButtons: ArrayList<BuyButton>) {
-        val pos = position + ConstPoint(GLOW_WIDTH + 191, GLOW_WIDTH + y)
+        val pos = ConstPoint(GLOW_WIDTH + 191, GLOW_WIDTH + y)
 
         sectionFont.drawString(
-            pos.x + 7f,
-            pos.y - 5f,
+            position.x + pos.x + 7f,
+            position.y + pos.y - 5f,
             game.translator[section.localisationKey],
             Constants.JUMP_DISABLED_TEXT
         )
@@ -218,10 +220,16 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         }
 
         for (button in buyButtons) {
-            button.draw(g)
-
-            if (updatingBuyButtons)
+            if (updatingBuyButtons) {
                 buttons.add(button)
+
+                // Be sure to set the window position before drawing the button,
+                // to avoid it flickering in the wrong position for the first
+                // frame it's drawn.
+                button.windowOffset = position
+            }
+
+            button.draw(g)
         }
     }
 
@@ -312,8 +320,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                     val icon = weapon.getLauncher(game).chargedImage
 
                     // The sprite is rotated 90°, so swap the width and height.
-                    val iconX = (iconWindowWidth - icon.height) / 2;
-                    val iconY = (iconWindowHeight - icon.width) / 2;
+                    val iconX = (iconWindowWidth - icon.height) / 2
+                    val iconY = (iconWindowHeight - icon.width) / 2
 
                     weapon.drawLauncherUI(game, this.pos.x + iconX + 11f, this.pos.y + iconY + 11f)
                 }
@@ -387,7 +395,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     inner class ResourceButton(pos: IPoint, val resource: Resource) :
-        BuyButton(position + pos, "store_items_${resourceTextureName(resource)}", ConstPoint(130, 26)) {
+        BuyButton(pos, "store_items_${resourceTextureName(resource)}", ConstPoint(130, 26)) {
 
         val numAvailable: Int get() = store.availableResources[resource] ?: 0
 

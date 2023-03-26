@@ -464,7 +464,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun renderMenus(container: GameContainer, g: Graphics) {
-        currentWindow?.draw(g)
+        val window = currentWindow ?: return
+
+        // Centre the window.
+        window.position = ConstPoint(
+            (container.width - window.size.x) / 2,
+            (container.height - window.size.y) / 2
+        )
+
+        window.draw(g)
     }
 
     private fun drawTopBar(g: Graphics) {

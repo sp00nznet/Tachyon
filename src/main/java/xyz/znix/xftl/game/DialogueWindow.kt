@@ -14,7 +14,7 @@ import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.max
 
-class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window(ConstPoint(100, 100)) {
+class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window() {
     override val size: IPoint get() = ConstPoint(602, 377)
     override val outlineImage = game.getImg("img/window_base.png")
 
