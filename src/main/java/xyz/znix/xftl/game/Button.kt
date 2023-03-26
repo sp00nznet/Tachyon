@@ -159,7 +159,7 @@ object Buttons {
         }
     }
 
-    class ShipButton(pos: IPoint, val game: SlickGame) : Button(pos, ConstPoint(60, 41)) {
+    class ShipButton(pos: IPoint, val game: SlickGame, private val cb: () -> Unit) : Button(pos, ConstPoint(60, 41)) {
         private val imgPos = pos - ConstPoint(7, 7)
 
         private val imgOff = game.getImg("img/statusUI/top_ship_off.png")
@@ -177,7 +177,8 @@ object Buttons {
         }
 
         override fun click(button: Int) {
-            TODO("Not yet implemented")
+            if (button == Input.MOUSE_LEFT_BUTTON)
+                cb()
         }
     }
 

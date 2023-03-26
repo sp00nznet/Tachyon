@@ -12,5 +12,14 @@ class SystemBlueprint(xml: Element) : Blueprint(xml) {
 
     val upgradeCost: List<Int> = xml.getChild("upgradeCost").getChildren("level").map { it.text.toInt() }
 
+    val onIconPath = "img/icons/s_${name}_green1.png"
+
     // No idea what the 'locked' flag does.
+
+    companion object {
+        /**
+         * Padding inside the icon image file, which contains the glow
+         */
+        const val ICON_GLOW = 19
+    }
 }

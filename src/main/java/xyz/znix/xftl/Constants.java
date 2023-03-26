@@ -28,6 +28,7 @@ public class Constants {
     public static final Color SYS_ENERGY_DEPOWERED = new Color(251, 251, 251);
     public static final Color SYS_ENERGY_BROKEN = new Color(255, 50, 50);
     public static final Color SYS_ENERGY_REPAIR = new Color(255, 255, 50);
+    public static final Color SYS_ENERGY_PURCHASE = new Color(104, 98, 59);
 
     public static final Color WEAPONS_ITEM_DESELECTED = new Color(150, 150, 150);
     public static final Color WEAPONS_ITEM_SELECTED = UI_BACKGROUND_GLOW_COLOUR;

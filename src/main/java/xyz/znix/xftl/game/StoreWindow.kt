@@ -9,6 +9,7 @@ import xyz.znix.xftl.draw
 import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.systems.SystemBlueprint
 
 class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, private val close: () -> Unit) : Window() {
 
@@ -267,9 +268,11 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                         textColour
                     )
 
-                    val icon = game.getImg("img/icons/s_${system.name}_green1.png")
-                    val iconGlow = 19 // Padding inside the icon image file, which contains the glow
-                    icon.draw(this.pos.x - iconGlow + 6f, this.pos.y - iconGlow + 7f)
+                    val icon = game.getImg(system.onIconPath)
+                    icon.draw(
+                        this.pos.x - SystemBlueprint.ICON_GLOW + 6f,
+                        this.pos.y - SystemBlueprint.ICON_GLOW + 7f
+                    )
                 }
             })
         }

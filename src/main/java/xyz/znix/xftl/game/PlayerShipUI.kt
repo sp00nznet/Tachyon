@@ -77,7 +77,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
         nextPos += ConstPoint(101, 0)
 
-        val ship = Buttons.ShipButton(nextPos, game)
+        val ship = Buttons.ShipButton(nextPos, game) {
+            showShipWindow()
+        }
         nextPos += ConstPoint(ship.size.x + 17, 0)
 
         // TODO shift over the settings button when the store is unavailable
@@ -601,6 +603,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             if (game.currentBeacon.hasStore && !storeWasAvailable) {
                 showStoreWindow()
             }
+        }
+    }
+
+    private fun showShipWindow() {
+        currentWindow = ShipWindow(game, ship) {
+            currentWindow = null
         }
     }
 
