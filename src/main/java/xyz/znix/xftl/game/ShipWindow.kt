@@ -19,6 +19,8 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     private val shipNameFont = game.getFont("c&c", 3f)
     private val numberFont = game.getFont("num_font")
     private val reactorFont = game.getFont("hl1", 2f)
+    private val crewNameFont = game.getFont("JustinFont8")
+    private val dismissFont = game.getFont("hl1")
 
     private var tab: Tab = Tab.UPGRADES
 
@@ -295,7 +297,78 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     }
 
     private fun drawCrew(g: Graphics) {
-        // TODO
+        // First row
+        drawCrewBox(g, ConstPoint(68 + 170 * 0, 88 + 133 * 0), 0)
+        drawCrewBox(g, ConstPoint(68 + 170 * 1, 88 + 133 * 0), 1)
+        drawCrewBox(g, ConstPoint(68 + 170 * 2, 88 + 133 * 0), 2)
+
+        // Second row
+        drawCrewBox(g, ConstPoint(68 + 170 * 0, 88 + 133 * 1), 3)
+        drawCrewBox(g, ConstPoint(68 + 170 * 1, 88 + 133 * 1), 4)
+        drawCrewBox(g, ConstPoint(68 + 170 * 2, 88 + 133 * 1), 5)
+
+        // Third row
+        // TODO use the same pattern as before for the too-many-crewmembers screen
+        drawCrewBox(g, ConstPoint(154, 88 + 133 * 2), 6)
+        drawCrewBox(g, ConstPoint(324, 88 + 133 * 2), 7)
+    }
+
+    private fun drawCrewBox(g: Graphics, boxPos: ConstPoint, id: Int) {
+        if (ship.crew.size <= id) {
+            val boxEmpty = game.getImg("img/upgradeUI/Equipment/box_crew_off.png")
+            boxEmpty.draw(boxPos + position)
+            return
+        }
+        val crew = ship.crew[id]
+
+        val dismissButtonBox = game.getImg("img/customizeUI/box_crewcustom_on.png")
+        val dismissButtonBoxHover = game.getImg("img/customizeUI/box_crewcustom_selected.png")
+
+        val boxNormal = game.getImg("img/upgradeUI/Equipment/box_crew_on.png")
+        val boxHover = game.getImg("img/upgradeUI/Equipment/box_crew_selected.png")
+
+        if (!updatingButtons)
+            return
+
+        buttons += object : Button(boxPos, boxNormal.imageSize) {
+            override fun draw(g: Graphics) {
+                val box = if (hovered) boxHover else boxNormal
+                box.draw(pos)
+
+                val dismissBox = if (hovered) dismissButtonBoxHover else dismissButtonBox
+                dismissBox.draw(pos.x.f, pos.y + 62f)
+
+                // Draw the name
+                val name = "Crew name"
+                val nameX = (96 - crewNameFont.getWidth(name)) / 2
+                crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, Color.white)
+
+                // Draw the crewmember portrait
+                // TODO layer rendering
+                val portrait = game.animations["${crew.codename}_portrait"].spriteAt(0)
+
+                portrait.filter = Image.FILTER_NEAREST
+
+                // TODO align properly
+                portrait.draw(
+                    pos.x + 2f + (96 - portrait.width * 2) / 2,
+                    pos.y + 2f + (45 - portrait.height * 2) / 2,
+                    2f
+                )
+            }
+
+            override fun click(button: Int) {
+                // TODO renaming
+            }
+        }
+
+        buttons += Buttons.BasicButton(
+            boxPos + ConstPoint(4, 70), ConstPoint(92, 12),
+            game.translator["crewbox_dismiss"], game,
+            2, dismissFont, 9
+        ) {
+            // TODO show the crewmember dismiss warning box
+        }
     }
 
     private fun drawEquipment(g: Graphics) {

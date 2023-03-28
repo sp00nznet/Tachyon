@@ -13,7 +13,7 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.RoomPoint
 
 abstract class AbstractCrew(
-    private val codename: String,
+    val codename: String,
     private val anims: Animations,
     var room: Room,
     mode: SlotType

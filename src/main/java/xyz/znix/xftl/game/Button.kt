@@ -145,8 +145,7 @@ object Buttons {
     ) : Button(pos, size) {
 
         override fun draw(g: Graphics) {
-            // TODO mouseover highlight
-            g.color = Constants.SECTOR_CUTOUT_TEXT
+            g.color = if (hovered) Constants.UI_BUTTON_HOVER else Constants.SECTOR_CUTOUT_TEXT
             drawRounded(g, pos.x, pos.y, size.x, size.y, radius)
 
             val x = (size.x - font.getWidth(label)) / 2f
