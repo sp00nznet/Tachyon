@@ -1,12 +1,11 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Font
-import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
-import org.newdawn.slick.Input
+import org.newdawn.slick.*
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
 abstract class Button(pos: IPoint, size: IPoint) {
     val basePos = pos.const
@@ -199,5 +198,84 @@ object Buttons {
             if (button == Input.MOUSE_LEFT_BUTTON)
                 callback()
         }
+    }
+
+    abstract class BlueprintButton(pos: IPoint, val game: SlickGame, val textureName: String) :
+        Button(pos, game.getImg("${textureName}_on.png").imageSize) {
+
+        private val systemNameFont = game.getFont("c&c", 2f)
+        private val weaponNameFont = game.getFont("JustinFont8")
+
+        var normal = game.getImg("${textureName}_on.png")
+        var off = game.getImg("${textureName}_off.png")
+        var hover = game.getImg("${textureName}_select2.png")
+
+        abstract val blueprint: Blueprint?
+
+        val empty: Boolean get() = blueprint == null
+
+        protected val textColour: Color
+            get() = when {
+                hovered -> Constants.STORE_BUY_HOVER
+                else -> Constants.SECTOR_CUTOUT_TEXT
+            }
+
+        override fun draw(g: Graphics) {
+            val image = when {
+                empty -> off
+                hovered -> hover
+                else -> normal
+            }
+            image.draw(pos)
+
+            // Stop Kotlin from complaining the blueprint could change
+            val blueprint = this.blueprint ?: return
+
+            when (blueprint) {
+                is SystemBlueprint -> {
+                    systemNameFont.drawString(
+                        this.pos.x + 48f,
+                        this.pos.y + 26f,
+                        game.translator[blueprint.title!!],
+                        textColour
+                    )
+
+                    val icon = game.getImg(blueprint.onIconPath)
+                    icon.draw(
+                        this.pos.x - SystemBlueprint.ICON_GLOW + 6f,
+                        this.pos.y - SystemBlueprint.ICON_GLOW + 7f
+                    )
+                }
+
+                is ShipWeaponBlueprint -> {
+                    // Draw the weapon name
+                    val name = game.translator[blueprint.short!!]
+                    val nameWindowWidth = 96
+                    val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2
+
+                    weaponNameFont.drawString(
+                        this.pos.x + 11f + nameX,
+                        this.pos.y + 70f,
+                        name,
+                        textColour
+                    )
+
+                    // Draw the weapon icon
+                    val iconWindowWidth = 96
+                    val iconWindowHeight = 45
+                    val icon = blueprint.getLauncher(game).chargedImage
+
+                    // The sprite is rotated 90°, so swap the width and height.
+                    val iconX = (iconWindowWidth - icon.height) / 2
+                    val iconY = (iconWindowHeight - icon.width) / 2
+
+                    blueprint.drawLauncherUI(game, this.pos.x + iconX + 11f, this.pos.y + iconY + 11f)
+                }
+
+                else -> throw Exception("Can't draw blueprint button for $blueprint")
+            }
+        }
+
+        // Leave click for child classes to override.
     }
 }

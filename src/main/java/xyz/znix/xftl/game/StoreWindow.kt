@@ -1,15 +1,13 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
+import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.draw
-import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.systems.SystemBlueprint
 
 class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, private val close: () -> Unit) : Window() {
 
@@ -23,8 +21,6 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val buySellTabFont = game.getFont("HL2", 3f)
     private val sectionFont = game.getFont("HL2", 2f)
     private val numberFont = game.getFont("num_font")
-    private val systemNameFont = game.getFont("c&c", 2f)
-    private val weaponNameFont = game.getFont("JustinFont8")
 
     private val buyTabButton = SimpleButton(
         ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
@@ -243,38 +239,22 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
         for ((i, system) in store.systems.withIndex()) {
             val buttonPos = pos + ConstPoint(5, 17 + i * 53)
-            buyButtons.add(object : BuyButton(buttonPos, "store_systems", ConstPoint(345, 27)) {
-                override var available: Boolean = system != null
+            buyButtons.add(object : BuyButton(buttonPos, "img/storeUI/store_systems", ConstPoint(345, 27)) {
+                override val blueprint: Blueprint? get() = system
+
                 override val price: Int get() = system?.cost ?: 0
 
-                // The sold-out image still has the cutout for the system icon, so
-                // use the sold-out weapon image instead.
-                override val off get() = game.getImg("img/storeUI/store_weapons_off.png")
-
-                override fun buy() {
-                    available = false
-
-                    // TODO add it to the ship
+                init {
+                    // The sold-out image still has the cutout for the system icon, so
+                    // use the sold-out weapon image instead.
+                    off = game.getImg("img/storeUI/store_weapons_off.png")
                 }
 
-                override fun draw(g: Graphics) {
-                    super.draw(g)
+                override fun buy() {
+                    store.systems[i] = null
+                    updateButtons() // Make this button show as sold out
 
-                    if (!available)
-                        return
-
-                    systemNameFont.drawString(
-                        this.pos.x + 48f,
-                        this.pos.y + 26f,
-                        game.translator[system!!.title!!],
-                        textColour
-                    )
-
-                    val icon = game.getImg(system.onIconPath)
-                    icon.draw(
-                        this.pos.x - SystemBlueprint.ICON_GLOW + 6f,
-                        this.pos.y - SystemBlueprint.ICON_GLOW + 7f
-                    )
+                    // TODO add it to the ship
                 }
             })
         }
@@ -291,44 +271,15 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
         for ((i, weapon) in store.weapons.withIndex()) {
             val buttonPos = pos + ConstPoint(10 + i * 125, 37)
-            buyButtons.add(object : BuyButton(buttonPos, "store_buy_weapons", ConstPoint(42, 98)) {
-                override var available: Boolean = weapon != null
+            buyButtons.add(object : BuyButton(buttonPos, "img/storeUI/store_buy_weapons", ConstPoint(42, 98)) {
+                override val blueprint: Blueprint? get() = weapon
                 override val price: Int get() = weapon?.cost ?: 0
 
                 override fun buy() {
-                    available = false
+                    store.weapons[i] = null
+                    updateButtons() // Make this button show as sold out
 
                     // TODO add it to the ship
-                }
-
-                override fun draw(g: Graphics) {
-                    super.draw(g)
-
-                    if (!available)
-                        return
-
-                    // Draw the weapon name
-                    val name = game.translator[weapon!!.short!!]
-                    val nameWindowWidth = 96
-                    val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2
-
-                    weaponNameFont.drawString(
-                        this.pos.x + 11f + nameX,
-                        this.pos.y + 70f,
-                        name,
-                        textColour
-                    )
-
-                    // Draw the weapon icon
-                    val iconWindowWidth = 96
-                    val iconWindowHeight = 45
-                    val icon = weapon.getLauncher(game).chargedImage
-
-                    // The sprite is rotated 90°, so swap the width and height.
-                    val iconX = (iconWindowWidth - icon.height) / 2
-                    val iconY = (iconWindowHeight - icon.width) / 2
-
-                    weapon.drawLauncherUI(game, this.pos.x + iconX + 11f, this.pos.y + iconY + 11f)
                 }
             })
         }
@@ -348,34 +299,19 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         close()
     }
 
-    abstract inner class BuyButton(pos: IPoint, val textureName: String, val priceOffset: IPoint) :
-        Button(pos, game.getImg("img/storeUI/${textureName}_on.png").imageSize) {
+    abstract inner class BuyButton(pos: IPoint, textureName: String, val priceOffset: IPoint) :
+        Buttons.BlueprintButton(pos, game, textureName) {
 
-        open val normal get() = game.getImg("img/storeUI/${textureName}_on.png")
-        open val off get() = game.getImg("img/storeUI/${textureName}_off.png")
-        open val hover get() = game.getImg("img/storeUI/${textureName}_select2.png")
-
-        abstract val available: Boolean
         abstract val price: Int
+
         abstract fun buy()
 
-        protected val textColour: Color
-            get() = when {
-                hovered -> Constants.STORE_BUY_HOVER
-                else -> Constants.SECTOR_CUTOUT_TEXT
-            }
-
         override fun draw(g: Graphics) {
-            val image = when {
-                !available -> off
-                hovered -> hover
-                else -> normal
-            }
-            image.draw(pos)
+            super.draw(g)
 
             // Don't draw the price text if we've already sold it
             // (or in the case of resources, sold out).
-            if (!available)
+            if (empty)
                 return
 
             numberFont.drawString(
@@ -390,7 +326,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
-            if (!available)
+            if (empty)
                 return
 
             // TODO check and deduct scrap
@@ -399,25 +335,45 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         }
     }
 
-    inner class ResourceButton(pos: IPoint, val resource: Resource) :
-        BuyButton(pos, "store_items_${resourceTextureName(resource)}", ConstPoint(130, 26)) {
+    inner class ResourceButton(pos: IPoint, val resource: Resource) : Button(pos, ConstPoint(169, 40)) {
+        private val nameBase = "img/storeUI/store_items_${resourceTextureName(resource)}"
+        private val normal = game.getImg(nameBase + "_on.png")
+        private val soldOut = game.getImg(nameBase + "_off.png")
+        private val hover = game.getImg(nameBase + "_select2.png")
 
         val numAvailable: Int get() = store.availableResources[resource] ?: 0
 
-        override val available: Boolean get() = numAvailable > 0
-        override val price: Int get() = 5 // TODO implement the price
+        val price: Int get() = 5 // TODO implement the price
 
         override fun draw(g: Graphics) {
-            super.draw(g)
+            val image = when {
+                numAvailable == 0 -> soldOut
+                hovered -> hover
+                else -> normal
+            }
+            image.draw(pos)
 
             // Don't draw the available quantity if we've sold out.
             if (numAvailable == 0)
                 return
 
+            val textColour = when {
+                hovered -> Constants.STORE_BUY_HOVER
+                else -> Constants.SECTOR_CUTOUT_TEXT
+            }
+
+            numberFont.drawString(pos.x + 130f, pos.y + 26f, price.toString(), textColour)
+
             numberFont.drawString(pos.x + 70f, pos.y + 26f, numAvailable.toString(), textColour)
         }
 
-        override fun buy() {
+        override fun click(button: Int) {
+            if (button != Input.MOUSE_LEFT_BUTTON)
+                return
+
+            if (numAvailable == 0)
+                return
+
             val resourceSet = ResourceSet()
             resourceSet[resource] = 1
             game.givePlayerResources(resourceSet)
