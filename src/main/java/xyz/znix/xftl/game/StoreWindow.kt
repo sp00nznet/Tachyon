@@ -237,18 +237,20 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         if (!updatingBuyButtons)
             return
 
+        val images = ButtonImageSet(
+            game.getImg("img/storeUI/store_systems_on.png"),
+            // The sold-out image still has the cutout for the system icon, so
+            // use the sold-out weapon image instead.
+            game.getImg("img/storeUI/store_weapons_off.png"),
+            game.getImg("img/storeUI/store_systems_select2.png")
+        )
+
         for ((i, system) in store.systems.withIndex()) {
             val buttonPos = pos + ConstPoint(5, 17 + i * 53)
-            buyButtons.add(object : BuyButton(buttonPos, "img/storeUI/store_systems", ConstPoint(345, 27)) {
+            buyButtons.add(object : BuyButton(buttonPos, images, ConstPoint(345, 27)) {
                 override val blueprint: Blueprint? get() = system
 
                 override val price: Int get() = system?.cost ?: 0
-
-                init {
-                    // The sold-out image still has the cutout for the system icon, so
-                    // use the sold-out weapon image instead.
-                    off = game.getImg("img/storeUI/store_weapons_off.png")
-                }
 
                 override fun buy() {
                     store.systems[i] = null
@@ -269,9 +271,11 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         if (!updatingBuyButtons)
             return
 
+        val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_weapons")
+
         for ((i, weapon) in store.weapons.withIndex()) {
             val buttonPos = pos + ConstPoint(10 + i * 125, 37)
-            buyButtons.add(object : BuyButton(buttonPos, "img/storeUI/store_buy_weapons", ConstPoint(42, 98)) {
+            buyButtons.add(object : BuyButton(buttonPos, images, ConstPoint(42, 98)) {
                 override val blueprint: Blueprint? get() = weapon
                 override val price: Int get() = weapon?.cost ?: 0
 
@@ -299,8 +303,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         close()
     }
 
-    abstract inner class BuyButton(pos: IPoint, textureName: String, val priceOffset: IPoint) :
-        Buttons.BlueprintButton(pos, game, textureName) {
+    abstract inner class BuyButton(pos: IPoint, images: ButtonImageSet, val priceOffset: IPoint) :
+        Buttons.BlueprintButton(pos, game, images) {
 
         abstract val price: Int
 

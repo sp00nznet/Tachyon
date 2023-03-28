@@ -9,6 +9,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SubSystem
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
 class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> Unit) :
     Window() {
@@ -16,6 +17,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
     override val outlineImage get() = error("Ship UI uses a pre-made background image")
 
+    private val sectionFont = game.getFont("hl2", 2f)
     private val shipNameFont = game.getFont("c&c", 3f)
     private val numberFont = game.getFont("num_font")
     private val reactorFont = game.getFont("hl1", 2f)
@@ -24,8 +26,29 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
     private var tab: Tab = Tab.UPGRADES
 
+    private var draggingBlueprint: Buttons.DragDropBlueprintButton? = null
+        set(value) {
+            field = value
+            for (button in buttons) {
+                if (button !is Buttons.DragDropBlueprintButton)
+                    continue
+                button.currentlyDraggedBlueprint = value?.blueprint
+            }
+        }
+
+    private val weaponButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
+
+    private val closeButton = Buttons.BasicButton(
+        // As an interesting note, in the base game it's one pixel too far right so
+        // where it meets up with the side of the ship panel has a small ledge.
+        position + ConstPoint(428, 471),
+        ConstPoint(132, 32), game.translator["button_accept"], game,
+        4, game.getFont("hl2", 3f), 25,
+        this::escapePressed
+    )
 
     init {
         updateButtons()
@@ -33,6 +56,8 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
     private fun updateButtons() {
         buttons.clear()
+
+        buttons += closeButton
 
         // The buttons can change their icon depending on which of the other two
         // tabs are selected, so re-create them whenever a different tab is selected.
@@ -72,6 +97,9 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             position.y - GLOW_WIDTH
         )
 
+        val acceptImage = game.getImg("img/upgradeUI/buttons_accept_base.png")
+        acceptImage.draw(position.x + 405f, position.y + 464f)
+
         when (tab) {
             Tab.UPGRADES -> drawUpgrades(g)
             Tab.CREW -> drawCrew(g)
@@ -87,6 +115,9 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         for (button in buttons) {
             button.draw(g)
         }
+
+        // Draw the dragged bit of equipment above everything else
+        draggingBlueprint?.drawDrag()
     }
 
     private fun drawUpgrades(g: Graphics) {
@@ -372,7 +403,116 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     }
 
     private fun drawEquipment(g: Graphics) {
-        // TODO
+        sectionFont.drawString(
+            position.x + 11f,
+            position.y + 60f,
+            game.translator["equipment_frame_weapons"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+        sectionFont.drawString(
+            position.x + 11f,
+            position.y + 170f,
+            game.translator["equipment_frame_drones"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+        sectionFont.drawString(
+            position.x + 11f,
+            position.y + 280f,
+            game.translator["equipment_frame_cargo"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+        sectionFont.drawString(
+            position.x + 300f,
+            position.y + 280f,
+            game.translator["equipment_frame_augments"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+
+        if (!updatingButtons)
+            return
+
+        // Draw the weapons
+        // Note: I think all the playable ships have weaponSlots set?
+        weaponButtons.clear()
+        for (i in 0 until ship.weaponSlots!!) {
+            val weapon = ship.hardpoints[i].weapon
+
+            val images = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_weapons", true)
+            val buttonPos = ConstPoint(56 + i * 117, 70)
+
+            // Use a separate variable so we can use the button in it's callback.
+            lateinit var button: Buttons.DragDropBlueprintButton
+            button = Buttons.DragDropBlueprintButton(
+                buttonPos, game, images, ShipWeaponBlueprint::class.java, weapon?.type
+            ) {
+                if (weapon == null)
+                    return@DragDropBlueprintButton
+
+                // TODO start drag
+                draggingBlueprint = button
+            }
+            buttons += button
+            weaponButtons += button
+        }
+    }
+
+    override fun updateUI(x: Int, y: Int) {
+        super.updateUI(x, y)
+
+        // If we're dragging a blueprint around, update it.
+        draggingBlueprint?.dragPosition = ConstPoint(x, y)
+    }
+
+    override fun mouseReleased(button: Int, x: Int, y: Int) {
+        super.mouseReleased(button, x, y)
+
+        if (draggingBlueprint != null)
+            dropBlueprint()
+    }
+
+    private fun dropBlueprint() {
+        val drag = draggingBlueprint!!
+        drag.dragPosition = null
+        draggingBlueprint = null
+
+        val blueprint = drag.blueprint
+
+        fun removeCurrent(replacement: Blueprint?): Boolean {
+            for ((i, button) in weaponButtons.withIndex()) {
+                if (button.blueprint != blueprint)
+                    continue
+
+                // If the user drags one item on top of another, swap them if we can.
+                if (replacement != null) {
+                    if (replacement !is ShipWeaponBlueprint)
+                        return false
+                    ship.hardpoints[i].weapon = replacement.buildInstance(ship)
+                } else {
+                    ship.hardpoints[i].weapon = null
+                }
+
+                updateButtons()
+                return true
+            }
+
+            return false
+        }
+
+        // Check if we can drop this into a weapon slot
+        if (blueprint is ShipWeaponBlueprint) {
+            for ((i, button) in weaponButtons.withIndex()) {
+                if (!button.hovered)
+                    continue
+
+                removeCurrent(ship.hardpoints[i].weapon?.type)
+
+                // It doesn't matter if we re-create a weapon when we don't need to,
+                // since you can only do that out of combat anyway.
+                ship.hardpoints[i].weapon = blueprint.buildInstance(ship)
+
+                return
+            }
+        }
     }
 
     override fun escapePressed() {

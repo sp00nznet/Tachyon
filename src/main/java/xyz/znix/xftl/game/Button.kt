@@ -86,6 +86,27 @@ class SimpleButton(
     }
 }
 
+data class ButtonImageSet(val normal: Image, val off: Image, val hover: Image, val offHover: Image? = null) {
+    companion object {
+        fun select2(game: SlickGame, prefix: String): ButtonImageSet {
+            val normal = game.getImg("${prefix}_on.png")
+            val off = game.getImg("${prefix}_off.png")
+            val hover = game.getImg("${prefix}_select2.png")
+            return ButtonImageSet(normal, off, hover)
+        }
+
+        fun selected(game: SlickGame, prefix: String, withOffHover: Boolean = false): ButtonImageSet {
+            val normal = game.getImg("${prefix}_on.png")
+            val off = game.getImg("${prefix}_off.png")
+            val hover = game.getImg("${prefix}_selected.png")
+            var offHover: Image? = null
+            if (withOffHover)
+                offHover = game.getImg("${prefix}_off_selected.png")
+            return ButtonImageSet(normal, off, hover, offHover)
+        }
+    }
+}
+
 object Buttons {
     fun drawRounded(g: Graphics, x: Int, y: Int, width: Int, height: Int, radius: Int) {
         // Note: this loop's range is inclusive, and will run for both 0 and radius.
@@ -200,15 +221,11 @@ object Buttons {
         }
     }
 
-    abstract class BlueprintButton(pos: IPoint, val game: SlickGame, val textureName: String) :
-        Button(pos, game.getImg("${textureName}_on.png").imageSize) {
+    abstract class BlueprintButton(pos: IPoint, val game: SlickGame, val image: ButtonImageSet) :
+        Button(pos, image.normal.imageSize) {
 
         private val systemNameFont = game.getFont("c&c", 2f)
         private val weaponNameFont = game.getFont("JustinFont8")
-
-        var normal = game.getImg("${textureName}_on.png")
-        var off = game.getImg("${textureName}_off.png")
-        var hover = game.getImg("${textureName}_select2.png")
 
         abstract val blueprint: Blueprint?
 
@@ -222,9 +239,9 @@ object Buttons {
 
         override fun draw(g: Graphics) {
             val image = when {
-                empty -> off
-                hovered -> hover
-                else -> normal
+                empty -> image.off
+                hovered -> image.hover
+                else -> image.normal
             }
             image.draw(pos)
 
@@ -234,16 +251,16 @@ object Buttons {
             when (blueprint) {
                 is SystemBlueprint -> {
                     systemNameFont.drawString(
-                        this.pos.x + 48f,
-                        this.pos.y + 26f,
+                        pos.x + 48f,
+                        pos.y + 26f,
                         game.translator[blueprint.title!!],
                         textColour
                     )
 
                     val icon = game.getImg(blueprint.onIconPath)
                     icon.draw(
-                        this.pos.x - SystemBlueprint.ICON_GLOW + 6f,
-                        this.pos.y - SystemBlueprint.ICON_GLOW + 7f
+                        pos.x - SystemBlueprint.ICON_GLOW + 6f,
+                        pos.y - SystemBlueprint.ICON_GLOW + 7f
                     )
                 }
 
@@ -254,8 +271,8 @@ object Buttons {
                     val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2
 
                     weaponNameFont.drawString(
-                        this.pos.x + 11f + nameX,
-                        this.pos.y + 70f,
+                        pos.x + 11f + nameX,
+                        pos.y + 70f,
                         name,
                         textColour
                     )
@@ -269,7 +286,7 @@ object Buttons {
                     val iconX = (iconWindowWidth - icon.height) / 2
                     val iconY = (iconWindowHeight - icon.width) / 2
 
-                    blueprint.drawLauncherUI(game, this.pos.x + iconX + 11f, this.pos.y + iconY + 11f)
+                    blueprint.drawLauncherUI(game, pos.x + iconX + 11f, pos.y + iconY + 11f)
                 }
 
                 else -> throw Exception("Can't draw blueprint button for $blueprint")
@@ -277,5 +294,75 @@ object Buttons {
         }
 
         // Leave click for child classes to override.
+    }
+
+    class DragDropBlueprintButton(
+        homePos: IPoint, game: SlickGame, image: ButtonImageSet,
+        val compatible: Class<*>, override val blueprint: Blueprint?, val callback: () -> Unit
+    ) : BlueprintButton(homePos, game, image) {
+
+        private val overlay = game.getImg("img/upgradeUI/Equipment/box_overlay_red.png")
+
+        // Null means we're not dragging, non-null indicates the cursor position
+        var dragPosition: IPoint? = null
+
+        // If a blueprint is being dragged from another blueprint, this is set to
+        // highlight which cells it can and can't be dropped into (this is for
+        // drones and weapons).
+        var currentlyDraggedBlueprint: Blueprint? = null
+
+        override fun draw(g: Graphics) {
+            if (dragPosition == null && !empty) {
+                super.draw(g)
+            } else {
+                // Hide the card when the item is being dragged, but use the selected
+                // image if the user is dragging an item over us.
+                // This is why we also run this path if this button is empty, to get
+                // the highlighting.
+                val img = when {
+                    hovered && currentlyDraggedBlueprint != null -> image.offHover ?: image.hover
+                    else -> image.off
+                }
+                img.draw(pos)
+            }
+
+            val blueprint = currentlyDraggedBlueprint ?: return
+            val colour = when (compatible.isInstance(blueprint)) {
+                true -> Color(100, 255, 100, 127) // Transparent SYS_ENERGY_ACTIVE
+                false -> Color(255, 50, 50, 127) // Transparent SYS_ENERGY_BROKEN
+            }
+            overlay.draw(pos.x.f, pos.y.f, colour)
+        }
+
+        fun drawDrag() {
+            // Stop dragPosition from changing under us (it actually won't,
+            // but Kotlin doesn't know that).
+            val dragPosition = dragPosition ?: return
+
+            // Draw only the item itself being dragged, without the whole card.
+            when (val blueprint = blueprint) {
+                is ShipWeaponBlueprint -> {
+                    val icon = blueprint.getLauncher(game).chargedImage
+
+                    // The sprite is rotated 90°, so swap the width and height.
+                    val iconX = -icon.height / 2
+                    val iconY = -icon.width / 2
+
+                    blueprint.drawLauncherUI(game, dragPosition.x + iconX.f, dragPosition.y + iconY.f)
+                }
+
+                else -> throw Exception("Can't draw dragged blueprint for $blueprint")
+            }
+        }
+
+        override fun click(button: Int) {
+            if (button != Input.MOUSE_LEFT_BUTTON)
+                return
+
+            if (blueprint == null)
+                return
+
+            callback()
+        }
     }
 }

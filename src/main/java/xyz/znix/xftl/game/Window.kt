@@ -34,6 +34,9 @@ abstract class Window {
         }
     }
 
+    open fun mouseReleased(button: Int, x: Int, y: Int) {
+    }
+
     open fun escapePressed() {
         // Subclasses may close the window
     }

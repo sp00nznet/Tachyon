@@ -173,6 +173,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun mouseUp(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
+        currentWindow?.let { win ->
+            win.mouseReleased(button, x, y)
+            return
+        }
+
         crewSelectionRectangle?.let { csr ->
             if (button != MOUSE_LEFT_BUTTON) return@let
 
