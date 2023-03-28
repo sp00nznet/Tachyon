@@ -4,10 +4,7 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import org.newdawn.slick.Input
-import xyz.znix.xftl.AbstractSystem
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.draw
+import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SubSystem
@@ -21,6 +18,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
     private val shipNameFont = game.getFont("c&c", 3f)
     private val numberFont = game.getFont("num_font")
+    private val reactorFont = game.getFont("hl1", 2f)
 
     private var tab: Tab = Tab.UPGRADES
 
@@ -171,6 +169,67 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                 system, price
             )
         }
+
+        // Add the reactor button
+        if (updatingButtons) {
+            val reactorImg = game.getImg("img/upgradeUI/Equipment/equipment_reactor_on.png")
+            val reactorHighlight = game.getImg("img/upgradeUI/Equipment/equipment_reactor_select2.png")
+            buttons += object : Button(ConstPoint(298, 327), reactorImg.imageSize) {
+                override fun draw(g: Graphics) {
+                    if (hovered) {
+                        reactorHighlight.draw(pos)
+                    } else {
+                        reactorImg.draw(pos)
+                    }
+
+                    // Draw the energy bars
+                    for (level in 0 until 25) {
+                        g.color = when {
+                            ship.purchasedReactorPower >= (level + 1) -> Constants.SYS_ENERGY_ACTIVE
+                            hovered -> Constants.SYS_ENERGY_PURCHASE_HOVER
+                            else -> Constants.SYS_ENERGY_PURCHASE
+                        }
+
+                        g.fillRect(
+                            pos.x + 30f + (level / 5) * 44,
+                            pos.y + 66f - (level % 5) * 13,
+                            32f, 8f
+                        )
+                    }
+
+                    // Draw the current price
+                    val price = 20
+                    numberFont.drawString(
+                        pos.x + 235f, pos.y + 105f,
+                        price.toString(), Constants.SECTOR_CUTOUT_TEXT
+                    )
+
+                    // Draw the 'n power bars' text - this is annoyingly mixed between two fonts
+                    // TODO mix them properly to work in languages where the power number doesn't
+                    //  come first - is this something FTL does?
+                    val text = game.translator["upgrade_reactor_power"].replace("\\1", "")
+                    reactorFont.drawStringLeftAligned(pos.x + 179f, pos.y + 105f, text, Constants.SECTOR_CUTOUT_TEXT)
+                    numberFont.drawStringLeftAligned(
+                        pos.x + 47f,
+                        pos.y + 105f,
+                        ship.purchasedReactorPower.toString(),
+                        Constants.SECTOR_CUTOUT_TEXT
+                    )
+                }
+
+                override fun click(button: Int) {
+                    if (button != Input.MOUSE_LEFT_BUTTON)
+                        return
+
+                    if (ship.purchasedReactorPower >= 25)
+                        return
+
+                    // TODO scrap check
+
+                    ship.purchasedReactorPower++
+                }
+            }
+        }
     }
 
     inner class UpgradeButton(
@@ -197,8 +256,11 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
             // Draw the energy bars
             for (level in 1..system.blueprint.maxPower) {
-                g.color =
-                    if (system.energyLevels >= level) Constants.SYS_ENERGY_ACTIVE else Constants.SYS_ENERGY_PURCHASE
+                g.color = when {
+                    system.energyLevels >= level -> Constants.SYS_ENERGY_ACTIVE
+                    hovered -> Constants.SYS_ENERGY_PURCHASE_HOVER
+                    else -> Constants.SYS_ENERGY_PURCHASE
+                }
 
                 g.fillRect(
                     pos.x + 24f,
