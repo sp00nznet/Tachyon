@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game
 
+import org.newdawn.slick.Font
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import org.newdawn.slick.Input
@@ -87,14 +88,12 @@ class SimpleButton(
 }
 
 object Buttons {
-    fun drawRounded(g: Graphics, x: Int, y: Int, width: Int, height: Int) {
-        g.fillRect(x + 3f, y + 0f, width - 6f, 1f)
-        g.fillRect(x + 2f, y + 1f, width - 4f, 1f)
-        g.fillRect(x + 1f, y + 2f, width - 2f, 1f)
-        g.fillRect(x.f, y + 3f, width.f, height - 6f)
-        g.fillRect(x + 1f, y + height - 3f, width - 2f, 1f)
-        g.fillRect(x + 2f, y + height - 2f, width - 4f, 1f)
-        g.fillRect(x + 3f, y + height - 1f, width - 6f, 1f)
+    fun drawRounded(g: Graphics, x: Int, y: Int, width: Int, height: Int, radius: Int) {
+        // Note: this loop's range is inclusive, and will run for both 0 and radius.
+        for (i in 0..radius) {
+            // Draw a bunch of overlapping rectangles, making a diagonal corner.
+            g.fillRect(x.f + i, y.f + radius - i, width.f - i * 2, height.f - (radius - i) * 2)
+        }
     }
 
     class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame, private val callback: () -> Unit) :
@@ -111,7 +110,7 @@ object Buttons {
             val engineOn = ship.engines!!.powerSelected > 0
             if (ship.isFtlCharged) {
                 g.color = if (engineOn) Constants.JUMP_READY else Constants.JUMP_DISABLED
-                drawRounded(g, pos.x + 5, pos.y + 6, size.x, size.y)
+                drawRounded(g, pos.x + 5, pos.y + 6, size.x, size.y, 3)
 
                 val textColour = when {
                     !engineOn -> Constants.JUMP_DISABLED_TEXT
@@ -140,17 +139,18 @@ object Buttons {
     }
 
     class BasicButton(
-        pos: IPoint, size: IPoint, val label: String, game: SlickGame, private val buttonOffsetX: Int,
+        pos: IPoint, size: IPoint, val label: String, game: SlickGame,
+        private val radius: Int, private val font: Font, private val yOffset: Int,
         private val cb: () -> Unit
     ) : Button(pos, size) {
-
-        private val font = game.getFont("HL2", 3f)
 
         override fun draw(g: Graphics) {
             // TODO mouseover highlight
             g.color = Constants.SECTOR_CUTOUT_TEXT
-            drawRounded(g, pos.x, pos.y, size.x, size.y)
-            font.drawStringLegacy(pos.x + buttonOffsetX.toFloat(), pos.y + 18f, label, Constants.JUMP_DISABLED_TEXT)
+            drawRounded(g, pos.x, pos.y, size.x, size.y, radius)
+
+            val x = (size.x - font.getWidth(label)) / 2f
+            font.drawString(pos.x + x, pos.y + yOffset.f, label, Constants.JUMP_DISABLED_TEXT)
         }
 
         override fun click(button: Int) {

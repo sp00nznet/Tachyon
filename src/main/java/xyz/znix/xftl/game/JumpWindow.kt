@@ -49,7 +49,9 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window() {
 
     val cancelButton = Buttons.BasicButton(
         position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
-        ConstPoint(124, 30), "CANCEL", game, 6, ::cancelClicked
+        ConstPoint(124, 30), "CANCEL", game,
+        3, font, 24,
+        ::cancelClicked
     )
 
     val background = game.getImg("img/map/zone_1.png")

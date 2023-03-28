@@ -73,7 +73,9 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
     private val closeButton = Buttons.BasicButton(
         position + ConstPoint(466, 472),
-        ConstPoint(103, 32), game.translator["button_close"], game, 5, this::escapePressed
+        ConstPoint(103, 32), game.translator["button_close"], game,
+        4, buySellTabFont, 25,
+        this::escapePressed
     )
 
     private var sellTab: Boolean = false
