@@ -1,0 +1,287 @@
+package xyz.znix.xftl.game
+
+import org.newdawn.slick.Graphics
+import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.Constants
+import xyz.znix.xftl.Ship
+import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.weapons.DroneBlueprint
+import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+
+/**
+ * This contains the drag-and-drop equipment UI used in the equipment tab
+ * of the player ship UI, and in the sell tab of the store.
+ */
+class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
+    var position: IPoint = ConstPoint.ZERO
+        set(value) {
+            if (field == value)
+                return
+            field = value
+            updateButtons()
+        }
+
+    private val sectionFont = game.getFont("hl2", 2f)
+    private val missingSystemFont = game.getFont("hl2", 3f)
+
+    private val buttons = ArrayList<Button>()
+    private val weaponButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+    private val droneButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+    private val cargoButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+
+    private var draggingBlueprint: Buttons.DragDropBlueprintButton? = null
+        set(value) {
+            field = value
+            for (button in buttons) {
+                if (button !is Buttons.DragDropBlueprintButton)
+                    continue
+                button.currentlyDraggedBlueprint = value?.blueprint
+            }
+        }
+
+    // Note: the buttons are first populated when the position is set
+
+    fun draw(g: Graphics) {
+        sectionFont.drawString(
+            position.x + 11f,
+            position.y + 60f,
+            game.translator["equipment_frame_weapons"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+        sectionFont.drawString(
+            position.x + 11f,
+            position.y + 170f,
+            game.translator["equipment_frame_drones"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+        sectionFont.drawString(
+            position.x + 11f,
+            position.y + 280f,
+            game.translator["equipment_frame_cargo"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+        sectionFont.drawString(
+            position.x + 300f,
+            position.y + 280f,
+            game.translator["equipment_frame_augments"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+
+        if (ship.drones == null) {
+            missingSystemFont.drawString(
+                position.x + 108f,
+                position.y + 227f,
+                game.translator["equipment_no_system"],
+                Constants.SECTOR_CUTOUT_TEXT
+            )
+        }
+
+        for (button in buttons) {
+            button.draw(g)
+        }
+    }
+
+    fun drawDrag() {
+        // Draw the dragged bit of equipment above everything else
+        draggingBlueprint?.drawDrag()
+    }
+
+    private fun updateButtons() {
+        buttons.clear()
+
+        // Draw the weapons
+        // Note: I think all the playable ships have weaponSlots set?
+        weaponButtons.clear()
+        for (i in 0 until ship.weaponSlots!!) {
+            val weapon = ship.hardpoints[i].weapon
+
+            val images = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_weapons", true)
+            val padding = 8
+            val baseX = (579 - (images.normal.width + padding) * ship.weaponSlots) / 2
+            val buttonPos = ConstPoint(baseX + i * (images.normal.width + padding), 70)
+
+            // Use a separate variable so we can use the button in it's callback.
+            lateinit var button: Buttons.DragDropBlueprintButton
+            button = Buttons.DragDropBlueprintButton(
+                buttonPos, game, images,
+                { it is ShipWeaponBlueprint },
+                weapon?.type
+            ) {
+                draggingBlueprint = button
+            }
+            buttons += button
+            weaponButtons += button
+        }
+
+        // Draw the drones
+        droneButtons.clear()
+        val droneSystem = ship.drones
+        if (droneSystem != null) {
+            val images = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_drones", true)
+            val padding = 8
+            val baseX = (579 - (images.normal.width + padding) * droneSystem.blueprints.size) / 2
+
+            for ((i, drone) in droneSystem.blueprints.withIndex()) {
+                val buttonPos = ConstPoint(baseX + i * (images.normal.width + padding), 180)
+
+                // Use a separate variable so we can use the button in it's callback.
+                lateinit var button: Buttons.DragDropBlueprintButton
+                button = Buttons.DragDropBlueprintButton(buttonPos, game, images, { it is DroneBlueprint }, drone) {
+                    draggingBlueprint = button
+                }
+                buttons += button
+                droneButtons += button
+            }
+        }
+
+        // Draw the cargo area
+        cargoButtons.clear()
+        for (i in 0 until 4) {
+            val blueprint = ship.cargoBlueprints[i]
+
+            val weapons = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_weapons", true)
+            val drones = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_drones", true)
+
+            val base = ButtonImageSet(
+                game.getImg("img/upgradeUI/Equipment/box_base_off.png"),
+                game.getImg("img/upgradeUI/Equipment/box_base_off.png"), // There's no 'on' image
+                game.getImg("img/upgradeUI/Equipment/box_base_off_selected.png")
+            )
+
+            val buttonPos = ConstPoint(
+                23 + 130 * (i % 2),
+                293 + 80 * (i / 2)
+            )
+
+            // Use a separate variable so we can use the button in it's callback.
+            lateinit var button: Buttons.DragDropBlueprintButton
+            button = object : Buttons.DragDropBlueprintButton(
+                buttonPos, game, base,
+                { true /* TODO block augments */ },
+                blueprint,
+                { draggingBlueprint = button }) {
+
+                // Change the card image depending on our contents
+                override val image: ButtonImageSet
+                    get() {
+                        // If our contents is being dragged, don't keep the weapon/drone
+                        // icon on the card.
+                        if (dragPosition != null)
+                            return base
+
+                        return when (this.blueprint) {
+                            is ShipWeaponBlueprint -> weapons
+                            is DroneBlueprint -> drones
+                            else -> base
+                        }
+                    }
+            }
+            buttons += button
+            cargoButtons += button
+        }
+
+        for (button in buttons) {
+            button.windowOffset = position
+        }
+    }
+
+    fun updateUI(x: Int, y: Int) {
+        for (button in buttons) {
+            button.update(x, y)
+        }
+
+        // If we're dragging a blueprint around, update it.
+        draggingBlueprint?.dragPosition = ConstPoint(x, y)
+    }
+
+    fun mouseClick(button: Int, x: Int, y: Int) {
+        // Copied from Window.
+        // Mouse clicking may change the buttons array (eg in the store
+        // window when switching tabs), so copy it.
+        for (btn in ArrayList(buttons)) {
+            btn.mouseDown(button, x, y)
+        }
+    }
+
+    fun mouseReleased(button: Int, x: Int, y: Int) {
+        if (draggingBlueprint != null)
+            dropBlueprint()
+    }
+
+    private fun dropBlueprint() {
+        val drag = draggingBlueprint!!
+        drag.dragPosition = null
+        draggingBlueprint = null
+
+        data class SlotAccess(
+            val get: () -> Blueprint?,
+            val set: (Blueprint?) -> Unit
+        )
+
+        fun getAccess(target: Buttons.DragDropBlueprintButton): SlotAccess? {
+            // Check the weapons
+            for ((i, button) in weaponButtons.withIndex()) {
+                if (button != target)
+                    continue
+
+                return SlotAccess(
+                    { ship.hardpoints[i].weapon?.type },
+                    { ship.hardpoints[i].weapon = (it as? ShipWeaponBlueprint)?.buildInstance(ship) }
+                )
+            }
+
+            // Check the drone system
+            for ((i, button) in droneButtons.withIndex()) {
+                if (button != target)
+                    continue
+
+                val drones = ship.drones ?: break
+
+                return SlotAccess(
+                    { drones.blueprints[i] },
+                    { drones.blueprints[i] = it as DroneBlueprint? }
+                )
+            }
+
+            // Check the cargo bay
+            for ((i, button) in cargoButtons.withIndex()) {
+                if (button != target)
+                    continue
+
+                return SlotAccess(
+                    { ship.cargoBlueprints[i] },
+                    { ship.cargoBlueprints[i] = it }
+                )
+            }
+
+            return null
+        }
+
+        // Find the blueprint the user is trying to drop the item into
+        val hovered = buttons.mapNotNull { it as? Buttons.DragDropBlueprintButton }.firstOrNull { it.hovered } ?: return
+
+        // Get access to where this blueprint is being dragged to and from
+        val src = getAccess(drag) ?: return
+        val dst = getAccess(hovered) ?: return
+
+        // Make sure something crazy hasn't happened
+        require(drag.blueprint == src.get())
+
+        // Check if the blueprint will fit
+        if (!hovered.compatible(drag.blueprint!!))
+            return
+
+        // If the user drops one blueprint onto another, they swap.
+        // Make sure that'll work.
+        val replacing = dst.get()
+        if (replacing != null && !drag.compatible(replacing))
+            return
+
+        // Swap them
+        dst.set(drag.blueprint)
+        src.set(replacing)
+
+        updateButtons()
+    }
+}

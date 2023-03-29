@@ -22,6 +22,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val sectionFont = game.getFont("HL2", 2f)
     private val numberFont = game.getFont("num_font")
 
+    private val sellPanel = ShipEquipmentPanel(game, ship)
+
     private val buyTabButton = SimpleButton(
         ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
         game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_on.png"),
@@ -97,6 +99,13 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
         if (sellTab) {
             buttons.add(buyTabButton)
+
+            // Our position is centred at the 0,0 of the image, whereas
+            // the sell panel excludes the glow part of the image.
+            // Also note ShipEquipmentPanel is aligned properly with the ship
+            // equipment menu, so we need to shift it around a little to make it
+            // line up properly here.
+            sellPanel.position = position + ConstPoint(GLOW_WIDTH, GLOW_WIDTH - 7)
         } else {
             buttons.add(sellTabButton)
             buttons.add(fuelButton)
@@ -141,6 +150,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             game.translator["store_tab_sell"],
             Constants.JUMP_DISABLED_TEXT
         )
+
+        sellPanel.drawDrag()
     }
 
     private fun drawBuy(g: Graphics) {
@@ -297,10 +308,33 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         sellImage.draw(position)
 
         buyTabButton.draw(g)
+
+        sellPanel.draw(g)
     }
 
     override fun escapePressed() {
         close()
+    }
+
+    override fun mouseClick(button: Int, x: Int, y: Int) {
+        super.mouseClick(button, x, y)
+
+        if (sellTab)
+            sellPanel.mouseClick(button, x, y)
+    }
+
+    override fun mouseReleased(button: Int, x: Int, y: Int) {
+        super.mouseReleased(button, x, y)
+
+        if (sellTab)
+            sellPanel.mouseReleased(button, x, y)
+    }
+
+    override fun updateUI(x: Int, y: Int) {
+        super.updateUI(x, y)
+
+        if (sellTab)
+            sellPanel.updateUI(x, y)
     }
 
     abstract inner class BuyButton(pos: IPoint, images: ButtonImageSet, val priceOffset: IPoint) :
