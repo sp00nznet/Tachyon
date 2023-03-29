@@ -44,6 +44,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     open fun drawForeground(g: Graphics) {
     }
 
+    open fun initialise(ship: Ship) {
+    }
+
     fun drawRoom(g: Graphics) {
         // Draw the system icon
         val room = room!!

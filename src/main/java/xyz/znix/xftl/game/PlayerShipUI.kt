@@ -19,6 +19,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
 import java.util.function.Consumer
+import java.util.stream.Collectors
 import java.util.stream.Stream
 import kotlin.math.ceil
 import kotlin.math.pow
@@ -59,7 +60,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     val boxX get() = 234
     val boxY get() = height - 113
 
-    fun sysImgX(i: Int): Int = 58 + i * 36
+    fun sysImgX(i: Int, system: AbstractSystem?): Int {
+        if (system == ship.drones && ship.weapons != null) {
+            // The drones are shifted by the width of the weapons area
+            return sysImgX(i - 1, null) + 48 + ship.weaponSlots!! * 97
+        }
+
+        return 58 + i * 36
+    }
+
     fun sysImgY(i: Int): Int = height - 69
 
     // The position of a given weapon's selector
@@ -126,7 +135,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         var i = 0
         for (sys in sortedMainSystems()) {
-            val imgX = sysImgX(i) + 19
+            val imgX = sysImgX(i, sys) + 19
             val imgY = sysImgY(i) + 19
 
             if (x >= imgX && y >= imgY && x < imgX + 26 && y < imgY + 26) {
@@ -328,21 +337,34 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // Draw the systems
         var systemCount = 0
 
-        for (sys in sortedMainSystems()) {
-            sys.drawIconAndPower(game, g, sysImgX(systemCount), sysImgY(systemCount))
+        val sortedSystems = sortedMainSystems().collect(Collectors.toList())
+        for (sys in sortedSystems) {
+            sys.drawIconAndPower(game, g, sysImgX(systemCount, sys), sysImgY(systemCount))
             systemCount++
         }
 
         // Draw the wires between the systems
         for (i in 0 until systemCount - 1) {
             // Draw the power bar to the next item
-            val powerX = sysImgX(i) + 31
+            val powerX = sysImgX(i, sortedSystems[i]) + 31
             val powerY = sysImgY(i) + 45 + 12 - 26
 
-            if (i == systemCount - 2)
-                game.getImg("img/wireUI/wire_36_cap.png").draw(powerX.f, powerY.f)
-            else
-                game.getImg("img/wireUI/wire_36.png").draw(powerX.f, powerY.f)
+            val lastSystem = i == systemCount - 2
+
+            val image = when {
+                !lastSystem -> game.getImg("img/wireUI/wire_36.png")
+                ship.weapons != null && ship.drones != null -> {
+                    // Draw the wire that goes under the weapons to the drone system
+                    val name = when (ship.weaponSlots) {
+                        4 -> "img/wireUI/wire_456_cap.png"
+                        else -> "img/wireUI/wire_456_${ship.weaponSlots!!}weapon_cap.png"
+                    }
+                    game.getImg(name)
+                }
+
+                else -> game.getImg("img/wireUI/wire_36_cap.png")
+            }
+            image.draw(powerX.f, powerY.f)
         }
 
         // If a weapon is being targeted, check that our click event is still the game's active click
@@ -454,6 +476,36 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 }
                 g.fillRect((wx + 4).f, y.f, 16f, 7f)
             }
+        }
+
+        // Draw the drone area, if it's installed
+        val drones = ship.drones
+        if (drones != null) {
+            val x = sysImgX(sortedSystems.indexOf(drones), drones) + 32
+
+            game.getImg("img/box_weapons_bottom" + ship.droneSlots!! + ".png").draw(x.f, boxY.f)
+
+            val textX = x + 18
+
+            // Draw the 'drones' label
+            // TODO deduplicate this with the weapons text, using this one since
+            //  it draws the glow properly.
+            val name = game.translator["drones_label"]
+            val textWidth = font.getWidth(name)
+            val img = game.getImg("img/box_weapons_bottom_label.png")
+
+            // Stretch part of the label to cover the width of the text
+            img.draw(
+                textX.f, ty.f, textX + textWidth - 13f, ty + img.height.f,
+                0f, 0f, 3f, img.height.f
+            )
+
+            // Draw the 'ramp' at the end of the label.
+            img.draw((textX + textWidth - 13).f, ty.f)
+
+            font.drawString(textX + 1f, ty + 15f, name, UI_TEXT_COLOUR_1)
+
+            // TODO draw the in-operation drone boxes - this seems very similar to weapons
         }
 
         // Draw the crew selection rectangle, if appropriate

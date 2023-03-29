@@ -55,6 +55,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             selectedShieldHalfSize
 
     val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
+    val droneSlots: Int? = shipNode.getChildTextTrim("droneSlots")?.toInt()
 
     val isAutoScout = shipNode.getChild("crewCount")?.getAttributeValue("amount")?.trim() == "0"
     val crew: MutableList<AbstractCrew> = ArrayList()
@@ -118,6 +119,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         get() {
             for (room in rooms)
                 return room.system as? Weapons ?: continue
+            return null
+        }
+
+    val drones: Drones?
+        get() {
+            for (room in rooms)
+                return room.system as? Drones ?: continue
             return null
         }
 
@@ -237,6 +245,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 "sensors" -> Sensors(blueprint, node)
                 "shields" -> Shields(blueprint, node)
                 "weapons" -> Weapons(blueprint, node)
+                "drones" -> Drones(blueprint, node)
                 else -> {
                     // TODO throw exception when all systems are implemented
                     System.out.println("Warning: unimplemented system ${node.name}")
@@ -381,6 +390,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 dir
             )
             hardpoints += hardpoint
+        }
+
+        // Initialise all the systems
+        for (room in rooms) {
+            room.system?.initialise(this)
         }
 
         gibs = ArrayList()

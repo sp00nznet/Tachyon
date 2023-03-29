@@ -37,7 +37,7 @@ abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractS
         ENGINES,
         MEDBAY,
         OXYGEN,
-        WEAPONS;
-        // TODO support drones
+        WEAPONS,
+        DRONES;
     }
 }
