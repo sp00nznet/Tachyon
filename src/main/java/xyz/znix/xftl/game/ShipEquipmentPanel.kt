@@ -4,6 +4,7 @@ import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.weapons.DroneBlueprint
@@ -22,13 +23,18 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             updateButtons()
         }
 
+    var sellUI: Boolean = false
+
     private val sectionFont = game.getFont("hl2", 2f)
     private val missingSystemFont = game.getFont("hl2", 3f)
+    private val sellBoxFont = game.getFont("hl1", 2f)
+    private val sellPriceFont = game.getFont("num_font")
 
     private val buttons = ArrayList<Button>()
     private val weaponButtons = ArrayList<Buttons.DragDropBlueprintButton>()
     private val droneButtons = ArrayList<Buttons.DragDropBlueprintButton>()
     private val cargoButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+    private var sellButton: Button? = null // The box for selling and leaving behind items
 
     private var draggingBlueprint: Buttons.DragDropBlueprintButton? = null
         set(value) {
@@ -181,6 +187,88 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             cargoButtons += button
         }
 
+        // Draw the sell/leave behind box - do this here since
+        // the sell and leave behind (when you get a piece of
+        // equipment but your cargo is full) UIs are similar.
+        sellButton = null
+        if (sellUI) {
+            val normal = game.getImg("img/dropbox_sell_on.png")
+            val hover = game.getImg("img/dropbox_sell_select2.png")
+
+            sellButton = object : Button(ConstPoint(-275, 107), ConstPoint(258, 191)) {
+                override fun draw(g: Graphics) {
+                    val hoverActive = hovered && draggingBlueprint != null
+                    val image = if (hoverActive) hover else normal
+                    val glow = 7f
+
+                    val colour = if (hoverActive) Constants.UI_BUTTON_HOVER else Constants.SECTOR_CUTOUT_TEXT
+
+                    // Image x and y origin positions - note the image has a glow
+                    // around it, so we have to offset it to make it's top-left solid
+                    // pixel line up with our position.
+                    val ix = pos.x - glow
+                    val iy = pos.y - glow
+
+                    // Draw the top (title bar) area
+                    image.draw(
+                        ix, iy, ix + image.width, iy + 62f,
+                        0f, 0f, image.width.f, 62f
+                    )
+
+                    // Draw the stretched middle area to accomidate all the text
+                    val descriptionText = game.translator["sell_box_text"]
+                    val lines = descriptionText.split('\n')
+                    val insertHeight = lines.size * 24 - 10
+
+                    image.draw(
+                        ix, iy + 62f, ix + image.width, iy + 62f + insertHeight,
+                        0f, 63f, image.width.f, 63f
+                    )
+
+                    // Draw the bottom part of the image
+                    image.draw(
+                        ix, iy + 62f + insertHeight, ix + image.width, iy + insertHeight + image.height,
+                        0f, 62f, image.width.f, image.height.f
+                    )
+
+                    // Draw the description text
+                    for ((i, line) in lines.withIndex()) {
+                        val y = pos.y + 66f + i * 24
+                        sellBoxFont.drawStringCentred(pos.x.f, y, size.x.f, line, colour)
+                    }
+
+                    // Draw the title
+                    missingSystemFont.drawStringCentred(
+                        pos.x.f, pos.y + 29f, size.x.f,
+                        game.translator["sell_box_title"],
+                        Constants.STORE_SELL_TITLE
+                    )
+
+                    sellBoxFont.drawString(pos.x + 44f, pos.y + 180f, game.translator["sell_value"], colour)
+
+                    val blueprint = draggingBlueprint?.blueprint
+                    if (blueprint != null) {
+                        val buyPrice = when (blueprint) {
+                            is ShipWeaponBlueprint -> blueprint.cost
+                            is DroneBlueprint -> blueprint.cost!!
+                            // TODO augments
+                            else -> error("Can't find price when selling blueprint: $blueprint")
+                        }
+
+                        // You only get half of what you paid for it
+                        val sellPrice = 123
+
+                        sellPriceFont.drawString(pos.x + 207f, pos.y + 181f, sellPrice.toString(), colour)
+                    }
+                }
+
+                override fun click(button: Int) {
+                    // Clicking the sell box doesn't do anything
+                }
+            }
+            buttons += sellButton!!
+        }
+
         for (button in buttons) {
             button.windowOffset = position
         }
@@ -219,7 +307,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             val set: (Blueprint?) -> Unit
         )
 
-        fun getAccess(target: Buttons.DragDropBlueprintButton): SlotAccess? {
+        fun getAccess(target: Button): SlotAccess? {
             // Check the weapons
             for ((i, button) in weaponButtons.withIndex()) {
                 if (button != target)
@@ -255,11 +343,19 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
                 )
             }
 
+            // Check the sell button
+            if (target == sellButton) {
+                return SlotAccess({ null }) {
+                    // TODO give the player scrap for the item
+                    // Do nothing with it, thus destroying it.
+                }
+            }
+
             return null
         }
 
         // Find the blueprint the user is trying to drop the item into
-        val hovered = buttons.mapNotNull { it as? Buttons.DragDropBlueprintButton }.firstOrNull { it.hovered } ?: return
+        val hovered = buttons.firstOrNull { it.hovered } ?: return
 
         // Get access to where this blueprint is being dragged to and from
         val src = getAccess(drag) ?: return
@@ -268,8 +364,9 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
         // Make sure something crazy hasn't happened
         require(drag.blueprint == src.get())
 
-        // Check if the blueprint will fit
-        if (!hovered.compatible(drag.blueprint!!))
+        // Check if the blueprint will fit - the sell button is the exception
+        // here, you can sell anything you can drag.
+        if (hovered is Buttons.DragDropBlueprintButton && !hovered.compatible(drag.blueprint!!))
             return
 
         // If the user drops one blueprint onto another, they swap.

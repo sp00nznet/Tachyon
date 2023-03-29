@@ -170,6 +170,11 @@ class SILFontLoader : Font {
         }
     }
 
+    fun drawStringCentred(x: Float, y: Float, width: Float, text: String, col: Color) {
+        val textX = x + (width - getWidth(text)) / 2
+        drawString(textX, y, text, col)
+    }
+
     @Deprecated(message = "Uses the legacy baseline drawing function")
     fun drawStringLeftAlignedLegacy(x: Float, y: Float, text: String, colour: Color) {
         drawStringLegacy(x - getWidth(text), y, text, colour)

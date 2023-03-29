@@ -217,14 +217,15 @@ public class SlickGame extends BasicGame {
             hostileShipUI.render(container, g, hoveredRoom, enemyIsHostile);
         }
 
-        shipUI.renderMenus(container, g);
-
+        // Draw the paused text before the UI, so the UI goes on top.
         if (paused) {
             Image pauseImg = getImg("img/Text_pause2.png");
             int imgY = shipUI.getBoxY() - 80;
             int imgX = container.getWidth() / 2 - pauseImg.getWidth() / 2;
             pauseImg.draw(imgX, imgY);
         }
+
+        shipUI.renderMenus(container, g);
     }
 
     private void renderBackground(GameContainer gc, Graphics g) throws SlickException {

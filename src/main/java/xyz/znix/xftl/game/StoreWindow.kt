@@ -22,7 +22,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val sectionFont = game.getFont("HL2", 2f)
     private val numberFont = game.getFont("num_font")
 
-    private val sellPanel = ShipEquipmentPanel(game, ship)
+    private val sellPanel = ShipEquipmentPanel(game, ship).apply { sellUI = true }
 
     private val buyTabButton = SimpleButton(
         ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),

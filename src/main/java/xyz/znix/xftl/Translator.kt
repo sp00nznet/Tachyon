@@ -28,7 +28,7 @@ class Translator(df: Datafile, lang: String) {
 
         for (elem in doc.rootElement.children) {
             check(elem.name == "text")
-            tl[elem.getAttributeValue("name")] = elem.textTrim
+            tl[elem.getAttributeValue("name")] = elem.textTrim.replace("\\n", "\n")
         }
     }
 
