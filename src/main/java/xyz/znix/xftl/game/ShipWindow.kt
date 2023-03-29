@@ -9,6 +9,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SubSystem
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
 class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> Unit) :
@@ -18,6 +19,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     override val outlineImage get() = error("Ship UI uses a pre-made background image")
 
     private val sectionFont = game.getFont("hl2", 2f)
+    private val missingSystemFont = game.getFont("hl2", 3f)
     private val shipNameFont = game.getFont("c&c", 3f)
     private val numberFont = game.getFont("num_font")
     private val reactorFont = game.getFont("hl1", 2f)
@@ -37,6 +39,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         }
 
     private val weaponButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+    private val droneButtons = ArrayList<Buttons.DragDropBlueprintButton>()
     private val cargoButtons = ArrayList<Buttons.DragDropBlueprintButton>()
 
     // If true, the drawing code should re-create any buttons it added
@@ -47,7 +50,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         // where it meets up with the side of the ship panel has a small ledge.
         position + ConstPoint(428, 471),
         ConstPoint(132, 32), game.translator["button_accept"], game,
-        4, game.getFont("hl2", 3f), 25,
+        4, missingSystemFont, 25,
         this::escapePressed
     )
 
@@ -429,6 +432,16 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             Constants.JUMP_DISABLED_TEXT
         )
 
+        val droneSystem = ship.drones
+        if (droneSystem == null) {
+            missingSystemFont.drawString(
+                position.x + 108f,
+                position.y + 227f,
+                game.translator["equipment_no_system"],
+                Constants.SECTOR_CUTOUT_TEXT
+            )
+        }
+
         if (!updatingButtons)
             return
 
@@ -439,7 +452,9 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             val weapon = ship.hardpoints[i].weapon
 
             val images = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_weapons", true)
-            val buttonPos = ConstPoint(56 + i * 117, 70)
+            val padding = 8
+            val baseX = (579 - (images.normal.width + padding) * ship.weaponSlots) / 2
+            val buttonPos = ConstPoint(baseX + i * (images.normal.width + padding), 70)
 
             // Use a separate variable so we can use the button in it's callback.
             lateinit var button: Buttons.DragDropBlueprintButton
@@ -454,7 +469,25 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             weaponButtons += button
         }
 
-        // TODO draw the drones
+        // Draw the drones
+        droneButtons.clear()
+        if (droneSystem != null) {
+            val images = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_drones", true)
+            val padding = 8
+            val baseX = (579 - (images.normal.width + padding) * droneSystem.blueprints.size) / 2
+
+            for ((i, drone) in droneSystem.blueprints.withIndex()) {
+                val buttonPos = ConstPoint(baseX + i * (images.normal.width + padding), 180)
+
+                // Use a separate variable so we can use the button in it's callback.
+                lateinit var button: Buttons.DragDropBlueprintButton
+                button = Buttons.DragDropBlueprintButton(buttonPos, game, images, { it is DroneBlueprint }, drone) {
+                    draggingBlueprint = button
+                }
+                buttons += button
+                droneButtons += button
+            }
+        }
 
         // Draw the cargo area
         cargoButtons.clear()
@@ -493,7 +526,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
                         return when (this.blueprint) {
                             is ShipWeaponBlueprint -> weapons
-                            // TODO drones
+                            is DroneBlueprint -> drones
                             else -> base
                         }
                     }
@@ -528,6 +561,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         )
 
         fun getAccess(target: Buttons.DragDropBlueprintButton): SlotAccess? {
+            // Check the weapons
             for ((i, button) in weaponButtons.withIndex()) {
                 if (button != target)
                     continue
@@ -538,7 +572,20 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                 )
             }
 
-            // Check if we can drop it into the cargo bay
+            // Check the drone system
+            for ((i, button) in droneButtons.withIndex()) {
+                if (button != target)
+                    continue
+
+                val drones = ship.drones ?: break
+
+                return SlotAccess(
+                    { drones.blueprints[i] },
+                    { drones.blueprints[i] = it as DroneBlueprint? }
+                )
+            }
+
+            // Check the cargo bay
             for ((i, button) in cargoButtons.withIndex()) {
                 if (button != target)
                     continue
@@ -553,7 +600,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         }
 
         // Find the blueprint the user is trying to drop the item into
-        val hovered = buttons.mapNotNull { it as? Buttons.DragDropBlueprintButton }.first { it.hovered }
+        val hovered = buttons.mapNotNull { it as? Buttons.DragDropBlueprintButton }.firstOrNull { it.hovered } ?: return
 
         // Get access to where this blueprint is being dragged to and from
         val src = getAccess(drag) ?: return

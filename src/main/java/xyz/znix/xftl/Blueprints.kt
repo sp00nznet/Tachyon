@@ -33,6 +33,7 @@ class BlueprintManager(df: Datafile) {
             val bp = when (elem.name) {
                 "blueprintList" -> buildList(elem)
                 "weaponBlueprint" -> buildWeaponBlueprint(elem)
+                "droneBlueprint" -> buildDroneBlueprint(elem)
                 "systemBlueprint" -> buildSystemBlueprint(elem)
 
                 // Intentionally ignore itemBlueprint - this contains fuel, drones, and missiles.
@@ -81,6 +82,10 @@ class BlueprintManager(df: Datafile) {
             "BOMB" -> BombBlueprint(elem)
             else -> UknShipWeaponBlueprint(elem)
         }
+    }
+
+    private fun buildDroneBlueprint(elem: Element): IBlueprint {
+        return DroneBlueprint(elem)
     }
 
     private fun buildSystemBlueprint(elem: Element): IBlueprint {

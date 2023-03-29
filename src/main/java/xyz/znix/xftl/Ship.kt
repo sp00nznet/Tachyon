@@ -409,6 +409,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             hardpoints[nextHardpoint].weapon = weapon.buildInstance(this)
         }
 
+        for ((idx, node) in shipNode.getChild("droneList").children.withIndex()) {
+            val name = node.getAttributeValue("name")
+            val drone = sys.blueprintManager[name] as DroneBlueprint
+
+            drones!!.blueprints[idx] = drone
+        }
+
         // Set up the pathfinder after the layout is loaded
         pathFinder = PathFinder(this)
     }

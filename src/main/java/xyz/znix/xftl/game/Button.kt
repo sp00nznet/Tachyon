@@ -5,6 +5,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
 abstract class Button(pos: IPoint, size: IPoint) {
@@ -289,6 +290,24 @@ object Buttons {
                     blueprint.drawLauncherUI(game, pos.x + iconX + 11f, pos.y + iconY + 11f)
                 }
 
+                is DroneBlueprint -> {
+                    // Draw the drone name
+                    // TODO deduplicate the name drawing?
+                    val name = game.translator[blueprint.short!!]
+                    val nameWindowWidth = 96
+                    val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2
+
+                    weaponNameFont.drawString(
+                        pos.x + 11f + nameX,
+                        pos.y + 70f,
+                        name,
+                        textColour
+                    )
+
+                    // Draw the drone icon
+                    blueprint.drawIconUI(game, pos + ConstPoint(60, 35))
+                }
+
                 else -> throw Exception("Can't draw blueprint button for $blueprint")
             }
         }
@@ -313,6 +332,8 @@ object Buttons {
         var currentlyDraggedBlueprint: Blueprint? = null
 
         override fun draw(g: Graphics) {
+            val isCompatible: Boolean? = currentlyDraggedBlueprint?.let(compatible)
+
             if (dragPosition == null && !empty) {
                 super.draw(g)
             } else {
@@ -321,14 +342,14 @@ object Buttons {
                 // This is why we also run this path if this button is empty, to get
                 // the highlighting.
                 val img = when {
-                    hovered && currentlyDraggedBlueprint != null -> image.offHover ?: image.hover
+                    hovered && isCompatible == true -> image.offHover ?: image.hover
                     else -> image.off
                 }
                 img.draw(pos)
             }
 
-            val blueprint = currentlyDraggedBlueprint ?: return
-            val colour = when (compatible(blueprint)) {
+            val colour = when (isCompatible) {
+                null -> return // Nothing being dragged
                 true -> Color(100, 255, 100, 127) // Transparent SYS_ENERGY_ACTIVE
                 false -> Color(255, 50, 50, 127) // Transparent SYS_ENERGY_BROKEN
             }
@@ -350,6 +371,10 @@ object Buttons {
                     val iconY = -icon.width / 2
 
                     blueprint.drawLauncherUI(game, dragPosition.x + iconX.f, dragPosition.y + iconY.f)
+                }
+
+                is DroneBlueprint -> {
+                    blueprint.drawIconUI(game, dragPosition)
                 }
 
                 else -> throw Exception("Can't draw dragged blueprint for $blueprint")
