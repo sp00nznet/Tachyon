@@ -221,7 +221,7 @@ object Buttons {
         }
     }
 
-    abstract class BlueprintButton(pos: IPoint, val game: SlickGame, val image: ButtonImageSet) :
+    abstract class BlueprintButton(pos: IPoint, val game: SlickGame, open val image: ButtonImageSet) :
         Button(pos, image.normal.imageSize) {
 
         private val systemNameFont = game.getFont("c&c", 2f)
@@ -296,9 +296,10 @@ object Buttons {
         // Leave click for child classes to override.
     }
 
-    class DragDropBlueprintButton(
+    open class DragDropBlueprintButton(
         homePos: IPoint, game: SlickGame, image: ButtonImageSet,
-        val compatible: Class<*>, override val blueprint: Blueprint?, val callback: () -> Unit
+        val compatible: (Blueprint) -> Boolean,
+        override val blueprint: Blueprint?, val callback: () -> Unit
     ) : BlueprintButton(homePos, game, image) {
 
         private val overlay = game.getImg("img/upgradeUI/Equipment/box_overlay_red.png")
@@ -327,7 +328,7 @@ object Buttons {
             }
 
             val blueprint = currentlyDraggedBlueprint ?: return
-            val colour = when (compatible.isInstance(blueprint)) {
+            val colour = when (compatible(blueprint)) {
                 true -> Color(100, 255, 100, 127) // Transparent SYS_ENERGY_ACTIVE
                 false -> Color(255, 50, 50, 127) // Transparent SYS_ENERGY_BROKEN
             }

@@ -37,6 +37,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         }
 
     private val weaponButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+    private val cargoButtons = ArrayList<Buttons.DragDropBlueprintButton>()
 
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
@@ -443,16 +444,62 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             // Use a separate variable so we can use the button in it's callback.
             lateinit var button: Buttons.DragDropBlueprintButton
             button = Buttons.DragDropBlueprintButton(
-                buttonPos, game, images, ShipWeaponBlueprint::class.java, weapon?.type
+                buttonPos, game, images,
+                { it is ShipWeaponBlueprint },
+                weapon?.type
             ) {
-                if (weapon == null)
-                    return@DragDropBlueprintButton
-
-                // TODO start drag
                 draggingBlueprint = button
             }
             buttons += button
             weaponButtons += button
+        }
+
+        // TODO draw the drones
+
+        // Draw the cargo area
+        cargoButtons.clear()
+        for (i in 0 until 4) {
+            val blueprint = ship.cargoBlueprints[i]
+
+            val weapons = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_weapons", true)
+            val drones = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_drones", true)
+
+            val base = ButtonImageSet(
+                game.getImg("img/upgradeUI/Equipment/box_base_off.png"),
+                game.getImg("img/upgradeUI/Equipment/box_base_off.png"), // There's no 'on' image
+                game.getImg("img/upgradeUI/Equipment/box_base_off_selected.png")
+            )
+
+            val buttonPos = ConstPoint(
+                23 + 130 * (i % 2),
+                293 + 80 * (i / 2)
+            )
+
+            // Use a separate variable so we can use the button in it's callback.
+            lateinit var button: Buttons.DragDropBlueprintButton
+            button = object : Buttons.DragDropBlueprintButton(
+                buttonPos, game, base,
+                { true /* TODO block augments */ },
+                blueprint,
+                { draggingBlueprint = button }) {
+
+                // Change the card image depending on our contents
+                override val image: ButtonImageSet
+                    get() {
+                        // If our contents is being dragged, don't keep the weapon/drone
+                        // icon on the card.
+                        if (dragPosition != null)
+                            return base
+
+                        return when (this.blueprint) {
+                            is ShipWeaponBlueprint -> weapons
+                            // TODO drones
+                            else -> base
+                        }
+                    }
+            }
+            buttons += button
+            cargoButtons += button
         }
     }
 
@@ -475,44 +522,61 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         drag.dragPosition = null
         draggingBlueprint = null
 
-        val blueprint = drag.blueprint
+        data class SlotAccess(
+            val get: () -> Blueprint?,
+            val set: (Blueprint?) -> Unit
+        )
 
-        fun removeCurrent(replacement: Blueprint?): Boolean {
+        fun getAccess(target: Buttons.DragDropBlueprintButton): SlotAccess? {
             for ((i, button) in weaponButtons.withIndex()) {
-                if (button.blueprint != blueprint)
+                if (button != target)
                     continue
 
-                // If the user drags one item on top of another, swap them if we can.
-                if (replacement != null) {
-                    if (replacement !is ShipWeaponBlueprint)
-                        return false
-                    ship.hardpoints[i].weapon = replacement.buildInstance(ship)
-                } else {
-                    ship.hardpoints[i].weapon = null
-                }
-
-                updateButtons()
-                return true
+                return SlotAccess(
+                    { ship.hardpoints[i].weapon?.type },
+                    { ship.hardpoints[i].weapon = (it as? ShipWeaponBlueprint)?.buildInstance(ship) }
+                )
             }
 
-            return false
-        }
-
-        // Check if we can drop this into a weapon slot
-        if (blueprint is ShipWeaponBlueprint) {
-            for ((i, button) in weaponButtons.withIndex()) {
-                if (!button.hovered)
+            // Check if we can drop it into the cargo bay
+            for ((i, button) in cargoButtons.withIndex()) {
+                if (button != target)
                     continue
 
-                removeCurrent(ship.hardpoints[i].weapon?.type)
-
-                // It doesn't matter if we re-create a weapon when we don't need to,
-                // since you can only do that out of combat anyway.
-                ship.hardpoints[i].weapon = blueprint.buildInstance(ship)
-
-                return
+                return SlotAccess(
+                    { ship.cargoBlueprints[i] },
+                    { ship.cargoBlueprints[i] = it }
+                )
             }
+
+            return null
         }
+
+        // Find the blueprint the user is trying to drop the item into
+        val hovered = buttons.mapNotNull { it as? Buttons.DragDropBlueprintButton }.first { it.hovered }
+
+        // Get access to where this blueprint is being dragged to and from
+        val src = getAccess(drag) ?: return
+        val dst = getAccess(hovered) ?: return
+
+        // Make sure something crazy hasn't happened
+        require(drag.blueprint == src.get())
+
+        // Check if the blueprint will fit
+        if (!hovered.compatible(drag.blueprint!!))
+            return
+
+        // If the user drops one blueprint onto another, they swap.
+        // Make sure that'll work.
+        val replacing = dst.get()
+        if (replacing != null && !drag.compatible(replacing))
+            return
+
+        // Swap them
+        dst.set(drag.blueprint)
+        src.set(replacing)
+
+        updateButtons()
     }
 
     override fun escapePressed() {

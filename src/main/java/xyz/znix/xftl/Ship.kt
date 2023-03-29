@@ -59,6 +59,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val isAutoScout = shipNode.getChild("crewCount")?.getAttributeValue("amount")?.trim() == "0"
     val crew: MutableList<AbstractCrew> = ArrayList()
 
+    val cargoBlueprints = ArrayList<Blueprint?>(listOf(null, null, null, null))
+
     val pathFinder: PathFinder
 
     val hardpoints: List<Hardpoint>
