@@ -1,6 +1,7 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
 
@@ -126,6 +127,9 @@ open class Blueprint(elem: Element) : IBlueprint {
      * have a price.
      */
     open val cost: Int? = null
+
+    fun translateTitle(game: SlickGame): String = title?.let { game.translator[it] } ?: "MISSING TITLE: $name"
+    fun translateShort(game: SlickGame): String = short?.let { game.translator[it] } ?: "MISSING SHORT: $name"
 
     override fun resolve(): Blueprint = this
     override fun list(): List<Blueprint> = listOf(this)

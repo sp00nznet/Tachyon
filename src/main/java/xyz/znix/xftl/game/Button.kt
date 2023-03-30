@@ -254,7 +254,7 @@ object Buttons {
                     systemNameFont.drawString(
                         pos.x + 48f,
                         pos.y + 26f,
-                        game.translator[blueprint.title!!],
+                        blueprint.translateTitle(game),
                         textColour
                     )
 
@@ -267,7 +267,7 @@ object Buttons {
 
                 is ShipWeaponBlueprint -> {
                     // Draw the weapon name
-                    val name = game.translator[blueprint.short!!]
+                    val name = blueprint.translateShort(game)
                     val nameWindowWidth = 96
                     val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2
 
@@ -293,7 +293,7 @@ object Buttons {
                 is DroneBlueprint -> {
                     // Draw the drone name
                     // TODO deduplicate the name drawing?
-                    val name = game.translator[blueprint.short!!]
+                    val name = blueprint.translateShort(game)
                     val nameWindowWidth = 96
                     val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2
 
