@@ -1,9 +1,11 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.math.ConstPoint
 
 abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val launcher: String = xml.getChildTextTrim("weaponArt")
@@ -17,7 +19,15 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val power = xml.getChildTextTrim("power").toInt()
 
     fun getLauncher(game: SlickGame): Animations.WeaponAnimationSpec {
-        return game.animations.weaponAnimations.getValue(launcher)
+        game.animations.weaponAnimations[launcher]?.let { return it }
+
+        // Missing animation?
+        val missing = game.missingImage
+        val sheet = SpriteSheet(missing, missing.width, missing.height)
+        return Animations.WeaponAnimationSpec(
+            sheet, 0, 0, 1, 0, 0,
+            ConstPoint.ZERO, ConstPoint.ZERO, null
+        )
     }
 
     /**

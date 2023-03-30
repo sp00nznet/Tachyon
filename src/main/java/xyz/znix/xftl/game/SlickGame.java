@@ -41,6 +41,8 @@ public class SlickGame extends BasicGame {
 
     private Translator translator;
 
+    private Image missingImage;
+
     private Point tempPoint = new Point(0, 0);
 
     private Room hoveredRoom;
@@ -482,6 +484,27 @@ public class SlickGame extends BasicGame {
 
     public LootPool getLootPool() {
         return lootPool;
+    }
+
+    public Image getMissingImage() {
+        if (missingImage != null)
+            return missingImage;
+
+        // Unfortunately we can't use nullResource, since it uses indexed
+        // colour and Slick doesn't support that.
+
+        ImageBuffer buffer = new ImageBuffer(64, 64);
+        for (int y = 0; y < buffer.getHeight(); y++) {
+            for (int x = 0; x < buffer.getWidth(); x++) {
+                // Produce a stripe pattern
+                boolean secondColour = ((x + y) / 4) % 2 == 0;
+                int rg = secondColour ? 255 : 0;
+
+                buffer.setRGBA(x, y, rg, rg, 0, 255);
+            }
+        }
+        missingImage = new Image(buffer);
+        return missingImage;
     }
 
     public void givePlayerResources(@NotNull ResourceSet resources) {
