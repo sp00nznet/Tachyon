@@ -31,9 +31,10 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     private var flashTimer: Float = 0f
 
     private val commands: List<Cmd> = listOf(
-        Cmd("help", 0, this::cmdHelp, "Show the available commands"),
         Cmd("rich", 0, this::cmdRich, "Get a huge amount of scrap, fuel, drones, and missiles"),
-        Cmd("weapon", 0, this::cmdWeapon, "Select a weapon, and add it to the ship's cargo area")
+        Cmd("weapon", 0, this::cmdWeapon, "Select a weapon, and add it to the ship's cargo area"),
+        Cmd("store", 0, this::cmdStore, "Create a store at this beacon"),
+        Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
     private val prompt: String get() = continued?.prompt ?: PROMPT
@@ -212,6 +213,13 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
             lines.add("No space in cargo hold, can't add weapon.")
         }
+    }
+
+    private fun cmdStore(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        game.currentBeacon.hasStore = true
+        game.shipUI.updateButtons()
+
+        lines.add("A store is now available at this beacon.")
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {
