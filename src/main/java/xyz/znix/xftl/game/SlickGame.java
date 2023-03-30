@@ -341,6 +341,9 @@ public class SlickGame extends BasicGame {
         enemyIsHostile = true;
         setEnemy(currentBeacon.getShip());
 
+        // Make the store button appear and disappear.
+        shipUI.updateButtons();
+
         player.resetAfterJump();
         if (currentBeacon.getState() == Beacon.State.UNVISITED) {
             shipUI.showEventDialogue(currentBeacon.getEvent());

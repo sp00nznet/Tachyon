@@ -80,11 +80,18 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun weaponBoxY(i: Int): Int = boxY + 12 + 4
 
     init {
+        updateButtons()
+    }
+
+    fun updateButtons() {
+        buttons.clear()
+
         var nextPos = ConstPoint(531, 29)
 
         val jump = Buttons.JumpButton(nextPos, ship, game) {
-            currentWindow = JumpWindow(game) { beacon ->
+            currentWindow = JumpWindow(game) {
                 currentWindow = null
+                updateButtons() // A store may now be available
             }
         }
         nextPos += ConstPoint(101, 0)
@@ -94,12 +101,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
         nextPos += ConstPoint(ship.size.x + 17, 0)
 
-        // TODO shift over the settings button when the store is unavailable
-        val store = Buttons.StoreButton(nextPos, game) {
-            showStoreWindow()
+        if (game.currentBeacon?.hasStore == true) {
+            val store = Buttons.StoreButton(nextPos, game) {
+                showStoreWindow()
+            }
+            nextPos += ConstPoint(store.size.x + 17, 0)
+            buttons += store
         }
-        nextPos += ConstPoint(store.size.x + 17, 0)
-        buttons += store
 
         val settings = SimpleButton(
             nextPos, ConstPoint(41, 41), ConstPoint(7, 7),
@@ -672,6 +680,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             // If a store was made available by the dialogue, open it
             if (game.currentBeacon.hasStore && !storeWasAvailable) {
+                updateButtons() // Make the store button show up
                 showStoreWindow()
             }
         }
