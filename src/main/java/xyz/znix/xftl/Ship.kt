@@ -70,10 +70,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
-    // The number of fuel, missiles and drones this ship has - TODO set proper default values.
-    var fuelCount: Int = 10
-    var missilesCount: Int = 10
-    var dronesCount: Int = 10
+    // The number of fuel, missiles and drones this ship has. The missiles and drones
+    // are set during ship loading. Player ships always seem to start with 16 fuel.
+    var fuelCount: Int = 16
+    var missilesCount: Int = 0
+    var dronesCount: Int = 0
 
     // How far through charging the FTL drive, 1=fully charged
     var ftlChargeProgress: Float = 0f
@@ -415,6 +416,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
             drones!!.blueprints[idx] = drone
         }
+
+        // Load the starting number of drones and missiles
+        missilesCount = shipNode.getChild("weaponList")?.getAttributeValue("missiles")?.toInt() ?: 0
+        dronesCount = shipNode.getChild("droneList")?.getAttributeValue("drones")?.toInt() ?: 0
 
         // Set up the pathfinder after the layout is loaded
         pathFinder = PathFinder(this)
