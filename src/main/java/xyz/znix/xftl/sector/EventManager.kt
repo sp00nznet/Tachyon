@@ -14,6 +14,9 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     private val imageLists = HashMap<String, ImageList>()
     private val ships = HashMap<String, EnemyShipSpec>()
 
+    // For the debug console
+    val eventNames: Collection<String> = events.keys
+
     init {
         imageLists[ImageList.NONE.name] = ImageList.NONE
 

@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer
 import java.util.*
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class SILFontLoader : Font {
@@ -154,19 +155,32 @@ class SILFontLoader : Font {
     }
 
     override fun drawString(x: Float, y: Float, text: String, col: Color) {
+        drawStringTruncated(x, y, Float.MAX_VALUE, text, col)
+    }
+
+    fun drawStringTruncated(x: Float, y: Float, width: Float, text: String, col: Color) {
         var next = x
         for (ch in text) {
-            val info = chars[ch] ?: error("Unknown char $ch")
+            // Replace unknown characters with question marks
+            val info = chars[ch] ?: chars['?']!!
+
             val cy = y + (scale * -info.ascent).roundToInt()
             next += (info.prekern * scale).roundToInt()
             val cx = next.roundToInt()
+
+            // Check if this character is going to overflow the allowed area
+            val charWidth = min((width + x - cx) / scale, info.w.f)
+
             picture.draw(
                 cx.f, cy,
-                cx.f + info.w * scale, cy + info.h * scale,
+                cx.f + charWidth * scale, cy + info.h * scale,
                 info.x.f, info.y.f,
-                (info.x + info.w).f, (info.y + info.h).f, col
+                info.x + charWidth, (info.y + info.h).f, col
             )
             next += ((info.w + info.postkern) * scale).roundToInt()
+
+            if (next - x > width)
+                return
         }
     }
 

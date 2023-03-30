@@ -11,6 +11,7 @@ import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.util.*
 
@@ -34,6 +35,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("rich", 0, this::cmdRich, "Get a huge amount of scrap, fuel, drones, and missiles"),
         Cmd("weapon", 0, this::cmdWeapon, "Select a weapon, and add it to the ship's cargo area"),
         Cmd("store", 0, this::cmdStore, "Create a store at this beacon"),
+        Cmd("event", 0, this::cmdEvent, "Load an event at this beacon"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -73,7 +75,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         continued?.render(gc, g, height)
     }
 
-    fun update(gc: GameContainer, dt: Float) {
+    fun update(@Suppress("UNUSED_PARAMETER") gc: GameContainer, dt: Float) {
         flashTimer += dt
     }
 
@@ -144,6 +146,10 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     }
 
     private fun runCommand() {
+        // Clear out the input
+        val input = this.input
+        this.input = ""
+
         // Don't add blank lines or the same command multiple times in a row
         if (history.lastOrNull() != input && input.isNotBlank())
             history.add(input)
@@ -155,7 +161,6 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         continued?.let { cmd ->
             continued = null
             cmd.run(input.trim())
-            input = ""
             return
         }
 
@@ -180,8 +185,6 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
 
         cmd.func(args)
-
-        input = ""
     }
 
     private fun cmdHelp(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -222,6 +225,12 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         lines.add("A store is now available at this beacon.")
     }
 
+    private fun cmdEvent(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        getEvent { event ->
+            game.shipUI.showEventDialogue(event.resolve())
+        }
+    }
+
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {
         continued = object : ContinuedCommand() {
             // A little caching for the search
@@ -259,7 +268,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     val x = 10 + (button.image.normal.width + 5) * i
                     val y = height.toInt() + 10
 
-                    if (y > gc.width)
+                    if (x > gc.width)
                         break
 
                     button.windowOffset = ConstPoint(x, y)
@@ -279,31 +288,17 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     return
                 lastInput = line
 
-                // Implement a simple fuzzy search, splitting up words.
-                val inputParts = line.split(" ", "_")
-                    .map { it.toLowerCase(Locale.UK) }
-                    .filter { it.isNotBlank() }
+                val searcher = FuzzySearcher(line)
 
                 val names = game.blueprintManager.blueprints.keys.mapNotNull {
-                    val parts = it.toLowerCase(Locale.UK).split("_")
-
-                    var score = 0
-
-                    for (part in parts) {
-                        for (ip in inputParts) {
-                            if (part.contains(ip)) {
-                                // Add a per-word weight
-                                score += 10 + ip.length
-                            }
-                        }
-                    }
+                    val score = searcher.rank(it)
 
                     return@mapNotNull if (score == 0) {
                         null
                     } else {
                         Pair(it, score)
                     }
-                }.sortedBy { it.second }.map { it.first }
+                }.sortedByDescending { it.second }.map { it.first }
 
                 val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_weapons")
 
@@ -329,7 +324,163 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
     }
 
+    private fun getEvent(callback: (IEvent) -> Unit) {
+        data class EventInfo(val event: Event, val text: String)
+
+        continued = object : ContinuedCommand() {
+            // A little caching for the search
+            var lastInput: String? = null
+            val visibleEvents = ArrayList<EventInfo>()
+
+            override val prompt: String get() = "EVENT> "
+
+            var lastLeftClick = false
+
+            override fun run(line: String) {
+                val names = game.eventManager.eventNames
+                if (!names.contains(line)) {
+                    lines.add("No such event '$line'")
+                    return
+                }
+                val event = game.eventManager[line]
+
+                callback(event)
+            }
+
+            override fun render(gc: GameContainer, g: Graphics, height: Float) {
+                updateSearch()
+
+                val mouseX = gc.input.mouseX
+                val mouseY = gc.input.mouseY
+
+                val leftDown = gc.input.isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)
+                val clicking = leftDown && !lastLeftClick
+                lastLeftClick = leftDown
+
+                val x = 30
+                val blockHeight = 15
+                val width = gc.width - x - 40
+
+                val idWidth = 125
+
+                for ((i, event) in visibleEvents.withIndex()) {
+                    val y = height.toInt() + 10 + i * blockHeight
+
+                    if (y > gc.height)
+                        break
+
+                    val hovering = mouseX in x until x + width && mouseY in y until y + blockHeight
+
+                    val shade = if (hovering) 140 else 100
+                    g.color = Color(shade, shade, shade, 180)
+                    g.fillRect(x.f, y.f, width.f, blockHeight.f)
+
+                    font.drawStringTruncated(x + 5f, y + 10f, idWidth.f, event.event.debugId, Color.white)
+
+                    val descriptionX = x + idWidth + 10
+                    val descriptionWidth = width - descriptionX - 5f
+                    font.drawStringTruncated(
+                        descriptionX.f, y + 10f, descriptionWidth,
+                        event.text.replace("\n", " \\n "),
+                        Color.white
+                    )
+
+                    if (clicking && hovering) {
+                        // Note the debug ID matches the event name for top-level events (we don't
+                        // display nested events).
+                        historyCursor = -1
+                        input = event.event.debugId
+                        runCommand()
+                    }
+                }
+            }
+
+            private fun updateSearch() {
+                val line = currentLine
+
+                if (lastInput == line)
+                    return
+                lastInput = line
+
+                val searcher = FuzzySearcher(line)
+
+                val events = game.eventManager.eventNames.mapNotNull { name ->
+                    // Filter out event lists
+                    val event = game.eventManager[name] as? Event ?: return@mapNotNull null
+
+                    // Search the name, and consider it to be more important
+                    // than the body text. This makes it easier to find a specific
+                    // event.
+                    var score = searcher.rank(name) * 15
+
+                    // And the body of the event text - just search the first
+                    // available one, it'd get a bit unmanageable otherwise.
+                    val textBody = event.text?.let(::getTextBody) ?: return@mapNotNull null
+                    score += searcher.rank(textBody)
+
+                    return@mapNotNull if (score == 0) {
+                        null
+                    } else {
+                        Pair(EventInfo(event, textBody), score)
+                    }
+                }.sortedByDescending { it.second }
+
+                visibleEvents.clear()
+                visibleEvents.addAll(events.map { it.first })
+            }
+
+            private fun getTextBody(text: IEventText): String? {
+                if (text is EventText)
+                    return text.localised
+
+                require(text is TextList)
+
+                for (item in text.items) {
+                    getTextBody(item)?.let { return it }
+                }
+                return null
+            }
+        }
+    }
+
     private data class Cmd(val name: String, val argCount: Int?, val func: (List<String>) -> Unit, val helpText: String)
+
+    private class FuzzySearcher(query: String) {
+        // Split up the words
+        private val query = query.toLowerCase(Locale.UK)
+        private val inputParts = query.split(" ", "_").filter { it.isNotBlank() }
+
+        fun rank(target: String): Int {
+            val lower = target.toLowerCase(Locale.UK)
+
+            // Only match words once, as otherwise a word that's repeated a lot could
+            // cause one entry to very frequently appear at the top of the list.
+            val parts = lower
+                .replace("_", " ")
+                .split(" ")
+                .toSet()
+
+            var score = 0
+
+            for (part in parts) {
+                for (ip in inputParts) {
+                    if (part == ip) {
+                        score += 20 + ip.length * 3
+                    } else if (part.contains(ip)) {
+                        // Add a per-word weight
+                        score += 10 + ip.length
+                    }
+                }
+            }
+
+            // Add a bonus if the search matches literally (though case-insensitively).
+            if (target.contains(query)) {
+                score += 4 * query.length
+            }
+
+            return score
+        }
+    }
 
     private abstract class ContinuedCommand {
         abstract val prompt: String

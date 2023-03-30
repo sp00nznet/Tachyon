@@ -489,6 +489,10 @@ public class SlickGame extends BasicGame {
         return lootPool;
     }
 
+    public EventManager getEventManager() {
+        return eventManager;
+    }
+
     public Image getMissingImage() {
         if (missingImage != null)
             return missingImage;
