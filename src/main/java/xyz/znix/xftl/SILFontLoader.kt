@@ -205,6 +205,10 @@ class SILFontLoader : Font {
         TODO("not implemented")
     }
 
+    fun supportsCharacter(c: Char): Boolean {
+        return chars.containsKey(c)
+    }
+
     @Suppress("unused")
     private class Charinfo(
         val ch: Char, val x: Int, val y: Int, val w: Int, val h: Int, val ascent: Int,

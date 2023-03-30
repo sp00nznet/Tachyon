@@ -3,8 +3,10 @@ package xyz.znix.xftl.game;
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.*;
+import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
+import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.Point;
@@ -56,6 +58,9 @@ public class SlickGame extends BasicGame {
     private Image background;
     private Image planet;
 
+    private DebugConsole debugConsole;
+    private boolean debugConsoleVisible;
+
     public SlickGame(Datafile df) {
         super("Subluminal");
         this.df = df;
@@ -103,6 +108,17 @@ public class SlickGame extends BasicGame {
             getImg("img/icons/s_" + system.getCodename() + "_grey1.png");
             getImg("img/icons/s_" + system.getCodename() + "_green1.png");
         }
+
+        // Feed inputs to the debug console.
+        container.getInput().addKeyListener(new InputAdapter() {
+            @Override
+            public void keyPressed(int key, char c) {
+                if (!debugConsoleVisible)
+                    return;
+
+                debugConsole.keyPressed(key, c);
+            }
+        });
     }
 
     private void loadPlayerShip() {
@@ -129,30 +145,19 @@ public class SlickGame extends BasicGame {
 
         Input in = container.getInput();
 
-        if (in.isKeyPressed(Input.KEY_SPACE))
-            paused = !paused;
+        if (in.isKeyPressed(Input.KEY_GRAVE)) {
+            if (debugConsole == null) {
+                debugConsole = new DebugConsole(this);
+            }
+            debugConsoleVisible = !debugConsoleVisible;
+        }
 
-        if (in.isKeyPressed(Input.KEY_1))
-            shipUI.weaponHotkeyPressed(0);
-        if (in.isKeyPressed(Input.KEY_2))
-            shipUI.weaponHotkeyPressed(1);
-        if (in.isKeyPressed(Input.KEY_3))
-            shipUI.weaponHotkeyPressed(2);
-        if (in.isKeyPressed(Input.KEY_4))
-            shipUI.weaponHotkeyPressed(3);
-
-        if (in.isKeyPressed(Input.KEY_ESCAPE))
-            shipUI.escapePressed();
-
-        boolean powerUp = !in.isKeyDown(Input.KEY_LSHIFT);
-        if (in.isKeyPressed(Input.KEY_A))
-            shipUI.systemPowerHotkeyPressed(Shields.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_S))
-            shipUI.systemPowerHotkeyPressed(Engines.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_F))
-            shipUI.systemPowerHotkeyPressed(Oxygen.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_D))
-            shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
+        // Block all key inputs if the debug console is open
+        if (!debugConsoleVisible) {
+            readKeyboardInput(in);
+        } else {
+            debugConsole.update(container, delta / 1000f);
+        }
 
         for (int i = 0; i < 3; i++) {
             boolean prev = mouseDownPrev[i];
@@ -204,6 +209,33 @@ public class SlickGame extends BasicGame {
         }
     }
 
+    private void readKeyboardInput(Input in) {
+        if (in.isKeyPressed(Input.KEY_SPACE))
+            paused = !paused;
+
+        if (in.isKeyPressed(Input.KEY_1))
+            shipUI.weaponHotkeyPressed(0);
+        if (in.isKeyPressed(Input.KEY_2))
+            shipUI.weaponHotkeyPressed(1);
+        if (in.isKeyPressed(Input.KEY_3))
+            shipUI.weaponHotkeyPressed(2);
+        if (in.isKeyPressed(Input.KEY_4))
+            shipUI.weaponHotkeyPressed(3);
+
+        if (in.isKeyPressed(Input.KEY_ESCAPE))
+            shipUI.escapePressed();
+
+        boolean powerUp = !in.isKeyDown(Input.KEY_LSHIFT);
+        if (in.isKeyPressed(Input.KEY_A))
+            shipUI.systemPowerHotkeyPressed(Shields.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_S))
+            shipUI.systemPowerHotkeyPressed(Engines.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_F))
+            shipUI.systemPowerHotkeyPressed(Oxygen.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_D))
+            shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
+    }
+
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
         renderBackground(container, g);
@@ -228,6 +260,10 @@ public class SlickGame extends BasicGame {
         }
 
         shipUI.renderMenus(container, g);
+
+        if (debugConsoleVisible) {
+            debugConsole.render(container, g);
+        }
     }
 
     private void renderBackground(GameContainer gc, Graphics g) throws SlickException {
