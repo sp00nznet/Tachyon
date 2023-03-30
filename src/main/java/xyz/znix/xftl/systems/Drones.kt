@@ -11,7 +11,11 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
 
     override fun initialise(ship: Ship) {
         // Resize the blueprints list to match the ship
-        while (blueprints.size < ship.droneSlots!!)
+        // On some enemy ships (eg REBEL_FAT) there's a drone system but
+        // no number of drone slots - in that case assume it's three, though
+        // maybe there's no limit on it? TODO find out.
+        val droneSlots = ship.droneSlots ?: 3
+        while (blueprints.size < droneSlots)
             blueprints.add(null)
     }
 }
