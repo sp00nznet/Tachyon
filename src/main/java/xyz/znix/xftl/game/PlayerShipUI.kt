@@ -56,6 +56,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     // Set by render
     private var height: Int = 500
 
+    // The time remaining on the insufficient scrap flash animation
+    private var insufficientScrapTimer: Float = 0f
+
     // The position of the weapons box
     val boxX get() = 234
     val boxY get() = height - 113
@@ -288,6 +291,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         // Untarget all unpowered weapons
         selectedTargets.keys.removeIf { !it.isPowered }
+    }
+
+    fun updateAlways(dt: Float) {
+        // Always called, whether or not the player is paused.
+        // This is therefore only to be used for UI stuff.
+        insufficientScrapTimer -= dt
+        if (insufficientScrapTimer < 0)
+            insufficientScrapTimer = 0f
     }
 
     fun render(gc: GameContainer, g: Graphics) {
@@ -564,8 +575,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         mask.draw(11f, 0f, 11f + hpW, hpH, 0f, 0f, hpW, hpH, healthColour)
 
         // Draw the scrap indicator
-        game.getImg("img/statusUI/top_scrap.png").draw(374f + 8 - 5, 0f)
-        // TODO scrap number
+        val isScrapRed = insufficientScrapTimer != 0f &&
+                (insufficientScrapTimer / INSUFFICIENT_SCRAP_FLASH_TIME).toInt() % 2 == 0
+        val scrapPath = if (isScrapRed) "img/statusUI/top_scrap_red.png" else "img/statusUI/top_scrap.png"
+        game.getImg(scrapPath).draw(374f + 8 - 5, 0f)
+        numberFont.drawStringCentred(416f, 35f, 87f, ship.scrap.toString(), UI_SCRAP_TEXT_COLOUR)
 
         // Going down the side, for the shields/oxygen
         val shieldY = 43
@@ -689,6 +703,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // TODO open settings menu
     }
 
+    fun playInsufficientScrapAnimation() {
+        // Three flashes: on-off-on-off-on
+        insufficientScrapTimer = INSUFFICIENT_SCRAP_FLASH_TIME * 5
+    }
+
     private class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon)
 
     companion object {
@@ -698,5 +717,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
          * standing underneath.
          */
         val SELECTION_BOX_SIZE = 6f.pow(2f).toInt()
+
+        private val INSUFFICIENT_SCRAP_FLASH_TIME = 0.35f
     }
 }

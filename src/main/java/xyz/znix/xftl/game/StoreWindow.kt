@@ -367,7 +367,11 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             if (empty)
                 return
 
-            // TODO check and deduct scrap
+            if (ship.scrap < price) {
+                game.shipUI.playInsufficientScrapAnimation()
+                return
+            }
+            ship.scrap -= price
 
             buy()
         }
@@ -408,6 +412,12 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
+
+            if (ship.scrap < price) {
+                game.shipUI.playInsufficientScrapAnimation()
+                return
+            }
+            ship.scrap -= price
 
             if (numAvailable == 0)
                 return

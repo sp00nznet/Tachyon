@@ -248,15 +248,8 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
 
                     val blueprint = draggingBlueprint?.blueprint
                     if (blueprint != null) {
-                        val buyPrice = when (blueprint) {
-                            is ShipWeaponBlueprint -> blueprint.cost
-                            is DroneBlueprint -> blueprint.cost!!
-                            // TODO augments
-                            else -> error("Can't find price when selling blueprint: $blueprint")
-                        }
-
                         // You only get half of what you paid for it
-                        val sellPrice = 123
+                        val sellPrice = (blueprint.cost ?: 0) / 2
 
                         sellPriceFont.drawString(pos.x + 207f, pos.y + 181f, sellPrice.toString(), colour)
                     }
@@ -292,6 +285,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun mouseReleased(button: Int, x: Int, y: Int) {
         if (draggingBlueprint != null)
             dropBlueprint()
@@ -346,7 +340,9 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             // Check the sell button
             if (target == sellButton) {
                 return SlotAccess({ null }) {
-                    // TODO give the player scrap for the item
+                    // Give the player scrap for the item
+                    ship.scrap += (it?.cost ?: 0) / 2
+
                     // Do nothing with it, thus destroying it.
                 }
             }

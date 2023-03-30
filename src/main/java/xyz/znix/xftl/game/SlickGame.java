@@ -123,6 +123,8 @@ public class SlickGame extends BasicGame {
         if (!isPaused())
             updateGameState(delta / 1000f);
 
+        shipUI.updateAlways(delta / 1000f);
+
         hoveredRoom = null;
 
         Input in = container.getInput();
@@ -450,7 +452,7 @@ public class SlickGame extends BasicGame {
         player.setFuelCount(player.getFuelCount() + resources.getFuel());
         player.setDronesCount(player.getDronesCount() + resources.getDroneParts());
         player.setMissilesCount(player.getMissilesCount() + resources.getMissiles());
-        // TODO give player scrap
+        player.setScrap(player.getScrap() + resources.getScrap());
         // TODO give player items
     }
 }

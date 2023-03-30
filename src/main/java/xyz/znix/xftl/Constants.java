@@ -24,6 +24,7 @@ public class Constants {
     public static final Color UI_TEXT_COLOUR_1 = new Color(40, 78, 82);
     public static final Color UI_BUTTON_HOVER = new Color(255, 230, 94);
     public static final Color UI_BACKGROUND_GLOW_COLOUR = new Color(243, 255, 238);
+    public static final Color UI_SCRAP_TEXT_COLOUR = new Color(243, 255, 230);
 
     public static final Color SYS_ENERGY_ACTIVE = new Color(100, 255, 100);
     public static final Color SYS_ENERGY_DEPOWERED = new Color(251, 251, 251);

@@ -76,6 +76,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     var missilesCount: Int = 0
     var dronesCount: Int = 0
 
+    // How much scrap the player has
+    var scrap: Int = 10 // TODO 30 on easy
+
     // How far through charging the FTL drive, 1=fully charged
     var ftlChargeProgress: Float = 0f
     val isFtlCharged get() = ftlChargeProgress >= 1f

@@ -120,6 +120,13 @@ open class Blueprint(elem: Element) : IBlueprint {
     val short = elem.getChild("short")?.getAttributeValue("id")
     val desc = elem.getChild("desc")?.getAttributeValue("id")
 
+    /**
+     * Get this item's purchase price (the price you can buy it at, not the
+     * price you sell it at) in scrap. Returns null if the item doesn't
+     * have a price.
+     */
+    open val cost: Int? = null
+
     override fun resolve(): Blueprint = this
     override fun list(): List<Blueprint> = listOf(this)
 }

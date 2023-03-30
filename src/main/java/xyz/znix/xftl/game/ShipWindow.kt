@@ -246,7 +246,14 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                     if (ship.purchasedReactorPower >= 25)
                         return
 
-                    // TODO scrap check
+                    // TODO calculate the price
+                    val price = 20
+
+                    if (ship.scrap < price) {
+                        game.shipUI.playInsufficientScrapAnimation()
+                        return
+                    }
+                    ship.scrap -= price
 
                     ship.purchasedReactorPower++
                 }
@@ -308,7 +315,12 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             if (upgradePrice == null)
                 return
 
-            // TODO deduct scrap
+            if (ship.scrap < upgradePrice) {
+                game.shipUI.playInsufficientScrapAnimation()
+                return
+            }
+            ship.scrap -= upgradePrice
+
             system!!.energyLevels++
 
             // Replace this button to reflect the upgrade
