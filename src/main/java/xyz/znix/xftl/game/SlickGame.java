@@ -147,7 +147,7 @@ public class SlickGame extends BasicGame {
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
             if (debugConsole == null) {
-                debugConsole = new DebugConsole(this);
+                debugConsole = new DebugConsole(this, player);
             }
             debugConsoleVisible = !debugConsoleVisible;
         }

@@ -4,13 +4,14 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.SlickGame
 
 /**
  * A development console, to quickly do stuff like load events or get scrap.
  */
-class DebugConsole(val game: SlickGame) {
+class DebugConsole(val game: SlickGame, val ship: Ship) {
     private val history = ArrayList<String>()
     private var historyCursor: Int = -1
 
@@ -23,7 +24,8 @@ class DebugConsole(val game: SlickGame) {
     private var flashTimer: Float = 0f
 
     private val commands: List<Cmd> = listOf(
-        Cmd("help", this::cmdHelp, "Show the available commands")
+        Cmd("help", 0, this::cmdHelp, "Show the available commands"),
+        Cmd("rich", 0, this::cmdRich, "Get a huge amount of scrap, fuel, drones, and missiles")
     )
 
     fun render(gc: GameContainer, g: Graphics) {
@@ -46,7 +48,7 @@ class DebugConsole(val game: SlickGame) {
             inputLine += "_"
         }
         font.drawString(20f, y, inputLine, Color.white)
-        y -= lineSpacing - 4
+        y -= lineSpacing + 4
 
         for (i in lines.size - 1 downTo 0) {
             val line = lines[i]
@@ -145,17 +147,33 @@ class DebugConsole(val game: SlickGame) {
             lines.add("Unknown command '${command}', see the help command")
             return
         }
+
+        val numArgs = args.size - 1 // Exclude the command itself
+        if (cmd.argCount != null && cmd.argCount != numArgs) {
+            lines.add("Command '${command}' takes ${cmd.argCount} arguments, but $numArgs were supplied.")
+            return
+        }
+
         cmd.func(args)
     }
 
-    private fun cmdHelp(args: List<String>) {
+    private fun cmdHelp(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         lines.add("Available commands:")
         for (cmd in commands) {
             lines.add("  ${cmd.name.padEnd(15)} ${cmd.helpText}")
         }
     }
 
-    private data class Cmd(val name: String, val func: (List<String>) -> Unit, val helpText: String)
+    private fun cmdRich(@Suppress("UNUSED_PARAMETER") strings: List<String>) {
+        lines.add("Resources added.")
+
+        ship.scrap = 5000
+        ship.fuelCount = 99
+        ship.missilesCount = 99
+        ship.dronesCount = 99
+    }
+
+    private data class Cmd(val name: String, val argCount: Int?, val func: (List<String>) -> Unit, val helpText: String)
 
     companion object {
         private const val PROMPT = "> "
