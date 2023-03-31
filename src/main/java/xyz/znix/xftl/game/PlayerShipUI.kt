@@ -14,6 +14,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Event
+import xyz.znix.xftl.systems.Drones
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
@@ -67,8 +68,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private var maxWeaponChargeTime: Float = 1f
 
     // The position of the weapons box
-    val boxX get() = 234
-    val boxY get() = height - 113
+    val weaponBoxY get() = height - 113
 
     fun sysImgX(i: Int, system: AbstractSystem?): Int {
         if (system == ship.drones && ship.weapons != null) {
@@ -308,17 +308,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         g.font = font
 
-        game.getImg("img/box_weapons_bottom" + ship.weaponSlots + ".png").draw(boxX.f, boxY.f)
-        val tx = boxX + 18
-        val ty = boxY + 61
-
-        g.color = UI_BACKGROUND_GLOW_COLOUR
-        val tw = font.getWidth("WEAPONS")
-        g.fillRect(tx.f, ty.f, (tw - 13).f, 20f)
-        game.getImg("img/box_weapons_bottom_label.png").draw((tx + tw - 13).f, ty.f)
-
-        font.drawStringLegacy((tx + 1).f, (ty + 11).f, "WEAPONS", UI_TEXT_COLOUR_1)
-
         val powerTreeX = 86 - 53
         val powerTreeY = gc.height - 21 - 302
         val powerTreeMaskY = powerTreeY + 27 - (ship.purchasedReactorPower - 1) * 9
@@ -355,10 +344,24 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
 
         // Draw the wires between the systems
-        for (i in 0 until systemCount - 1) {
+        var weaponPowerX: Int? = null
+        var dronePowerX: Int? = null
+        for (i in 0 until systemCount) {
             // Draw the power bar to the next item
             val powerX = sysImgX(i, sortedSystems[i]) + 31
             val powerY = sysImgY(i) + 45 + 12 - 26
+
+            // Save the position of the weapon and drone power icons, since
+            // they're used to position the weapon and drone selection boxes.
+            if (sortedSystems[i] is Weapons)
+                weaponPowerX = powerX
+            if (sortedSystems[i] is Drones)
+                dronePowerX = powerX
+
+            // Don't draw the bar under the last item - since each item draws the
+            // wire to the next item, this would result in a wire sticking out.
+            if (i == systemCount - 1)
+                continue
 
             val lastSystem = i == systemCount - 2
 
@@ -396,13 +399,17 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             .reduce { a, b -> Math.max(a, b) }
             .orElse(1f)
 
-        for (i in 0 until ship.weaponSlots!!) {
+        // Draw the weapons box
+        val weaponBoxX = weaponPowerX!! + 1
+        drawWeaponBox(weaponBoxX, "weapons_label", ship.weaponSlots!!)
+
+        for (i in 0 until ship.weaponSlots) {
             if (!updatingButtons)
                 continue
 
-            // The origin position of the weapon box
-            val wx = boxX + 12 + 12 + 97 * i
-            val wy = boxY + 12 + 4
+            // The origin position of the weapon button
+            val wx = weaponBoxX + WEAPON_BOX_GLOW + 12 + i * 97
+            val wy = weaponBoxY + 12 + 4
 
             val weapon = ship.hardpoints[i].weapon
 
@@ -432,29 +439,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // Draw the drone area, if it's installed
         val drones = ship.drones
         if (drones != null) {
-            val x = sysImgX(sortedSystems.indexOf(drones), drones) + 32
-
-            game.getImg("img/box_weapons_bottom" + ship.droneSlots!! + ".png").draw(x.f, boxY.f)
-
-            val textX = x + 18
-
-            // Draw the 'drones' label
-            // TODO deduplicate this with the weapons text, using this one since
-            //  it draws the glow properly.
-            val name = game.translator["drones_label"]
-            val textWidth = font.getWidth(name)
-            val img = game.getImg("img/box_weapons_bottom_label.png")
-
-            // Stretch part of the label to cover the width of the text
-            img.draw(
-                textX.f, ty.f, textX + textWidth - 13f, ty + img.height.f,
-                0f, 0f, 3f, img.height.f
-            )
-
-            // Draw the 'ramp' at the end of the label.
-            img.draw((textX + textWidth - 13).f, ty.f)
-
-            font.drawString(textX + 1f, ty + 15f, name, UI_TEXT_COLOUR_1)
+            drawWeaponBox(dronePowerX!! + 1, "drones_label", ship.droneSlots!!)
 
             // TODO draw the in-operation drone boxes - this seems very similar to weapons
         }
@@ -576,6 +561,30 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // Oxygen
         val avgOxygen = (ship.rooms.map { it.oxygen }.average() * 100).toInt()
         oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8 + 22, "$avgOxygen%", Color.white)
+    }
+
+    // Draw the box containing the weapon or drone selection buttons
+    private fun drawWeaponBox(x: Int, label: String, size: Int) {
+        game.getImg("img/box_weapons_bottom$size.png").draw(x.f, weaponBoxY.f)
+
+        val textX = x + 18
+        val textY = weaponBoxY + 61
+
+        // Draw the 'weapons' or 'drones' label
+        val name = game.translator[label]
+        val textWidth = font.getWidth(name)
+        val img = game.getImg("img/box_weapons_bottom_label.png")
+
+        // Stretch part of the label to cover the width of the text
+        img.draw(
+            textX.f, textY.f, textX + textWidth - 13f, textY + img.height.f,
+            0f, 0f, 3f, img.height.f
+        )
+
+        // Draw the 'ramp' at the end of the label.
+        img.draw((textX + textWidth - 13).f, textY.f)
+
+        font.drawString(textX + 1f, textY + 15f, name, UI_TEXT_COLOUR_1)
     }
 
     private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()
@@ -758,6 +767,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
          */
         val SELECTION_BOX_SIZE = 6f.pow(2f).toInt()
 
-        private val INSUFFICIENT_SCRAP_FLASH_TIME = 0.35f
+        private const val INSUFFICIENT_SCRAP_FLASH_TIME = 0.35f
+        private const val WEAPON_BOX_GLOW = 12
     }
 }
