@@ -336,7 +336,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
             // If the system isn't installed by default, set it aside so
             // the user can purchase it in a store.
-            if (node.getAttributeValue("start")?.toBoolean() == true) {
+            // Note that if not specified, the system is included by default. This
+            // is commonly found with enemy ships.
+            if (node.getAttributeValue("start")?.toBoolean() != false) {
                 room.setSystem(configuration)
             } else {
                 room.purchasableSystem = configuration
