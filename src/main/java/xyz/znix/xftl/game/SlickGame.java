@@ -63,6 +63,8 @@ public class SlickGame extends BasicGame {
     private DebugConsole debugConsole;
     private boolean debugConsoleVisible;
 
+    private float asteroidAnimationTimer;
+
     public SlickGame(Datafile df) {
         super("Subluminal");
         this.df = df;
@@ -142,6 +144,8 @@ public class SlickGame extends BasicGame {
             updateGameState(delta / 1000f);
 
         shipUI.updateAlways(delta / 1000f);
+
+        asteroidAnimationTimer += delta / 1000f;
 
         hoveredRoom = null;
 
@@ -293,7 +297,7 @@ public class SlickGame extends BasicGame {
     }
 
     private void renderAsteroid(GameContainer gc, Image img, float speed) {
-        int offset = (int) (System.nanoTime() / 1_000_000_000f * speed) % img.getWidth();
+        int offset = (int) (asteroidAnimationTimer * speed) % img.getWidth();
         for (int x = -offset; x < gc.getWidth(); x += img.getWidth()) {
             for (int y = 0; y < gc.getHeight(); y += img.getHeight()) {
                 img.draw(x, y);
