@@ -8,6 +8,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.systems.MainSystem
 
 class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, private val close: () -> Unit) : Window() {
 
@@ -263,11 +264,32 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
                 override val price: Int get() = system?.cost ?: 0
 
+                override val disabled: Boolean
+                    get() {
+                        // Stop the user from installing more than eight systems
+                        val numSystems = ship.rooms.count { it.system is MainSystem }
+                        if (numSystems >= 8)
+                            return true
+
+                        // Stop the user from buying a system their ship doesn't support
+                        return ship.rooms.none { it.purchasableSystem?.system?.blueprint == system }
+                    }
+
                 override fun buy() {
                     store.systems[i] = null
                     updateButtons() // Make this button show as sold out
 
-                    // TODO add it to the ship
+                    for (room in ship.rooms) {
+                        val config = room.purchasableSystem ?: continue
+                        if (config.system.blueprint != system)
+                            continue
+
+                        room.setSystem(config)
+                        ship.updateAvailableSystems()
+                        return
+                    }
+
+                    error("Couldn't find candidate room for installing system $system")
                 }
             })
         }

@@ -22,6 +22,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     var computerPoint: IPoint? = null
         private set
 
+    /**
+     * The system that can be bought and installed into this room, but
+     * hasn't been yet.
+     */
+    var purchasableSystem: SystemInstallConfiguration? = null
+
     private var _doors: List<Door>? = null
     val doors: List<Door>
         get() {
@@ -162,18 +168,18 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         system?.drawRoom(g)
     }
 
-    fun setSystem(system: AbstractSystem?, compPoint: IPoint?, compDir: Direction?) {
-        this.system = system
-        this.computerDirection = compDir
-        this.computerPoint = compPoint
+    fun setSystem(config: SystemInstallConfiguration) {
+        system = config.system
+        computerDirection = config.computerDirection
+        computerPoint = config.computerPoint
 
         system?.room = this
 
         if (system == null)
-            check(compPoint == null)
+            check(computerPoint == null)
 
-        if (compPoint == null)
-            check(compDir == null)
+        if (computerPoint == null)
+            check(computerDirection == null)
     }
 
     // Check if a point (relative to this room's origin) is inside this room
@@ -210,4 +216,14 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         return point.x + point.y * width
     }
+
+    /**
+     * Information about how a system is installed into this room - this is both
+     * the system and the location of its computer.
+     */
+    data class SystemInstallConfiguration(
+        val system: AbstractSystem,
+        val computerPoint: IPoint?,
+        val computerDirection: Direction?
+    )
 }
