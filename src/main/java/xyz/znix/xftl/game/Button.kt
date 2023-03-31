@@ -230,17 +230,25 @@ object Buttons {
 
         abstract val blueprint: Blueprint?
 
+        /**
+         * Set to true if the button is disabled for some reason other than
+         * not having an associated blueprint - for example, you can't buy
+         * more weapons when your weapons and cargo bay are full.
+         */
+        open val disabled: Boolean get() = false
+
         val empty: Boolean get() = blueprint == null
 
         protected val textColour: Color
             get() = when {
+                empty || disabled -> Constants.SECTOR_CUTOUT_TEXT
                 hovered -> Constants.STORE_BUY_HOVER
                 else -> Constants.SECTOR_CUTOUT_TEXT
             }
 
         override fun draw(g: Graphics) {
             val image = when {
-                empty -> image.off
+                empty || disabled -> image.off
                 hovered -> image.hover
                 else -> image.normal
             }

@@ -290,11 +290,38 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                 override val blueprint: Blueprint? get() = weapon
                 override val price: Int get() = weapon?.cost ?: 0
 
+                override val disabled: Boolean
+                    get() {
+                        for (slot in 0 until ship.weaponSlots!!) {
+                            if (ship.hardpoints[slot].weapon == null)
+                                return false
+                        }
+
+                        return ship.cargoBlueprints.all { it != null }
+                    }
+
                 override fun buy() {
                     store.weapons[i] = null
                     updateButtons() // Make this button show as sold out
 
-                    // TODO add it to the ship
+                    for (slot in 0 until ship.weaponSlots!!) {
+                        if (ship.hardpoints[slot].weapon != null)
+                            continue
+
+                        ship.hardpoints[slot].weapon = weapon!!.buildInstance(ship)
+                        sellPanel.shipCargoUpdated()
+                        return
+                    }
+
+                    for ((slot, current) in ship.cargoBlueprints.withIndex()) {
+                        if (current != null)
+                            continue
+                        ship.cargoBlueprints[slot] = weapon
+                        sellPanel.shipCargoUpdated()
+                        return
+                    }
+
+                    error("Couldn't find space to place purchased weapon!")
                 }
             })
         }
@@ -364,7 +391,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
-            if (empty)
+            if (empty || disabled)
                 return
 
             if (ship.scrap < price) {
