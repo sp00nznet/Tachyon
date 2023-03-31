@@ -120,47 +120,23 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             return used
         }
 
-    val weapons: Weapons?
-        get() {
-            for (room in rooms)
-                return room.system as? Weapons ?: continue
-            return null
-        }
+    var weapons: Weapons? = null
+        private set
 
-    val drones: Drones?
-        get() {
-            for (room in rooms)
-                return room.system as? Drones ?: continue
-            return null
-        }
+    var drones: Drones? = null
+        private set
 
-    val engines: Engines?
-        get() {
-            for (room in rooms)
-                return room.system as? Engines ?: continue
-            return null
-        }
+    var engines: Engines? = null
+        private set
 
-    val shields: Shields?
-        get() {
-            for (room in rooms)
-                return room.system as? Shields ?: continue
-            return null
-        }
+    var shields: Shields? = null
+        private set
 
-    val piloting: Piloting?
-        get() {
-            for (room in rooms)
-                return room.system as? Piloting ?: continue
-            return null
-        }
+    var piloting: Piloting? = null
+        private set
 
-    val oxygen: Oxygen?
-        get() {
-            for (room in rooms)
-                return room.system as? Oxygen ?: continue
-            return null
-        }
+    var oxygen: Oxygen? = null
+        private set
 
     // The ship's evasion, in percent
     val evasion: Int get() = (piloting!!.evasionMultiplier * (piloting!!.evasion + engines!!.evasion)).toInt()
@@ -398,6 +374,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         // Initialise all the systems
+        updateAvailableSystems()
         for (room in rooms) {
             room.system?.initialise(this)
         }
@@ -721,6 +698,17 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         freeSpace.room.reservedPlayerSlots[freeSpace.room.pointToSlot(freeSpace)] = crewMember
 
         return crewMember
+    }
+
+    fun updateAvailableSystems() {
+        val systems = rooms.mapNotNull { it.system }
+
+        weapons = systems.mapNotNull { it as? Weapons }.firstOrNull()
+        drones = systems.mapNotNull { it as? Drones }.firstOrNull()
+        engines = systems.mapNotNull { it as? Engines }.firstOrNull()
+        shields = systems.mapNotNull { it as? Shields }.firstOrNull()
+        piloting = systems.mapNotNull { it as? Piloting }.firstOrNull()
+        oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
     }
 
     companion object {
