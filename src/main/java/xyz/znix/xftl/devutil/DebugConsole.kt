@@ -31,6 +31,12 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
     private var flashTimer: Float = 0f
 
+    // Used for event searches - put them here so they persiste between
+    // searches.
+    var eventSearchIds = true
+    var eventSearchMessageText = true
+    var eventSearchOptions = true
+
     private val commands: List<Cmd> = listOf(
         Cmd("rich", 0, this::cmdRich, "Get a huge amount of scrap, fuel, drones, and missiles"),
         Cmd("weapon", 0, this::cmdWeapon, "Select a weapon, and add it to the ship's cargo area"),
@@ -80,6 +86,10 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     }
 
     fun keyPressed(key: Int, c: Char) {
+        // Check if the continuation UI wants to handle the keypress
+        if (continued?.keyPressed(key, c) == true)
+            return
+
         when (key) {
             Input.KEY_ENTER -> {
                 selectHistory()
@@ -363,8 +373,25 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
                 val idWidth = 125
 
+                // Draw the search category options
+                val optionHeight = blockHeight + 2
+                var optionX = x
+                fun drawOption(value: Boolean, text: String) {
+                    val boxWidth = 5 + font.getWidth(text) + 5
+                    g.color = Color(55, if (value) 180 else 55, 55, 180)
+
+                    val y = height + 10f
+                    g.fillRect(optionX.f, y, boxWidth.f, optionHeight.f)
+                    font.drawString(optionX + 5f, y + 10f, text, Color.white)
+
+                    optionX += boxWidth
+                }
+                drawOption(eventSearchIds, "Search IDs (F1)")
+                drawOption(eventSearchMessageText, "Search event text (F2)")
+                drawOption(eventSearchOptions, "Search choice text (F3)")
+
                 for ((i, event) in visibleEvents.withIndex()) {
-                    val y = height.toInt() + 10 + i * blockHeight
+                    val y = height.toInt() + 10 + optionHeight + i * blockHeight
 
                     if (y > gc.height)
                         break
@@ -395,6 +422,33 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                 }
             }
 
+            override fun keyPressed(key: Int, c: Char): Boolean {
+                val handled = when (key) {
+                    Input.KEY_F1 -> {
+                        eventSearchIds = !eventSearchIds
+                        true
+                    }
+
+                    Input.KEY_F2 -> {
+                        eventSearchMessageText = !eventSearchMessageText
+                        true
+                    }
+
+                    Input.KEY_F3 -> {
+                        eventSearchOptions = !eventSearchOptions
+                        true
+                    }
+
+                    else -> false
+                }
+
+                // Update the search entries
+                if (handled)
+                    lastInput = null
+
+                return handled
+            }
+
             private fun updateSearch() {
                 val line = currentLine
 
@@ -408,15 +462,27 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     // Filter out event lists
                     val event = game.eventManager[name] as? Event ?: return@mapNotNull null
 
+                    var score = 0
+
                     // Search the name, and consider it to be more important
                     // than the body text. This makes it easier to find a specific
                     // event.
-                    var score = searcher.rank(name) * 15
+                    if (eventSearchIds)
+                        searcher.rank(name) * 10
 
                     // And the body of the event text - just search the first
                     // available one, it'd get a bit unmanageable otherwise.
                     val textBody = event.text?.let(::getTextBody) ?: return@mapNotNull null
-                    score += searcher.rank(textBody)
+                    if (eventSearchMessageText)
+                        score += searcher.rank(textBody)
+
+                    // Rank all the options, too.
+                    if (eventSearchOptions) {
+                        for (choice in event.choices) {
+                            val text = getTextBody(choice.text) ?: continue
+                            score += searcher.rank(text)
+                        }
+                    }
 
                     return@mapNotNull if (score == 0) {
                         null
@@ -485,6 +551,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     private abstract class ContinuedCommand {
         abstract val prompt: String
         open fun render(gc: GameContainer, g: Graphics, height: Float) {}
+        open fun keyPressed(key: Int, c: Char): Boolean = false
         abstract fun run(line: String)
     }
 
