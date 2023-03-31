@@ -23,6 +23,11 @@ abstract class AbstractCrew(
 
     // The cell position in the current room
     var position: Point = Point(0, 0)
+        set(value) {
+            field = value
+            updateAnimation()
+        }
+
     val roomPosition: RoomPoint get() = RoomPoint(room, position)
 
     var roomWasDamaged: Boolean = false

@@ -678,15 +678,36 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
     }
 
-    fun addCrewMember(race: String): AbstractCrew {
+    fun addCrewMember(race: String, initial: Boolean): AbstractCrew {
         var freeSpace: RoomPoint? = null
 
-        for (room in rooms) {
-            for (i in 0 until (room.width * room.height)) {
-                if (room.reservedPlayerSlots[i] != null) continue
+        // If this crewmember is being created with the ship, put them
+        // in a system that makes sense.
+        if (initial) {
+            val systems = listOf(piloting, engines, weapons, shields)
+            for (system in systems) {
+                if (system == null)
+                    continue
 
-                freeSpace = RoomPoint(room, room.slotToPoint(i))
+                val room = system.room!!
+                if (!room.reservedPlayerSlots.all { it == null })
+                    continue
+
+                // Stand by the computer, if possible
+                freeSpace = RoomPoint(room, room.computerPoint ?: ConstPoint.ZERO)
                 break
+            }
+        }
+
+        // Otherwise just put them whereever they'll fit.
+        if (freeSpace == null) {
+            for (room in rooms) {
+                for (i in 0 until (room.width * room.height)) {
+                    if (room.reservedPlayerSlots[i] != null) continue
+
+                    freeSpace = RoomPoint(room, room.slotToPoint(i))
+                    break
+                }
             }
         }
 
@@ -695,7 +716,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         val crewMember = HumanCrew(sys.animations, freeSpace.room, AbstractCrew.SlotType.CREW)
-        crewMember.position.set(freeSpace)
+        crewMember.position = Point(freeSpace)
         crew.add(crewMember)
         freeSpace.room.reservedPlayerSlots[freeSpace.room.pointToSlot(freeSpace)] = crewMember
 

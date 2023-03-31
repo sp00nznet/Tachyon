@@ -2,8 +2,6 @@ package xyz.znix.xftl.shipgen
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
-import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.crew.HumanCrew
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.sector.EventManager
 import xyz.znix.xftl.sector.IEvent
@@ -33,8 +31,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             val amount = (softMin..softMax).random()
 
             for (i in 1..amount) {
-                val enemyCrew = HumanCrew(sys.animations, ship.rooms.random(), AbstractCrew.SlotType.CREW)
-                ship.crew.add(enemyCrew)
+                ship.addCrewMember("human", true)
             }
         }
 

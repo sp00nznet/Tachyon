@@ -131,7 +131,7 @@ public class SlickGame extends BasicGame {
             int count = Integer.parseInt(elem.getAttributeValue("amount").strip());
             String race = elem.getAttributeValue("class");
             for (int i = 0; i < count; i++) {
-                player.addCrewMember(race);
+                player.addCrewMember(race, true);
             }
         }
     }
