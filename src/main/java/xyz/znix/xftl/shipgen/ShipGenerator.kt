@@ -54,15 +54,17 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         // Make a list of all the possible places we could put our extra power
         val possiblePoints = ArrayList<AbstractSystem>()
         for (system in ship.rooms.mapNotNull { it.system }) {
-            checkNotNull(system.aiMaxPower)
-            val range = system.aiMaxPower - system.energyLevels
+            // The flagship notably doesn't have it's maximum power set
+            val maxPower = system.aiMaxPower ?: system.blueprint.maxPower
+
+            val range = maxPower - system.energyLevels
             val offset = (range * sector / 8f).toInt()
 
             val maxExtra = if (sector < 2) 1 else 2
 
             // Note the count we come up with at the end is to be added to the existing system
             // power, hence we don't take the current power into account
-            val softMax = min(offset + maxExtra, system.aiMaxPower)
+            val softMax = min(offset + maxExtra, maxPower)
 
             val count = (offset..softMax).random()
             for (i in 1..count) {
