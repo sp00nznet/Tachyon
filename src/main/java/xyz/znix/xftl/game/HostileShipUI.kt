@@ -37,6 +37,10 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
         }) {
             g.translate(shipPos.x.f, shipPos.y.f)
             enemy.render(g, isHostile, hoveredRoom)
+
+            // FIXME this is pretty horrible accessing the player ship like this
+            enemy.renderTargeting(game.shipUI.ship.weapons!!.selectedTargets)
+
             g.resetTransform()
         }
 

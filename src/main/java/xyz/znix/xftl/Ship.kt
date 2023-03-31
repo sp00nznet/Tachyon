@@ -19,6 +19,7 @@ import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.*
 import java.awt.Rectangle
 import java.util.stream.Collectors
+import kotlin.math.min
 
 class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: EnemyShipSpec?) {
     val name: String = shipNode.getAttributeValue("name")
@@ -509,6 +510,31 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         animations.removeIf { a -> a.isFinished }
     }
 
+    /**
+     * Render the crosshairs, beam marker, etc that appear when a weapon
+     * is targeted to a specific room. This is in Ship rather than the
+     * hostile ship UI, as the player can teleport bombs to their own ship
+     * and for debug purposes we may want to show where the AI is targeting
+     * their shots.
+     */
+    fun renderTargeting(targets: Weapons.TargetList) {
+        for (target in targets) {
+            val room = target.room
+
+            val weaponNumber = min(target.weaponNumber + 1, 4)
+            val img = sys.getImg("img/misc/crosshairs_placed${weaponNumber}.png")
+
+            val pos = Point(room.offsetX, room.offsetY)
+            pos.x += room.width * ROOM_SIZE / 2
+            pos.y += room.height * ROOM_SIZE / 2
+
+            pos.x -= img.width / 2
+            pos.y -= img.height / 2
+
+            img.draw(pos)
+        }
+    }
+
     private fun drawInterior(g: Graphics, selected: Room?) {
         if (floorImage != null)
             g.drawImage(floorImage, floorOffset.x.f, floorOffset.y.f)
@@ -599,6 +625,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     private fun updateExterior(dt: Float) {
         // Walk backwards, since missiles remove themselves when they hit
+        // FIXME update weapons targeted at this ship after it's been destroyed,
+        //  otherwise they just sit there in space which obviously looks weird.
         for (i in inboundProjectiles.size - 1 downTo 0) {
             inboundProjectiles[i].update(dt)
         }

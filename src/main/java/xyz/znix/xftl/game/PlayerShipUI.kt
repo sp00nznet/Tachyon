@@ -15,7 +15,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.systems.MainSystem
-import xyz.znix.xftl.weapons.AbstractWeaponInstance
+import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
 import java.util.function.Consumer
@@ -34,7 +34,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private var selectWeaponClickEvent: Consumer<Room>? = null
     private var targetingSelectedWeapon: Int? = null
 
-    private val selectedTargets: MutableMap<AbstractWeaponInstance, SelectedTarget> = HashMap()
     private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
 
     private val buttons = ArrayList<Button>()
@@ -255,11 +254,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             return
         }
 
-        selectedTargets.remove(weapon)
+        val targets = ship.weapons?.selectedTargets ?: return
+        targets.unTarget(id)
 
         targetingSelectedWeapon = id
         selectWeaponClickEvent = Consumer { r: Room ->
-            selectedTargets[weapon] = SelectedTarget(r, weapon)
+            targets.targetRoom(id, r)
         }
         game.clickEvent = selectWeaponClickEvent
     }
@@ -280,9 +280,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     // Dispatch actions from the UI - this is only called when the game is not paused, so dispatch
     // everything from here so a player can cancel their actions if they remain paused.
     fun update(dt: Float) {
-        var fired: MutableList<SelectedTarget>? = null
+        var fired: MutableList<Weapons.SelectedTarget>? = null
 
-        for (tgt in selectedTargets.values) {
+        val targets = ship.weapons?.selectedTargets ?: return
+
+        for (tgt in targets) {
             val weapon = tgt.weapon
             if (!weapon.asWeaponInstance().isCharged)
                 continue
@@ -295,10 +297,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             weapon.fire(ship.weapons!!, tgt.room)
         }
 
-        fired?.let { selectedTargets.values.removeAll(it) }
-
-        // Untarget all unpowered weapons
-        selectedTargets.keys.removeIf { !it.isPowered }
+        fired?.forEach { tgt ->
+            targets.unTarget(tgt.weaponNumber)
+        }
     }
 
     fun updateAlways(dt: Float) {
@@ -444,7 +445,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 g.drawLine((wx - j).f, y.f, wx.f, y.f)
             }
 
-            if (selectedTargets.containsKey(weapon))
+            if (ship.weapons!!.selectedTargets.getTarget(i) != null)
                 g.color = WEAPONS_ITEM_TARGETING
 
             val chargePx = (barSize * weapon.chargeProgress).toInt()
@@ -716,8 +717,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // Three flashes: on-off-on-off-on
         insufficientScrapTimer = INSUFFICIENT_SCRAP_FLASH_TIME * 5
     }
-
-    private class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon)
 
     companion object {
         /**

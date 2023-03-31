@@ -4,13 +4,17 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
+import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
+import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import kotlin.math.roundToInt
 
 class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
     override val sortingType: SortingType get() = SortingType.WEAPONS
+
+    val selectedTargets = TargetList()
 
     override fun update(dt: Float) {
         for (hp in ship.hardpoints) {
@@ -25,6 +29,8 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
                 weapon.slide = (weapon.slide - slideSpeed).coerceAtLeast(0f)
             }
         }
+
+        selectedTargets.update()
     }
 
     private val departing: MutableList<DepartingShot> = ArrayList()
@@ -169,4 +175,38 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     class DepartingShot(val hardpoint: Ship.Hardpoint, val offset: ConstPoint, val projectile: AbstractProjectile) {
         val initialDistance: Float = projectile.distance
     }
+
+    inner class TargetList {
+        /**
+         * For a weapon that's aimed at a specific room (notably not beams),
+         * target it onto a given room.
+         */
+        fun targetRoom(weaponId: Int, room: Room) {
+            val weapon = ship.hardpoints[weaponId].weapon!!
+            check(weapon is IRoomTargetingWeapon)
+
+            targets[weaponId] = SelectedTarget(room, weapon, weaponId)
+        }
+
+        fun unTarget(weaponId: Int) {
+            targets.remove(weaponId)
+        }
+
+        operator fun iterator(): MutableIterator<SelectedTarget> {
+            return targets.values.iterator()
+        }
+
+        fun getTarget(weaponId: Int): SelectedTarget? {
+            return targets[weaponId]
+        }
+
+        fun update() {
+            // Un-target all unpowered weapons
+            selectedTargets.targets.values.removeIf { !it.weapon.asWeaponInstance().isPowered }
+        }
+
+        private val targets = HashMap<Int, SelectedTarget>()
+    }
+
+    class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon, val weaponNumber: Int)
 }
