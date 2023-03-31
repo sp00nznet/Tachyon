@@ -58,6 +58,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     // The time remaining on the insufficient scrap flash animation
     private var insufficientScrapTimer: Float = 0f
 
+    // If true, buttons that are tightly intertwined with the rest of the UI
+    // (for example, the weapon and drone buttons) will be re-populated.
+    private var updatingButtons = false
+
+    // The longest time it takes to charge a weapon - this is used for drawing
+    // the weapon charge bars.
+    private var maxWeaponChargeTime: Float = 1f
+
     // The position of the weapons box
     val boxX get() = 234
     val boxY get() = height - 113
@@ -73,17 +81,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     fun sysImgY(i: Int): Int = height - 69
 
-    // The position of a given weapon's selector
-    fun weaponBoxX(i: Int): Int = boxX + 12 + 12 + 97 * i
-
-    fun weaponBoxY(i: Int): Int = boxY + 12 + 4
-
     init {
         updateButtons()
     }
 
     fun updateButtons() {
         buttons.clear()
+        updatingButtons = true
 
         var nextPos = ConstPoint(531, 29)
 
@@ -125,22 +129,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         currentWindow?.let { win ->
             win.mouseClick(button, x, y)
             return
-        }
-
-        for (i in 0 until ship.weaponSlots!!) {
-            val wx = weaponBoxX(i)
-            val wy = weaponBoxY(i)
-
-            if (x >= wx && y >= wy && x < wx + 87 && y < wy + 39) {
-                if (button == MOUSE_LEFT_BUTTON) {
-                    weaponHotkeyPressed(i)
-                }
-                if (button == MOUSE_RIGHT_BUTTON) {
-                    ship.hardpoints[i].weapon?.isPowered = false
-                }
-
-                return
-            }
         }
 
         var i = 0
@@ -235,7 +223,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
     fun weaponHotkeyPressed(id: Int) {
         // Temporary hack to make the option hotkeys work
-        (currentWindow as? DialogueWindow)?.selectOption(id)
+        (currentWindow as? DialogueWindow)?.let {
+            it.selectOption(id)
+            return
+        }
 
         if (currentWindow != null) return
 
@@ -398,7 +389,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         g.font = weaponNameText
 
         // Find the longest charge time of all equipped weapons
-        val maxWeaponChargeTime = ship.hardpoints.stream()
+        maxWeaponChargeTime = ship.hardpoints.stream()
             .map { it.weapon }
             .filter { Objects.nonNull(it) }
             .map { it!!.type.chargeTime }
@@ -406,95 +397,35 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             .orElse(1f)
 
         for (i in 0 until ship.weaponSlots!!) {
-            val wx = weaponBoxX(i)
-            val wy = weaponBoxY(i)
-
-            val hp = ship.hardpoints[i]
-            val weapon = hp.weapon
-
-            val mainColour = when {
-                weapon == null -> WEAPONS_ITEM_DESELECTED
-                !weapon.isPowered -> WEAPONS_ITEM_DESELECTED
-                targetingSelectedWeapon == i -> WEAPONS_ITEM_TARGETING
-                weapon.isCharged -> WEAPONS_ITEM_CHARGED
-                else -> WEAPONS_ITEM_SELECTED
-            }
-            g.color = mainColour
-
-            // Draw the outline box
-            g.drawRect(wx.f, wy.f, (87 - 1).f, (39 - 1).f)
-            g.drawRect((wx + 1).f, (wy + 1).f, (87 - 3).f, (39 - 3).f)
-
-            if (weapon == null)
+            if (!updatingButtons)
                 continue
 
-            val maxBarSize = 35 - 2
-            val barSize = (maxBarSize * weapon.type.chargeTime / maxWeaponChargeTime).toInt()
+            // The origin position of the weapon box
+            val wx = boxX + 12 + 12 + 97 * i
+            val wy = boxY + 12 + 4
 
-            // The Y position of the inside of the charge bar, relative to the main weapons box
-            val top = maxBarSize - barSize
+            val weapon = ship.hardpoints[i].weapon
 
-            // The top point of the triangle
-            val triangleTop = top - 7
+            buttons += object : WeaponDroneButton(ConstPoint(wx, wy), i) {
+                override val empty: Boolean get() = weapon == null
+                override val name: String get() = game.translator[weapon!!.type.short!!]
+                override val requiredPower: Int get() = weapon!!.type.power
+                override val chargeTime: Float get() = weapon!!.type.chargeTime
+                override val chargeProgress: Float get() = weapon!!.chargeProgress
+                override val zoltanPower: Int get() = 0 // TODO
+                override val isPowered: Boolean get() = weapon!!.isPowered
+                override val isCharged: Boolean get() = weapon!!.isCharged
+                override val isTargeted: Boolean get() = ship.weapons!!.selectedTargets.getTarget(i) != null
+                override val isSelectingTarget: Boolean get() = targetingSelectedWeapon == i
 
-            for (j in 8 downTo 1) {
-                val pos = j + triangleTop
-                if (pos < 0)
-                    continue
-                val y = wy + pos
-                g.drawLine((wx - j).f, y.f, wx.f, y.f)
-            }
-
-            if (ship.weapons!!.selectedTargets.getTarget(i) != null)
-                g.color = WEAPONS_ITEM_TARGETING
-
-            val chargePx = (barSize * weapon.chargeProgress).toInt()
-            g.fillRect((wx - 5).f, (wy + 36 - chargePx).f, 4f, chargePx.f)
-
-            g.color = mainColour
-
-            g.lineWidth = 2f
-            g.drawLine(wx - 7.5f, wy.f + top.f + 1.5f, wx - 7.5f, wy + 39 - 1.5f)
-            g.drawLine(wx - 7.5f, wy + 39 - 1.5f, wx - 0.5f, wy + 39 - 1.5f)
-            g.lineWidth = 1f
-
-            // Draw the weapon number box
-            g.lineWidth = 2f
-            g.drawLine(wx.f + 75f + 0.5f, wy.f + 24f + 0.5f, wx.f + 75f + 0.5f, wy.f + 36f + 0.5f)
-            g.drawLine(wx.f + 75f + 0.5f, wy.f + 24f + 0.5f, wx.f + 85f + 0.5f, wy.f + 24f + 0.5f)
-            g.lineWidth = 1f
-
-            // Draw the weapon number itself
-            val weaponNumber = Integer.toString(i + 1)
-            val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
-            weaponNumberFont.drawStringLegacy(
-                (wx + 77 + 1 + (8 - weaponNumberWidth) / 2).f,
-                (wy + 30).f,
-                weaponNumber,
-                g.color
-            )
-
-            val shortName = translator[weapon.type.short!!].replaceFirst(" ".toRegex(), "\n")
-            drawWeaponString(g, shortName, wx + 26, wy + 8)
-
-            // TODO make these correct
-            val zoltanPower = 1
-
-            for (bar in 0 until weapon.type.power) {
-                val y = wy + 28 - bar * 8
-
-                if (zoltanPower > bar) {
-                    g.color = WEAPONS_ITEM_ENERGY_ZOLTAN
-                } else if (!weapon.isPowered) {
-                    g.color = WEAPONS_ITEM_ENERGY_UNPOWERED
-                    g.drawRect((wx + 4).f, y.f, (16 - 1).f, (7 - 1).f)
-                    continue
-                } else if (weapon.isCharged) {
-                    g.color = WEAPONS_ITEM_ENERGY_CHARGED
-                } else {
-                    g.color = WEAPONS_ITEM_ENERGY_POWERED
+                override fun click(button: Int) {
+                    if (button == MOUSE_LEFT_BUTTON) {
+                        weaponHotkeyPressed(i)
+                    }
+                    if (button == MOUSE_RIGHT_BUTTON) {
+                        ship.hardpoints[i].weapon?.isPowered = false
+                    }
                 }
-                g.fillRect((wx + 4).f, y.f, 16f, 7f)
             }
         }
 
@@ -540,6 +471,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         for (button in buttons) {
             button.draw(g)
         }
+
+        updatingButtons = false
     }
 
     fun renderMenus(container: GameContainer, g: Graphics) {
@@ -716,6 +649,105 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun playInsufficientScrapAnimation() {
         // Three flashes: on-off-on-off-on
         insufficientScrapTimer = INSUFFICIENT_SCRAP_FLASH_TIME * 5
+    }
+
+    private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int) : Button(pos, ConstPoint(87, 39)) {
+        abstract val empty: Boolean
+        abstract val name: String
+        abstract val chargeTime: Float
+        abstract val chargeProgress: Float
+        abstract val requiredPower: Int
+        abstract val zoltanPower: Int
+        abstract val isPowered: Boolean
+        abstract val isCharged: Boolean
+        abstract val isTargeted: Boolean
+        abstract val isSelectingTarget: Boolean
+
+        override fun draw(g: Graphics) {
+            val mainColour = when {
+                empty -> WEAPONS_ITEM_DESELECTED
+                !isPowered -> WEAPONS_ITEM_DESELECTED
+                isSelectingTarget -> WEAPONS_ITEM_TARGETING
+                isCharged -> WEAPONS_ITEM_CHARGED
+                else -> WEAPONS_ITEM_SELECTED
+            }
+            g.color = mainColour
+
+            // Draw the outline box
+            g.drawRect(pos.x.f, pos.y.f, (87 - 1).f, (39 - 1).f)
+            g.drawRect((pos.x + 1).f, (pos.y + 1).f, (87 - 3).f, (39 - 3).f)
+
+            if (empty)
+                return
+
+            val maxBarSize = 35 - 2
+            val barSize = (maxBarSize * chargeTime / maxWeaponChargeTime).toInt()
+
+            // The Y position of the inside of the charge bar, relative to the main weapons box
+            val top = maxBarSize - barSize
+
+            // The top point of the triangle
+            val triangleTop = top - 7
+
+            for (j in 8 downTo 1) {
+                val triangleY = j + triangleTop
+                if (triangleY < 0)
+                    continue
+                val y = pos.y + triangleY
+                g.drawLine((pos.x - j).f, y.f, pos.x.f, y.f)
+            }
+
+            if (isTargeted)
+                g.color = WEAPONS_ITEM_TARGETING
+
+            val chargePx = (barSize * chargeProgress).toInt()
+            g.fillRect((pos.x - 5).f, (pos.y + 36 - chargePx).f, 4f, chargePx.f)
+
+            g.color = mainColour
+
+            g.lineWidth = 2f
+            g.drawLine(pos.x - 7.5f, pos.y.f + top.f + 1.5f, pos.x - 7.5f, pos.y + 39 - 1.5f)
+            g.drawLine(pos.x - 7.5f, pos.y + 39 - 1.5f, pos.x - 0.5f, pos.y + 39 - 1.5f)
+            g.lineWidth = 1f
+
+            // Draw the weapon number box
+            g.lineWidth = 2f
+            g.drawLine(pos.x.f + 75f + 0.5f, pos.y.f + 24f + 0.5f, pos.x.f + 75f + 0.5f, pos.y.f + 36f + 0.5f)
+            g.drawLine(pos.x.f + 75f + 0.5f, pos.y.f + 24f + 0.5f, pos.x.f + 85f + 0.5f, pos.y.f + 24f + 0.5f)
+            g.lineWidth = 1f
+
+            // Draw the weapon/drone number itself
+            val weaponNumber = (slotNumber + 1).toString()
+            val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
+            weaponNumberFont.drawStringLegacy(
+                (pos.x + 77 + 1 + (8 - weaponNumberWidth) / 2).f,
+                (pos.y + 30).f,
+                weaponNumber,
+                g.color
+            )
+
+            val shortName = name.replaceFirst(" ".toRegex(), "\n")
+            drawWeaponString(g, shortName, pos.x + 26, pos.y + 8)
+
+            for (bar in 0 until requiredPower) {
+                val y = pos.y + 28 - bar * 8
+
+                if (zoltanPower > bar) {
+                    g.color = WEAPONS_ITEM_ENERGY_ZOLTAN
+                } else if (!isPowered) {
+                    g.color = WEAPONS_ITEM_ENERGY_UNPOWERED
+                    g.drawRect((pos.x + 4).f, y.f, (16 - 1).f, (7 - 1).f)
+                    continue
+                } else if (isSelectingTarget) {
+                    g.color = WEAPONS_ITEM_TARGETING
+                } else if (isCharged) {
+                    g.color = WEAPONS_ITEM_ENERGY_CHARGED
+                } else {
+                    g.color = WEAPONS_ITEM_ENERGY_POWERED
+                }
+                g.fillRect((pos.x + 4).f, y.f, 16f, 7f)
+            }
+        }
     }
 
     companion object {
