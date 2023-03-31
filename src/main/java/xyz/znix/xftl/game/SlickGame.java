@@ -9,6 +9,7 @@ import xyz.znix.xftl.ai.ShipAI;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
+import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
 import xyz.znix.xftl.sector.*;
@@ -18,7 +19,6 @@ import xyz.znix.xftl.systems.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public class SlickGame extends BasicGame {
     private static ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(50, 150);
@@ -46,7 +46,7 @@ public class SlickGame extends BasicGame {
     private Point tempPoint = new Point(0, 0);
 
     private Room hoveredRoom;
-    private Consumer<Room> clickEvent;
+    private RoomClickListener clickEvent;
     private boolean mouseDownPrev[] = new boolean[3];
 
     private PlayerShipUI shipUI;
@@ -211,7 +211,7 @@ public class SlickGame extends BasicGame {
                 && container.getInput().isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)) {
             var prev = clickEvent;
             clickEvent = null;
-            prev.accept(hoveredRoom);
+            prev.roomClicked(hoveredRoom, container);
         }
     }
 
@@ -454,11 +454,11 @@ public class SlickGame extends BasicGame {
         return animations;
     }
 
-    public Consumer<Room> getClickEvent() {
+    public RoomClickListener getClickEvent() {
         return clickEvent;
     }
 
-    public void setClickEvent(Consumer<Room> clickEvent) {
+    public void setClickEvent(RoomClickListener clickEvent) {
         this.clickEvent = clickEvent;
     }
 
@@ -484,9 +484,26 @@ public class SlickGame extends BasicGame {
 
     /**
      * Try to avoid using, this is generally indicative of little hacks.
+     * <p>
+     * It's generally better to go through SlickGame or something else to
+     * keep the various moving parts separate.
      */
     public PlayerShipUI getShipUI() {
         return shipUI;
+    }
+
+    /**
+     * Try to avoid using, this is generally indicative of little hacks.
+     */
+    public Ship getEnemy() {
+        return enemy;
+    }
+
+    /**
+     * Try to avoid using, this is generally indicative of little hacks.
+     */
+    public IPoint getEnemyPosition() {
+        return hostileShipUI.getShipPos();
     }
 
     public LootPool getLootPool() {
@@ -524,5 +541,9 @@ public class SlickGame extends BasicGame {
         player.setMissilesCount(player.getMissilesCount() + resources.getMissiles());
         player.setScrap(player.getScrap() + resources.getScrap());
         // TODO give player items
+    }
+
+    public interface RoomClickListener {
+        void roomClicked(Room room, GameContainer gc);
     }
 }

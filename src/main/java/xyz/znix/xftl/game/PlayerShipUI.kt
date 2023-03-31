@@ -9,6 +9,7 @@ import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.game.SlickGame.RoomClickListener
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -16,14 +17,14 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.systems.Drones
 import xyz.znix.xftl.systems.MainSystem
+import xyz.znix.xftl.systems.SelectedTarget
 import xyz.znix.xftl.systems.Weapons
+import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
-import java.util.function.Consumer
 import java.util.stream.Collectors
 import java.util.stream.Stream
-import kotlin.math.ceil
-import kotlin.math.pow
+import kotlin.math.*
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
     private val font = game.getFont("HL2", 2f)
@@ -32,7 +33,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private val numberFont = SILFontLoader(df, df["fonts/num_font.font"])
     private val oxygenEvadeFont = SILFontLoader(df, df["fonts/JustinFont10.font"])
 
-    private var selectWeaponClickEvent: Consumer<Room>? = null
+    private var selectWeaponClickEvent: RoomClickListener? = null
     private var targetingSelectedWeapon: Int? = null
 
     private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
@@ -52,6 +53,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private var crewSelectionRectangle: Pair<ConstPoint, Point>? = null
     private val isCrewSelectionPoint: Boolean
         get() = crewSelectionRectangle?.let { it.first.distToSq(it.second) < SELECTION_BOX_SIZE } ?: false
+
+    // Non-null when the player is aiming a beam weapon
+    private var beamTargeting: SelectedTarget.BeamAim? = null
+        set(value) {
+            field = value
+
+            // Show the aiming-in-progress beam on the enemy ship
+            ship.weapons!!.selectedTargets.beamAiming = value
+        }
 
     // Set by render
     private var height: Int = 500
@@ -128,6 +138,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
         currentWindow?.let { win ->
             win.mouseClick(button, x, y)
+            return
+        }
+
+        // When we're in beam targeting mode, block other mouse input.
+        if (beamTargeting != null) {
+            if (button == MOUSE_LEFT_BUTTON) {
+                targetBeamWeapon()
+            } else if (button == MOUSE_RIGHT_BUTTON) {
+                beamTargeting = null
+            }
             return
         }
 
@@ -230,10 +250,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         if (currentWindow != null) return
 
-        val weapon = ship.hardpoints[id].weapon ?: return
+        // If the user was previously targeting a beam, cancel that.
+        beamTargeting = null
 
-        // TODO support beams
-        check(weapon is IRoomTargetingWeapon)
+        val weapon = ship.hardpoints[id].weapon ?: return
 
         if (!weapon.isPowered) {
             val weapons = ship.weapons!!
@@ -249,8 +269,14 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         targets.unTarget(id)
 
         targetingSelectedWeapon = id
-        selectWeaponClickEvent = Consumer { r: Room ->
-            targets.targetRoom(id, r)
+        selectWeaponClickEvent = RoomClickListener { room, gc ->
+            if (weapon is IRoomTargetingWeapon) {
+                targets.targetRoom(id, room)
+            } else if (weapon is BeamBlueprint.BeamInstance) {
+                val mousePos = ConstPoint(gc.input.mouseX, gc.input.mouseY)
+                val shipPos = mousePos - game.enemyPosition
+                beamTargeting = SelectedTarget.BeamAim(weapon, id, mousePos, shipPos)
+            }
         }
         game.clickEvent = selectWeaponClickEvent
     }
@@ -268,16 +294,73 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
     }
 
+    private fun updateBeamTargeting(mouseX: Int, mouseY: Int) {
+        val beam = beamTargeting ?: return
+        beam.hitRooms.clear()
+
+        val point = Point(beam.startMousePoint)
+
+        val delta = ConstPoint(mouseX, mouseY) - point
+
+        // If the mouse is too close to where the beam starts, no beam is drawn.
+        beam.visible = delta.distToSq(ConstPoint.ZERO) > MIN_BEAM_LENGTH * MIN_BEAM_LENGTH
+        if (!beam.visible)
+            return
+
+        beam.angle = atan2(delta.y.toDouble(), delta.x.toDouble()).toFloat()
+
+        // Move the start position into enemy-ship-space
+        point.minusAssign(game.enemyPosition)
+
+        val length = (beam.weapon.type as BeamBlueprint).length
+
+        // Loop over the pixels, marking whenever we cross one of the lines of the
+        // grid all the enemy rooms are placed on.
+        val lastPoint = Point(-100, -100)
+        var lastRoom: Room? = null
+        val tmpPoint = Point(point)
+        for (i in 0 until length) {
+            tmpPoint.x = point.x + (i * cos(beam.angle)).toInt()
+            tmpPoint.y = point.y + (i * sin(beam.angle)).toInt()
+
+            // This (among other things) divides the position by the size
+            // of a room, so whenever the result changes we might
+            // be in a new room.
+            game.enemy.screenPosToShipPos(tmpPoint)
+
+            if (tmpPoint == lastPoint)
+                continue
+            lastPoint.set(tmpPoint)
+
+            val roomPoint = game.enemy.shipToRoomPos(tmpPoint) ?: continue
+
+            // We might still be inside the same room, however.
+            if (roomPoint.room == lastRoom)
+                continue
+            lastRoom = roomPoint.room
+
+            beam.hitRooms.add(roomPoint.room)
+        }
+    }
+
+    private fun targetBeamWeapon() {
+        val beam = beamTargeting ?: error("Called targetBeamWeapon without beam")
+        beamTargeting = null
+
+        val weaponIndex = ship.hardpoints.indexOfFirst { it.weapon == beam.weapon }
+        ship.weapons!!.selectedTargets.targetBeam(weaponIndex, beam)
+    }
+
     // Dispatch actions from the UI - this is only called when the game is not paused, so dispatch
     // everything from here so a player can cancel their actions if they remain paused.
     fun update(dt: Float) {
-        var fired: MutableList<Weapons.SelectedTarget>? = null
+        var fired: MutableList<SelectedTarget>? = null
 
+        // TODO move this to Weapons.update
         val targets = ship.weapons?.selectedTargets ?: return
 
         for (tgt in targets) {
-            val weapon = tgt.weapon
-            if (!weapon.asWeaponInstance().isCharged)
+            if (!tgt.weapon.asWeaponInstance().isCharged)
                 continue
 
             if (fired == null)
@@ -285,7 +368,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             fired.add(tgt)
 
-            weapon.fire(ship.weapons!!, tgt.room)
+            when (tgt) {
+                is SelectedTarget.BeamAim -> TODO()
+                is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire(ship.weapons!!, tgt.room)
+            }
         }
 
         fired?.forEach { tgt ->
@@ -305,8 +391,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         height = gc.height
 
         drawTopBar(g)
-
-        g.font = font
 
         val powerTreeX = 86 - 53
         val powerTreeY = gc.height - 21 - 302
@@ -612,6 +696,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             button.update(x, y)
         }
 
+        if (beamTargeting != null) {
+            updateBeamTargeting(x, y)
+        }
+
         crewSelectionRectangle?.second?.set(x, y)
     }
 
@@ -769,5 +857,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         private const val INSUFFICIENT_SCRAP_FLASH_TIME = 0.35f
         private const val WEAPON_BOX_GLOW = 12
+
+        private const val MIN_BEAM_LENGTH = 10f
     }
 }

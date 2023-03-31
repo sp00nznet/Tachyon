@@ -71,6 +71,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
+    // This really is a bit horrible - if this is the enemy ship, we store the beam the
+    // player is currently aiming at us to highlight the affected rooms.
+    private var inboundBeamAim: SelectedTarget.BeamAim? = null
+
     // The number of fuel, missiles and drones this ship has. The missiles and drones
     // are set during ship loading. Player ships always seem to start with 16 fuel.
     var fuelCount: Int = 16
@@ -504,8 +508,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
      * and for debug purposes we may want to show where the AI is targeting
      * their shots.
      */
-    fun renderTargeting(targets: Weapons.TargetList) {
+    fun renderTargeting(g: Graphics, targets: Weapons.TargetList) {
         for (target in targets) {
+            if (target is SelectedTarget.BeamAim)
+                renderTargetingBeam(g, target)
+            if (target !is SelectedTarget.RoomAim)
+                continue
+
             val room = target.room
 
             val weaponNumber = min(target.weaponNumber + 1, 4)
@@ -520,6 +529,38 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
             img.draw(pos)
         }
+
+        inboundBeamAim = targets.beamAiming
+        targets.beamAiming?.let { renderTargetingBeam(g, it) }
+    }
+
+    fun renderTargetingBeam(g: Graphics, beam: SelectedTarget.BeamAim) {
+        // This is false for beams the player is currently aiming, where their
+        // mouse is too close to the start of the beam.
+        if (!beam.visible)
+            return
+
+        // FTL has a nice 'cap' image that squares off the ends of a beam. However
+        // this seemed to cause flickering at the transition between the cap and centre
+        // image when rotated, so don't bother with it. Notably the game itself
+        // doesn't seem to use this asset.
+        // TODO use the cap without a flicker, it really does look nicer.
+        val img = sys.getImg("img/misc/beam_center.png")
+
+        g.pushTransform()
+        g.translate(beam.startShipPoint.x.f, beam.startShipPoint.y.f)
+        g.rotate(0f, 0f, Math.toDegrees(beam.angle.toDouble()).toFloat())
+
+        // Draw the stretched-out middle image
+        val length = (beam.weapon.type as BeamBlueprint).length
+        img.draw(
+            0f, -img.height / 2f, length.f, img.height.f / 2f,
+            // Stretch out the centre of the beam - if we don't do this, then
+            // the ends appear faded (windows and nvidia, if that's important).
+            0.5f, 0f, 0.5f, img.height.f
+        )
+
+        g.popTransform()
     }
 
     private fun drawInterior(g: Graphics, selected: Room?) {
@@ -527,8 +568,17 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             g.drawImage(floorImage, floorOffset.x.f, floorOffset.y.f)
 
         // Draw the rooms
-        for (room in rooms)
-            room.render(g, selected == room)
+        for (room in rooms) {
+            var roomSelected = selected == room
+
+            // If the user is currently aiming a beam, highlight
+            // the rooms it would hit.
+            if (inboundBeamAim?.hitRooms?.contains(room) == true) {
+                roomSelected = true
+            }
+
+            room.render(g, roomSelected)
+        }
 
         // Draw the doors
         for (door in doors) {

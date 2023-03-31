@@ -4,6 +4,8 @@ import org.jdom2.Element
 import xyz.znix.xftl.Ship
 
 class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
+    val length: Int = xml.getChildTextTrim("length").toInt()
+
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return BeamInstance(ship)
     }

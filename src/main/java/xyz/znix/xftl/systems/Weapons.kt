@@ -6,8 +6,10 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
+import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import kotlin.math.roundToInt
 
@@ -185,7 +187,14 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             val weapon = ship.hardpoints[weaponId].weapon!!
             check(weapon is IRoomTargetingWeapon)
 
-            targets[weaponId] = SelectedTarget(room, weapon, weaponId)
+            targets[weaponId] = SelectedTarget.RoomAim(room, weapon, weaponId)
+        }
+
+        fun targetBeam(weaponId: Int, beam: SelectedTarget.BeamAim) {
+            val weapon = ship.hardpoints[weaponId].weapon!!
+            require(weapon == beam.weapon)
+
+            targets[weaponId] = beam
         }
 
         fun unTarget(weaponId: Int) {
@@ -202,11 +211,34 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
         fun update() {
             // Un-target all unpowered weapons
-            selectedTargets.targets.values.removeIf { !it.weapon.asWeaponInstance().isPowered }
+            selectedTargets.targets.values.removeIf { !it.weapon.isPowered }
         }
 
         private val targets = HashMap<Int, SelectedTarget>()
+
+        // If the user is currently aiming a beam, this marks it so the ship being targeted
+        // can draw it. It's a bit ugly, but keeps all the target-drawing stuff in one place.
+        var beamAiming: SelectedTarget.BeamAim? = null
+    }
+}
+
+sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber: Int) {
+    class RoomAim(val room: Room, weapon: IRoomTargetingWeapon, weaponNumber: Int) :
+        SelectedTarget(weapon.asWeaponInstance(), weaponNumber) {
+
+        val roomTargetingWeapon get() = weapon as IRoomTargetingWeapon
     }
 
-    class SelectedTarget(val room: Room, val weapon: IRoomTargetingWeapon, val weaponNumber: Int)
+    class BeamAim(
+        weapon: BeamBlueprint.BeamInstance,
+        weaponId: Int,
+        val startMousePoint: IPoint,
+        val startShipPoint: IPoint
+    ) : SelectedTarget(weapon, weaponId) {
+        val hitRooms = ArrayList<Room>()
+        var angle: Float = 0f
+        var visible: Boolean = false
+
+        val beamWeapon get() = weapon as BeamBlueprint.BeamInstance
+    }
 }
