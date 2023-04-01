@@ -27,6 +27,8 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
     private val optionBoundingBoxes = ArrayList<Rectangle>()
     private var hoveredOption: Int? = null
 
+    private val textX get() = position.x + 25
+
     init {
         loadEvent(EvaluatedEvent(startingEvent, game, null))
     }
@@ -89,30 +91,15 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         if (resourcesGained.isNotEmpty() || resourcesGained.items.isNotEmpty()) {
             textY += 27
             val boxSize = findResourceBoxSize(resourcesGained)
-            val boxWidth = boxSize.x
-            val boxX = position.x.f + (size.x - boxWidth) / 2
+            val boxX = position.x + (size.x - boxSize.x) / 2
+            val boxPos = ConstPoint(boxX, textY)
+            drawResourceBox(g, resourcesGained, boxPos, boxSize)
+            textY += boxSize.y
 
-            g.color = Constants.REWARDS_BACKGROUND
-            g.fillRect(boxX, textY.f, boxWidth.f, boxSize.y.f + 2f)
-
-            g.color = Color.white
-            g.drawRect(boxX, textY.f, boxWidth - 1f, boxSize.y + 1f)
-            g.drawRect(boxX + 1, textY.f + 1, boxWidth - 3f, boxSize.y - 1f)
-
-            for ((i, pair) in resourcesGained.toList().sortedBy { it.first.ordinal }.withIndex()) {
-                val x = boxX + 5 + 45 * i
-                pair.first.getIcon(game).draw(x, textY.f, Constants.REWARDS_ICONS)
-                resourceNumFont.drawString(x + 30, textY + 21f, pair.second.toString(), Color.white)
-            }
-
-            if (resourcesGained.isNotEmpty()) textY += 23
-
-            for (bp in resourcesGained.items) {
-                textY = drawRewardBlueprint(bp, boxX, textY)
-            }
+            textY += 51
+        } else {
+            textY += 60
         }
-
-        textY += 60
 
         val rebuildBBs = optionBoundingBoxes.isEmpty()
 
@@ -124,9 +111,47 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
                 choice.blue -> Constants.TEXT_OPTION_BLUE
                 else -> Color.white
             }
+
             val prefix = "${i + 1}. "
-            textY = drawText(textY, prefix + option.choiceText, colour, rebuildBBs)
-            textY += 32
+            val text = prefix + option.choiceText
+
+            // Handle the 'continue' option, since it fails if
+            // we try to read its resources.
+            if (option.isContinue) {
+                drawText(textY, text, colour, rebuildBBs)
+                continue
+            }
+
+            // Draw the resources for this event, if appropriate
+            val hasResources = (option.resources.isNotEmpty() || option.resources.items.isNotEmpty())
+            if (hasResources && choice != null && !choice.hidden && !option.event.itemsModifySteal) {
+                val boxSize = findResourceBoxSize(option.resources)
+
+                // A normal line of text is 32 pixels high including padding. Thus find
+                // out what the intended top of this option's area is.
+                val normalPadding = (OPTION_SPACING - FONT_HEIGHT) / 2
+                val topY = textY - FONT_HEIGHT - normalPadding
+
+                // Figure out the height of this entry, including padding
+                val padding = 8
+                val height = boxSize.y + padding
+
+                val boxX = textX + font.getWidth(text) + 10
+                val boxY = topY + padding / 2
+                val boxPos = ConstPoint(boxX, boxY)
+                drawResourceBox(g, option.resources, boxPos, boxSize)
+
+                // Align the text with the middle of the box - TODO multiline support
+                // Since the font is referenced at it's baseline, we go half way down
+                // the box to reach it's middle, then down another half-line-width
+                // so that the middle of the text will align with the middle of the box.
+                val lineY = boxY + (boxSize.y + FONT_HEIGHT) / 2
+                drawText(lineY, text, colour, rebuildBBs)
+                textY += height
+            } else {
+                textY = drawText(textY, text, colour, rebuildBBs)
+                textY += OPTION_SPACING
+            }
         }
     }
 
@@ -134,9 +159,9 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         var width = resourceSet.size * 45 + 10
         var height = 0
 
-        // TODO is this right? Check with a weapon-only reward
+        // TODO check this on an image with both scrap and resources
         if (resourceSet.isNotEmpty())
-            height += 30
+            height += 32
 
         for (bp in resourceSet.items) {
             val bpWidth = when (bp) {
@@ -156,8 +181,33 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         return ConstPoint(width, height)
     }
 
+    private fun drawResourceBox(g: Graphics, resourceSet: ResourceSet, pos: IPoint, size: IPoint) {
+        var y = pos.y
+
+        g.color = Constants.REWARDS_BACKGROUND
+        g.fillRect(pos.x.f, y.f, size.x.f, size.y.f)
+
+        g.color = Color.white
+        g.drawRect(pos.x.f, y.f, size.x - 1f, size.y - 1f)
+        g.drawRect(pos.x.f + 1, y + 1f, size.x - 3f, size.y - 3f)
+
+        for ((i, pair) in resourceSet.toList().sortedBy { it.first.ordinal }.withIndex()) {
+            val x = pos.x + 5 + 45 * i
+            pair.first.getIcon(game).draw(x.f, y.f, Constants.REWARDS_ICONS)
+            resourceNumFont.drawString(x + 30f, y + 21f, pair.second.toString(), Color.white)
+        }
+
+        // If we drew some resources, move the blueprints down so they don't overlap
+        if (resourceSet.isNotEmpty()) {
+            y += 30
+        }
+
+        for (bp in resourceSet.items) {
+            y = drawRewardBlueprint(bp, pos.x.f, y)
+        }
+    }
+
     private fun drawText(y: Int, msg: String, colour: Color = Color.white, addOption: Boolean = false): Int {
-        val textX = position.x + 25f
         val textFarX = position.x + size.x - 25f
 
         var lineText = ""
@@ -166,7 +216,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         for (word in msg.split(" ")) {
             if (font.getWidth(lineText + word) + textX > textFarX) {
                 longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
-                font.drawString(textX, textY.f, lineText, colour)
+                font.drawString(textX.f, textY.f, lineText, colour)
                 lineText = ""
                 textY += 20
             }
@@ -174,10 +224,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             lineText += "$word "
         }
         longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
-        font.drawString(textX, textY.f, lineText, colour)
+        font.drawString(textX.f, textY.f, lineText, colour)
 
         if (addOption) {
-            optionBoundingBoxes += Rectangle(textX, y.f - 11, longestLine.f, textY - y + 14f)
+            optionBoundingBoxes += Rectangle(textX.f, y.f - 11, longestLine.f, textY - y + 14f)
         }
 
         return textY
@@ -188,11 +238,11 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             is ShipWeaponBlueprint -> {
                 val anim = bp.getLauncher(game)
 
-                bp.drawLauncherUI(game, boxX + 10f, textY + 9f)
+                bp.drawLauncherUI(game, boxX + 10f, textY + 4f)
 
                 // Draw the name
                 val name = game.translator[bp.title!!]
-                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY.f + 31, name, Color.white)
+                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY + 24f, name, Color.white)
 
                 return textY + 44
             }
@@ -249,5 +299,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         val event: Event get() = eventInt ?: throw Exception("Continue does not have an event")
         val resources by lazy { event.resolveResources(game) }
         val text by lazy { event.text?.resolve() }
+    }
+
+    companion object {
+        private const val FONT_HEIGHT = 11
+        private const val OPTION_SPACING = 32
     }
 }

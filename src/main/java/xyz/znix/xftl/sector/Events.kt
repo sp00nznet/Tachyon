@@ -5,6 +5,10 @@ import org.newdawn.slick.Image
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.requireAttributeValue
 
+// Many of the comments in this file came from ftlwiki.com (now unfortunately
+// offline, but accessable via the wayback machine):
+// https://ftlwiki.com/wiki/Events_file_structure
+
 /**
  * Represents something that can be used as an event. This is either an Event or
  * an EventList.
@@ -22,7 +26,7 @@ class Event(
     val isDistressBeacon: Boolean = elem.getChild("distressBeacon") != null
     val isStore: Boolean = elem.getChild("store") != null
 
-    val itemsModifySteal: Boolean?
+    val itemsModifySteal: Boolean
     val itemsModify: Map<Resource, IntRange>
     val autoRewards: Pair<RewardType, RewardTier>?
     val blueprintRewards: List<String>
@@ -42,7 +46,7 @@ class Event(
                 items[type] = min..max
             }
         } else {
-            itemsModifySteal = null
+            itemsModifySteal = false
             itemsModify = emptyMap()
         }
 
@@ -140,8 +144,38 @@ class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {
     override fun resolve() = events.random().resolve()
 }
 
-class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, val blue: Boolean) {
+class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {
+    /**
+     * Event to be triggered when this choice is taken. This element is required. One of:
+     * A complete event, as detailed above (which can again contain choices).
+     * Empty with just the load attribute given: loads the event with the given id.
+     * Completely empty (<element />), if you want nothing to happen at all.
+     */
     val event by lazyEvent
+
+    /**
+     * true/false, false if omitted. When set to false or omitted, it causes rewards (fuel, drone parts, scrap, etc)
+     * in the choice's event (specified by <item_modify> or <autoReward>) to appear next to the choice's text.
+     * See req for behavior of hidden when used alongside req.
+     */
+    val hidden: Boolean = elem.getAttributeValue("hidden")?.toBoolean() ?: false
+
+    /**
+     * The name of any race, weapon, drone, augmentation or system/subsystem.
+     *
+     * When hidden is set to true, the choice will be visible, able to be selected, and will be a blue choice
+     *   (unless blue is set to false), if and only if the player has whatever is specified by the req, otherwise
+     *   it will not be shown (hidden).
+     * When hidden is omitted or set to false and the player does not have the listed req, the player will be able
+     *   to see the choice but will be unable to select it (it will be grayed out).
+     */
+    val req: String? = elem.getAttributeValue("req")
+
+    /**
+     * true/false, true if omitted. Determines whether the choice will appear as (literally) a blue choice.
+     * Only has meaning when used alongside req, as only req can make the choice blue in the first place.
+     */
+    val blue: Boolean = elem.getAttributeValue("blue")?.toBoolean() ?: (req != null)
 }
 
 interface IEventText {
