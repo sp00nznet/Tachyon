@@ -31,8 +31,8 @@ class BombBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             }
         }
 
-        override fun update(dt: Float) {
-            super.update(dt)
+        override fun update(dt: Float, canCharge: Boolean) {
+            super.update(dt, canCharge)
 
             val firingAnimation = firingAnimation ?: return
 

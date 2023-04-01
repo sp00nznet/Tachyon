@@ -42,6 +42,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("weapon", 0, this::cmdWeapon, "Select a weapon, and add it to the ship's cargo area"),
         Cmd("store", 0, this::cmdStore, "Create a store at this beacon"),
         Cmd("event", 0, this::cmdEvent, "Load an event at this beacon"),
+        Cmd("fix", 0, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -240,6 +241,20 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         getEvent { event ->
             game.shipUI.showEventDialogue(event.resolve())
         }
+    }
+
+    private fun cmdFix(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        for (room in ship.rooms) {
+            val system = room.system ?: continue
+
+            system.damagedEnergyLevels = 0
+            system.ionTimer = 0f
+            system.ionDamage = 0
+        }
+
+        ship.health = ship.maxHealth
+
+        lines.add("The ship has been repaired, all regular and ion damage was removed.")
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {

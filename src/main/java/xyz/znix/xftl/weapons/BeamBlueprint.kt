@@ -122,8 +122,8 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             contact.draw(targetPos.x - 24f, targetPos.y - 32f, BEAM_COLOUR_OPAQUE)
         }
 
-        override fun update(dt: Float) {
-            super.update(dt)
+        override fun update(dt: Float, canCharge: Boolean) {
+            super.update(dt, canCharge)
 
             if (firing) {
                 val targetShip = target!!.targetShip

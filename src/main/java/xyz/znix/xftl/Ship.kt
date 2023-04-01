@@ -36,6 +36,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
     val hullImage: Image = base.readImage("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
+    val cloakImage: Image? = base.getOrNull("img/ship/${imageName}_cloak.png")?.let { i -> base.readImage(i) }
     val gibs: List<ShipGib>
 
     val shieldImage: Image = base.readImage(
@@ -117,6 +118,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
      */
     val isGone: Boolean get() = isDead && gibs.firstOrNull()?.isFinished != false
 
+    val isCloakActive: Boolean get() = cloaking?.active ?: false
+
     // The amount of power currently used by the ship's systems
     val powerConsumed: Int
         get() {
@@ -139,6 +142,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     var shields: Shields? = null
         private set
 
+    var cloaking: Cloaking? = null
+        private set
+
     var piloting: Piloting? = null
         private set
 
@@ -146,7 +152,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         private set
 
     // The ship's evasion, in percent
-    val evasion: Int get() = (piloting!!.evasionMultiplier * (piloting!!.evasion + engines!!.evasion)).toInt()
+    val evasion: Int
+        get() {
+            var evasion: Float = piloting!!.evasion + engines!!.evasion.f
+            evasion *= piloting!!.evasionMultiplier
+
+            if (isCloakActive)
+                evasion += 60
+
+            return evasion.toInt()
+        }
 
     init {
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
@@ -238,6 +253,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 "pilot" -> Piloting(blueprint, node)
                 "sensors" -> Sensors(blueprint, node)
                 "shields" -> Shields(blueprint, node)
+                "cloaking" -> Cloaking(blueprint, node)
                 "weapons" -> Weapons(blueprint, node)
                 "drones" -> Drones(blueprint, node)
                 else -> {
@@ -486,7 +502,25 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 gib.draw(g, ConstPoint.ZERO)
             }
         } else {
-            g.drawImage(hullImage, 0f, 0f)
+            // Animate between cloaked and uncloaked
+            // Note this is guesstimated, not measured - change it if
+            // you think it can be made more accurate.
+            val cloakFade = cloaking?.cloakFade ?: 0f
+
+            val hullOpacity = 1f - cloakFade * 0.2f
+            g.drawImage(hullImage, 0f, 0f, Color(1f, 1f, 1f, hullOpacity))
+
+            if (cloakFade != 0f) {
+                requireNotNull(cloakImage) { "Ship '$name' cloaked, but it doesn't have a cloak image!" }
+
+                // The cloak image isn't always the same size as the background image :(
+                // Thus we have to centre it or they won't line up.
+                val offset = Point(hullImage.imageSize)
+                offset -= cloakImage.imageSize
+                offset.divideFloor(2)
+
+                g.drawImage(cloakImage, offset.x.f, offset.y.f, Color(1f, 1f, 1f, cloakFade))
+            }
 
             if (interiorVisible)
                 drawInterior(g, selected)
@@ -780,6 +814,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         drones = systems.mapNotNull { it as? Drones }.firstOrNull()
         engines = systems.mapNotNull { it as? Engines }.firstOrNull()
         shields = systems.mapNotNull { it as? Shields }.firstOrNull()
+        cloaking = systems.mapNotNull { it as? Cloaking }.firstOrNull()
         piloting = systems.mapNotNull { it as? Piloting }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
 

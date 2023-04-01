@@ -7,13 +7,14 @@ import kotlin.math.min
 
 abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractSystem(blueprint, elem) {
     private var simpleSelectedEnergyLevel: Int = 1
+
     open val powerSelected: Int get() = simpleSelectedEnergyLevel
 
     val powerAvailable: Int get() = min(undamagedEnergy, ship.powerAvailable + powerSelected)
 
     val powerUnused: Int get() = min(undamagedEnergy - powerSelected, ship.powerAvailable)
 
-    open val isPowerLocked: Boolean get() = ionDamage > 0
+    open val isPowerLocked: Boolean get() = isIonised
 
     abstract val sortingType: SortingType
 
@@ -45,6 +46,7 @@ abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractS
         ENGINES,
         MEDBAY,
         OXYGEN,
+        CLOAKING,
         WEAPONS,
         DRONES;
     }

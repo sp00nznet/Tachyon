@@ -19,8 +19,8 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
     private var shotsFired: Int = 0
     private var lastProjectile: AbstractProjectile? = null
 
-    override fun update(dt: Float) {
-        super.update(dt)
+    override fun update(dt: Float, canCharge: Boolean) {
+        super.update(dt, canCharge)
 
         val fa = firingAnimation ?: return
 

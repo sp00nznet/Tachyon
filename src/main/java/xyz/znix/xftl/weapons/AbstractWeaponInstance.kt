@@ -21,11 +21,14 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
 
     val animation = type.getLauncher(ship.sys)
 
-    open fun update(dt: Float) {
-        if (isPowered)
-            timeCharged += dt
-        else
+    open fun update(dt: Float, canCharge: Boolean) {
+        if (isPowered) {
+            if (canCharge)
+                timeCharged += dt
+        } else {
             timeCharged -= dt * 10
+        }
+
         if (timeCharged > type.chargeTime)
             timeCharged = type.chargeTime
         if (timeCharged < 0f)

@@ -41,6 +41,11 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
      */
     var ionDamage: Int = 0
 
+    // Note that system cooldowns set the ion timer without adding
+    // any ion damage, to lock in the power. Hence we need to check
+    // the timer instead of the damage.
+    val isIonised: Boolean get() = ionTimer > 0
+
     // Used for calculations by the ship generator.
     val aiMaxPower: Int? = elem.getAttributeValue("max")?.toInt()
 
@@ -139,7 +144,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         }
 
     open fun drawIconAndPower(game: SlickGame, g: Graphics, x: Int, baseY: Int) {
-        if (ionDamage == 0) {
+        if (!isIonised) {
             game.getImg("img/icons/s_${codename}_${iconColourName}1.png").draw(x.f, baseY.f)
         } else {
             // Levels are rounded up, so <5s shows 1, <10s shows 2, etc.
@@ -167,7 +172,15 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
             // Figure out the angle around this image we need to cut it at
             val numSegments = 12 // The ring is split up into 12 segments
             val progress = (ionTimer / TIME_PER_ION).rem(1f) // How full the ring is, 0-1
-            val segments = ceil(numSegments * progress).toInt() // There's always at least 1 segment visible
+            var segments = ceil(numSegments * progress).toInt() // There's always at least 1 segment visible
+
+            // If the timer is an exact multiple of five seconds,
+            // progress will be zero and thus no segments will be
+            // displayed. Fix that, as it should be showing all the
+            // segments.
+            if (segments == 0)
+                segments = numSegments
+
             val angle = Math.PI.toFloat() * 2 * segments / numSegments
 
             // Find the position of the point that changes with the angle
@@ -238,7 +251,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
                     g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
                 }
 
-                ionDamage != 0 -> {
+                isIonised -> {
                     // The system is powered at this level (or it's
                     // a subsystem), but ion damage is applied.
                     // This changes the colour of all the remaining power.
@@ -261,7 +274,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         }
 
         // If the system is ionised, draw the 'locked' bar around it
-        if (ionDamage != 0) {
+        if (isIonised) {
             val topBarY = baseY + 8f - (energyLevels - 1) * 8
             val barsHeight = energyLevels * 8 - 2
 
@@ -274,6 +287,15 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
             val lockImg = game.getImg("img/icons/locking/s_lock.png")
             lockImg.draw(barX + 2f - 6f, topBarY - 21f - 6f)
         }
+    }
+
+    /**
+     * Create any system-specific buttons that go next to the power button in the main UI.
+     *
+     * For example, this is for stuff like the cloak and teleport buttons on those systems.
+     */
+    open fun makeExtraButtons(powerPos: IPoint): List<Button> {
+        return emptyList()
     }
 
     companion object {

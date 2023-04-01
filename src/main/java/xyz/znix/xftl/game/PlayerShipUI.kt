@@ -410,12 +410,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 dronePowerX = wireX
 
             if (updatingButtons) {
-                buttons += SystemPowerButton(ConstPoint(powerX + 19, powerY + 19), system)
+                val powerPos = ConstPoint(powerX + 19, powerY + 19)
+                buttons += SystemPowerButton(powerPos, system)
+
+                buttons += system.makeExtraButtons(powerPos)
             }
 
             powerX += when (system) {
                 is Weapons -> 48 + ship.weaponSlots!! * 97
                 is Drones -> 48 + ship.droneSlots!! * 97
+                is Cloaking -> 54
                 else -> 36
             }
 
@@ -426,20 +430,23 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             val lastSystem = i == sortedSystems.size - 2
 
-            val image = when {
+            val wireWidth = when (system) {
                 // Remember that we'll only run this if this isn't the last system,
                 // so we won't be drawing a wire under weapons if drones isn't installed.
-                system is Weapons -> {
+                is Weapons -> {
                     // Draw the wire that goes under the weapons to the drone system
-                    val name = when (ship.weaponSlots) {
-                        4 -> "img/wireUI/wire_456_cap.png"
-                        else -> "img/wireUI/wire_456_${ship.weaponSlots!!}weapon_cap.png"
+                    when (ship.weaponSlots) {
+                        4 -> "456"
+                        else -> "456_${ship.weaponSlots!!}weapon"
                     }
-                    game.getImg(name)
                 }
 
-                lastSystem -> game.getImg("img/wireUI/wire_36_cap.png")
-                else -> game.getImg("img/wireUI/wire_36.png")
+                is Cloaking -> "54"
+                else -> "36"
+            }
+            val image = when (lastSystem) {
+                true -> game.getImg("img/wireUI/wire_${wireWidth}_cap.png")
+                false -> game.getImg("img/wireUI/wire_$wireWidth.png")
             }
             image.draw(wireX.f, wireY.f)
         }

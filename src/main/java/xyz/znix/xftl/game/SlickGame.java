@@ -312,6 +312,14 @@ public class SlickGame extends BasicGame {
         if (enemy != null) {
             enemy.update(dt);
 
+            // Since we try and limit direct communications between
+            // the ships, pass information about the cloak status back
+            // and forth here.
+            //noinspection ConstantConditions
+            player.getWeapons().setOpponentCloakActive(enemy.isCloakActive());
+            //noinspection ConstantConditions
+            enemy.getWeapons().setOpponentCloakActive(player.isCloakActive());
+
             if (enemyIsHostile) {
                 enemyAI.update(dt);
             }
@@ -326,6 +334,9 @@ public class SlickGame extends BasicGame {
                 setEnemy(null);
                 currentBeacon.setShip(null);
             }
+        } else {
+            //noinspection ConstantConditions
+            player.getWeapons().setOpponentCloakActive(false);
         }
 
         if (!isInDanger()) {
