@@ -69,6 +69,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
     val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
+    val inboundBeams: MutableList<BeamBlueprint.BeamInstance> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
     // This really is a bit horrible - if this is the enemy ship, we store the beam the
@@ -492,6 +493,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         for (bomb in inboundBombs) {
             bomb.render()
+        }
+
+        for (beam in inboundBeams) {
+            beam.renderInbound()
         }
 
         // Draw the floating animations (eg, from projectile explosions)

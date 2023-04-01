@@ -275,7 +275,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             } else if (weapon is BeamBlueprint.BeamInstance) {
                 val mousePos = ConstPoint(gc.input.mouseX, gc.input.mouseY)
                 val shipPos = mousePos - game.enemyPosition
-                beamTargeting = SelectedTarget.BeamAim(weapon, id, mousePos, shipPos)
+                beamTargeting = SelectedTarget.BeamAim(weapon, id, game.enemy, mousePos, shipPos)
             }
         }
         game.clickEvent = selectWeaponClickEvent
@@ -369,7 +369,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             fired.add(tgt)
 
             when (tgt) {
-                is SelectedTarget.BeamAim -> TODO()
+                is SelectedTarget.BeamAim -> tgt.beamWeapon.fire(tgt)
                 is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire(ship.weapons!!, tgt.room)
             }
         }

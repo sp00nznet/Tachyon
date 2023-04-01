@@ -232,6 +232,7 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
     class BeamAim(
         weapon: BeamBlueprint.BeamInstance,
         weaponId: Int,
+        val targetShip: Ship,
         val startMousePoint: IPoint,
         val startShipPoint: IPoint
     ) : SelectedTarget(weapon, weaponId) {
