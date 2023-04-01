@@ -12,6 +12,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.systems.SelectedTarget
 import kotlin.math.*
 import kotlin.random.Random
@@ -34,6 +35,7 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
         private var firingTime: Float = 0f
         private var target: SelectedTarget.BeamAim? = null
         private val originPos = Point(0, 0)
+        private var lastRoomPos: RoomPoint? = null
 
         private val contact: Animation
 
@@ -72,12 +74,7 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             val target = target!!
 
             // Figure out where the beam touches the ship
-            val distanceAcross = (length * firingTime / fireDuration).toInt()
-
-            val targetPos = target.startShipPoint + ConstPoint(
-                (distanceAcross * cos(target.angle)).toInt(),
-                (distanceAcross * sin(target.angle)).toInt()
-            )
+            val targetPos = pointAtTime(firingTime)
 
             // Calculate the point where the beam and the shield bubble intersect
             // (Note that if the shields are off, we still do this - but the beams
@@ -129,18 +126,53 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             super.update(dt)
 
             if (firing) {
+                val targetShip = target!!.targetShip
+
                 // Don't block charging while firing - it does appear
                 // to charge up even while firing!
 
-                firingTime += dt
+                // Step across all the points the beam has moved
+                // across in this frame. This is done to ensure
+                // the beam can't skip rooms when running with
+                // high delta-times.
+                val onePixelTime = fireDuration / length;
+                val newFiringTime = firingTime + dt
+                var t = firingTime
+                val tmp = Point(0, 0)
+                while (t < newFiringTime) {
+                    // Check if we've potentially crossed into a new room
+                    tmp.set(pointAtTime(t))
+                    t += onePixelTime
+                    targetShip.screenPosToShipPos(tmp)
+
+                    if (!tmp.equals(lastRoomPos?.shipPoint)) {
+                        val lastRoom = lastRoomPos?.room
+                        lastRoomPos = targetShip.shipToRoomPos(tmp)
+
+                        // Is this point outside the ship?
+                        if (lastRoomPos == null)
+                            continue
+
+                        val shieldLayers = targetShip.shields?.activeShields ?: 0
+                        val beamPower = max(0, damage - shieldLayers)
+
+                        // If we hit a new room, damage it
+                        if (lastRoom != lastRoomPos!!.room) {
+                            targetShip.damage(lastRoomPos!!.room, beamPower, beamPower)
+                        }
+
+                        // TODO deal crew damage - this is done on entry
+                        //  to a new cell, not only to a new room.
+                    }
+                }
+
+                firingTime = newFiringTime
                 if (firingTime >= fireDuration) {
                     firing = false
-                    target!!.targetShip.inboundBeams.remove(this)
+                    targetShip.inboundBeams.remove(this)
                 }
 
                 contact.update((dt * 1000).toLong())
-
-                // TODO deal damage
             }
         }
 
@@ -152,6 +184,10 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
 
             firing = true
             firingTime = 0f
+
+            // Without this, if the first room hit was the same room as the
+            // last one hit on the previous shot, no damage would be dealt.
+            lastRoomPos = null
 
             // Find the point the beam is going to come from. Only do this once per
             // shot so the beam doesn't bounce around.
@@ -172,6 +208,15 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             originPos.y += Random.nextInt(-range..range)
 
             originPos += target.targetShip.shieldOrigin
+        }
+
+        private fun pointAtTime(time: Float): IPoint {
+            val distanceAcross = (length * time / fireDuration).toInt()
+
+            return target!!.startShipPoint + ConstPoint(
+                (distanceAcross * cos(target!!.angle)).toInt(),
+                (distanceAcross * sin(target!!.angle)).toInt()
+            )
         }
     }
 
@@ -287,8 +332,10 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             return Pair(null, null)
 
         fun xToPoint(x: Float): IPoint? {
-            // Check this point sits inside the line segment
-            if (x.toInt() + centre.x !in src.x..dst.x)
+            // Check this point sits inside the line segment.
+            val minX = min(src.x, dst.x)
+            val maxX = max(src.x, dst.x)
+            if (x.toInt() + centre.x !in minX..maxX)
                 return null
 
             val y = m * x + L
