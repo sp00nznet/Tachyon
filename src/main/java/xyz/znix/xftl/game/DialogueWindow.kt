@@ -141,7 +141,8 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
                 val boxPos = ConstPoint(boxX, boxY)
                 drawResourceBox(g, option.resources, boxPos, boxSize)
 
-                // Align the text with the middle of the box - TODO multiline support
+                // Align the text with the middle of the box
+                // TODO multiline support - this can be tested with the ENGI_REFUGEES event
                 // Since the font is referenced at it's baseline, we go half way down
                 // the box to reach it's middle, then down another half-line-width
                 // so that the middle of the text will align with the middle of the box.
@@ -193,7 +194,8 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         for ((i, pair) in resourceSet.toList().sortedBy { it.first.ordinal }.withIndex()) {
             val x = pos.x + 5 + 45 * i
-            pair.first.getIcon(game).draw(x.f, y.f, Constants.REWARDS_ICONS)
+            val colour = if (pair.second > 0) Constants.REWARDS_ICONS else Constants.REWARDS_NEGATIVE_ICONS
+            pair.first.getIcon(game).draw(x.f, y.f, colour)
             resourceNumFont.drawString(x + 30f, y + 21f, pair.second.toString(), Color.white)
         }
 

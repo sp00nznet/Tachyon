@@ -59,6 +59,7 @@ public class Constants {
     public static final Color TEXT_OPTION_HOVER = new Color(243, 255, 80);
 
     public static final Color REWARDS_ICONS = SYS_ENERGY_ACTIVE;
+    public static final Color REWARDS_NEGATIVE_ICONS = SYS_ENERGY_BROKEN;
     public static final Color REWARDS_BACKGROUND = new Color(0, 0, 0, 128);
 
     public static final Color CREW_DESELECTED_BG = SYS_ENERGY_REPAIR;
