@@ -55,6 +55,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         else
             selectedShieldHalfSize
 
+    val shieldOrigin: ConstPoint
+
     val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
     val droneSlots: Int? = shipNode.getChildTextTrim("droneSlots")?.toInt()
 
@@ -212,6 +214,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         shieldOffset = ConstPoint(found_ellipse.x, found_ellipse.y)
         selectedShieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
+
+        val origin = Point(hullImage.width, hullImage.height)
+        origin.divide(2)
+        if (isPlayerShip)
+            origin += shieldOffset
+        shieldOrigin = origin.const
 
         for (node in shipNode.getChild("systemList").children) {
             if (node.name == "clonebay") {

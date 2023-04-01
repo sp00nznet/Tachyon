@@ -50,13 +50,8 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
             // Check if we're inside the target ships shields
             val s = ship
 
-            val shieldOrigin = Point(s.hullImage.width, s.hullImage.height)
-            shieldOrigin.divide(2)
-            if (s.isPlayerShip)
-                shieldOrigin += s.shieldOffset
-
             val rel = Point(position)
-            rel -= shieldOrigin
+            rel -= s.shieldOrigin
 
             val shieldSize = s.shieldHalfSize
 

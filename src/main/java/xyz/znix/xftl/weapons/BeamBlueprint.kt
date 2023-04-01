@@ -14,6 +14,8 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.systems.SelectedTarget
 import kotlin.math.*
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
     val length: Int = xml.getChildTextTrim("length").toInt()
@@ -31,6 +33,7 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
         private var firing: Boolean = false
         private var firingTime: Float = 0f
         private var target: SelectedTarget.BeamAim? = null
+        private val originPos = Point(0, 0)
 
         private val contact: Animation
 
@@ -68,6 +71,7 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             // This means we don't have to put !! on every usage of target
             val target = target!!
 
+            // Figure out where the beam touches the ship
             val distanceAcross = (length * firingTime / fireDuration).toInt()
 
             val targetPos = target.startShipPoint + ConstPoint(
@@ -75,22 +79,15 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
                 (distanceAcross * sin(target.angle)).toInt()
             )
 
-            // TODO figure out the source position
-            val srcPos = ConstPoint.ZERO
-
             // Calculate the point where the beam and the shield bubble intersect
             // (Note that if the shields are off, we still do this - but the beams
             //  on each side will appear the same, so it doesn't matter)
 
             val targetShip = target.targetShip
-            val shieldOrigin = Point(targetShip.hullImage.width, targetShip.hullImage.height)
-            shieldOrigin.divide(2)
-            if (targetShip.isPlayerShip)
-                shieldOrigin += targetShip.shieldOffset
+            val shieldSize = targetShip.shieldHalfSize
+            val shieldOrigin = targetShip.shieldOrigin
 
-            val shieldSize = target.targetShip.shieldHalfSize
-
-            val intersections = findIntersections(srcPos, targetPos, shieldSize, shieldOrigin)
+            val intersections = findIntersections(originPos, targetPos, shieldSize, shieldOrigin)
 
             // If we only cross the shield layer once, pick the first solution.
             // Note it's valid to never cross the shield line, or cross it twice,
@@ -105,16 +102,16 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
                 // and out the other.
                 // Check which is nearest, so the attenuation happens when
                 // the line first crosses the shield bubble.
-                iFirst.distToSq(srcPos) < iSecond.distToSq(srcPos) -> iFirst
+                iFirst.distToSq(originPos) < iSecond.distToSq(originPos) -> iFirst
                 else -> iSecond
             }
 
-            val shieldLayers = target.targetShip.shields?.activeShields ?: 0
+            val shieldLayers = targetShip.shields?.activeShields ?: 0
             val piercing = max(0, damage - shieldLayers)
 
             // TODO make the transition around the shield line a bit cleaner - it's a clear
             //  square cutoff, and doesn't match the tangent line of the shields bubble.
-            drawBeam(damage, srcPos, shieldPoint)
+            drawBeam(damage, originPos, shieldPoint)
 
             // Draw the inside-the-shield-bubble part
             if (piercing == 0)
@@ -155,6 +152,26 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
 
             firing = true
             firingTime = 0f
+
+            // Find the point the beam is going to come from. Only do this once per
+            // shot so the beam doesn't bounce around.
+            // This is mostly guessed from images of FTL, and may vary quite a bit.
+            // So long as it looks reasonable though that shouldn't be an issue, since
+            // this is purely cosmetic.
+            // It can start in any of the four corners, and apply a large amount of
+            // randomisation in addition.
+            originPos.set(1000, 1000)
+
+            if (Random.nextBoolean())
+                originPos.x *= -1
+            if (Random.nextBoolean())
+                originPos.y *= -1
+
+            val range = 350
+            originPos.x += Random.nextInt(-range..range)
+            originPos.y += Random.nextInt(-range..range)
+
+            originPos += target.targetShip.shieldOrigin
         }
     }
 
