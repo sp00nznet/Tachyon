@@ -22,6 +22,8 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     val rechargeDelay: Float get() = 2f
 
     override fun update(dt: Float) {
+        super.update(dt)
+
         if (activeShields == selectedShieldBars)
             return
 
@@ -42,11 +44,17 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     }
 
     override fun increasePower() {
+        if (isPowerLocked)
+            return
+
         selectedShieldBars++
         powerStateChanged()
     }
 
     override fun decreasePower() {
+        if (isPowerLocked)
+            return
+
         if (selectedShieldBars > 0)
             selectedShieldBars--
 

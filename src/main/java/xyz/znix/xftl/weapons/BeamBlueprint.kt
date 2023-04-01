@@ -158,7 +158,7 @@ class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
 
                         // If we hit a new room, damage it
                         if (lastRoom != lastRoomPos!!.room) {
-                            targetShip.damage(lastRoomPos!!.room, beamPower, beamPower)
+                            targetShip.damage(lastRoomPos!!.room, beamPower, beamPower, 0)
                         }
 
                         // TODO deal crew damage - this is done on entry

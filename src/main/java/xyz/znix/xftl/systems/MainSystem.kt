@@ -2,16 +2,18 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
+import kotlin.math.max
+import kotlin.math.min
 
 abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractSystem(blueprint, elem) {
     private var simpleSelectedEnergyLevel: Int = 1
     open val powerSelected: Int get() = simpleSelectedEnergyLevel
 
-    val powerAvailableSys: Int get() = energyLevels - damagedEnergyLevels
+    val powerAvailable: Int get() = min(undamagedEnergy, ship.powerAvailable + powerSelected)
 
-    val powerAvailable: Int get() = Math.min(powerAvailableSys, ship.powerAvailable + powerSelected)
+    val powerUnused: Int get() = min(undamagedEnergy - powerSelected, ship.powerAvailable)
 
-    val powerUnused: Int get() = Math.min(powerAvailableSys - powerSelected, ship.powerAvailable)
+    open val isPowerLocked: Boolean get() = ionDamage > 0
 
     abstract val sortingType: SortingType
 
@@ -21,12 +23,18 @@ abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractS
     }
 
     open fun increasePower() {
+        if (isPowerLocked)
+            return
+
         simpleSelectedEnergyLevel++
         powerStateChanged()
     }
 
     open fun decreasePower() {
-        simpleSelectedEnergyLevel = Math.max(0, simpleSelectedEnergyLevel - 1)
+        if (isPowerLocked)
+            return
+
+        simpleSelectedEnergyLevel = max(0, simpleSelectedEnergyLevel - 1)
         powerStateChanged()
     }
 

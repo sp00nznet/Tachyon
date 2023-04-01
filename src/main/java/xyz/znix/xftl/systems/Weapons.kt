@@ -19,6 +19,8 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     val selectedTargets = TargetList()
 
     override fun update(dt: Float) {
+        super.update(dt)
+
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
             weapon.update(dt)

@@ -15,10 +15,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Event
-import xyz.znix.xftl.systems.Drones
-import xyz.znix.xftl.systems.MainSystem
-import xyz.znix.xftl.systems.SelectedTarget
-import xyz.znix.xftl.systems.Weapons
+import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*

@@ -693,7 +693,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
-        damage(target, type.damage, type.sysDamage)
+        damage(target, type.damage, type.sysDamage, type.ionDamage)
 
         if (!vfx) return
 
@@ -707,9 +707,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         animations += FloatingAnimation.centered(animation.start(), position)
     }
 
-    fun damage(target: Room, damage: Int, systemDamage: Int) {
+    fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
         health -= damage
-        target.system?.dealDamage(systemDamage)
+        target.system?.dealDamage(systemDamage, ionDamage)
     }
 
     fun resetAfterJump() {
