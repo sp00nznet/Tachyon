@@ -110,6 +110,7 @@ class ResourceSet() : Map<Resource, Int> {
         this.scrap += other.scrap
         this.droneParts += other.droneParts
         this.missiles += other.missiles
+        this.items += other.items
     }
 
     companion object {

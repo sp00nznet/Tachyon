@@ -216,17 +216,11 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
     private fun cmdWeapon(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         getWeapon { weapon ->
-            for ((i, bp) in ship.cargoBlueprints.withIndex()) {
-                if (bp != null)
-                    continue
-
-                ship.cargoBlueprints[i] = weapon
-                ship.cargoUpdated()
-                lines.add("Added weapon ${weapon.translateTitle(game)} to cargo slot ${i + 1}.")
-                return@getWeapon
+            if (ship.addBlueprint(weapon, false)) {
+                lines.add("Added weapon ${weapon.translateTitle(game)} to ship inventory.")
+            } else {
+                lines.add("No space in cargo hold, can't add weapon.")
             }
-
-            lines.add("No space in cargo hold, can't add weapon.")
         }
     }
 

@@ -830,6 +830,52 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         sys.shipUI.shipModified()
     }
 
+    /**
+     * Place an item in this ship's inventory.
+     *
+     * If [forced] is true and the ship's inventory is full, the item is placed
+     * into the left-behind-when-you-jump window. Otherwise, nothing happens.
+     *
+     * @return True if the item fits in the ship, false otherwise.
+     */
+    fun addBlueprint(item: Blueprint, forced: Boolean): Boolean {
+        if (item is ShipWeaponBlueprint) {
+            for (slot in 0 until weaponSlots!!) {
+                if (hardpoints[slot].weapon != null)
+                    continue
+
+                hardpoints[slot].weapon = item.buildInstance(this)
+                cargoUpdated()
+                return true
+            }
+        }
+
+        val drones = drones
+        if (item is DroneBlueprint && drones != null) {
+            for (slot in 0 until droneSlots!!) {
+                if (drones.blueprints[slot] != null)
+                    continue
+
+                drones.blueprints[slot] = item
+                cargoUpdated()
+                return true
+            }
+        }
+
+        for ((slot, current) in cargoBlueprints.withIndex()) {
+            if (current != null)
+                continue
+
+            cargoBlueprints[slot] = item
+            cargoUpdated()
+            return true
+        }
+
+        // TODO handle forced=true.
+
+        return false
+    }
+
     companion object {
         private fun findDefaultShipElement(df: Datafile, name: String): Element? {
             val blueprints = df.parseXML(df["data/blueprints.xml"])

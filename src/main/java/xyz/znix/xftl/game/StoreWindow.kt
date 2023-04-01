@@ -326,24 +326,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                     store.weapons[i] = null
                     updateButtons() // Make this button show as sold out
 
-                    for (slot in 0 until ship.weaponSlots!!) {
-                        if (ship.hardpoints[slot].weapon != null)
-                            continue
-
-                        ship.hardpoints[slot].weapon = weapon!!.buildInstance(ship)
-                        ship.cargoUpdated()
-                        return
-                    }
-
-                    for ((slot, current) in ship.cargoBlueprints.withIndex()) {
-                        if (current != null)
-                            continue
-                        ship.cargoBlueprints[slot] = weapon
-                        ship.cargoUpdated()
-                        return
-                    }
-
-                    error("Couldn't find space to place purchased weapon!")
+                    if (!ship.addBlueprint(weapon!!, false))
+                        error("Couldn't find space to place purchased weapon!")
                 }
             })
         }

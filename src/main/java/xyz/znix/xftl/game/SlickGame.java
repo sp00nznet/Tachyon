@@ -551,7 +551,10 @@ public class SlickGame extends BasicGame {
         player.setDronesCount(player.getDronesCount() + resources.getDroneParts());
         player.setMissilesCount(player.getMissilesCount() + resources.getMissiles());
         player.setScrap(player.getScrap() + resources.getScrap());
-        // TODO give player items
+
+        for (Blueprint item : resources.getItems()) {
+            player.addBlueprint(item, true);
+        }
     }
 
     public interface RoomClickListener {
