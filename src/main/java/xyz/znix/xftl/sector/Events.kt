@@ -130,7 +130,7 @@ class Event(
         // eg destroying a ship usually gives STANDARD/MEDIUM rewards.
         if (autoRewards != null) {
             val sector = game.currentBeacon.sector.sectorNumber + 1
-            val rewards = LootDropGenerator.generateRewards(autoRewards.second, autoRewards.first, sector)
+            val rewards = LootDropGenerator.generateRewards(game, autoRewards.second, autoRewards.first, sector)
             resourcesGained += rewards
         }
 

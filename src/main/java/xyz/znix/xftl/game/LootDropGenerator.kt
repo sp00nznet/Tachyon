@@ -27,7 +27,7 @@ object LootDropGenerator {
         return (base * rand).toInt()
     }
 
-    fun generateRewards(tier: RewardTier, type: RewardType, sector: Int): ResourceSet {
+    fun generateRewards(game: SlickGame, tier: RewardTier, type: RewardType, sector: Int): ResourceSet {
         val resources = ResourceSet()
         var remainingType = type
 
@@ -62,7 +62,12 @@ object LootDropGenerator {
 
         if (RewardType.ITEMS.contains(remainingType)) {
             resources.scrap += generateScrap(tier, sector)
-            println("Generate reward item $remainingType")
+            resources.items += when (remainingType) {
+                RewardType.WEAPON -> game.lootPool.getWeapon()
+                RewardType.DRONE -> TODO("Drone random drops")
+                RewardType.AUGMENT -> TODO("Augment random drops")
+                else -> error("Unknown autoReward type: $remainingType")
+            }
         }
 
         return resources
