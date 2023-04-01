@@ -80,17 +80,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     // The position of the weapons box
     val weaponBoxY get() = height - 113
 
-    fun sysImgX(i: Int, system: AbstractSystem?): Int {
-        if (system == ship.drones && ship.weapons != null) {
-            // The drones are shifted by the width of the weapons area
-            return sysImgX(i - 1, null) + 48 + ship.weaponSlots!! * 97
-        }
-
-        return 58 + i * 36
-    }
-
-    fun sysImgY(i: Int): Int = height - 69
-
     init {
         updateButtons()
     }
@@ -149,23 +138,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 beamTargeting = null
             }
             return
-        }
-
-        var i = 0
-        for (sys in sortedMainSystems()) {
-            val imgX = sysImgX(i, sys) + 19
-            val imgY = sysImgY(i) + 19
-
-            if (x >= imgX && y >= imgY && x < imgX + 26 && y < imgY + 26) {
-                if (button == MOUSE_LEFT_BUTTON && sys.powerUnused > 0) {
-                    sys.increasePower()
-                } else if (button == MOUSE_RIGHT_BUTTON && sys.powerSelected > 0) {
-                    sys.decreasePower()
-                }
-                return
-            }
-
-            i++
         }
 
         for (btn in buttons) {
@@ -418,40 +390,49 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             }
         }
 
-        // Draw the systems
-        var systemCount = 0
-
+        // Draw the systems and the wires under them
         val sortedSystems = sortedMainSystems().collect(Collectors.toList())
-        for (sys in sortedSystems) {
-            sys.drawIconAndPower(game, g, sysImgX(systemCount, sys), sysImgY(systemCount))
-            systemCount++
-        }
 
-        // Draw the wires between the systems
         var weaponPowerX: Int? = null
         var dronePowerX: Int? = null
-        for (i in 0 until systemCount) {
+        var powerX = 58
+        val powerY = height - 69
+        for ((i, system) in sortedSystems.withIndex()) {
             // Draw the power bar to the next item
-            val powerX = sysImgX(i, sortedSystems[i]) + 31
-            val powerY = sysImgY(i) + 45 + 12 - 26
+            val wireX = powerX + 31
+            val wireY = powerY +
+                    45 + // Top of the power button image to the bottom
+                    12 + // Distance between the power button and the main horizontal wire
+                    -26 // Go back up to the top of the wire image
 
             // Save the position of the weapon and drone power icons, since
             // they're used to position the weapon and drone selection boxes.
-            if (sortedSystems[i] is Weapons)
-                weaponPowerX = powerX
-            if (sortedSystems[i] is Drones)
-                dronePowerX = powerX
+            if (system is Weapons)
+                weaponPowerX = wireX
+            if (system is Drones)
+                dronePowerX = wireX
+
+            if (updatingButtons) {
+                buttons += SystemPowerButton(ConstPoint(powerX + 19, powerY + 19), system)
+            }
+
+            powerX += when (system) {
+                is Weapons -> 48 + ship.weaponSlots!! * 97
+                is Drones -> 48 + ship.droneSlots!! * 97
+                else -> 36
+            }
 
             // Don't draw the bar under the last item - since each item draws the
             // wire to the next item, this would result in a wire sticking out.
-            if (i == systemCount - 1)
+            if (i == sortedSystems.size - 1)
                 continue
 
-            val lastSystem = i == systemCount - 2
+            val lastSystem = i == sortedSystems.size - 2
 
             val image = when {
-                !lastSystem -> game.getImg("img/wireUI/wire_36.png")
-                ship.weapons != null && ship.drones != null -> {
+                // Remember that we'll only run this if this isn't the last system,
+                // so we won't be drawing a wire under weapons if drones isn't installed.
+                system is Weapons -> {
                     // Draw the wire that goes under the weapons to the drone system
                     val name = when (ship.weaponSlots) {
                         4 -> "img/wireUI/wire_456_cap.png"
@@ -460,9 +441,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     game.getImg(name)
                 }
 
-                else -> game.getImg("img/wireUI/wire_36_cap.png")
+                lastSystem -> game.getImg("img/wireUI/wire_36_cap.png")
+                else -> game.getImg("img/wireUI/wire_36.png")
             }
-            image.draw(powerX.f, powerY.f)
+            image.draw(wireX.f, wireY.f)
         }
 
         // If a weapon is being targeted, check that our click event is still the game's active click
@@ -850,6 +832,28 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 g.fillRect((pos.x + 4).f, y.f, 16f, 7f)
             }
         }
+    }
+
+    /**
+     * This is the button that adjusts a system's power.
+     */
+    private inner class SystemPowerButton(pos: IPoint, val system: AbstractSystem) : Button(pos, ConstPoint(26, 26)) {
+        override fun draw(g: Graphics) {
+            system.drawIconAndPower(game, g, pos.x - 19, pos.y - 19)
+        }
+
+        override fun click(button: Int) {
+            // You can't adjust the power of subsystems
+            if (system !is MainSystem)
+                return
+
+            if (button == MOUSE_LEFT_BUTTON && system.powerUnused > 0) {
+                system.increasePower()
+            } else if (button == MOUSE_RIGHT_BUTTON && system.powerSelected > 0) {
+                system.decreasePower()
+            }
+        }
+
     }
 
     companion object {

@@ -782,6 +782,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         shields = systems.mapNotNull { it as? Shields }.firstOrNull()
         piloting = systems.mapNotNull { it as? Piloting }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
+
+        // The UI will need to change to reflect this
+        // Note that shipUI may be called this this function is called
+        // very early on, right after ship initialisation.
+        sys.shipUI?.shipModified()
     }
 
     fun cargoUpdated() {
