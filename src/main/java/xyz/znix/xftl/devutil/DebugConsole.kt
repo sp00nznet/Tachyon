@@ -478,7 +478,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     // than the body text. This makes it easier to find a specific
                     // event.
                     if (eventSearchIds)
-                        searcher.rank(name) * 10
+                        score += searcher.rank(name) * 10
 
                     // And the body of the event text - just search the first
                     // available one, it'd get a bit unmanageable otherwise.
