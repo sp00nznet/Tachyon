@@ -110,4 +110,10 @@ abstract class Window {
             button.update(x, y)
         }
     }
+
+    /**
+     * Called whenever the ship is changed in some way - for example,
+     * weapons are added or moved around.
+     */
+    open fun shipModified() {}
 }

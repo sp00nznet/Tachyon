@@ -776,6 +776,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
     }
 
+    fun cargoUpdated() {
+        // Update all the buttons that have to change to reflect
+        // the cargo being modified.
+        sys.shipUI.shipModified()
+    }
+
     companion object {
         private fun findDefaultShipElement(df: Datafile, name: String): Element? {
             val blueprints = df.parseXML(df["data/blueprints.xml"])

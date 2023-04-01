@@ -93,10 +93,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
         draggingBlueprint?.drawDrag()
     }
 
-    /**
-     * Call when the ship's cargo has been updated, to reflect the changes in the UI.
-     */
-    fun shipCargoUpdated() {
+    fun shipModified() {
         updateButtons()
     }
 
@@ -382,6 +379,6 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
         dst.set(drag.blueprint)
         src.set(replacing)
 
-        updateButtons()
+        ship.cargoUpdated()
     }
 }

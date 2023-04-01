@@ -748,6 +748,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         insufficientScrapTimer = INSUFFICIENT_SCRAP_FLASH_TIME * 5
     }
 
+    fun shipModified() {
+        updateButtons()
+        currentWindow?.shipModified()
+    }
+
     private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int) : Button(pos, ConstPoint(87, 39)) {
         abstract val empty: Boolean
         abstract val name: String

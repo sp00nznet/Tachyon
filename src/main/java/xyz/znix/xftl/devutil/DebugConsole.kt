@@ -220,6 +220,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     continue
 
                 ship.cargoBlueprints[i] = weapon
+                ship.cargoUpdated()
                 lines.add("Added weapon ${weapon.translateTitle(game)} to cargo slot ${i + 1}.")
                 return@getWeapon
             }

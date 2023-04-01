@@ -331,7 +331,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                             continue
 
                         ship.hardpoints[slot].weapon = weapon!!.buildInstance(ship)
-                        sellPanel.shipCargoUpdated()
+                        ship.cargoUpdated()
                         return
                     }
 
@@ -339,7 +339,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                         if (current != null)
                             continue
                         ship.cargoBlueprints[slot] = weapon
-                        sellPanel.shipCargoUpdated()
+                        ship.cargoUpdated()
                         return
                     }
 
@@ -384,6 +384,11 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
         if (sellTab)
             sellPanel.updateUI(x, y)
+    }
+
+    override fun shipModified() {
+        super.shipModified()
+        sellPanel.shipModified()
     }
 
     abstract inner class BuyButton(pos: IPoint, images: ButtonImageSet, val priceOffset: IPoint) :

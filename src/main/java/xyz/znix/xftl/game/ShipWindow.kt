@@ -109,6 +109,11 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         equipmentPanel.drawDrag()
     }
 
+    override fun shipModified() {
+        super.shipModified()
+        equipmentPanel.shipModified()
+    }
+
     private fun drawUpgrades(g: Graphics) {
         // Draw the ship name
         val name = "The Kestrel" // TODO
