@@ -13,11 +13,11 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
     var firingAnimation: Animation? = null
     var hasFired: Boolean = false
 
-    private var weapons: Weapons? = null
-    private var target: Room? = null
+    protected var weapons: Weapons? = null
+    protected var target: Room? = null
 
-    private var shotsFired: Int = 0
-    private var lastProjectile: AbstractProjectile? = null
+    protected var shotsFired: Int = 0
+    protected var lastProjectile: AbstractProjectile? = null
 
     override fun update(dt: Float, canCharge: Boolean) {
         super.update(dt, canCharge)
@@ -51,7 +51,7 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
             super.render(g)
     }
 
-    private fun fireFrameHit() {
+    protected open fun fireFrameHit() {
         val projectile = buildProjectile(target!!)
         val hp = weapons!!.findHardpoint(this)
         lastProjectile?.run { projectile.angle = angle }

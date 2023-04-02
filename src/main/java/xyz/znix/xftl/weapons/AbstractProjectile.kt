@@ -41,7 +41,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
      */
     val position: IPoint get() = mutablePosition
 
-    fun update(dt: Float) {
+    open fun update(dt: Float) {
         timeInFlight += dt
 
         calculatePositionFor(distance, mutablePosition)
@@ -65,9 +65,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
             if (missed == true)
                 return
 
-            // TODO shields
-
-            ship.damage(target, type)
+            hitHull()
 
             ship.inboundProjectiles.remove(this)
         }
@@ -92,9 +90,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         // We're inside the shield!
         passedShields = true
 
-        val shields = ship.shields
-
-        if (shields == null || shields.activeShields == 0)
+        if ((ship.shields?.activeShields ?: 0) == 0)
             return
 
         resolveMissed()
@@ -102,15 +98,23 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         if (missed == true)
             return
 
-        shields.activeShields--
+        hitShields()
 
         ship.inboundProjectiles.remove(this)
+    }
+
+    protected open fun hitShields() {
+        ship.shields!!.activeShields--
         ship.playDamageEffect(type, position)
+    }
+
+    protected open fun hitHull() {
+        ship.damage(target, type)
     }
 
     abstract fun render(g: Graphics, x: Float, y: Float, rotation: Float)
 
-    private fun calculatePositionFor(dist: Float, output: Point) {
+    protected open fun calculatePositionFor(dist: Float, output: Point) {
         val offX = cos(angle.toDouble()) * dist
         val offY = sin(angle.toDouble()) * dist
         output.x = offX.toInt() + target.offsetX + target.width * ROOM_SIZE / 2

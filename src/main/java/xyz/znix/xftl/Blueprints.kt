@@ -81,6 +81,7 @@ class BlueprintManager(df: Datafile) {
             "MISSILES" -> MissileBlueprint(elem)
             "BEAM" -> BeamBlueprint(elem)
             "BOMB" -> BombBlueprint(elem)
+            "BURST" -> FlakBlueprint(elem)
             else -> UknShipWeaponBlueprint(elem)
         }
     }
