@@ -17,10 +17,12 @@ import xyz.znix.xftl.requireAttributeValue
  */
 interface IEvent {
     fun resolve(): Event
+
+    abstract val debugId: String
 }
 
 class Event(
-    val text: IEventText?, val choices: List<Choice>, elem: Element, val debugId: String,
+    val text: IEventText?, val choices: List<Choice>, elem: Element, override val debugId: String,
     imageFinder: (String) -> ImageList
 ) : IEvent {
     val isDistressBeacon: Boolean = elem.getChild("distressBeacon") != null
@@ -142,6 +144,8 @@ class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {
     val events by lazy { events.map { it.value } }
 
     override fun resolve() = events.random().resolve()
+
+    override val debugId: String get() = name
 }
 
 class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {

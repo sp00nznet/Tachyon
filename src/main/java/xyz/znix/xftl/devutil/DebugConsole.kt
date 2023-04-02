@@ -345,7 +345,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     }
 
     private fun getEvent(callback: (IEvent) -> Unit) {
-        data class EventInfo(val event: Event, val text: String)
+        data class EventInfo(val event: IEvent, val text: String?)
 
         continued = object : ContinuedCommand() {
             // A little caching for the search
@@ -416,9 +416,10 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
                     val descriptionX = x + idWidth + 10
                     val descriptionWidth = width - descriptionX - 5f
+                    val text = event.text ?: "<event list>"
                     font.drawStringTruncated(
                         descriptionX.f, y + 10f, descriptionWidth,
-                        event.text.replace("\n", " \\n "),
+                        text.replace("\n", " \\n "),
                         Color.white
                     )
 
@@ -469,8 +470,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                 val searcher = FuzzySearcher(line)
 
                 val events = game.eventManager.eventNames.mapNotNull { name ->
-                    // Filter out event lists
-                    val event = game.eventManager[name] as? Event ?: return@mapNotNull null
+                    val event = game.eventManager[name]
 
                     var score = 0
 
@@ -479,6 +479,10 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     // event.
                     if (eventSearchIds)
                         score += searcher.rank(name) * 10
+
+                    // If this is an event list, we can't search it's text
+                    if (event !is Event)
+                        return@mapNotNull Pair(EventInfo(event, null), score)
 
                     // And the body of the event text - just search the first
                     // available one, it'd get a bit unmanageable otherwise.
@@ -494,12 +498,8 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                         }
                     }
 
-                    return@mapNotNull if (score == 0) {
-                        null
-                    } else {
-                        Pair(EventInfo(event, textBody), score)
-                    }
-                }.sortedByDescending { it.second }
+                    Pair(EventInfo(event, textBody), score)
+                }.filter { it.second != 0 }.sortedByDescending { it.second }
 
                 visibleEvents.clear()
                 visibleEvents.addAll(events.map { it.first })
