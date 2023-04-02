@@ -89,20 +89,33 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         val resourcesGained = currentEvent.resources
         if (resourcesGained.isNotEmpty() || resourcesGained.items.isNotEmpty()) {
-            textY += 27
+            // The box is centred 43 pixels below the baseline of the last line of
+            // the event text.
+            val boxMiddleY = textY + 43
+
             val boxSize = findResourceBoxSize(resourcesGained)
             val boxX = position.x + (size.x - boxSize.x) / 2
-            val boxPos = ConstPoint(boxX, textY)
+            val boxY = boxMiddleY - boxSize.y / 2
+            val boxPos = ConstPoint(boxX, boxY)
             drawResourceBox(g, resourcesGained, boxPos, boxSize)
-            textY += boxSize.y
 
-            textY += 51
+            // The spacing between the event text and the options is constant, regardless
+            // of the size of the rewards.
+            textY += 95
         } else {
-            textY += 60
+            textY += 45
         }
 
         val rebuildBBs = optionBoundingBoxes.isEmpty()
 
+        // You can think of each option having a top and bottom Y. For text
+        // events there's a spacing between the top of the space and the baseline
+        // of the text (TEXT_OPTION_TOP_OFFSET), and then another offset from
+        // the baseline to the bottom of the option (which is the top of the next
+        // option) - TEXT_OPTION_BOTTOM_MARGIN.
+        // When resources are involved, the top of the resource box sits exactly
+        // at the option's Y top, and there's 10 pixels (RESOURCE_BOTTOM_MARGIN)
+        // between the bottom of the box and the start of the next option.
         for ((i, option) in options.withIndex()) {
             val choice = if (currentEvent.event.choices.isNotEmpty()) currentEvent.event.choices[i] else null
             val colour = when {
@@ -127,31 +140,20 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             if (hasResources && choice != null && !choice.hidden && !option.event.itemsModifySteal) {
                 val boxSize = findResourceBoxSize(option.resources)
 
-                // A normal line of text is 32 pixels high including padding. Thus find
-                // out what the intended top of this option's area is.
-                val normalPadding = (OPTION_SPACING - FONT_HEIGHT) / 2
-                val topY = textY - FONT_HEIGHT - normalPadding
-
-                // Figure out the height of this entry, including padding
-                val padding = 8
-                val height = boxSize.y + padding
-
                 val boxX = textX + font.getWidth(text) + 10
-                val boxY = topY + padding / 2
-                val boxPos = ConstPoint(boxX, boxY)
+                val boxPos = ConstPoint(boxX, textY)
                 drawResourceBox(g, option.resources, boxPos, boxSize)
 
                 // Align the text with the middle of the box
                 // TODO multiline support - this can be tested with the ENGI_REFUGEES event
-                // Since the font is referenced at it's baseline, we go half way down
-                // the box to reach it's middle, then down another half-line-width
-                // so that the middle of the text will align with the middle of the box.
-                val lineY = boxY + (boxSize.y + FONT_HEIGHT) / 2
+                val textTop = textY + (boxSize.y - FONT_HEIGHT) / 2
+                val lineY = textTop + FONT_HEIGHT
                 drawText(lineY, text, colour, rebuildBBs)
-                textY += height
+                textY += boxSize.y + RESOURCE_BOTTOM_MARGIN
             } else {
+                textY += TEXT_OPTION_TOP_OFFSET
                 textY = drawText(textY, text, colour, rebuildBBs)
-                textY += OPTION_SPACING
+                textY += TEXT_OPTION_BOTTOM_MARGIN
             }
         }
     }
@@ -165,7 +167,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             height += 32
 
         for (bp in resourceSet.items) {
-            val bpWidth = when (bp) {
+            val bpWidth: Int = when (bp) {
                 is ShipWeaponBlueprint -> {
                     val nameWidth = resourceNumFont.getWidth(game.translator[bp.title!!])
                     val img = bp.getLauncher(game).chargedImage
@@ -305,6 +307,14 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
     companion object {
         private const val FONT_HEIGHT = 11
-        private const val OPTION_SPACING = 32
+
+        // Text-only options (no resources) are spaced 32 pixels apart
+        private const val TEXT_OPTION_SPACING = 32
+
+        // The pixels between the top of an option and where it's text is placed
+        private const val TEXT_OPTION_TOP_OFFSET = 15
+        private const val TEXT_OPTION_BOTTOM_MARGIN = TEXT_OPTION_SPACING - TEXT_OPTION_TOP_OFFSET
+
+        private const val RESOURCE_BOTTOM_MARGIN = 10
     }
 }
