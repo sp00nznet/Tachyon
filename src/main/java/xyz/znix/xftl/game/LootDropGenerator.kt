@@ -64,7 +64,7 @@ object LootDropGenerator {
             resources.scrap += generateScrap(tier, sector)
             resources.items += when (remainingType) {
                 RewardType.WEAPON -> game.lootPool.getWeapon()
-                RewardType.DRONE -> TODO("Drone random drops")
+                RewardType.DRONE -> game.lootPool.getDrone()
                 RewardType.AUGMENT -> TODO("Augment random drops")
                 else -> error("Unknown autoReward type: $remainingType")
             }

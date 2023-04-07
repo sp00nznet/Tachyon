@@ -122,7 +122,7 @@ class Event(
         resourcesGained.items += blueprintRewards.map { name ->
             when (name) {
                 "xftl_rand_weapon" -> game.lootPool.getWeapon()
-                "xftl_rand_drone" -> TODO()
+                "xftl_rand_drone" -> game.lootPool.getDrone()
                 "xftl_rand_augment" -> TODO()
                 else -> game.blueprintManager[name].resolve()
             }

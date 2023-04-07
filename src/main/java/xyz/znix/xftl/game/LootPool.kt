@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.sector.SectorType
+import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
 class LootPool(bpManager: BlueprintManager, sector: SectorType?) {
@@ -32,6 +33,8 @@ class LootPool(bpManager: BlueprintManager, sector: SectorType?) {
     }
 
     fun getWeapon() = getRandom { it is ShipWeaponBlueprint } ?: error("No available weapons!")
+
+    fun getDrone() = getRandom { it is DroneBlueprint } ?: error("No available drones!")
 
     fun getRandom(filter: (Blueprint) -> Boolean): Blueprint? {
         val candidates = pool.asSequence().filter(filter).toList()
