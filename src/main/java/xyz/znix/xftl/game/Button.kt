@@ -213,6 +213,15 @@ object Buttons {
 
         override fun draw(g: Graphics) {
             imgBase.draw(imgPos)
+
+            // Change the colour if the button is hovered. Since there's only
+            // one image, draw a rounded box over it - this is how vanilla
+            // FTL does it.
+            if (hovered) {
+                g.color = Constants.UI_BUTTON_HOVER
+                drawRounded(g, imgPos.x + 12, imgPos.y + 12, 78, 31, 3)
+            }
+
             font.drawString(pos.x + 11f, pos.y + 26f, "STORE", Constants.JUMP_DISABLED_TEXT)
         }
 
