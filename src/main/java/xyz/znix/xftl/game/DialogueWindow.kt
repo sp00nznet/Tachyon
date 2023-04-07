@@ -11,11 +11,15 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Event
+import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.max
 
 class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window() {
-    override val size: IPoint get() = ConstPoint(602, 377)
+    // We have to include the margin from the glow
+    // around the window, which is 7 pixels per side.
+    override val size: IPoint get() = ConstPoint(602 + 7 * 2, 377 + 7 * 2)
+
     override val outlineImage = game.getImg("img/window_base.png")
 
     private val resourceNumFont = game.getFont("JustinFont10")
@@ -175,7 +179,16 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
                     10 + img.height + 10 + nameWidth + 16
                 }
 
-                else -> TODO()
+                is DroneBlueprint -> {
+                    val nameWidth = resourceNumFont.getWidth(game.translator[bp.title!!])
+
+                    // Not sure if +9 is appropriate, or iconSize should be bigger.
+                    height += bp.iconSize.y + 9
+
+                    10 + bp.iconSize.x + 8 + nameWidth + 12 // Approximate numbers
+                }
+
+                else -> TODO("Can't draw non-ship/drone blueprint: $bp")
             }
 
             width = max(width, bpWidth)
@@ -203,7 +216,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
         // If we drew some resources, move the blueprints down so they don't overlap
         if (resourceSet.isNotEmpty()) {
-            y += 30
+            y += 32
         }
 
         for (bp in resourceSet.items) {
@@ -242,16 +255,30 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             is ShipWeaponBlueprint -> {
                 val anim = bp.getLauncher(game)
 
-                bp.drawLauncherUI(game, boxX + 10f, textY + 4f)
+                bp.drawLauncherUI(game, boxX + 10f, textY + 2f)
 
                 // Draw the name
                 val name = game.translator[bp.title!!]
-                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY + 24f, name, Color.white)
+                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY + 22f, name, Color.white)
 
-                return textY + 44
+                return textY + 42
             }
 
-            else -> TODO()
+            is DroneBlueprint -> {
+                // Draw the drone icon - the Y here isn't right, but it's good enough for now. TODO do it properly.
+                val height = bp.iconSize.y + 9
+                val imgCentreY = textY + height / 2
+                bp.drawIconUI(game, ConstPoint(boxX.toInt() + 21, imgCentreY))
+
+                // Draw the name
+                val name = game.translator[bp.title!!]
+                val textX = boxX + 10 + bp.iconSize.x + 8
+                resourceNumFont.drawString(textX, imgCentreY.f + FONT_HEIGHT / 2, name, Color.white)
+
+                return 20
+            }
+
+            else -> TODO("Can't draw non-ship/drone blueprint: $bp")
         }
     }
 
