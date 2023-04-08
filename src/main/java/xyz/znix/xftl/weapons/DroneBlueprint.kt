@@ -1,6 +1,7 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
@@ -30,7 +31,33 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     }
 
     fun drawIconUI(game: SlickGame, pos: IPoint) {
-        val base = game.getImg("img/ship/drones/drone_${iconImage!!}_charged.png")
+        var base: Image? = null
+
+        // For indoor drones, use their portrait.
+        // For some reason, the ion intruder drone (BOARDER_ION) doesn't set
+        // it's iconImage such that we can access it - likely due to it being
+        // hardcoded - so leave it null to use missingImage.
+        if (iconImage != null) {
+            val portrait = "${iconImage}_portrait"
+            if (game.animations.animations.containsKey(portrait))
+                base = game.animations[portrait].spriteAt(0)
+        }
+
+        // Special-case the hacking drone, though obviously it's probably
+        // not great if the player is seeing this outside a debug menu.
+        if (name == "DRONE_HACKING") {
+            base = game.getImg("img/ship/drones/drone_hack_base.png")
+        }
+
+        // Otherwise use the outside charged image - this won't exist
+        // for indoor drones, so only use it if there isn't a portrait.
+        if (base == null && droneImage != null) {
+            base = game.getImg("img/ship/drones/${droneImage}_charged.png")
+        }
+
+        if (base == null)
+            base = game.missingImage
+
         base.draw(pos.x - base.width / 2f, pos.y - base.height / 2f)
 
         // TODO laser for defense drones

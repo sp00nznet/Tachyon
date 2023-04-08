@@ -525,6 +525,7 @@ public class SlickGame extends BasicGame {
         return eventManager;
     }
 
+    @NotNull
     public Image getMissingImage() {
         if (missingImage != null)
             return missingImage;
