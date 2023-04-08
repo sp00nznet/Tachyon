@@ -45,6 +45,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("store", 0, this::cmdStore, "Create a store at this beacon"),
         Cmd("event", 0, this::cmdEvent, "Load an event at this beacon"),
         Cmd("fix", 0, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
+        Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -261,6 +262,24 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         ship.health = ship.maxHealth
 
         lines.add("The ship has been repaired, all regular and ion damage was removed.")
+    }
+
+    private fun cmdClearDrones(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        fun clearFor(target: Ship) {
+            val drones = target.drones ?: return
+
+            for (info in drones.drones) {
+                info?.instance = null
+            }
+
+            target.orphanedDrones.clear()
+            target.dronePawns.clear()
+        }
+
+        clearFor(ship)
+        game.enemy?.let { clearFor(it) }
+
+        lines.add("All drones (including orphan drones) have been cleared from all ships")
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {
