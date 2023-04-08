@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.drones.AbstractDrone
+import xyz.znix.xftl.drones.RepairDrone
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -66,6 +67,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
 
     fun makeInstance(): AbstractDrone {
         return when (type) {
+            DroneType.REPAIR -> RepairDrone(this)
             else -> DummyDrone(this)
         }
     }

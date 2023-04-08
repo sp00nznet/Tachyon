@@ -19,7 +19,7 @@ abstract class AbstractCrew(
     mode: SlotType
 ) {
     var icon: Animation
-    val backImg: SpriteSheet
+    val backImg: SpriteSheet?
 
     // The cell position in the current room
     var position: Point = Point(0, 0)
@@ -31,6 +31,9 @@ abstract class AbstractCrew(
     val roomPosition: RoomPoint get() = RoomPoint(room, position)
 
     var roomWasDamaged: Boolean = false
+
+    open val canManSystem: Boolean = false
+    open val repairSpeed: Float = 1f
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
@@ -117,13 +120,13 @@ abstract class AbstractCrew(
     init {
         val anim = anims["${codename}_portrait"]
         icon = anim.start()
-        backImg = anim.sheet.secondary!!
+        backImg = anim.sheet.secondary
         updateAnimation()
     }
 
     fun slotsFor(room: Room) = mode.slotsFor(room)
 
-    fun update(dt: Float) {
+    open fun update(dt: Float) {
         icon.update((dt * 1000).toLong())
 
         val pos = position
@@ -165,30 +168,36 @@ abstract class AbstractCrew(
 
         room.system?.let { sys ->
             if (sys.damaged)
-                sys.repair(dt / BASE_REPAIR_TIME)
+                sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
             if (roomWasDamaged != sys.damaged)
                 updateAnimation()
             roomWasDamaged = sys.damaged
         }
     }
 
-    fun draw() {
+    open fun draw() {
         // Bit of a hack, since we're drawn from the ship
         val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
 
-        // Draw the background image - the coloured hint that changes when you mouse over the crew
         val cf = icon.currentFrame
-        val backSubImg = backImg.getSubImage(
-            (cf.textureOffsetX * cf.texture.textureWidth).toInt(),
-            (cf.textureOffsetY * cf.texture.textureHeight).toInt(),
-            cf.width,
-            cf.height
-        )
-        val backColour = when {
-            isSelected -> CREW_SELECTED_BG
-            else -> CREW_DESELECTED_BG
+
+        // Draw the background image - the coloured hint that changes
+        // when you mouse over the crew.
+        // This is missing for drones, which makes sense as you can't
+        // select them.
+        if (backImg != null) {
+            val backSubImg = backImg.getSubImage(
+                (cf.textureOffsetX * cf.texture.textureWidth).toInt(),
+                (cf.textureOffsetY * cf.texture.textureHeight).toInt(),
+                cf.width,
+                cf.height
+            )
+            val backColour = when {
+                isSelected -> CREW_SELECTED_BG
+                else -> CREW_DESELECTED_BG
+            }
+            backSubImg.draw(screenX.f, screenY.f, backColour)
         }
-        backSubImg.draw(screenX.f, screenY.f, backColour)
 
         // Draw the actual image
         cf.draw(screenX.f, screenY.f)
@@ -225,7 +234,7 @@ abstract class AbstractCrew(
         }
     }
 
-    private fun updateAnimation() {
+    protected fun updateAnimation() {
         if (movement != null) {
             icon = anims["${codename}_walk_${dirAsString(movement!!)}"].start()
             return
@@ -236,7 +245,7 @@ abstract class AbstractCrew(
             return
         }
 
-        if (room.computerPoint == position) {
+        if (room.computerPoint == position && canManSystem) {
             icon = anims["${codename}_type_${dirAsString(room.computerDirection!!)}"].start()
             return
         }
@@ -288,7 +297,7 @@ abstract class AbstractCrew(
         return true
     }
 
-    private fun clearFromRoomSlots(slots: Array<AbstractCrew?>) {
+    fun clearFromRoomSlots(slots: Array<AbstractCrew?>) {
         slots.forEachIndexed { index, crew ->
             if (crew == this)
                 slots[index] = null

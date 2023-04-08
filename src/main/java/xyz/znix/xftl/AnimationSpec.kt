@@ -5,6 +5,8 @@ import org.newdawn.slick.Image
 import java.lang.reflect.Field
 
 class AnimationSpec(val sheet: Animations.SpriteSheetSpec, val x: Int, val y: Int, val length: Int, val time: Float) {
+    val totalTime: Float get() = time * length
+
     fun start() = start(1f, false)
 
     fun start(tmult: Float, backwards: Boolean): Animation {

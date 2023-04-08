@@ -8,6 +8,8 @@ import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.HumanCrew
+import xyz.znix.xftl.drones.AbstractDrone
+import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
@@ -63,6 +65,15 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     val isAutoScout = shipNode.getChild("crewCount")?.getAttributeValue("amount")?.trim() == "0"
     val crew: MutableList<AbstractCrew> = ArrayList()
+
+    // All the indoors drones, owned by this ship (repair) or not (boarder) on this ship.
+    val dronePawns: MutableList<AbstractIndoorsDrone.Pawn> = ArrayList()
+
+    // These are the friendly drones that exist around the ship,
+    // even though they're been removed from the drones system. They're
+    // kept here so that if you take a blueprint out of the drones system
+    // then put it back in, you won't lose the drone.
+    val orphanedDrones = ArrayList<AbstractDrone>()
 
     val cargoBlueprints = ArrayList<Blueprint?>(listOf(null, null, null, null))
 
@@ -662,6 +673,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         for (crew in crew) {
             crew.draw()
         }
+        for (pawn in dronePawns) {
+            pawn.draw()
+        }
 
         // Draw the system foregrounds
         for (room in rooms)
@@ -701,8 +715,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         for (room in rooms)
             room.update(dt)
 
-        for (crew in crew)
+        // Duplicate the crew and drone lists, in case some are removed
+        // by dying or (in the case of drones) the enemy ship blowing up.
+        for (crew in crew.toTypedArray())
             crew.update(dt)
+        for (pawn in dronePawns.toTypedArray())
+            pawn.update(dt)
 
         ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
     }
