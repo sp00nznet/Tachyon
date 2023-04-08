@@ -3,6 +3,7 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -63,14 +64,31 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         // TODO laser for defense drones
     }
 
-    enum class DroneType {
-        COMBAT,
-        SHIP_REPAIR,
-        DEFENSE,
-        REPAIR,
-        BATTLE,
-        BOARDER,
-        HACKING,
-        SHIELD,
+    fun makeInstance(): AbstractDrone {
+        return when (type) {
+            else -> DummyDrone(this)
+        }
+    }
+
+    enum class DroneType(val needsHostileShip: Boolean) {
+        COMBAT(true),
+        SHIP_REPAIR(false),
+        DEFENSE(false),
+        REPAIR(false),
+        BATTLE(false),
+        BOARDER(true),
+        HACKING(true),
+        SHIELD(false),
+    }
+
+    // A fake drone that does nothing, to avoid the game crashing
+    // if an unsupported drone is deployed.
+    // (This is more useful with enemy ships, as otherwise
+    // unsupported drones being deployed by the enemy ship would trigger
+    // a for-the-player unavoidable crash, with no apparent reason).
+    private class DummyDrone(type: DroneBlueprint) : AbstractDrone(type) {
+        init {
+            println("WARNING: Initialising dummy drone ${type.name}, actual drone isn't implemented.")
+        }
     }
 }

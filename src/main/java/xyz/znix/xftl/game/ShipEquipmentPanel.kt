@@ -7,6 +7,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.systems.Drones
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
@@ -130,10 +131,11 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
         if (droneSystem != null) {
             val images = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_drones", true)
             val padding = 8
-            val baseX = (579 - (images.normal.width + padding) * droneSystem.blueprints.size) / 2
+            val baseX = (579 - (images.normal.width + padding) * droneSystem.drones.size) / 2
 
-            for ((i, drone) in droneSystem.blueprints.withIndex()) {
+            for ((i, droneInfo) in droneSystem.drones.withIndex()) {
                 val buttonPos = ConstPoint(baseX + i * (images.normal.width + padding), 180)
+                val drone = droneInfo?.type
 
                 // Use a separate variable so we can use the button in it's callback.
                 lateinit var button: Buttons.DragDropBlueprintButton
@@ -325,8 +327,8 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
                 val drones = ship.drones ?: break
 
                 return SlotAccess(
-                    { drones.blueprints[i] },
-                    { drones.blueprints[i] = it as DroneBlueprint? }
+                    { drones.drones[i]?.type },
+                    { drones.drones[i] = (it as DroneBlueprint?)?.let { bp -> Drones.DroneInfo(bp) } }
                 )
             }
 

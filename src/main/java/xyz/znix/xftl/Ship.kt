@@ -438,7 +438,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 val name = node.getAttributeValue("name")
                 val drone = sys.blueprintManager[name] as DroneBlueprint
 
-                drones!!.blueprints[idx] = drone
+                drones!!.drones[idx] = Drones.DroneInfo(drone, null)
             }
 
             // Load the starting number of drones
@@ -853,10 +853,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         val drones = drones
         if (item is DroneBlueprint && drones != null) {
             for (slot in 0 until droneSlots!!) {
-                if (drones.blueprints[slot] != null)
+                if (drones.drones[slot] != null)
                     continue
 
-                drones.blueprints[slot] = item
+                drones.drones[slot] = Drones.DroneInfo(item, null)
                 cargoUpdated()
                 return true
             }

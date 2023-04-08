@@ -483,7 +483,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             val weapon = ship.hardpoints[i].weapon
 
-            buttons += object : WeaponDroneButton(ConstPoint(wx, wy), i) {
+            buttons += object : WeaponDroneButton(ConstPoint(wx, wy), i, ConstPoint(87, 39)) {
                 override val empty: Boolean get() = weapon == null
                 override val name: String get() = game.translator[weapon!!.type.short!!]
                 override val requiredPower: Int get() = weapon!!.type.power
@@ -494,6 +494,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 override val isCharged: Boolean get() = weapon!!.isCharged
                 override val isTargeted: Boolean get() = ship.weapons!!.selectedTargets.getTarget(i) != null
                 override val isSelectingTarget: Boolean get() = targetingSelectedWeapon == i
+                override val hasChargeBar: Boolean get() = true
 
                 override fun click(button: Int) {
                     if (button == MOUSE_LEFT_BUTTON) {
@@ -509,9 +510,44 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         // Draw the drone area, if it's installed
         val drones = ship.drones
         if (drones != null) {
-            drawWeaponBox(dronePowerX!! + 1, "drones_label", ship.droneSlots!!)
+            val droneBoxX = dronePowerX!! + 1
+            drawWeaponBox(droneBoxX, "drones_label", ship.droneSlots!!)
 
-            // TODO draw the in-operation drone boxes - this seems very similar to weapons
+            // Draw the in-operation drone boxes - this seems very similar to weapons
+            for ((i, info) in drones.drones.withIndex()) {
+                val drone = info?.type
+                if (!updatingButtons)
+                    break
+
+                // The origin position of the drone button
+                val pos = ConstPoint(
+                    droneBoxX + WEAPON_BOX_GLOW + 4 + i * 97,
+                    weaponBoxY + 12 + 4
+                )
+
+                buttons += object : WeaponDroneButton(pos, i, ConstPoint(95, 39)) {
+                    override val empty: Boolean get() = drone == null
+                    override val name: String get() = game.translator[drone!!.short!!]
+                    override val requiredPower: Int get() = drone!!.power
+                    override val chargeTime: Float get() = error("Can't get charge time for drone")
+                    override val chargeProgress: Float get() = error("Can't get charge progress for drone")
+                    override val zoltanPower: Int get() = 0 // TODO
+                    override val isPowered: Boolean get() = info!!.instance?.isPowered == true
+                    override val isCharged: Boolean get() = isPowered // Always use the charged colour
+                    override val isTargeted: Boolean get() = false
+                    override val isSelectingTarget: Boolean get() = false
+                    override val hasChargeBar: Boolean get() = false
+
+                    override fun click(button: Int) {
+                        if (button == MOUSE_LEFT_BUTTON) {
+                            drones.setDronePower(i, true)
+                        }
+                        if (button == MOUSE_RIGHT_BUTTON) {
+                            drones.setDronePower(i, false)
+                        }
+                    }
+                }
+            }
         }
 
         // Draw the crew selection rectangle, if appropriate
@@ -739,7 +775,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         currentWindow?.shipModified()
     }
 
-    private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int) : Button(pos, ConstPoint(87, 39)) {
+    private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int, size: ConstPoint) :
+        Button(pos, size) {
         abstract val empty: Boolean
         abstract val name: String
         abstract val chargeTime: Float
@@ -750,6 +787,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         abstract val isCharged: Boolean
         abstract val isTargeted: Boolean
         abstract val isSelectingTarget: Boolean
+        abstract val hasChargeBar: Boolean
 
         override fun draw(g: Graphics) {
             val mainColour = when {
@@ -762,54 +800,58 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             g.color = mainColour
 
             // Draw the outline box
-            g.drawRect(pos.x.f, pos.y.f, (87 - 1).f, (39 - 1).f)
-            g.drawRect((pos.x + 1).f, (pos.y + 1).f, (87 - 3).f, (39 - 3).f)
+            g.drawRect(pos.x.f, pos.y.f, (size.x - 1).f, (size.y - 1).f)
+            g.drawRect((pos.x + 1).f, (pos.y + 1).f, (size.x - 3).f, (size.y - 3).f)
 
             if (empty)
                 return
 
-            val maxBarSize = 35 - 2
-            val barSize = (maxBarSize * chargeTime / maxWeaponChargeTime).toInt()
+            if (hasChargeBar) {
+                val maxBarSize = 35 - 2
+                val barSize = (maxBarSize * chargeTime / maxWeaponChargeTime).toInt()
 
-            // The Y position of the inside of the charge bar, relative to the main weapons box
-            val top = maxBarSize - barSize
+                // The Y position of the inside of the charge bar, relative to the main weapons box
+                val top = maxBarSize - barSize
 
-            // The top point of the triangle
-            val triangleTop = top - 7
+                // The top point of the triangle
+                val triangleTop = top - 7
 
-            for (j in 8 downTo 1) {
-                val triangleY = j + triangleTop
-                if (triangleY < 0)
-                    continue
-                val y = pos.y + triangleY
-                g.drawLine((pos.x - j).f, y.f, pos.x.f, y.f)
+                for (j in 8 downTo 1) {
+                    val triangleY = j + triangleTop
+                    if (triangleY < 0)
+                        continue
+                    val y = pos.y + triangleY
+                    g.drawLine((pos.x - j).f, y.f, pos.x.f, y.f)
+                }
+
+                if (isTargeted)
+                    g.color = WEAPONS_ITEM_TARGETING
+
+                val chargePx = (barSize * chargeProgress).toInt()
+                g.fillRect((pos.x - 5).f, (pos.y + 36 - chargePx).f, 4f, chargePx.f)
+
+                g.color = mainColour
+
+                g.lineWidth = 2f
+                g.drawLine(pos.x - 7.5f, pos.y.f + top.f + 1.5f, pos.x - 7.5f, pos.y + 39 - 1.5f)
+                g.drawLine(pos.x - 7.5f, pos.y + 39 - 1.5f, pos.x - 0.5f, pos.y + 39 - 1.5f)
+                g.lineWidth = 1f
             }
 
-            if (isTargeted)
-                g.color = WEAPONS_ITEM_TARGETING
-
-            val chargePx = (barSize * chargeProgress).toInt()
-            g.fillRect((pos.x - 5).f, (pos.y + 36 - chargePx).f, 4f, chargePx.f)
-
-            g.color = mainColour
-
-            g.lineWidth = 2f
-            g.drawLine(pos.x - 7.5f, pos.y.f + top.f + 1.5f, pos.x - 7.5f, pos.y + 39 - 1.5f)
-            g.drawLine(pos.x - 7.5f, pos.y + 39 - 1.5f, pos.x - 0.5f, pos.y + 39 - 1.5f)
-            g.lineWidth = 1f
-
             // Draw the weapon number box
+            val numBoxX = pos.x + size.x - 12
+            val numBoxY = pos.y + size.y - 15
             g.lineWidth = 2f
-            g.drawLine(pos.x.f + 75f + 0.5f, pos.y.f + 24f + 0.5f, pos.x.f + 75f + 0.5f, pos.y.f + 36f + 0.5f)
-            g.drawLine(pos.x.f + 75f + 0.5f, pos.y.f + 24f + 0.5f, pos.x.f + 85f + 0.5f, pos.y.f + 24f + 0.5f)
+            g.drawLine(numBoxX + 0.5f, numBoxY + 0.5f, numBoxX + 0.5f, numBoxY + 12f + 0.5f)
+            g.drawLine(numBoxX + 0.5f, numBoxY + 0.5f, numBoxX + 10f + 0.5f, numBoxY + 0.5f)
             g.lineWidth = 1f
 
             // Draw the weapon/drone number itself
             val weaponNumber = (slotNumber + 1).toString()
             val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
-            weaponNumberFont.drawStringLegacy(
-                (pos.x + 77 + 1 + (8 - weaponNumberWidth) / 2).f,
-                (pos.y + 30).f,
+            weaponNumberFont.drawString(
+                (numBoxX + 2 + 1 + (8 - weaponNumberWidth) / 2).f,
+                pos.y + size.y - 4f,
                 weaponNumber,
                 g.color
             )
@@ -818,7 +860,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             drawWeaponString(g, shortName, pos.x + 26, pos.y + 8)
 
             for (bar in 0 until requiredPower) {
-                val y = pos.y + 28 - bar * 8
+                val y = pos.y + size.y - 11 - bar * 8
 
                 if (zoltanPower > bar) {
                     g.color = WEAPONS_ITEM_ENERGY_ZOLTAN
