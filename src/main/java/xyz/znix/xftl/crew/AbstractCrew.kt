@@ -251,7 +251,13 @@ abstract class AbstractCrew(
         }
 
         // Since the portrait doesn't have a background colour frame, use the top-left frame.
-        icon = Animation(anims["${codename}_portrait"].sheet.sheet, 0, 0, 0, 0, true, 1, false)
+        // Drones need to use the correct image, though!
+        val portrait = anims["${codename}_portrait"]
+        if (backImg == null) {
+            icon = portrait.start()
+        } else {
+            icon = Animation(portrait.sheet.sheet, 0, 0, 0, 0, true, 1, false)
+        }
         return
     }
 
