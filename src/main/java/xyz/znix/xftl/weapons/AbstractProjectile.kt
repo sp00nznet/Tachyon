@@ -1,6 +1,5 @@
 package xyz.znix.xftl.weapons
 
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
@@ -10,12 +9,14 @@ import xyz.znix.xftl.math.Point
 import kotlin.math.cos
 import kotlin.math.sin
 
-abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val travelTime: Float) {
+abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val travelTime: Float) :
+    IProjectile {
+
     // The angle we are approaching the target at, in radians
     var angle: Float = (Math.random() * Math.PI * 2).toFloat()
 
     // The angle the projectile is heading in, in radians
-    val projectileAngle: Float
+    override val projectileAngle: Float
         get() {
             val shift = angle - Math.PI
             return (if (shift < 0) shift + Math.PI * 2 else shift).toFloat()
@@ -36,12 +37,9 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
     private val mutablePosition = Point(0, 0)
 
-    /**
-     * The position of this projectile on the screen, relative to the target ship
-     */
-    val position: IPoint get() = mutablePosition
+    override val position: IPoint get() = mutablePosition
 
-    open fun update(dt: Float) {
+    override fun update(dt: Float) {
         timeInFlight += dt
 
         calculatePositionFor(distance, mutablePosition)
@@ -74,7 +72,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     /**
      * Is this projectile 'dead' and can be safely removed?
      */
-    fun isDead(): Boolean {
+    override fun isDead(): Boolean {
         // If we missed and ran off the screen, get removed
         // TODO use the actual screen size for this - for now just assume that 10 000 px is when the user won't see them
         if (distance < -5_000) return true
@@ -111,8 +109,6 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     protected open fun hitHull() {
         ship.damage(target, type)
     }
-
-    abstract fun render(g: Graphics, x: Float, y: Float, rotation: Float)
 
     protected open fun calculatePositionFor(dist: Float, output: Point) {
         val offX = cos(angle.toDouble()) * dist

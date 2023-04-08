@@ -7,10 +7,7 @@ import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.Direction
-import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.math.RoomPoint
+import xyz.znix.xftl.math.*
 
 abstract class AbstractCrew(
     val codename: String,
@@ -22,11 +19,8 @@ abstract class AbstractCrew(
     val backImg: SpriteSheet?
 
     // The cell position in the current room
-    var position: Point = Point(0, 0)
-        set(value) {
-            field = value
-            updateAnimation()
-        }
+    private var positionInternal = Point(0, 0)
+    val position: IPoint get() = positionInternal
 
     val roomPosition: RoomPoint get() = RoomPoint(room, position)
 
@@ -75,7 +69,7 @@ abstract class AbstractCrew(
             if (value == null)
                 return
 
-            val target = position.copy()
+            val target = positionInternal.copy()
             target += value
 
             if (room.containsRelative(target))
@@ -129,7 +123,7 @@ abstract class AbstractCrew(
     open fun update(dt: Float) {
         icon.update((dt * 1000).toLong())
 
-        val pos = position
+        val pos = positionInternal
         if (movement != null) {
             movementProgress += dt * 2
 
@@ -208,8 +202,10 @@ abstract class AbstractCrew(
      * their desired target.
      */
     private fun updateMovement() {
-        if (pathingTarget == roomPosition)
+        if (pathingTarget == roomPosition) {
             pathingTarget = null
+            movement = null
+        }
 
         val immPt = pathingTarget ?: return
 
@@ -308,6 +304,18 @@ abstract class AbstractCrew(
             if (crew == this)
                 slots[index] = null
         }
+    }
+
+    /**
+     * Set the room and position to the given values.
+     *
+     * This ensures movement is updated appropriately and only once.
+     */
+    fun jumpTo(newRoom: Room, newPoint: IPoint) {
+        room = newRoom
+        positionInternal.set(newPoint)
+        updateMovement()
+        updateAnimation()
     }
 
     enum class SlotType {

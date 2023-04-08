@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.weapons.DroneBlueprint
@@ -18,6 +19,13 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
         val droneSlots = ship.droneSlots ?: 3
         while (drones.size < droneSlots)
             drones.add(null)
+    }
+
+    override fun drawBackground(g: Graphics) {
+        // Draw the departing boarding drones
+        for (info in drones) {
+            info?.instance?.drawBackground(g)
+        }
     }
 
 
@@ -124,6 +132,12 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
 
         info.instance!!.isPowered = power
         return true
+    }
+
+    fun enemyShipUpdated() {
+        for (drone in drones) {
+            drone?.instance?.onEnemyShipUpdated()
+        }
     }
 
     class DroneInfo(val type: DroneBlueprint, var instance: AbstractDrone? = null)

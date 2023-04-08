@@ -32,7 +32,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     lateinit var ship: Ship
         private set
 
-    lateinit var pawn: Pawn
+    var pawn: Pawn? = null
         private set
 
     protected open val repairSpeed: Float = 1f
@@ -80,18 +80,21 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         }
 
         // Move the drone to it's starting position
-        tmpPawn.position.set(tmpPawn.pathingTarget!!)
-        tmpPawn.room = targetRoom
+        tmpPawn.jumpTo(targetRoom, tmpPawn.pathingTarget!!)
 
         // TODO fix the drone driving up and down when spawned
 
         pawn = tmpPawn
-        ship.dronePawns += pawn
+        ship.dronePawns += tmpPawn
         return true
     }
 
     override fun destroy() {
         super.destroy()
+
+        // If the pawn was never spawned, there's nothing to clean up.
+        val pawn = this.pawn ?: return
+        this.pawn = null
 
         // Destroy the pawn
         for (room in ship.rooms) {
@@ -110,7 +113,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     override fun onPowerChanged() {
         super.onPowerChanged()
 
-        pawn.onPowerChanged()
+        pawn?.onPowerChanged()
     }
 
     /**
@@ -141,6 +144,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             val on = isPowered && powerUpDuration == 0f
             if (on) {
                 super.update(dt)
+                updatePawn(dt)
             } else {
                 icon.update((dt * 1000).toLong())
 
@@ -156,8 +160,6 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             // Keep track of whether the drone was turned off then on again
             // while paused, as the turning-on animation won't have to play.
             onLastUpdate = on
-
-            updatePawn(dt)
         }
 
         override fun draw() {

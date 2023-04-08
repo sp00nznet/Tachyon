@@ -81,7 +81,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     val hardpoints: List<Hardpoint>
 
-    val inboundProjectiles: MutableList<AbstractProjectile> = ArrayList()
+    val inboundProjectiles: MutableList<IProjectile> = ArrayList()
     val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val inboundBeams: MutableList<BeamBlueprint.BeamInstance> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
@@ -818,7 +818,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         val crewMember = HumanCrew(sys.animations, freeSpace.room, AbstractCrew.SlotType.CREW)
-        crewMember.position = Point(freeSpace)
+        crewMember.jumpTo(freeSpace.room, freeSpace)
         crew.add(crewMember)
         freeSpace.room.reservedPlayerSlots[freeSpace.room.pointToSlot(freeSpace)] = crewMember
 

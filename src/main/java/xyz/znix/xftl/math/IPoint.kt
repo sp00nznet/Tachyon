@@ -59,4 +59,8 @@ interface IPoint {
         val dy = other.y - y
         return dx * dx + dy * dy
     }
+
+    fun divideTruncate(n: Float): IPoint {
+        return ConstPoint((x / n).toInt(), (y / n).toInt())
+    }
 }

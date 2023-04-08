@@ -411,6 +411,13 @@ public class SlickGame extends BasicGame {
             enemyAI = null;
             hostileShipUI = null;
         }
+
+        // Update the drones system, as drones may need to disappear
+        // when the enemy ship is changed.
+        Drones playerDrones = player.getDrones();
+        if (playerDrones != null) {
+            playerDrones.enemyShipUpdated();
+        }
     }
 
     public boolean isInDanger() {

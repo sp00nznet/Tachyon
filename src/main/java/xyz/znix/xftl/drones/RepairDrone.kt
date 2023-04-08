@@ -21,9 +21,9 @@ class RepairDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
     override fun updatePawn(dt: Float) {
         // Check if we're idle and should scan for damaged systems.
-        if (pawn.pathingTarget != null)
+        if (pawn!!.pathingTarget != null)
             return
-        if (pawn.room.system?.damaged == true)
+        if (pawn!!.room.system?.damaged == true)
             return
 
         for (room in ship.rooms) {
@@ -33,7 +33,7 @@ class RepairDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
             // Try to path to this room. If we can then end the loop,
             // otherwise continue to the next room.
-            if (pawn.setTargetRoom(room))
+            if (pawn!!.setTargetRoom(room))
                 break
         }
     }
