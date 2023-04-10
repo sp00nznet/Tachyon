@@ -24,8 +24,6 @@ abstract class AbstractCrew(
 
     val roomPosition: RoomPoint get() = RoomPoint(room, position)
 
-    var roomWasDamaged: Boolean = false
-
     open val canManSystem: Boolean get() = true
     open val repairSpeed: Float get() = 1f
 
@@ -111,6 +109,17 @@ abstract class AbstractCrew(
     val movementOffsetX: Float get() = movement?.x?.times(movementProgress) ?: 0f
     val movementOffsetY: Float get() = movement?.y?.times(movementProgress) ?: 0f
 
+    /**
+     * The action this crewmember is currently performing.
+     */
+    var currentAction: Action = Action.IDLE
+        private set(value) {
+            val changed = field != value
+            field = value
+            if (changed)
+                updateAnimation()
+        }
+
     init {
         val anim = anims["${codename}_portrait"]
         icon = anim.start()
@@ -125,12 +134,14 @@ abstract class AbstractCrew(
 
         val pos = positionInternal
         if (movement != null) {
+            currentAction = Action.MOVING
             movementProgress += dt * 2
 
             if (movementProgress > 1) {
                 movementProgress = 0f
                 pos += movement!!
                 movement = null
+                currentAction = Action.IDLE
 
                 // If we've walked through a doorway, switch over
                 if (targetDoor != null) {
@@ -144,29 +155,37 @@ abstract class AbstractCrew(
 
                     room = newRoom
                     targetDoor = null
-
-                    updateAnimation()
                 }
 
                 // Calculate the next movement
                 updateMovement()
             }
             return
-        } else {
-            // Update ourselves to move to the computer
-            val cp = room.computerPoint?.let(room::pointToSlot)
-            if (cp != null && room.reservedPlayerSlots[cp] == null) {
+        }
+
+        room.system?.let { sys ->
+            if (sys.damaged) {
+                currentAction = Action.REPAIRING
+                sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
+                return
+            }
+        }
+
+        val computerPoint = room.computerPoint?.let(room::pointToSlot)
+        if (computerPoint != null && canManSystem) {
+            if (room.computerPoint == position) {
+                currentAction = Action.MANNING
+                return
+            }
+
+            // Walk to the computer if no-one is occupying that slot.
+            if (room.reservedPlayerSlots[computerPoint] == null) {
                 setTargetRoom(room)
             }
         }
 
-        room.system?.let { sys ->
-            if (sys.damaged)
-                sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
-            if (roomWasDamaged != sys.damaged)
-                updateAnimation()
-            roomWasDamaged = sys.damaged
-        }
+        // Nothing else is being done
+        currentAction = Action.IDLE
     }
 
     open fun draw() {
@@ -231,30 +250,26 @@ abstract class AbstractCrew(
     }
 
     protected fun updateAnimation() {
-        if (movement != null) {
-            icon = anims["${codename}_walk_${dirAsString(movement!!)}"].start()
-            return
-        }
+        icon = when (currentAction) {
+            Action.IDLE -> {
+                // Since the portrait doesn't have a background colour frame, use the top-left frame.
+                // Drones need to use the correct image, though!
+                val portrait = anims["${codename}_portrait"]
+                if (backImg == null) {
+                    portrait.start()
+                } else {
+                    Animation(portrait.sheet.sheet, 0, 0, 0, 0, true, 1, false)
+                }
+            }
 
-        if (room.system?.damaged == true) {
-            icon = anims["${codename}_repair"].start()
-            return
-        }
+            // Guard against movement being null, which could potentially
+            // happen if the user cancels the movement while paused at the
+            // perfect moment?
+            Action.MOVING -> anims["${codename}_walk_${dirAsString(movement ?: Direction.UP)}"].start()
 
-        if (room.computerPoint == position && canManSystem) {
-            icon = anims["${codename}_type_${dirAsString(room.computerDirection!!)}"].start()
-            return
+            Action.MANNING -> anims["${codename}_type_${dirAsString(room.computerDirection!!)}"].start()
+            Action.REPAIRING -> anims["${codename}_repair"].start()
         }
-
-        // Since the portrait doesn't have a background colour frame, use the top-left frame.
-        // Drones need to use the correct image, though!
-        val portrait = anims["${codename}_portrait"]
-        if (backImg == null) {
-            icon = portrait.start()
-        } else {
-            icon = Animation(portrait.sheet.sheet, 0, 0, 0, 0, true, 1, false)
-        }
-        return
     }
 
     fun setTargetRoom(value: Room): Boolean {
@@ -326,5 +341,12 @@ abstract class AbstractCrew(
             CREW -> room.reservedPlayerSlots
             INTRUDER -> room.reservedEnemySlots
         }
+    }
+
+    enum class Action {
+        IDLE,
+        MOVING,
+        MANNING, // Working at a computer
+        REPAIRING,
     }
 }
