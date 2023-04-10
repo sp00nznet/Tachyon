@@ -131,6 +131,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         var newPowerAnimation: Animation? = null
 
         override val repairSpeed: Float get() = this@AbstractIndoorsDrone.repairSpeed
+        override val canManSystem: Boolean get() = false
 
         override fun update(dt: Float) {
             // If a new animation has been selected while paused, apply that now.

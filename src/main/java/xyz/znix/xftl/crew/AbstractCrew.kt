@@ -26,8 +26,8 @@ abstract class AbstractCrew(
 
     var roomWasDamaged: Boolean = false
 
-    open val canManSystem: Boolean = false
-    open val repairSpeed: Float = 1f
+    open val canManSystem: Boolean get() = true
+    open val repairSpeed: Float get() = 1f
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
