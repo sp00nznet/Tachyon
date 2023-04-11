@@ -93,9 +93,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         g.color = FLOOR_GRID_COLOUR
         for (i in 1 until width) {
             g.drawLine(
-                (x + i * ROOM_SIZE).f,
+                (x + i * ROOM_SIZE - 1).f,
                 y.f,
-                (x + i * ROOM_SIZE).f,
+                (x + i * ROOM_SIZE - 1).f,
                 (y + h - 1).f
             )
         }
@@ -103,9 +103,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         for (i in 1 until height) {
             g.drawLine(
                 x.f,
-                (y + ROOM_SIZE * i).f,
+                (y + ROOM_SIZE * i - 1).f,
                 (x + w - 1).f,
-                (y + ROOM_SIZE * i).f
+                (y + ROOM_SIZE * i - 1).f
             )
         }
 

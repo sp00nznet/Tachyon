@@ -104,7 +104,7 @@ abstract class AbstractCrew(
     private var targetDoor: Door? = null
 
     val screenX: Int get() = room.offsetX + ((position.x + movementOffsetX) * ROOM_SIZE).toInt()
-    val screenY: Int get() = room.offsetY + ((position.y + movementOffsetY) * ROOM_SIZE).toInt()
+    val screenY: Int get() = room.offsetY + ((position.y + movementOffsetY) * ROOM_SIZE).toInt() + 3
 
     val movementOffsetX: Float get() = movement?.x?.times(movementProgress) ?: 0f
     val movementOffsetY: Float get() = movement?.y?.times(movementProgress) ?: 0f
