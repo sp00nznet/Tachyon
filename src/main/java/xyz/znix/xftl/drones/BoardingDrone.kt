@@ -117,6 +117,8 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         proj.render(g, startingPoint.x + dist, startingPoint.y.toFloat(), 0f)
     }
 
+    override fun makePawn(room: Room): Pawn = BoardingPawn(room)
+
     /**
      * The projectile that represents the drone flying through space towards
      * the target ship.
@@ -200,5 +202,9 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         var timeInFlight: Float = 0f
         val initialDistance: Float get() = 1000f
         val distance: Float get() = initialDistance * (1 - timeInFlight / travelTime)
+    }
+
+    private inner class BoardingPawn(room: Room) : AbstractIndoorsDrone.Pawn(room) {
+        // TODO damage multiplier of 1.2
     }
 }

@@ -35,8 +35,6 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     var pawn: Pawn? = null
         private set
 
-    protected open val repairSpeed: Float = 1f
-
     /**
      * Spawn in [targetRoom], or one of the nearby rooms if that's full.
      */
@@ -62,6 +60,10 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         error("Couldn't find any free space in ship ${ship.name} to deploy indoors drone ${type.name}")
     }
 
+    protected open fun makePawn(room: Room): Pawn {
+        return Pawn(room)
+    }
+
     private fun trySpawn(targetRoom: Room): Boolean {
         // Pick a different room to create the drone in, so we can set
         // its target room properly.
@@ -69,7 +71,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
         // While we create the pawn now, if there's no space
         // in this room we'll throw it away.
-        val tmpPawn = Pawn(pawnCodename, otherRoom, occupancySlotType)
+        val tmpPawn = makePawn(otherRoom)
 
         // Check if there's space in this room. If there is, this
         // pawn is added to that room's occupied slot array. Thus
@@ -123,14 +125,12 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
      * immediately spawn. Also, [AbstractCrew] needs the initial room in its
      * constructor, which is inconvenient for us.
      */
-    inner class Pawn(codename: String, room: Room, mode: SlotType) :
-        AbstractCrew(codename, room.ship.sys.animations, room, mode) {
+    open inner class Pawn(room: Room) : AbstractCrew(pawnCodename, room.ship.sys.animations, room, occupancySlotType) {
 
         var powerUpDuration: Float = 0f
         var onLastUpdate: Boolean = false
         var newPowerAnimation: Animation? = null
 
-        override val repairSpeed: Float get() = this@AbstractIndoorsDrone.repairSpeed
         override val canManSystem: Boolean get() = false
 
         override fun update(dt: Float) {

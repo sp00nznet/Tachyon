@@ -2,6 +2,7 @@ package xyz.znix.xftl.drones
 
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.Drones
 import xyz.znix.xftl.weapons.DroneBlueprint
 
@@ -9,8 +10,6 @@ class RepairDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     override val occupancySlotType get() = AbstractCrew.SlotType.CREW
 
     override val pawnCodename: String get() = "repair"
-
-    override val repairSpeed: Float get() = 2f
 
     override fun init(ownerShip: Ship) {
         super.init(ownerShip)
@@ -40,5 +39,11 @@ class RepairDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
     override fun drawPawn() {
         // TODO the green glow over the drone when it's powered on - that comes from the layer1 image
+    }
+
+    override fun makePawn(room: Room): Pawn = RepairPawn(room)
+
+    private inner class RepairPawn(room: Room) : AbstractIndoorsDrone.Pawn(room) {
+        override val repairSpeed: Float get() = 2f
     }
 }
