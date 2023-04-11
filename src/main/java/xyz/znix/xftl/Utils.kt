@@ -7,6 +7,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import java.io.File
 import java.util.*
+import kotlin.random.Random
 
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
@@ -63,6 +64,10 @@ fun Color.lerp(other: Color, proportion: Float): Color {
         b.lerp(other.b, proportion),
         a.lerp(other.a, proportion)
     )
+}
+
+fun ClosedFloatingPointRange<Float>.random(rand: Random): Float {
+    return start + rand.nextFloat() * (endInclusive - start)
 }
 
 object Utils {

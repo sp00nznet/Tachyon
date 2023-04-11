@@ -8,6 +8,8 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.random
+import kotlin.random.Random
 
 abstract class AbstractCrew(
     val codename: String,
@@ -26,6 +28,7 @@ abstract class AbstractCrew(
 
     open val canManSystem: Boolean get() = true
     open val repairSpeed: Float get() = 1f
+    open val canPunch: Boolean get() = true
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
@@ -100,11 +103,33 @@ abstract class AbstractCrew(
     var movementProgress: Float = 0F
         private set
 
+    // If we're currently attacking someone, the time until our next
+    // punch or shot is fired.
+    private var attackTimer: Float? = null
+    private var damageTime: Float = 0f // Damage is applied half-way through the attack animation
+    private var enemyToAttack: AbstractCrew? = null
+    private var isPunching: Boolean = false
+    private var sharesHostileCell: Boolean = false
+
     // The door we're walking through
     private var targetDoor: Door? = null
 
     val screenX: Int get() = room.offsetX + ((position.x + movementOffsetX) * ROOM_SIZE).toInt()
-    val screenY: Int get() = room.offsetY + ((position.y + movementOffsetY) * ROOM_SIZE).toInt() + 3
+    val screenY: Int
+        get() {
+            val base = room.offsetY + ((position.y + movementOffsetY) * ROOM_SIZE).toInt()
+
+            if (currentAction != Action.FIGHTING || !sharesHostileCell)
+                return base + 3
+
+            // When we're fighting in the same cell as an enemy, displace both parties so
+            // they don't fully overlap. Instead of 3 down, use 10 down or 2 (maybe 3?) up depending
+            // on whether we're at the top or bottom.
+            return when (mode) {
+                SlotType.CREW -> base - 2
+                SlotType.INTRUDER -> base + 10
+            }
+        }
 
     val movementOffsetX: Float get() = movement?.x?.times(movementProgress) ?: 0f
     val movementOffsetY: Float get() = movement?.y?.times(movementProgress) ?: 0f
@@ -163,6 +188,67 @@ abstract class AbstractCrew(
             return
         }
 
+        // Check if any enemies are in the room
+        // FIXME attack enemies that are just passing through the room, which
+        //  don't have a reserved slot.
+        val hostiles = mode.other.slotsFor(room).filterNotNull().filter { it.room == room }
+        if (hostiles.isNotEmpty()) {
+            // Check if someone is standing in the same cell as us
+            val sameCell = hostiles.firstOrNull { it.movement == null && it.position == position }
+
+            isPunching = sameCell != null && canPunch
+            sharesHostileCell = sameCell != null
+
+            currentAction = Action.FIGHTING
+
+            // Has the enemy walked out of the room?
+            enemyToAttack?.let { target ->
+                if (!hostiles.contains(target)) {
+                    enemyToAttack = null
+                    attackTimer = null
+                }
+            }
+
+            if (attackTimer != null) {
+                attackTimer = attackTimer!! - dt
+            }
+
+            if (attackTimer != null && attackTimer!! <= damageTime) {
+                damageTime = -1f
+
+                // TODO Apply damage
+                //  println("Attack $codename -> ${enemyToAttack!!.codename}")
+
+                // TODO if shooting, play the little laser graphic animation
+            }
+
+            if (attackTimer == null || attackTimer!! <= 0f) {
+                // If we're punching someone always attack them, otherwise pick
+                // someone in the room at random to shoot.
+                // For boarding drones that don't punch, still attack the person
+                // in the same slot instead of sharing the damage around.
+                enemyToAttack = sameCell ?: hostiles.random()
+
+                attackTimer = (1.0f..1.3f).random(Random.Default)
+
+                // Apply the damage half-way through the animation
+                damageTime = attackTimer!! / 2f
+
+                // Restart the fighting animation, and set its duration equal to that of the attack.
+                updateAnimation()
+            }
+
+            return
+        }
+
+        // If we're not fighting, clear all the combat-related variables.
+        attackTimer = null
+        enemyToAttack = null
+        isPunching = false
+        sharesHostileCell = false
+
+
+        // Check if the system in this room is broken, and if so repair it.
         room.system?.let { sys ->
             if (sys.damaged) {
                 currentAction = Action.REPAIRING
@@ -269,6 +355,47 @@ abstract class AbstractCrew(
 
             Action.MANNING -> anims["${codename}_type_${dirAsString(room.computerDirection!!)}"].start()
             Action.REPAIRING -> anims["${codename}_repair"].start()
+            Action.FIGHTING -> {
+                // Figure out the direction.
+                val dir: Direction = when {
+                    // If two parties are in the same cell, the crewmember stands
+                    // at the top and the intruder stands at the bottom.
+                    sharesHostileCell && mode == SlotType.CREW -> Direction.DOWN
+                    sharesHostileCell && mode == SlotType.INTRUDER -> Direction.UP
+
+                    // When combat is starting, we might not have the enemy selected yet.
+                    enemyToAttack == null -> Direction.UP
+
+                    // Otherwise we're standing in the open, shooting at someone.
+                    else -> Direction.fromPoint(enemyToAttack!!.position - position) ?: Direction.UP
+                }
+
+                val icon = when (isPunching) {
+                    true -> anims["${codename}_punch_${dirAsString(dir)}"].start()
+                    false -> anims["${codename}_shoot_${dirAsString(dir)}"].start()
+                }
+
+                // We have to update the icon each time the punch timer expires,
+                // so make it obvious if that isn't done.
+                icon.setLooping(false)
+
+                // Only use the first frame of shooting animations - this seems
+                // a bit weird, but also seems to match FTL.
+                if (!isPunching) {
+                    icon.stop()
+                }
+
+                // Leave the animation at its default 1 second if
+                // the attack timer isn't set, as the animation will
+                // be updated again once it's set.
+                if (attackTimer != null) {
+                    val frameDurationMs = (attackTimer!! / icon.frameCount * 1000).toInt()
+                    for (i in 0 until icon.frameCount)
+                        icon.setDuration(i, frameDurationMs)
+                }
+
+                icon
+            }
         }
     }
 
@@ -337,6 +464,12 @@ abstract class AbstractCrew(
         CREW,
         INTRUDER;
 
+        val other
+            get() = when (this) {
+                CREW -> INTRUDER
+                INTRUDER -> CREW
+            }
+
         fun slotsFor(room: Room): Array<AbstractCrew?> = when (this) {
             CREW -> room.reservedPlayerSlots
             INTRUDER -> room.reservedEnemySlots
@@ -348,5 +481,6 @@ abstract class AbstractCrew(
         MOVING,
         MANNING, // Working at a computer
         REPAIRING,
+        FIGHTING,
     }
 }

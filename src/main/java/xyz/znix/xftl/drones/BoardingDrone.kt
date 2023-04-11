@@ -205,6 +205,9 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     }
 
     private inner class BoardingPawn(room: Room) : AbstractIndoorsDrone.Pawn(room) {
+        // Always fight by shooting a laser
+        override val canPunch: Boolean get() = false
+
         // TODO damage multiplier of 1.2
     }
 }

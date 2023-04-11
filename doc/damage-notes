@@ -1,0 +1,39 @@
+Crew members slightly randomise their laser shoot position on whether
+they're attacking another crew member (from any ship of any race etc), or
+anything else (eg locked doors). So doors always get laser-ed at the same position.
+This is defined by CrewTarget::ExactTarget.
+
+Damage is calculated (in CrewAnimation::OnUpdate, setting fDamageDone for punches,
+and in CrewAnimation::OnUpdateEffects for laser shots) as:
+
+  3.0 <= damage <= 7.0
+
+This the base damage, before skill, race, and mind control bonuses are accounted for:
+
+  final_damage = skill_mult * damage_mult * mindControl_mult * damage
+
+(This is calculated in CrewMember::OnLoop)
+
+When two crew members are punching each other, damage is done randomly between every 500ms-650ms, and then
+an equal duration is spent letting the punch animation finish, so a full cycle is 1000ms-1300ms.
+When a crew member is shooting another crew member, damage is done randomly between every 1000ms-1300ms.
+
+
+Player animations:
+CrewAnimation.anims is vector<vector<Animation>>, and means anims[direction][type]
+direction:
+* 0=down
+* 1=right
+* 2=up
+* 3=left
+type (from strings in CrewAnimation::OnInit):
+* 0=walk
+* 1=punch
+* 2=repair (omnidirectional - all directions give the same image)
+* 3=death
+* 4=fire (as in firefighting - as compared to 'shoot')
+* 5 - not defined
+* 6=teleport (omnidirectional)
+* 7=shoot
+* 8=type
+* 9=portrait (omnidirectional)
