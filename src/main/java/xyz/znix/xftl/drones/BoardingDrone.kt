@@ -208,6 +208,8 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         // Always fight by shooting a laser
         override val canPunch: Boolean get() = false
 
-        // TODO damage multiplier of 1.2
+        override val attackDamageMult: Float get() = 1.2f
+
+        override val maxHealth: Float get() = 150f
     }
 }

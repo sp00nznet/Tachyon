@@ -671,10 +671,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         // Draw the crew
         for (crew in crew) {
-            crew.draw()
+            crew.draw(g)
         }
         for (pawn in dronePawns) {
-            pawn.draw()
+            pawn.draw(g)
         }
 
         // Draw the system foregrounds

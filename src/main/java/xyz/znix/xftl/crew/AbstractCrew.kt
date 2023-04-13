@@ -1,6 +1,8 @@
 package xyz.znix.xftl.crew
 
 import org.newdawn.slick.Animation
+import org.newdawn.slick.Color
+import org.newdawn.slick.Graphics
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Constants.*
@@ -9,6 +11,8 @@ import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.random
+import kotlin.math.ceil
+import kotlin.math.max
 import kotlin.random.Random
 
 abstract class AbstractCrew(
@@ -26,9 +30,15 @@ abstract class AbstractCrew(
 
     val roomPosition: RoomPoint get() = RoomPoint(room, position)
 
+    @Suppress("LeakingThis")
+    var health: Float = maxHealth
+    open val maxHealth: Float get() = 100f
+
     open val canManSystem: Boolean get() = true
     open val repairSpeed: Float get() = 1f
     open val canPunch: Boolean get() = true
+    open val attackDamageMult: Float get() = 1f
+    open val hasDyingAnimation: Boolean get() = true
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
@@ -157,6 +167,21 @@ abstract class AbstractCrew(
     open fun update(dt: Float) {
         icon.update((dt * 1000).toLong())
 
+        if (health == 0f) {
+            if (!hasDyingAnimation) {
+                removeFromShip()
+                return
+            }
+
+            // For crew with dying animations, play that before removing them.
+            currentAction = Action.DYING
+
+            if (icon.isStopped)
+                removeFromShip()
+
+            return
+        }
+
         val pos = positionInternal
         if (movement != null) {
             currentAction = Action.MOVING
@@ -216,8 +241,9 @@ abstract class AbstractCrew(
             if (attackTimer != null && attackTimer!! <= damageTime) {
                 damageTime = -1f
 
-                // TODO Apply damage
-                //  println("Attack $codename -> ${enemyToAttack!!.codename}")
+                // Apply damage
+                val damage = (3f..7f).random(Random.Default) * attackDamageMult
+                enemyToAttack!!.dealDamage(damage)
 
                 // TODO if shooting, play the little laser graphic animation
             }
@@ -274,7 +300,7 @@ abstract class AbstractCrew(
         currentAction = Action.IDLE
     }
 
-    open fun draw() {
+    open fun draw(g: Graphics) {
         // Bit of a hack, since we're drawn from the ship
         val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
 
@@ -300,6 +326,22 @@ abstract class AbstractCrew(
 
         // Draw the actual image
         cf.draw(screenX.f, screenY.f)
+
+        // Draw the health bar
+        if (health < maxHealth || isSelected) {
+            val healthBox = room.ship.sys.getImg("img/people/health_box.png")
+            healthBox.draw(screenX - 1f, screenY.f)
+
+            val width = ceil(25f * health / maxHealth).toInt()
+            g.color = Color.green
+            g.fillRect(screenX + 4f, screenY + 3f, width.f, 3f)
+        }
+    }
+
+    fun dealDamage(damage: Float) {
+        health = max(0f, health - damage)
+
+        // Dying is handled in the update loop
     }
 
     /**
@@ -396,6 +438,11 @@ abstract class AbstractCrew(
 
                 icon
             }
+
+            Action.DYING -> anims["${codename}_death_right"].start().apply {
+                // Don't loop, we'll disappear when the animation finishes
+                setLooping(false)
+            }
         }
     }
 
@@ -441,7 +488,7 @@ abstract class AbstractCrew(
         return true
     }
 
-    fun clearFromRoomSlots(slots: Array<AbstractCrew?>) {
+    private fun clearFromRoomSlots(slots: Array<AbstractCrew?>) {
         slots.forEachIndexed { index, crew ->
             if (crew == this)
                 slots[index] = null
@@ -458,6 +505,23 @@ abstract class AbstractCrew(
         positionInternal.set(newPoint)
         updateMovement()
         updateAnimation()
+    }
+
+    /**
+     * Immediately remove this crew from the ship. This is run after
+     * the dying animation finishes.
+     */
+    open fun removeFromShip() {
+        val ship = room.ship
+        for (room in ship.rooms) {
+            clearFromRoomSlots(room.reservedPlayerSlots)
+            clearFromRoomSlots(room.reservedEnemySlots)
+        }
+
+        // To support both crew and drones, remove ourselves
+        // from all the crew lists.
+        ship.crew.remove(this)
+        ship.dronePawns.remove(this)
     }
 
     enum class SlotType {
@@ -482,5 +546,6 @@ abstract class AbstractCrew(
         MANNING, // Working at a computer
         REPAIRING,
         FIGHTING,
+        DYING,
     }
 }

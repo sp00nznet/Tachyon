@@ -1,6 +1,7 @@
 package xyz.znix.xftl.drones
 
 import org.newdawn.slick.Animation
+import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.layout.Room
@@ -99,11 +100,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         this.pawn = null
 
         // Destroy the pawn
-        for (room in ship.rooms) {
-            pawn.clearFromRoomSlots(room.reservedPlayerSlots)
-            pawn.clearFromRoomSlots(room.reservedEnemySlots)
-            ship.dronePawns.remove(pawn)
-        }
+        pawn.removeFromShip()
 
         // TODO play the explosion animation
     }
@@ -132,6 +129,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         var newPowerAnimation: Animation? = null
 
         override val canManSystem: Boolean get() = false
+        override val hasDyingAnimation: Boolean get() = false
 
         override fun update(dt: Float) {
             // If a new animation has been selected while paused, apply that now.
@@ -145,7 +143,11 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             val on = isPowered && powerUpDuration == 0f
             if (on) {
                 super.update(dt)
-                updatePawn(dt)
+
+                // Note the pawn can be null here if it was killed
+                // during the update cycle.
+                if (pawn != null)
+                    updatePawn(dt)
             } else {
                 icon.update((dt * 1000).toLong())
 
@@ -163,8 +165,8 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             onLastUpdate = on
         }
 
-        override fun draw() {
-            super.draw()
+        override fun draw(g: Graphics) {
+            super.draw(g)
             drawPawn()
         }
 
@@ -184,6 +186,14 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             } else if (onLastUpdate) {
                 powerUpDuration = 0f
             }
+        }
+
+        override fun removeFromShip() {
+            super.removeFromShip()
+
+            // Cleanly kill the drone
+            this@AbstractIndoorsDrone.pawn = null
+            destroy()
         }
     }
 }

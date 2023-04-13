@@ -75,6 +75,13 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         val allTasks = tasks.toHashSet()
 
+        // Clear the assignee of tasks when that assignee is dead or missing
+        for (task in tasks) {
+            val assignee = task.assignee ?: continue
+            if (!assignments.containsKey(assignee))
+                task.assignee = null
+        }
+
         // Exclude tasks that are already in progress
         tasks.removeIf { it.assignee != null }
 
@@ -84,7 +91,10 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         // Make sure the assignments 1:1 matches the available crew
         if (!ship.crew.containsAll(assignments.keys)) {
-            assignments.filterKeys { ship.crew.contains(it) }
+            val missingCrew = assignments.keys.filter { !ship.crew.contains(it) }
+            for (crew in missingCrew) {
+                assignments.remove(crew)
+            }
         }
 
         if (ship.crew.size != assignments.size) {
