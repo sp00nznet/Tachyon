@@ -186,7 +186,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 Rectangle(pos.x.f, pos.y.f, size.x.f, size.y.f)
             } else null
 
-            for (crew in ship.crew) {
+            for (crew in ship.friendlyCrew) {
                 // If we're in rectangle mode, check that it intersects the centre of the player's body
                 val hovered = rect?.contains(crew.screenX + 16f, crew.screenY + 16f)
                 // Otherwise check the point overlaps the player

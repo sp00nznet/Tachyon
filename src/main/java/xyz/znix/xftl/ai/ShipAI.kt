@@ -90,15 +90,15 @@ class ShipAI(val ship: Ship, val player: Ship) {
         tasks.sortBy { it.priority }
 
         // Make sure the assignments 1:1 matches the available crew
-        if (!ship.crew.containsAll(assignments.keys)) {
-            val missingCrew = assignments.keys.filter { !ship.crew.contains(it) }
+        if (!ship.friendlyCrew.containsAll(assignments.keys)) {
+            val missingCrew = assignments.keys.filter { !ship.friendlyCrew.contains(it) }
             for (crew in missingCrew) {
                 assignments.remove(crew)
             }
         }
 
-        if (ship.crew.size != assignments.size) {
-            for (crew in ship.crew) {
+        if (ship.friendlyCrew.size != assignments.size) {
+            for (crew in ship.friendlyCrew) {
                 if (!assignments.containsKey(crew))
                     assignments[crew] = null
             }

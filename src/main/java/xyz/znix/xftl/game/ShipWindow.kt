@@ -351,12 +351,13 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     }
 
     private fun drawCrewBox(g: Graphics, boxPos: ConstPoint, id: Int) {
-        if (ship.crew.size <= id) {
+        // TODO block mind-controlled crew members, once that's implemented
+        if (ship.friendlyCrew.size <= id) {
             val boxEmpty = game.getImg("img/upgradeUI/Equipment/box_crew_off.png")
             boxEmpty.draw(boxPos + position)
             return
         }
-        val crew = ship.crew[id]
+        val crew = ship.friendlyCrew[id]
 
         val dismissButtonBox = game.getImg("img/customizeUI/box_crewcustom_on.png")
         val dismissButtonBoxHover = game.getImg("img/customizeUI/box_crewcustom_selected.png")

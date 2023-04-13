@@ -66,6 +66,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val isAutoScout = shipNode.getChild("crewCount")?.getAttributeValue("amount")?.trim() == "0"
     val crew: MutableList<AbstractCrew> = ArrayList()
 
+    // The subset of the crew that are or aren't intruders
+    val intruders: List<AbstractCrew> = ArrayList()
+    val friendlyCrew: List<AbstractCrew> = ArrayList()
+
     // All the indoors drones, owned by this ship (repair) or not (boarder) on this ship.
     val dronePawns: MutableList<AbstractIndoorsDrone.Pawn> = ArrayList()
 
@@ -721,6 +725,18 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             crew.update(dt)
         for (pawn in dronePawns.toTypedArray())
             pawn.update(dt)
+
+        // Update the list of intruders and friendly (non-intruder) crewmembers
+        require(intruders is ArrayList)
+        require(friendlyCrew is ArrayList)
+        intruders.clear()
+        friendlyCrew.clear()
+        for (crew in crew) {
+            when (crew.mode) {
+                AbstractCrew.SlotType.CREW -> friendlyCrew.add(crew)
+                AbstractCrew.SlotType.INTRUDER -> intruders.add(crew)
+            }
+        }
 
         ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
     }
