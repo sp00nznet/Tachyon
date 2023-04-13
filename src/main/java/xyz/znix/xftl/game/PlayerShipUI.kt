@@ -166,8 +166,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 continue
 
             if (button == MOUSE_RIGHT_BUTTON) {
-                for (crew in selectedCrew)
-                    crew.setTargetRoom(room)
+                for (crew in selectedCrew) {
+                    // Exclude crew that are boarding an enemy ship, as
+                    // this could cause a crash.
+                    if (crew.room.ship == ship)
+                        crew.setTargetRoom(room)
+                }
 
                 return
             }
@@ -187,16 +191,23 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             // If a rectangle is visible on screen (ie, the player isn't clicking a point) then build a rectangle
             val rect = if (!isCrewSelectionPoint) {
-                val pos = csr.first.min(csr.second) - playerShipPosition
+                val pos = csr.first.min(csr.second)
                 val size = (csr.second - csr.first).abs()
                 Rectangle(pos.x.f, pos.y.f, size.x.f, size.y.f)
             } else null
 
-            for (crew in ship.friendlyCrew) {
+            // Any intruders on the enemy ship should also be controllable,
+            // including mind controlled enemies (once that's implemented).
+            val controllableCrew = ArrayList(ship.friendlyCrew)
+            game.enemy?.let { controllableCrew.addAll(it.intruders) }
+
+            for (crew in controllableCrew) {
+                val crewPos = crewScreenPos(crew, playerShipPosition)
+
                 // If we're in rectangle mode, check that it intersects the centre of the player's body
-                val hovered = rect?.contains(crew.screenX + 16f, crew.screenY + 16f)
+                val hovered = rect?.contains(crewPos.x.f, crewPos.y.f)
                 // Otherwise check the point overlaps the player
-                    ?: isCrewHovered(crew, csr.first - playerShipPosition)
+                    ?: isCrewHovered(crew, csr.first, crewPos)
 
                 if (hovered) {
                     selectedCrew += crew
@@ -207,13 +218,26 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
     }
 
-    fun isCrewHovered(crew: AbstractCrew, shipMousePos: IPoint): Boolean {
-        if (shipMousePos.x < crew.screenX || shipMousePos.y < crew.screenY)
-            return false
-        if (shipMousePos.x >= crew.screenX + crew.icon.width || shipMousePos.y >= crew.screenY + crew.icon.height)
-            return false
+    fun crewScreenPos(crew: AbstractCrew, playerShipPosition: IPoint): IPoint {
+        if (crew.room.ship == ship) {
+            return ConstPoint(crew.screenX, crew.screenY) + playerShipPosition
+        }
 
-        return true
+        // The crewmember must be on the enemy ship, add that position on
+        return ConstPoint(crew.screenX, crew.screenY) + game.enemyPosition
+    }
+
+    fun isCrewHovered(crew: AbstractCrew, mousePos: IPoint, crewPos: IPoint): Boolean {
+        return mousePos.x in crewPos.x..crewPos.x + crew.icon.width &&
+                mousePos.y in crewPos.y..crewPos.y + crew.icon.height
+    }
+
+    // Called by SlickGame, used for controlling boarders.
+    fun enemyRoomRightClicked(room: Room, enemyShip: Ship) {
+        for (crew in selectedCrew) {
+            if (crew.room.ship == enemyShip)
+                crew.setTargetRoom(room)
+        }
     }
 
     fun weaponHotkeyPressed(id: Int) {

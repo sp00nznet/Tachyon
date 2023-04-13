@@ -165,12 +165,15 @@ public class SlickGame extends BasicGame {
             debugConsole.update(container, delta / 1000f);
         }
 
+        boolean rightClicked = false;
+
         for (int i = 0; i < 3; i++) {
             boolean prev = mouseDownPrev[i];
             boolean now = in.isMouseButtonDown(i);
             if (now && !prev) {
                 if (i == Input.MOUSE_RIGHT_BUTTON) {
                     clickEvent = null;
+                    rightClicked = true;
                 }
 
                 shipUI.mouseClick(i, in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
@@ -182,11 +185,27 @@ public class SlickGame extends BasicGame {
 
         shipUI.updateUI(in.getMouseX(), in.getMouseY());
 
+        // Figure out when the player right-clicks
+        // an enemy room - this is used for controlling boarders.
+        if (rightClicked && enemy != null) {
+            tempPoint.setX(container.getInput().getMouseX());
+            tempPoint.setY(container.getInput().getMouseY());
+            tempPoint.minusAssign(hostileShipUI.getShipPos());
+            enemy.screenPosToShipPos(tempPoint);
+
+            RoomPoint rp = enemy.shipToRoomPos(tempPoint);
+            if (rp != null) {
+                shipUI.enemyRoomRightClicked(rp.getRoom(), enemy);
+            }
+        }
+
+        // Handle stuff like weapon targeting where the player
+        // highlights a room on the enemy (or their) ship.
         if (clickEvent == null)
             return;
 
         // Hovering over the enemy
-        if (enemy != null && enemyIsHostile) {
+        if (enemy != null && (enemyIsHostile || !enemy.getIntruders().isEmpty())) {
             tempPoint.setX(container.getInput().getMouseX());
             tempPoint.setY(container.getInput().getMouseY());
             tempPoint.minusAssign(hostileShipUI.getShipPos());
@@ -254,7 +273,11 @@ public class SlickGame extends BasicGame {
         shipUI.render(container, g);
 
         if (enemy != null) {
-            hostileShipUI.render(container, g, hoveredRoom, enemyIsHostile);
+            // If the enemy ship is neutral but we still have crew inside,
+            // allow the user to control and recover them.
+            boolean renderShip = enemyIsHostile || !enemy.getIntruders().isEmpty();
+
+            hostileShipUI.render(container, g, hoveredRoom, renderShip);
         }
 
         // Draw the paused text before the UI, so the UI goes on top.
@@ -325,13 +348,34 @@ public class SlickGame extends BasicGame {
             }
 
             if (enemy.isGone()) {
-                if (enemy.getSpec() != null) {
+                // Be sure to check if the enemy is still hostile, if we've
+                // already killed their crew we can't get a second lot of
+                // rewards if they later blow up.
+                if (enemy.getSpec() != null && enemyIsHostile) {
                     IEvent event = enemy.getSpec().getDestroyed();
                     if (event != null)
                         shipUI.showEventDialogue(event.resolve());
                 }
 
                 setEnemy(null);
+                currentBeacon.setShip(null);
+            }
+
+            // Check if the enemy crew is dead (including any aboard the player ship).
+            if (enemy.getFriendlyCrew().isEmpty() && player.getIntruders().isEmpty()
+                    && !enemy.isAutoScout() && enemyIsHostile) {
+
+                if (enemy.getSpec() != null) {
+                    IEvent event = enemy.getSpec().getDeadCrew();
+                    if (event != null)
+                        shipUI.showEventDialogue(event.resolve());
+                }
+
+                enemyIsHostile = false;
+
+                // If we jump back, they shouldn't re-appear.
+                // This also means there won't be a danger mark
+                // on the map.
                 currentBeacon.setShip(null);
             }
         } else {
