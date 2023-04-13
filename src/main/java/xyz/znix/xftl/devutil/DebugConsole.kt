@@ -46,6 +46,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("event", 0, this::cmdEvent, "Load an event at this beacon"),
         Cmd("fix", 0, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
         Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
+        Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -118,6 +119,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
             }
 
             Input.KEY_BACK -> {
+                selectHistory()
                 if (input != "") {
                     input = input.substring(0, input.length - 1)
                 }
@@ -280,6 +282,29 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         game.enemy?.let { clearFor(it) }
 
         lines.add("All drones (including orphan drones) have been cleared from all ships")
+    }
+
+    private fun cmdCrew(args: List<String>) {
+        val race = args[1]
+
+        val races = setOf(
+            "human"
+        )
+
+        if (race == "races") {
+            lines.add("Supported crew races:")
+            for (r in races) {
+                lines.add("  $r")
+            }
+            return
+        }
+
+        if (!races.contains(race)) {
+            lines.add("Unknown crew race '$race', try 'crew races' for a list.")
+            return
+        }
+
+        ship.addCrewMember(race, false)
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {
