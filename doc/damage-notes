@@ -19,6 +19,11 @@ an equal duration is spent letting the punch animation finish, so a full cycle i
 When a crew member is shooting another crew member, damage is done randomly between every 1000ms-1300ms.
 
 
+The teleport stretch is set to 0.1 at 004792be (in 1.6.9 Windows, Epic version) in CrewAnimation::OnInit.
+This means that each frame increases the image stretch by 10%. The bottom of the image is fixed, and
+the top animates upwards.
+
+
 Player animations:
 CrewAnimation.anims is vector<vector<Animation>>, and means anims[direction][type]
 direction:

@@ -160,6 +160,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     var cloaking: Cloaking? = null
         private set
 
+    var teleporter: Teleporter? = null
+        private set
+
     var piloting: Piloting? = null
         private set
 
@@ -271,6 +274,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 "cloaking" -> Cloaking(blueprint, node)
                 "weapons" -> Weapons(blueprint, node)
                 "drones" -> Drones(blueprint, node)
+                "teleporter" -> Teleporter(blueprint, node)
                 else -> {
                     // TODO throw exception when all systems are implemented
                     System.out.println("Warning: unimplemented system ${node.name}")
@@ -849,6 +853,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         engines = systems.mapNotNull { it as? Engines }.firstOrNull()
         shields = systems.mapNotNull { it as? Shields }.firstOrNull()
         cloaking = systems.mapNotNull { it as? Cloaking }.firstOrNull()
+        teleporter = systems.mapNotNull { it as? Teleporter }.firstOrNull()
         piloting = systems.mapNotNull { it as? Piloting }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
 

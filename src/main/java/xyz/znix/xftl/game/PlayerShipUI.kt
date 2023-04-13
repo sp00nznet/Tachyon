@@ -77,6 +77,12 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     // The position of the weapons box
     val weaponBoxY get() = height - 113
 
+    /**
+     * If the user is selecting a room to teleport to/from, this is non-null.
+     * True if sending crew to an enemy ship, false if receiving.
+     */
+    val teleportMode: Boolean? get() = (game.clickEvent as? TeleportRoomListener)?.send
+
     init {
         updateButtons()
     }
@@ -419,7 +425,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             powerX += when (system) {
                 is Weapons -> 48 + ship.weaponSlots!! * 97
                 is Drones -> 48 + ship.droneSlots!! * 97
-                is Cloaking -> 54
+                is Cloaking, is Teleporter -> 54
                 else -> 36
             }
 
@@ -441,7 +447,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     }
                 }
 
-                is Cloaking -> "54"
+                is Cloaking, is Teleporter -> "54"
                 else -> "36"
             }
             val image = when (lastSystem) {
@@ -775,6 +781,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         currentWindow?.shipModified()
     }
 
+    /**
+     * Called by [Teleporter] when one of its buttons are clicked.
+     *
+     * When the 'send to enemy ship' button is clicked, [send] is true.
+     * Otherwise it's false.
+     */
+    fun teleportSelected(send: Boolean) {
+        game.clickEvent = TeleportRoomListener(send)
+    }
+
     private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int, size: ConstPoint) :
         Button(pos, size) {
         abstract val empty: Boolean
@@ -899,7 +915,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 system.decreasePower()
             }
         }
+    }
 
+    private inner class TeleportRoomListener(val send: Boolean) : RoomClickListener {
+        override fun roomClicked(room: Room, gc: GameContainer) {
+            // Can't teleport to/from our own ship
+            if (room.ship == ship)
+                return
+
+            ship.teleporter!!.selectTeleportAction(send, room)
+        }
     }
 
     companion object {

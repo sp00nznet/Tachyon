@@ -105,10 +105,7 @@ abstract class AbstractCrew(
         }
 
     var mode: SlotType = mode
-        set(value) {
-            field = value // Suppress warning
-            TODO()
-        }
+        private set // Warning: you have to update the room slots!
 
     var movementProgress: Float = 0F
         private set
@@ -124,6 +121,9 @@ abstract class AbstractCrew(
     // The door we're walking through
     private var targetDoor: Door? = null
 
+    private var teleportingTo: Room? = null
+    private var teleportTimer: Float = 0f
+
     val screenX: Int get() = room.offsetX + ((position.x + movementOffsetX) * ROOM_SIZE).toInt()
     val screenY: Int
         get() {
@@ -133,10 +133,10 @@ abstract class AbstractCrew(
                 return base + 3
 
             // When we're fighting in the same cell as an enemy, displace both parties so
-            // they don't fully overlap. Instead of 3 down, use 10 down or 2 (maybe 3?) up depending
+            // they don't fully overlap. Instead of 3 down, use 10 down or 4 up depending
             // on whether we're at the top or bottom.
             return when (mode) {
-                SlotType.CREW -> base - 2
+                SlotType.CREW -> base - 4
                 SlotType.INTRUDER -> base + 10
             }
         }
@@ -180,6 +180,76 @@ abstract class AbstractCrew(
                 removeFromShip()
 
             return
+        }
+
+        if (teleportingTo != null) {
+            currentAction = Action.TELEPORTING
+            teleportTimer += dt
+
+            // Run a timer matching the duration of the teleport animation, then:
+            // 1. When the animation has fully played, move
+            //    to the enemy ship and play it backwards.
+            // 2. When that's done, the teleporting is finished.
+            if (teleportTimer < TELEPORT_ANIMATION_TIME)
+                return
+            teleportTimer = 0f
+
+            val destination = teleportingTo!!
+            if (destination.ship != room.ship) {
+                // Step 1
+
+                // Clear out any movement, as the pathfinding system
+                // is understandably unhappy about walking between ships.
+                movement = null
+                movementProgress = 0f
+                pathingTarget = null
+
+                // Flip between being an intruder and a crewmember
+                mode = mode.other
+
+                // Move to the other ship
+                removeFromShip()
+                destination.ship.crew.add(this)
+
+                // Change the room over, preserving our current position if possible
+                room = destination
+
+                val slots = slotsFor(room)
+                var foundSlot = false
+                if (room.containsRelative(position)) {
+                    val slot = room.pointToSlot(position)
+                    if (slots[slot] == null) {
+                        slots[slot] = this
+                        foundSlot = true
+                    }
+                }
+                for ((slot, crew) in slots.withIndex()) {
+                    if (foundSlot)
+                        break
+                    if (crew != null)
+                        continue
+
+                    positionInternal.set(room.slotToPoint(slot))
+                    slots[slot] = this
+                    foundSlot = true
+                }
+
+                // TODO If there's no space in this room, pick another
+                if (!foundSlot)
+                    TODO("Implement teleporting into full rooms")
+
+                updateAnimation()
+            } else {
+                // Step 2 - we're done
+                teleportingTo = null
+            }
+
+            // When the teleportation finishes, immediately continue with
+            // our regular stuff. This avoids the player animation breaking
+            // from still having the teleport action set, but not being able
+            // to check whether they're on the source or destination ship.
+            if (teleportingTo != null)
+                return
         }
 
         val pos = positionInternal
@@ -276,7 +346,7 @@ abstract class AbstractCrew(
 
         // Check if the system in this room is broken, and if so repair it.
         room.system?.let { sys ->
-            if (sys.damaged) {
+            if (sys.damaged && mode == SlotType.CREW) {
                 currentAction = Action.REPAIRING
                 sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
                 return
@@ -284,7 +354,7 @@ abstract class AbstractCrew(
         }
 
         val computerPoint = room.computerPoint?.let(room::pointToSlot)
-        if (computerPoint != null && canManSystem) {
+        if (computerPoint != null && canManSystem && mode == SlotType.CREW) {
             if (room.computerPoint == position) {
                 currentAction = Action.MANNING
                 return
@@ -306,6 +376,35 @@ abstract class AbstractCrew(
 
         val cf = icon.currentFrame
 
+        var spriteY = screenY
+        var opacity = 1f
+        var stretch = 0f
+        if (currentAction == Action.TELEPORTING) {
+            // The sprite image (and not the health bar - hence why this isn't
+            // built into screenY) moves up when teleporting, since it needs
+            // to go further up on the screen.
+            spriteY -= 8
+
+            // The player fades out, and stretches upwards while teleporting.
+            val progress = teleportTimer / TELEPORT_ANIMATION_TIME
+            if (room.ship != teleportingTo?.ship) {
+                // Teleporting up
+                opacity *= 1 - progress
+                stretch = icon.frame * TELEPORT_IMAGE_STRETCH
+            } else {
+                // Teleporting down (the 2nd half of the animation)
+                stretch = (icon.frameCount - icon.frame) * TELEPORT_IMAGE_STRETCH
+                opacity *= progress
+            }
+        }
+
+        // Calculate the bounds of the image
+        val height = cf.height * (stretch + 1)
+        val x0 = screenX.f
+        val y0 = spriteY - stretch * cf.height
+        val x1 = x0 + cf.width
+        val y1 = y0 + height
+
         // Draw the background image - the coloured hint that changes
         // when you mouse over the crew.
         // This is missing for drones, which makes sense as you can't
@@ -318,14 +417,16 @@ abstract class AbstractCrew(
                 cf.height
             )
             val backColour = when {
-                isSelected -> CREW_SELECTED_BG
-                else -> CREW_DESELECTED_BG
+                isSelected -> Color(CREW_SELECTED_BG)
+                else -> Color(CREW_DESELECTED_BG)
             }
-            backSubImg.draw(screenX.f, screenY.f, backColour)
+            backColour.a *= opacity
+            backSubImg.draw(x0, y0, x1, y1, 0f, 0f, cf.width.f, cf.height.f, backColour)
         }
 
         // Draw the actual image
-        cf.draw(screenX.f, screenY.f)
+        val opacityColour = Color(1f, 1f, 1f, opacity)
+        cf.draw(x0, y0, x1, y1, 0f, 0f, cf.width.f, cf.height.f, opacityColour)
 
         // Draw the health bar
         if (health < maxHealth || isSelected) {
@@ -443,6 +544,16 @@ abstract class AbstractCrew(
                 // Don't loop, we'll disappear when the animation finishes
                 setLooping(false)
             }
+
+            Action.TELEPORTING -> {
+                // If we're beaming back down on the destination ship, play it backwards.
+                val backwards = teleportingTo?.ship == room.ship
+
+                anims["${codename}_teleport"].start(1f, backwards).apply {
+                    // Stop, as it would look weird if we restarted for a moment.
+                    setLooping(false)
+                }
+            }
         }
     }
 
@@ -524,6 +635,17 @@ abstract class AbstractCrew(
         ship.dronePawns.remove(this)
     }
 
+    /**
+     * Teleport to a room on an enemy ship, playing the teleport animation.
+     */
+    fun teleportAnimatedTo(room: Room) {
+        // Make sure we're teleporting to another ship
+        require(room.ship != this.room.ship)
+
+        teleportingTo = room
+        teleportTimer = 0f
+    }
+
     enum class SlotType {
         CREW,
         INTRUDER;
@@ -546,6 +668,12 @@ abstract class AbstractCrew(
         MANNING, // Working at a computer
         REPAIRING,
         FIGHTING,
+        TELEPORTING,
         DYING,
+    }
+
+    companion object {
+        const val TELEPORT_ANIMATION_TIME: Float = 0.5f
+        const val TELEPORT_IMAGE_STRETCH: Float = 0.1f
     }
 }

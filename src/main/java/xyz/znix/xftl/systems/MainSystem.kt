@@ -46,7 +46,9 @@ abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractS
         ENGINES,
         MEDBAY,
         OXYGEN,
+        TELEPORTER,
         CLOAKING,
+        MIND_CONTROL,
         WEAPONS,
         DRONES;
     }
