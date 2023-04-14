@@ -47,6 +47,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("fix", 0, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
         Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
         Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
+        Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -305,6 +306,17 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
 
         ship.addCrewMember(race, false)
+    }
+
+    private fun cmdKill(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        val enemy = game.enemy
+        if (enemy == null) {
+            lines.add("No enemy ship")
+            return
+        }
+
+        enemy.damage(enemy.rooms.random(), 100, 0, 0)
+        lines.add("Added 100 points of damage to the enemy ship")
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {
