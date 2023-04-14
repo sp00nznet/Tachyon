@@ -1,0 +1,117 @@
+Everything interesting is in the CrewAI class.
+
+Note that for system names, ShipSystem::SystemIdToName is very helpful.
+
+System hacking levels (stored in ShipSystem.iHackEffect) are (my constant names):
+0=HACK_NONE
+1=HACK_STANDBY (hacking system on, doors locked)
+2=HACK_ACTIVE  (start button pressed)
+
+Crew tasks are more inconvenient to find, my names are:
+0=TASK_MANNING
+1=TASK_REPAIR
+2=TASK_FIGHT_FIRE
+3=TASK_REPAIR_HULL_BREACH (though this may be wrong, seen in CrewAI::CheckForProblems)
+4=TASK_IDLE               (not entirely sure, though CrewMember::ClearTask sets it)
+5=TASK_DYING              (also not entirely clear, but it seems pretty likely)
+6=TASK_HEALING
+7=TASK_COMBAT
+8=TASK_TELEPORTING        (not sure if this is standing on a teleporter, or all of boarding)
+
+
+
+CrewAI::CheckForHealing:
+
+For each crew member, if all of:
+    - the crew health is <25% (non-calm ship) or <99% (calm ship)
+    - the medbay is working and isn't hacked
+    - the medbay room is rated as safe (see CrewAI::DangerRating)
+    - the crewmember isn't dying (as in, bDead==false)
+Then path to the medbay.
+
+If the health is low but the medbay is inaccessible, mark
+the medbay as requested (this adjusts repair priorities).
+
+
+CrewAI::DangerRating:
+
+(Note this function returns 1 for safe and 0 for dangerous)
+
+- If a room is an airlock and an airlock door is open, it's dangerous
+- If health<25% and oxygen<10% it's dangerous, if we can suffocate (ie, except lanius)
+- If fireCount>0 and health<20%, it's dangerous unless we're immune to fire
+- If fireCount>=4 then it's dangerous unless we're immune to fire
+- This room is the medbay, and it's being hacked
+
+
+CrewAI::PrioritizeSystem:
+
+0: Shields
+1: Weapons, clonebay
+2: Artillery
+3: Oxygen
+4: Engines, drones, piloting
+5: Cloaking, mind control, hacking
+6: Sensors, battery
+7: Doors
+8: Everything else
+
+Medbay: 1 if it's requested (see CheckForHealing), 2 otherwise.
+
+Teleporter: if an urgent teleport is demanded, priority 0 (!!).
+If (I think? iTeleportRequest!=0) a teleport is requested, priority 1
+Otherwise, priority 3
+
+
+CrewAI::CheckForProblems:
+
+Boarders get a single task each
+
+A room with any number of fires (and more than 10% oxygen) gets two
+tasks to put the fire out, plus a bonus task for it if two crewmembers
+are currently attached to those tasks (though that bit is quite confusing).
+
+A number of teleporting tasks, to match the iTeleportRequest variable.
+
+Hull breaches get a task, one per room, plus a bonus task.
+
+
+CrewAI::PrioritizeTask:
+
+If a task is in a room marked as dangerous (see DangerRating), then it
+gets a priority of 100.
+
+For crew members that are bad at combat (<1x damage or <100hp), healing
+and teleporting tasks also get a priority of 100.
+
+Teleporting tasks for crew with <50% health also get a priority of 100.
+Otherwise, non-urgent teleporting is 32 if the teleporter is charged,
+65 if the teleporter isn't charged, and in all cases urgent teleporting
+is priority 0.
+
+(assuming here that difficulty 2 is hard)
+
+For manning tasks:
+
+Piloting is 64
+Shields are 67 on hard, else 65.
+Engines are 65 on hard, else 67.
+Weapons and artillery is 66
+Oxygen is 68
+Sensors is 69
+Doors and cloaking is 70
+Teleporter is 71
+Medbay is 72
+Anything else is 1000.
+
+For repair tasks, use PrioritizeSystem + 48.
+The exception is that if oxygen is below 25%, repairing
+the oxygen system has priority 0.
+
+Healing tasks has priority 0.
+
+Fire fighting and combat tasks:
+Use PrioritizeSystem + 16, or 24 (8+16) for rooms without a system.
+
+For task ID=3 (likely repairing hull breaches):
+Use PrioritizeSystem + 32, or 40 (8+32) for rooms without a system.
