@@ -359,6 +359,19 @@ public class SlickGame extends BasicGame {
 
                 setEnemy(null);
                 currentBeacon.setShip(null);
+
+                // At this point enemy may be null if they
+                // were destroyed, so we can't use that any more.
+                // Just returning here keeps things simple.
+                return;
+            }
+
+            Float escapeTimer = enemy.getEscapeTimer();
+            if (escapeTimer != null && escapeTimer <= 0f) {
+                // TODO play the jumping away animation
+                setEnemy(null);
+                currentBeacon.setShip(null);
+                return;
             }
 
             // Check if the enemy crew is dead (including any aboard the player ship).

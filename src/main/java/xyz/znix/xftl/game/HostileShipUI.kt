@@ -77,6 +77,8 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
             }
         }
 
+        // TODO draw the 'FTL charging' warning if they're trying to escape
+
         // Draw the enemy's systems
         // TODO sorting
         for ((i, sys) in enemy.rooms.asSequence().mapNotNull { it.system }.withIndex()) {

@@ -8,7 +8,12 @@ import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 
 class ShipAI(val ship: Ship, val player: Ship) {
-    fun update(@Suppress("UNUSED_PARAMETER") dt: Float) {
+    fun update(dt: Float) {
+        // If the ship is dying, don't do anything.
+        // TODO figure out where the boarder AI will live
+        if (ship.isDead)
+            return
+
         // Power up all the systems
         for (room in ship.rooms) {
             val sys = room.system as? MainSystem ?: continue
@@ -19,6 +24,40 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         // TODO only run when something significant happens
         updateTasks()
+
+        // Check if we need to escape or surrender
+        if (ship.health <= ship.surrenderHealth) {
+            // Don't surrender repeatedly
+            ship.surrenderHealth = 0
+
+            // The surrender event must exist, it's XML tag did
+            // for surrenderHealth to be set.
+            ship.sys.shipUI.showEventDialogue(ship.spec!!.surrender!!.resolve())
+
+            // Use an else-if so we don't try and surrender and escape in
+            // the same update cycle.
+        } else if (ship.health <= ship.escapeHealth) {
+            // Show the event and start the timer running
+            ship.escapeHealth = 0
+            ship.sys.shipUI.showEventDialogue(ship.spec!!.escape!!.resolve())
+            ship.escapeTimer = ship.spec.escapeTimer
+        }
+
+        val escapeTimer = ship.escapeTimer
+        if (escapeTimer != null) {
+            // For the FTL to charge, the engines and piloting must
+            // be working, and a pilot must be present.
+            val engines = ship.engines!!
+            val piloting = ship.piloting!!
+            val hasPilot = ship.friendlyCrew.any { it.room == piloting.room }
+
+            if (engines.powerSelected > 0 && piloting.undamagedEnergy > 0 && hasPilot) {
+                ship.escapeTimer = escapeTimer - dt
+            }
+
+            // SlickGame will check the escape timer, and remove
+            // the ship if it runs out.
+        }
     }
 
     private fun updateWeapons() {

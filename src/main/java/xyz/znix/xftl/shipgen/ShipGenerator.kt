@@ -7,12 +7,21 @@ import xyz.znix.xftl.sector.EventManager
 import xyz.znix.xftl.sector.IEvent
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.min
+import kotlin.random.Random
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int): Ship {
         val elem = spec.autoBlueprint.resolve().let { it as MiscBlueprint }.loadElem(df)
 
         val ship = Ship(df, elem, sys, spec)
+
+        ship.escapeHealth = spec.escapeHealth?.pick(Random) ?: 0
+        ship.surrenderHealth = spec.surrenderHealth?.pick(Random) ?: 0
+
+        // Don't surrender after trying to escape
+        if (ship.surrenderHealth > 0 && ship.surrenderHealth <= ship.escapeHealth) {
+            ship.escapeHealth = ship.surrenderHealth - 1
+        }
 
         val crewCount = elem.getChild("crewCount")
         crewCount?.let {
@@ -146,6 +155,8 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 class EnemyShipSpec(elem: Element, bp: BlueprintManager, ev: EventManager) {
     val name = elem.requireAttributeValue("name")
 
+    val escape: IEvent? by loadEvent(elem, ev, name, "escape")
+    val surrender: IEvent? by loadEvent(elem, ev, name, "surrender")
     val destroyed: IEvent? by loadEvent(elem, ev, name, "destroyed")
     val deadCrew: IEvent? by loadEvent(elem, ev, name, "deadCrew")
     val gotaway: IEvent? by loadEvent(elem, ev, name, "gotaway")
@@ -154,6 +165,10 @@ class EnemyShipSpec(elem: Element, bp: BlueprintManager, ev: EventManager) {
     // unlikely we'll care about them for a long time (if ever), it's nice to load all the ships without
     // having to carry around a list of exceptions.
     val autoBlueprint = bp[elem.getAttributeValue("blueprint") ?: elem.requireAttributeValue("auto_blueprint")]
+
+    val escapeTimer: Float = elem.getChild("escape")?.getAttributeValue("timer")?.toFloat() ?: 15f
+    val escapeHealth: RandomWithChance? = elem.getChild("escape")?.let(::RandomWithChance)
+    val surrenderHealth: RandomWithChance? = elem.getChild("surrender")?.let(::RandomWithChance)
 
     companion object {
         private fun loadEvent(root: Element, ev: EventManager, name: String, evName: String): Lazy<IEvent?> {

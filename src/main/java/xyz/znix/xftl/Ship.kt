@@ -123,6 +123,15 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             field = value.coerceAtLeast(0).coerceAtMost(maxHealth)
         }
 
+    // The amount of health at which this ship will surrender and attempt to escape
+    var escapeHealth: Int = 0
+    var surrenderHealth: Int = 0
+
+    /**
+     * If this ship is attempting to escape, this is the time remaining until it jumps.
+     */
+    var escapeTimer: Float? = null
+
     /**
      * Returns true if this ship has ran out of health
      */
