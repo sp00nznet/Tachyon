@@ -582,6 +582,12 @@ abstract class AbstractCrew(
     }
 
     private fun setTargetRoom(value: Room, slot: Int, slots: Array<AbstractCrew?>): Boolean {
+        // If we're already going to, or are at, this point then do nothing.
+        if (pathingTarget?.room == value && value.pointToSlot(pathingTarget!!) == slot)
+            return true
+        if (pathingTarget == null && room == value && value.pointToSlot(position) == slot)
+            return true
+
         // If this slot is neither empty nor consumed by us (since we're moving anyway), then
         // it's consumed and we should skip it.
         val current = slots[slot]

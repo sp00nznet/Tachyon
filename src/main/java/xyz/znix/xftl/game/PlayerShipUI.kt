@@ -695,7 +695,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8, "${ship.evasion}%", Color.white)
 
         // Oxygen
-        val avgOxygen = (ship.rooms.map { it.oxygen }.average() * 100).toInt()
+        val avgOxygen = round(ship.averageOxygen * 100).toInt()
         oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8 + 22, "$avgOxygen%", Color.white)
     }
 

@@ -106,7 +106,8 @@ Anything else is 1000.
 
 For repair tasks, use PrioritizeSystem + 48.
 The exception is that if oxygen is below 25%, repairing
-the oxygen system has priority 0.
+the oxygen system has priority 0. Also, shields is always
+priority 1 (not 1+48, just 1).
 
 Healing tasks has priority 0.
 

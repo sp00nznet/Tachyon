@@ -181,6 +181,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             return evasion.toInt()
         }
 
+    /**
+     * From 0-1.
+     */
+    var averageOxygen: Float = 1f
+        private set
+
     init {
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
 
@@ -722,6 +728,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         for (room in rooms)
             room.update(dt)
+
+        averageOxygen = rooms.map { it.oxygen }.average().toFloat()
 
         // Duplicate the crew and drone lists, in case some are removed
         // by dying or (in the case of drones) the enemy ship blowing up.
