@@ -77,6 +77,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     // The position of the weapons box
     val weaponBoxY get() = height - 113
 
+    // Whether or not we've previously seen a store UI at this sector.
+    // This is used to auto-open the store when the dialogue is finished.
+    private var storeAlreadyOpened = false
+
     /**
      * If the user is selecting a room to teleport to/from, this is non-null.
      * True if sending crew to an enemy ship, false if receiving.
@@ -95,6 +99,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         val jump = Buttons.JumpButton(nextPos, ship, game) {
             currentWindow = JumpWindow(game) {
+                if (it != null) {
+                    // Reset stuff after jumping
+                    storeAlreadyOpened = false
+                }
+
                 currentWindow = null
                 updateButtons() // A store may now be available
             }
@@ -756,13 +765,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun showEventDialogue(event: Event) {
-        val storeWasAvailable = game.currentBeacon.hasStore
-
         currentWindow = DialogueWindow(game, event) {
             currentWindow = null
 
             // If a store was made available by the dialogue, open it
-            if (game.currentBeacon.hasStore && !storeWasAvailable) {
+            if (game.currentBeacon.hasStore && !storeAlreadyOpened) {
                 updateButtons() // Make the store button show up
                 showStoreWindow()
             }
@@ -776,6 +783,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     private fun showStoreWindow() {
+        storeAlreadyOpened = true
+
         currentWindow = StoreWindow(game, ship, game.currentBeacon.getStore(game)!!) {
             currentWindow = null
         }
