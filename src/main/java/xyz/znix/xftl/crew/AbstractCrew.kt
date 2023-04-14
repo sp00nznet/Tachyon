@@ -11,6 +11,7 @@ import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.random
+import xyz.znix.xftl.systems.Oxygen
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.random.Random
@@ -39,6 +40,7 @@ abstract class AbstractCrew(
     open val canPunch: Boolean get() = true
     open val attackDamageMult: Float get() = 1f
     open val hasDyingAnimation: Boolean get() = true
+    open val canSuffocate: Boolean get() = true
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
@@ -166,6 +168,10 @@ abstract class AbstractCrew(
 
     open fun update(dt: Float) {
         icon.update((dt * 1000).toLong())
+
+        if (room.oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL && canSuffocate) {
+            dealDamage(6.4f * dt)
+        }
 
         if (health == 0f) {
             if (!hasDyingAnimation) {
