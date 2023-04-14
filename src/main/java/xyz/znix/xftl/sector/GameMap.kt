@@ -13,6 +13,12 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
     private val sectorClasses = HashMap<String, List<SectorType>>()
     private val sectorTypes = HashMap<String, SectorType>()
 
+    private val specialEvents = SpecialEvents(
+        eventManager["NEUTRAL"],
+        eventManager["FINISH_BEACON"],
+        eventManager["FINISH_BEACON_NEBULA"]
+    )
+
     init {
         val xml = df.parseXML(df["data/sector_data.xml"])
 
@@ -66,10 +72,37 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
             }
         }
 
-        return Sector(type, sectorNum, eventPool, eventManager["NEUTRAL"])
+        return Sector(type, sectorNum, eventPool, specialEvents)
     }
 
     // Temporary, this is just a single linear line of sectors
     // TODO shape them how they are in standard FTL
     val sectors = Array(7) { sectorNum -> generateSector(sectorNum) }
+
+    class SpecialEvents(
+        /**
+         * The event to be used when we've run out of events, but still have more beacons
+         * to be filled. After modifying the vanilla FTL event XMLs, this is hardcoded
+         * to the 'NEUTRAL' event/eventList, so we should obviously behave likewise.
+         *
+         * Note that I haven't confirmed these should *only* be used after running out of
+         * other events - it's perfectly possible the base game peppers these in on a
+         * random chance.
+         *
+         * The filler will be resolved once per element, so if it's an [EventList] each beacon
+         * will a random (though certainly not guaranteed to be unique) event.
+         */
+        val filler: IEvent,
+
+        /**
+         * The event to show on regular (non-nebula-covered) exit beacons. This seems
+         * to be the same for all sectors.
+         *
+         * Whether this or [exitNebula] is used depends on whether the exit beacon
+         * is situated in a nebula itself, not whether the sector type is a nebula.
+         */
+        val exit: IEvent,
+
+        val exitNebula: IEvent
+    )
 }

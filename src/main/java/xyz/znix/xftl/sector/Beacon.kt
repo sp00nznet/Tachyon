@@ -18,7 +18,12 @@ class Beacon(
      * The event at this beacon. Even empty beacons have events, which set stuff like
      * the background and flavour text.
      */
-    val event: Event
+    val event: Event,
+
+    /**
+     * True if this is the exit beacon to progress to the next sector.
+     */
+    val isExit: Boolean
 ) {
 
     /**

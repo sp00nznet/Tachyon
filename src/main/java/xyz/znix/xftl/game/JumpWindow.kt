@@ -97,6 +97,9 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window() {
             if (beacon.hasStore)
                 drawBeaconLabel(pos, game.translator["map_icon_store"])
 
+            if (beacon.isExit)
+                drawBeaconLabel(pos, game.translator["map_icon_exit"])
+
             if (beacon == hovered && beacon != game.currentBeacon && game.currentBeacon.neighbours.contains(hovered)) {
                 drawTargetBox(pos)
             }

@@ -28,22 +28,15 @@ class Sector(
      */
     events: List<Event>,
 
-    /**
-     * The event to be used when we've run out of events, but still have more beacons
-     * to be filled. After modifying the vanilla FTL event XMLs, this is hardcoded
-     * to the 'NEUTRAL' event/eventList, so we should obviously behave likewise.
-     *
-     * Note that I haven't confirmed these should *only* be used after running out of
-     * other events - it's perfectly possible the base game peppers these in on a
-     * random chance.
-     *
-     * The filler will be resolved once per element, so if it's an [EventList] each beacon
-     * will a random (though certainly not guaranteed to be unique) event.
-     */
-    filler: IEvent
+    specialEvents: GameMap.SpecialEvents
 ) {
 
     val beacons = ArrayList<Beacon>()
+
+    // The start and finish beacon. The finish beacon will only
+    // be null in the final sector.
+    val startBeacon: Beacon
+    val finishBeacon: Beacon?
 
     init {
         val eventPool = ArrayDeque(events.shuffled())
@@ -64,6 +57,9 @@ class Sector(
 
         val cells = HashMap<Beacon, IPoint>()
 
+        var tmpStartBeacon: Beacon? = null
+        var tmpFinishBeacon: Beacon? = null
+
         val beaconCount = GRID_SIZE.x * GRID_SIZE.y - rand.nextInt(3)
         for (i in 1..beaconCount) {
             val gridPos = grid.random()
@@ -73,16 +69,48 @@ class Sector(
             pos.x += rand.nextInt(CELL_SIZE.x)
             pos.y += rand.nextInt(CELL_SIZE.y)
 
-            val event = eventPool.pollFirst() ?: filler.resolve()
-            val beacon = Beacon(pos.const, event)
+            var event: Event? = null
+            var isFinish = false
+            var isStart = false
+
+            // If we're at the right-most side of the map, add an exit beacon.
+            // Since we're using the grid cells in a random order, we can
+            // just add this in the first time we see such a beacon.
+            // TODO don't place this in the final sector.
+            if (gridPos.x == GRID_SIZE.x - 1 && tmpFinishBeacon == null) {
+                event = specialEvents.exit.resolve()
+                isFinish = true
+            }
+
+            // Same goes for the start beacon
+            if (gridPos.x == 0 && tmpStartBeacon == null) {
+                event = type.startEvent.resolve()
+                isStart = true
+            }
+
+            // Otherwise, just use a standard beacon from our event pool - or
+            // if we ran out of those, use a filler event.
+            if (event == null) {
+                event = eventPool.pollFirst() ?: specialEvents.filler.resolve()
+            }
+
+            val beacon = Beacon(pos.const, event, isFinish)
             beacons += beacon
             cells[beacon] = gridPos
+
+            if (isFinish)
+                tmpFinishBeacon = beacon
+            if (isStart)
+                tmpStartBeacon = beacon
         }
 
         for (b in beacons) {
             val neighbours = beacons.filter { cells[it]!!.distToSq(cells[b]!!) <= 2 && it != b }
             b.bindSector(this, neighbours)
         }
+
+        startBeacon = tmpStartBeacon ?: error("Failed to place a starting beacon!")
+        finishBeacon = tmpFinishBeacon
     }
 
     companion object {

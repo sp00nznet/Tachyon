@@ -8,8 +8,8 @@ import xyz.znix.xftl.requireAttributeValueInt
 class SectorType(private val eventManager: EventManager, elem: Element) {
     val name: String = elem.requireAttributeValue("name")
     val soundtracks: List<String> = elem.getChild("trackList").mapChildrenText("track")
-    val startEventName: String? = elem.getChildTextTrim("startEvent")
-    val startEvent: IEvent? get() = startEventName?.let { eventManager[it] }
+    val startEventName: String = elem.getChildTextTrim("startEvent") ?: "START_BEACON"
+    val startEvent: IEvent get() = startEventName.let { eventManager[it] }
 
     val events: List<EventInfo> = elem.getChildren("event").map {
         val name = it.requireAttributeValue("name")
