@@ -448,7 +448,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         // Initialise all the systems
-        updateAvailableSystems()
         for (room in rooms) {
             room.system?.initialise(this)
         }

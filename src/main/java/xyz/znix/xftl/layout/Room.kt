@@ -180,6 +180,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         if (computerPoint == null)
             check(computerDirection == null)
+
+        ship.updateAvailableSystems()
     }
 
     // Check if a point (relative to this room's origin) is inside this room

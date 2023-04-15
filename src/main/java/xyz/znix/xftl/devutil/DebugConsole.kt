@@ -49,6 +49,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
         Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
         Cmd("sectors", 0, this::cmdSectors, "Open the sector map, regardless of the current beacon"),
+        Cmd("system", 1, this::cmdSystem, "Unlock a system on the current ship, or 'list' or 'all'"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -323,6 +324,57 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     private fun cmdSectors(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         game.shipUI.openSectorMap()
         lines.add("Sector map window opened.")
+    }
+
+    private fun cmdSystem(args: List<String>) {
+        val systemName = args[1]
+
+        if (systemName == "list") {
+            lines.add("Systems on the player ship:")
+            for (room in ship.rooms) {
+                val system = room.system
+                val purchasable = room.purchasableSystem
+                if (system != null) {
+                    lines.add("  ${system.codename} (purchased)")
+                } else if (purchasable != null) {
+                    lines.add("  ${purchasable.system.codename}")
+                }
+            }
+            return
+        }
+
+        if (systemName == "all") {
+            // Note: ignore the eight-system limit
+            for (room in ship.rooms) {
+                if (room.system != null)
+                    continue
+                val system = room.purchasableSystem ?: continue
+                room.setSystem(system)
+            }
+            lines.add("Unlocked all systems on the player ship.")
+            return
+        }
+
+        for (room in ship.rooms) {
+            val system = room.system
+            if (system != null) {
+                if (system.codename == systemName) {
+                    lines.add("System $systemName is already purchased.")
+                    return
+                }
+                continue
+            }
+
+            val purchasable = room.purchasableSystem ?: continue
+            if (purchasable.system.codename != systemName)
+                continue
+
+            room.setSystem(purchasable)
+            lines.add("Unlocked system $systemName")
+            return
+        }
+
+        lines.add("No such system named '$systemName' on the current ship, try using 'system list'.")
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {

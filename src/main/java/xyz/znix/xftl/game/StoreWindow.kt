@@ -285,7 +285,6 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                             continue
 
                         room.setSystem(config)
-                        ship.updateAvailableSystems()
                         config.system.initialise(ship)
                         return
                     }
