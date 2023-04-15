@@ -231,7 +231,7 @@ class SectorMapWindow(private val game: SlickGame, private val selectedCallback:
             pos.y += 27
         }
 
-        val name = game.translator[sector.getOrGenerateType().shortTextId]
+        val name = game.translator[sector.type.shortTextId]
         val text = "%d. %s".format(index + 1, name)
 
         val textOffset = 6

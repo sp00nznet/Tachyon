@@ -57,9 +57,13 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
         sectors = ArrayList()
 
         // Add the starting sector
-        val startingSector = SectorInfo(0, 0, SectorClass.CIVILIAN)
-        startingSector.type = sectorTypes["CIVILIAN_SECTOR"] ?: error("Cannot find CIVILIAN_SECTOR for first sector")
+        val startingType = sectorTypes["CIVILIAN_SECTOR"] ?: error("Cannot find CIVILIAN_SECTOR for first sector")
+        val startingSector = SectorInfo(0, 0, startingType, SectorClass.CIVILIAN)
         sectors.add(listOf(startingSector))
+
+        // Keep track of what sector types we've used, to avoid duplicating
+        // sectors like homewords that are unique.
+        val usedSectorTypes = HashSet<SectorType>()
 
         // Add the six intermediate columns
         for (columnNum in 1..6) {
@@ -83,7 +87,28 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
             val column = ArrayList<SectorInfo>()
             for (i in 0 until numInColumn) {
                 val sectorClass = SectorClass.random(Random.Default)
-                column.add(SectorInfo(columnNum, i, sectorClass))
+
+                val allTypes = sectorClasses[sectorClass] ?: error("No sectors for sector class $sectorClass")
+
+                // Filter down the sector types to only those permitted at this point
+                val availableTypes = allTypes.filter {
+                    // Gated to later sectors
+                    if (columnNum < it.minSector)
+                        return@filter false
+
+                    // If this is a unique sector, make sure it's not already been used
+                    if (it.unique) {
+                        if (usedSectorTypes.contains(it))
+                            return@filter false
+                    }
+
+                    return@filter true
+                }
+
+                val type = availableTypes.random()
+                usedSectorTypes.add(type)
+
+                column.add(SectorInfo(columnNum, i, type, sectorClass))
             }
 
             // Add the connections between the previous sectors and
@@ -135,8 +160,8 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
         }
 
         // Add sector 8
-        val finalSector = SectorInfo(7, 0, SectorClass.HOSTILE)
-        finalSector.type = sectorTypes["FINAL"] ?: error("Cannot find FINAL sector for the boss fight")
+        val finalType = sectorTypes["FINAL"] ?: error("Cannot find FINAL sector for the boss fight")
+        val finalSector = SectorInfo(7, 0, finalType, SectorClass.HOSTILE)
         sectors.add(listOf(finalSector))
 
         // ... and link up all the sectors from the previous column, so it's accessible
@@ -167,17 +192,15 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
     }
 
     fun generateSector(sectorInfo: SectorInfo): Sector {
-        val type = sectorInfo.getOrGenerateType()
-
         val eventPool = ArrayList<Event>()
-        for (ev in type.events) {
+        for (ev in sectorInfo.type.events) {
             val count = ev.count.random()
             for (i in 1..count) {
                 eventPool += ev.event.resolve()
             }
         }
 
-        return Sector(type, sectorInfo, eventPool, specialEvents)
+        return Sector(sectorInfo, eventPool, specialEvents)
     }
 
     class SpecialEvents(
@@ -226,14 +249,13 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
          */
         val columnIndex: Int,
 
+        /**
+         * The exact type of sector.
+         */
+        var type: SectorType,
+
         val sectorClass: SectorClass
     ) {
-        /**
-         * The exact type of sector. This is filled in when the player reaches
-         * the preceding sector.
-         */
-        var type: SectorType? = null
-
         /**
          * The sectors the player can jump to from this one.
          */
@@ -242,14 +264,6 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
         // Note we don't store the actual Sector object here - that's
         // only needed when the player is inside it, so it can be stored
         // separately and discarded when not in use to save memory.
-
-        fun getOrGenerateType(): SectorType {
-            type?.let { return it }
-
-            val newType = sectorClasses[sectorClass]?.random() ?: error("No sectors for sector class $sectorClass")
-            type = newType
-            return newType
-        }
     }
 
     /**

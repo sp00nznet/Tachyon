@@ -9,7 +9,6 @@ import java.util.*
  * Represents an in-game sector. Handles the placement of the beacons within it.
  */
 class Sector(
-    val type: SectorType,
     val info: GameMap.SectorInfo,
 
     /**
@@ -31,6 +30,8 @@ class Sector(
      * sector, 7 is the last stand.
      */
     val sectorNumber: Int get() = info.columnNumber
+
+    val type: SectorType get() = info.type
 
     val beacons = ArrayList<Beacon>()
 
