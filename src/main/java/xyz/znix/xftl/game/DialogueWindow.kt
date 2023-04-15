@@ -4,13 +4,12 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import org.newdawn.slick.geom.Rectangle
-import xyz.znix.xftl.Blueprint
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.sector.Choice
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
@@ -63,19 +62,43 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         }
 
         currentEvent = event
-        options = event.event.choices
-            .mapNotNull {
-                val evaluated = EvaluatedEvent(it.event.resolve(), game, it.text.resolve())
 
-                // If we don't have the stuff for this event and it's
-                // hidden flag is set, then make it disappear.
-                // This is what stops you from seeing blue options you
-                // can't select.
-                if (it.hidden && !isConditionsSatisfied(event))
-                    return@mapNotNull null
+        val newOptions = ArrayList<EvaluatedEvent>()
+        for (choice in event.event.choices)
+            newOptions.add(EvaluatedEvent(choice.event.resolve(), game, choice.text.resolve(), choice))
 
-                evaluated
+        // Walk backwards from the end of the options list, removing
+        // anything that's not suitable. Aside from iteration order,
+        // we specifically need to go backwards to keep the last suitable
+        // option among many with max_group set.
+        val maxGroupHit = HashSet<Int>()
+        for (i in newOptions.size - 1 downTo 0) {
+            val option = newOptions[i]
+            val choice = option.choice!!
+
+            // If we don't have the stuff for this event and it's
+            // hidden flag is set, then make it disappear.
+            // This is what stops you from seeing blue options you
+            // can't select.
+            if (choice.hidden && !isConditionsSatisfied(option)) {
+                newOptions.removeAt(i)
+                continue
             }
+
+            // If multiple options with the same max_group are set,
+            // only the last one (first one we see in this iteration
+            // order) is kept.
+            if (choice.maxGroup == null)
+                continue
+
+            if (maxGroupHit.contains(choice.maxGroup)) {
+                newOptions.removeAt(i)
+                continue
+            }
+            maxGroupHit.add(choice.maxGroup)
+        }
+
+        options = newOptions
 
         if (options.isEmpty()) {
             options = listOf(EvaluatedEvent(null, game, game.translator["continue"]))
@@ -136,7 +159,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         // at the option's Y top, and there's 10 pixels (RESOURCE_BOTTOM_MARGIN)
         // between the bottom of the box and the start of the next option.
         for ((i, option) in options.withIndex()) {
-            val choice = if (currentEvent.event.choices.isNotEmpty()) currentEvent.event.choices[i] else null
+            val choice = option.choice
             val enabled = isConditionsSatisfied(option)
             val colour = when {
                 !enabled -> Constants.TEXT_OPTION_DISABLED
@@ -344,9 +367,90 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         if (playerShip.fuelCount < -res.fuel)
             return false
 
-        // TODO check req
+        // Check for the option requirement, which is usually used
+        // for blue-option requirements.
+        if (event.choice != null) {
+            return checkReq(event.choice)
+        }
 
         return true
+    }
+
+    private fun checkReq(choice: Choice): Boolean {
+        val req = choice.req ?: return true
+
+        // Req is the requirement name of an event choice. Per Choice.req, it is:
+        // "any race, weapon, drone, augmentation or system/subsystem"
+
+        // Check for matching races
+        if (playerShip.crew.any { it.codename == req }) {
+            return true
+        }
+
+        // FIXME until we've implemented all the crew, allow any crew-gated option.
+        if (CrewBlueprint.PLAYABLE_RACE_NAMES.contains(req))
+            return true
+
+        // Check for matching weapons, drones and augments. We search through all
+        // the places a blueprint could be, but none of these checks are specific
+        // to that type of item. For example, we could find a weapon in the cargo
+        // hold just the same as if it's in the weapons slots.
+        fun hasBlueprint(name: String): Boolean {
+            if (playerShip.hardpoints.any { it.weapon?.type?.name == name }) {
+                return true
+            }
+            if (playerShip.drones?.drones?.any { it?.type?.type?.name == name } == true) {
+                return true
+            }
+            // TODO check augments
+            return playerShip.cargoBlueprints.any { it?.name == name }
+        }
+        if (hasBlueprint(req))
+            return true
+
+        // Req can be a blueprint list, in which case match anything from that.
+        // For example, DISTRESS_SATELLITE_DEFENSE's ion weapon option.
+        val bpList = game.blueprintManager.blueprints[req] as? BlueprintList
+        if (bpList != null) {
+            for (bp in bpList.list()) {
+                if (hasBlueprint(bp.name))
+                    return true
+            }
+        }
+
+        // Check for any matching systems
+        val matchingSystem = playerShip.rooms.firstOrNull { it.system?.codename == req }?.system
+        if (matchingSystem != null) {
+            // Check if we're outside the level bounds of this system
+            choice.minLevel?.let { minLevel ->
+                if (matchingSystem.energyLevels < minLevel)
+                    return false
+            }
+            choice.maxLevel?.let { maxLevel ->
+                if (maxLevel < matchingSystem.energyLevels)
+                    return false
+            }
+
+            // Note that choice.maxGroup is processed during event setup.
+
+            return true
+        }
+
+        // If the system is 'reactor', we just have to check it's
+        // between the minimum and maximum level.
+        if (req == "reactor") {
+            choice.minLevel?.let { minLevel ->
+                if (playerShip.purchasedReactorPower < minLevel)
+                    return false
+            }
+            choice.maxLevel?.let { maxLevel ->
+                if (maxLevel < playerShip.purchasedReactorPower)
+                    return false
+            }
+            return true
+        }
+
+        return false
     }
 
     override fun updateUI(x: Int, y: Int) {
@@ -396,7 +500,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
     /**
      * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)
      */
-    private class EvaluatedEvent(private val eventInt: Event?, game: SlickGame, val choiceText: String?) {
+    private class EvaluatedEvent(
+        private val eventInt: Event?,
+        game: SlickGame,
+        val choiceText: String?,
+        val choice: Choice? = null
+    ) {
         val isContinue: Boolean = eventInt == null
         val event: Event get() = eventInt ?: throw Exception("Continue does not have an event")
         val resources by lazy { event.resolveResources(game) }

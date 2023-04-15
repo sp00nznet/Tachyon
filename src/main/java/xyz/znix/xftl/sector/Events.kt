@@ -267,6 +267,29 @@ class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {
     val req: String? = elem.getAttributeValue("req")
 
     /**
+     * The minimum level of a system required by [req].
+     */
+    val minLevel: Int? = elem.getAttributeValue("lvl")?.toInt()
+
+    /**
+     * The maximum level of a system required by [req].
+     *
+     * Note this is usually used with (or replaced by) [maxGroup].
+     */
+    val maxLevel: Int? = elem.getAttributeValue("max_lvl")?.toInt()
+
+    /**
+     * This defines a group of choices, only one of which can be displayed.
+     *
+     * If multiple choices with the same max_group attribute are available, all
+     * except the last one (in the order defined in the XML) will be hidden.
+     *
+     * This behaviour doesn't seem to be documented anywhere, and is largely
+     * guessed from the XML.
+     */
+    val maxGroup: Int? = elem.getAttributeValue("max_group")?.toInt()
+
+    /**
      * true/false, true if omitted. Determines whether the choice will appear as (literally) a blue choice.
      * Only has meaning when used alongside req, as only req can make the choice blue in the first place.
      */
