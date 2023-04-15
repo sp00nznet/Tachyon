@@ -57,6 +57,7 @@ public class Constants {
 
     public static final Color TEXT_OPTION_BLUE = new Color(0, 195, 255);
     public static final Color TEXT_OPTION_HOVER = new Color(243, 255, 80);
+    public static final Color TEXT_OPTION_DISABLED = WEAPONS_ITEM_DESELECTED;
 
     public static final Color REWARDS_ICONS = SYS_ENERGY_ACTIVE;
     public static final Color REWARDS_NEGATIVE_ICONS = SYS_ENERGY_BROKEN;

@@ -6,6 +6,7 @@ import org.newdawn.slick.Input
 import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
@@ -15,7 +16,9 @@ import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.max
 
-class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () -> Unit) : Window() {
+class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: Event, val close: () -> Unit) :
+    Window() {
+
     // We have to include the margin from the glow
     // around the window, which is 7 pixels per side.
     override val size: IPoint get() = ConstPoint(602 + 7 * 2, 377 + 7 * 2)
@@ -60,7 +63,19 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         }
 
         currentEvent = event
-        options = event.event.choices.map { EvaluatedEvent(it.event.resolve(), game, it.text.resolve()) }
+        options = event.event.choices
+            .mapNotNull {
+                val evaluated = EvaluatedEvent(it.event.resolve(), game, it.text.resolve())
+
+                // If we don't have the stuff for this event and it's
+                // hidden flag is set, then make it disappear.
+                // This is what stops you from seeing blue options you
+                // can't select.
+                if (it.hidden && !isConditionsSatisfied(event))
+                    return@mapNotNull null
+
+                evaluated
+            }
 
         if (options.isEmpty()) {
             options = listOf(EvaluatedEvent(null, game, game.translator["continue"]))
@@ -101,7 +116,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             val boxX = position.x + (size.x - boxSize.x) / 2
             val boxY = boxMiddleY - boxSize.y / 2
             val boxPos = ConstPoint(boxX, boxY)
-            drawResourceBox(g, resourcesGained, boxPos, boxSize)
+            drawResourceBox(g, resourcesGained, boxPos, boxSize, Color.white)
 
             // The spacing between the event text and the options is constant, regardless
             // of the size of the rewards.
@@ -122,7 +137,9 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         // between the bottom of the box and the start of the next option.
         for ((i, option) in options.withIndex()) {
             val choice = if (currentEvent.event.choices.isNotEmpty()) currentEvent.event.choices[i] else null
+            val enabled = isConditionsSatisfied(option)
             val colour = when {
+                !enabled -> Constants.TEXT_OPTION_DISABLED
                 hoveredOption == i -> Constants.TEXT_OPTION_HOVER
                 choice == null -> Color.white
                 choice.blue -> Constants.TEXT_OPTION_BLUE
@@ -146,7 +163,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
                 val boxX = textX + font.getWidth(text) + 10
                 val boxPos = ConstPoint(boxX, textY)
-                drawResourceBox(g, option.resources, boxPos, boxSize)
+                drawResourceBox(g, option.resources, boxPos, boxSize, colour)
 
                 // Align the text with the middle of the box
                 // TODO multiline support - this can be tested with the ENGI_REFUGEES event
@@ -206,13 +223,13 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         return ConstPoint(width, height)
     }
 
-    private fun drawResourceBox(g: Graphics, resourceSet: ResourceSet, pos: IPoint, size: IPoint) {
+    private fun drawResourceBox(g: Graphics, resourceSet: ResourceSet, pos: IPoint, size: IPoint, textColour: Color) {
         var y = pos.y
 
         g.color = Constants.REWARDS_BACKGROUND
         g.fillRect(pos.x.f, y.f, size.x.f, size.y.f)
 
-        g.color = Color.white
+        g.color = textColour
         g.drawRect(pos.x.f, y.f, size.x - 1f, size.y - 1f)
         g.drawRect(pos.x.f + 1, y + 1f, size.x - 3f, size.y - 3f)
 
@@ -220,7 +237,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             val x = pos.x + 5 + 45 * i
             val colour = if (pair.second > 0) Constants.REWARDS_ICONS else Constants.REWARDS_NEGATIVE_ICONS
             pair.first.getIcon(game).draw(x.f, y.f, colour)
-            resourceNumFont.drawString(x + 30f, y + 21f, pair.second.toString(), Color.white)
+            resourceNumFont.drawString(x + 30f, y + 21f, pair.second.toString(), textColour)
         }
 
         // If we drew some resources, move the blueprints down so they don't overlap
@@ -229,11 +246,11 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         }
 
         for (crew in resourceSet.crew) {
-            y = drawRewardCrew(crew, pos.x, y)
+            y = drawRewardCrew(crew, pos.x, y, textColour)
         }
 
         for (bp in resourceSet.items) {
-            y = drawRewardBlueprint(bp, pos.x.f, y)
+            y = drawRewardBlueprint(bp, pos.x, y, textColour)
         }
     }
 
@@ -263,7 +280,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         return textY
     }
 
-    private fun drawRewardBlueprint(bp: Blueprint, boxX: Float, textY: Int): Int {
+    private fun drawRewardBlueprint(bp: Blueprint, boxX: Int, textY: Int, textColour: Color): Int {
         when (bp) {
             is ShipWeaponBlueprint -> {
                 val anim = bp.getLauncher(game)
@@ -272,7 +289,7 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
                 // Draw the name
                 val name = game.translator[bp.title!!]
-                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY + 22f, name, Color.white)
+                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY + 22f, name, textColour)
 
                 return textY + 42
             }
@@ -281,12 +298,12 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
                 // Draw the drone icon - the Y here isn't right, but it's good enough for now. TODO do it properly.
                 val height = bp.iconSize.y + 9
                 val imgCentreY = textY + height / 2
-                bp.drawIconUI(game, ConstPoint(boxX.toInt() + 21, imgCentreY))
+                bp.drawIconUI(game, ConstPoint(boxX + 21, imgCentreY))
 
                 // Draw the name
                 val name = game.translator[bp.title!!]
                 val textX = boxX + 10 + bp.iconSize.x + 8
-                resourceNumFont.drawString(textX, imgCentreY.f + FONT_HEIGHT / 2, name, Color.white)
+                resourceNumFont.drawString(textX.f, imgCentreY.f + FONT_HEIGHT / 2, name, textColour)
 
                 return 20
             }
@@ -295,15 +312,41 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         }
     }
 
-    private fun drawRewardCrew(crew: AddCrewEval, x: Int, y: Int): Int {
+    private fun drawRewardCrew(crew: AddCrewEval, x: Int, y: Int, textColour: Color): Int {
         // TODO layers, and unify the crew drawing with stores and ShipWindow
         val portrait = game.animations["${crew.race.name}_portrait"].spriteAt(0)
 
         portrait.draw(x - 2f, y - 2f)
 
-        resourceNumFont.drawString(x + 30f, y + 21f, crew.name, Color.white)
+        resourceNumFont.drawString(x + 30f, y + 21f, crew.name, textColour)
 
         return 32
+    }
+
+    /**
+     * Checks if we've got all the stuff required for an event (both
+     * consumables and scrap if they're subtracted by the event, and
+     * also equipment/crew used for blue options).
+     */
+    private fun isConditionsSatisfied(event: EvaluatedEvent): Boolean {
+        if (event.isContinue)
+            return true
+
+        val res = event.resources
+
+        // Check we have enough stuff, if any of the resources are negative
+        if (playerShip.scrap < -res.scrap)
+            return false
+        if (playerShip.missilesCount < -res.missiles)
+            return false
+        if (playerShip.dronesCount < -res.droneParts)
+            return false
+        if (playerShip.fuelCount < -res.fuel)
+            return false
+
+        // TODO check req
+
+        return true
     }
 
     override fun updateUI(x: Int, y: Int) {
@@ -329,10 +372,14 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         if (idx < 0 || idx >= options.size)
             return
 
+        val choice = options[idx]
+
+        // Block the selection of disabled options
+        if (!isConditionsSatisfied(choice))
+            return
+
         // Add any resources the currently-visible event dropped.
         addResources(currentEvent)
-
-        val choice = options[idx]
 
         if (choice.isContinue) {
             close()

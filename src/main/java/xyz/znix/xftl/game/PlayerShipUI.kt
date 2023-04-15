@@ -765,7 +765,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun showEventDialogue(event: Event) {
-        currentWindow = DialogueWindow(game, event) {
+        currentWindow = DialogueWindow(game, ship, event) {
             currentWindow = null
 
             // If a store was made available by the dialogue, open it
