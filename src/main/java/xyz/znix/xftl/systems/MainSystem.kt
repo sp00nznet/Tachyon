@@ -49,6 +49,7 @@ abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractS
         TELEPORTER,
         CLOAKING,
         MIND_CONTROL,
+        HACKING,
         WEAPONS,
         DRONES;
     }

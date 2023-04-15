@@ -291,6 +291,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 "weapons" -> Weapons(blueprint, node)
                 "drones" -> Drones(blueprint, node)
                 "teleporter" -> Teleporter(blueprint, node)
+
+                // AE-only
+                "mind" -> MindControl(blueprint, node)
+                "hacking" -> Hacking(blueprint, node)
+                "battery" -> BackupBattery(blueprint, node)
+
                 else -> {
                     // TODO throw exception when all systems are implemented
                     System.out.println("Warning: unimplemented system ${node.name}")
