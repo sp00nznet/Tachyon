@@ -203,7 +203,19 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
     }
 
     private fun findResourceBoxSize(resourceSet: ResourceSet): IPoint {
-        var width = resourceSet.size * 45 + 10
+        var width = RESOURCE_LEFT_START
+
+        // Add up the width used by each of fuel/scrap/drones/missiles
+        for ((_, amount) in resourceSet.entries) {
+            // For the resource icon and it's padding to the number
+            width += RESOURCE_ICON_SPACING
+
+            width += resourceNumFont.getWidth(amount.toString())
+
+            // The padding until the next number, or the end of the box
+            width += RESOURCE_RIGHT_SPACING
+        }
+
         var height = 0
 
         // TODO check this on an image with both scrap and resources
@@ -256,11 +268,21 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         g.drawRect(pos.x.f, y.f, size.x - 1f, size.y - 1f)
         g.drawRect(pos.x.f + 1, y + 1f, size.x - 3f, size.y - 3f)
 
-        for ((i, pair) in resourceSet.toList().sortedBy { it.first.ordinal }.withIndex()) {
-            val x = pos.x + 5 + 45 * i
+        var resourceX = pos.x + RESOURCE_LEFT_START
+
+        for (pair in resourceSet.toList().sortedBy { it.first.ordinal }) {
+            // Draw the icon
             val colour = if (pair.second > 0) Constants.REWARDS_ICONS else Constants.REWARDS_NEGATIVE_ICONS
-            pair.first.getIcon(game).draw(x.f, y.f, colour)
-            resourceNumFont.drawString(x + 30f, y + 21f, pair.second.toString(), textColour)
+            pair.first.getIcon(game).draw(resourceX.f, y.f, colour)
+            resourceX += RESOURCE_ICON_SPACING
+
+            // Draw the text
+            val numText = pair.second.toString()
+            resourceNumFont.drawString(resourceX.f, y + 21f, numText, textColour)
+            resourceX += resourceNumFont.getWidth(numText)
+
+            // Add some padding before the next resource
+            resourceX += RESOURCE_RIGHT_SPACING
         }
 
         // If we drew some resources, move the blueprints down so they don't overlap
@@ -523,5 +545,9 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         private const val TEXT_OPTION_BOTTOM_MARGIN = TEXT_OPTION_SPACING - TEXT_OPTION_TOP_OFFSET
 
         private const val RESOURCE_BOTTOM_MARGIN = 10
+
+        private const val RESOURCE_LEFT_START = 5
+        private const val RESOURCE_ICON_SPACING = 30
+        private const val RESOURCE_RIGHT_SPACING = 9
     }
 }
