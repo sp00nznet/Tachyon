@@ -85,7 +85,10 @@ public class SlickGame extends BasicGame {
 
         // Start at the first beacon of the first sector
         // Be sure we do this after creating the player ship, it's used by the enemy AI
-        setCurrentBeacon(gameMap.getSectors()[0].getStartBeacon());
+        // Note that we don't store the current sector anywhere - it's determined via
+        // the current beacon.
+        Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0));
+        setCurrentBeacon(firstSector.getStartBeacon());
 
         for (Room room : player.getRooms()) {
             AbstractSystem system = room.getSystem();

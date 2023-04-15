@@ -4,13 +4,15 @@ import org.jdom2.Element
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.mapChildrenText
 import xyz.znix.xftl.requireAttributeValue
+import kotlin.math.abs
+import kotlin.random.Random
 
 /**
  * Represents the overall map of the game. This loads and parses the sector data (which defines all the
  * different types of sectors) and generates a random set of them to be used in the sector map.
  */
 class GameMap(df: Datafile, private val eventManager: EventManager) {
-    private val sectorClasses = HashMap<String, List<SectorType>>()
+    private val sectorClasses = HashMap<SectorClass, List<SectorType>>()
     private val sectorTypes = HashMap<String, SectorType>()
 
     private val specialEvents = SpecialEvents(
@@ -18,6 +20,8 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
         eventManager["FINISH_BEACON"],
         eventManager["FINISH_BEACON_NEBULA"]
     )
+
+    val sectors: List<List<SectorInfo>>
 
     init {
         val xml = df.parseXML(df["data/sector_data.xml"])
@@ -32,10 +36,112 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
             }
         }
 
-        for ((name, sectors) in namedSectorTypes) {
-            sectorClasses[name] = sectors.map {
+        outer@ for ((name, sectors) in namedSectorTypes) {
+            val sectorClass = when (name) {
+                "CIVILIAN" -> SectorClass.CIVILIAN
+                "HOSTILE" -> SectorClass.HOSTILE
+                "NEBULA" -> SectorClass.NEBULA
+
+                // TODO use OVERRIDE_HOSTILE instead in AE
+
+                // Skip unknown sector classes
+                else -> continue@outer
+            }
+
+            sectorClasses[sectorClass] = sectors.map {
                 sectorTypes[it] ?: error("Missing sector $it specificed in category $name")
             }
+        }
+
+        // Initialise here so we can add stuff to it in this constructor
+        sectors = ArrayList()
+
+        // Add the starting sector
+        val startingSector = SectorInfo(0, 0, SectorClass.CIVILIAN)
+        startingSector.type = sectorTypes["CIVILIAN_SECTOR"] ?: error("Cannot find CIVILIAN_SECTOR for first sector")
+        sectors.add(listOf(startingSector))
+
+        // Add the six intermediate columns
+        for (columnNum in 1..6) {
+            val lastColumn = sectors.last()
+
+            // Choose how many sectors there will be in this column, choosing
+            // a number different to the previous one.
+            var numInColumn: Int
+            do {
+                numInColumn = (2..4).random()
+            } while (numInColumn == lastColumn.size)
+
+            // Except the 2nd column is special, as it joins the starting
+            // beacon and thus must only have two beacons to avoid giving
+            // the player more than two options.
+            if (lastColumn.size == 1) {
+                numInColumn = 2
+            }
+
+            // Build all the sectors in this column
+            val column = ArrayList<SectorInfo>()
+            for (i in 0 until numInColumn) {
+                val sectorClass = SectorClass.random(Random.Default)
+                column.add(SectorInfo(columnNum, i, sectorClass))
+            }
+
+            // Add the connections between the previous sectors and
+            // the new ones. This depends on the number of sectors
+            // in this and the previous column, see sector-map for
+            // more information.
+
+            if (lastColumn.size == 2 && numInColumn == 4) {
+                lastColumn[0].nextSectors += column[0]
+                lastColumn[0].nextSectors += column[1]
+                lastColumn[1].nextSectors += column[2]
+                lastColumn[1].nextSectors += column[3]
+            } else if (lastColumn.size == 4 && numInColumn == 2) {
+                lastColumn[0].nextSectors += column[0]
+                lastColumn[1].nextSectors += column[0]
+                lastColumn[2].nextSectors += column[1]
+                lastColumn[3].nextSectors += column[1]
+            } else {
+                // This should only happen when we change size by one.
+                require(abs(lastColumn.size - numInColumn) == 1)
+
+                // Link each sector (except the edge ones in the column
+                // with the most sectors) to two others.
+
+                // Link the nth+a sector in the previous column to the nth+b
+                // one in the current column.
+                fun linkColumnsOffset(prevOffset: Int, currOffset: Int) {
+                    var i = 0
+                    while (prevOffset + i < lastColumn.size && currOffset + i < column.size) {
+                        lastColumn[prevOffset + i].nextSectors += column[currOffset + i]
+                        i += 1
+                    }
+                }
+
+                if (lastColumn.size > numInColumn) {
+                    // Less nodes in this column, we need the first and second
+                    // sectors in the first column linking to the first sector
+                    // in the second column, and so on.
+                    linkColumnsOffset(0, 0)
+                    linkColumnsOffset(1, 0)
+                } else {
+                    // There's more sectors in the new column, do the opposite
+                    linkColumnsOffset(0, 0)
+                    linkColumnsOffset(0, 1)
+                }
+            }
+
+            sectors.add(column)
+        }
+
+        // Add sector 8
+        val finalSector = SectorInfo(7, 0, SectorClass.HOSTILE)
+        finalSector.type = sectorTypes["FINAL"] ?: error("Cannot find FINAL sector for the boss fight")
+        sectors.add(listOf(finalSector))
+
+        // ... and link up all the sectors from the previous column, so it's accessible
+        for (sector in sectors[sectors.size - 2]) {
+            sector.nextSectors += finalSector
         }
     }
 
@@ -60,9 +166,8 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
         sectorTypes[name] = sector
     }
 
-    private fun generateSector(sectorNum: Int): Sector {
-        val category = listOf("CIVILIAN", "NEBULA", "OVERRIDE_HOSTILE").random()
-        val type = sectorClasses[category]?.random() ?: error("Missing sector category $category")
+    fun generateSector(sectorInfo: SectorInfo): Sector {
+        val type = sectorInfo.getOrGenerateType()
 
         val eventPool = ArrayList<Event>()
         for (ev in type.events) {
@@ -72,12 +177,8 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
             }
         }
 
-        return Sector(type, sectorNum, eventPool, specialEvents)
+        return Sector(type, sectorInfo, eventPool, specialEvents)
     }
-
-    // Temporary, this is just a single linear line of sectors
-    // TODO shape them how they are in standard FTL
-    val sectors = Array(7) { sectorNum -> generateSector(sectorNum) }
 
     class SpecialEvents(
         /**
@@ -105,4 +206,70 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
 
         val exitNebula: IEvent
     )
+
+    /**
+     * This stores the information about an available sector as it appears
+     * on the sector map.
+     */
+    inner class SectorInfo(
+        /**
+         * The 0-7 index of this column throughout the game - this sets
+         * the sector's X position.
+         */
+        val columnNumber: Int,
+
+        /**
+         * The index of this sector within it's column - this sets it's Y position.
+         *
+         * Row doesn't seem like the appropriate word since they're not
+         * in a grid, but it's pretty much that.
+         */
+        val columnIndex: Int,
+
+        val sectorClass: SectorClass
+    ) {
+        /**
+         * The exact type of sector. This is filled in when the player reaches
+         * the preceding sector.
+         */
+        var type: SectorType? = null
+
+        /**
+         * The sectors the player can jump to from this one.
+         */
+        val nextSectors = ArrayList<SectorInfo>()
+
+        // Note we don't store the actual Sector object here - that's
+        // only needed when the player is inside it, so it can be stored
+        // separately and discarded when not in use to save memory.
+
+        fun getOrGenerateType(): SectorType {
+            type?.let { return it }
+
+            val newType = sectorClasses[sectorClass]?.random() ?: error("No sectors for sector class $sectorClass")
+            type = newType
+            return newType
+        }
+    }
+
+    /**
+     * The broad types of sector, which determines the colour of the sector on the map.
+     */
+    enum class SectorClass {
+        CIVILIAN,
+        HOSTILE,
+        NEBULA;
+
+        companion object {
+            fun random(rand: Random): SectorClass {
+                // 20% chance of a nebula
+                if (rand.nextInt(5) == 0) {
+                    return NEBULA
+                }
+
+                // Otherwise, 60% civilian and 40% hostile
+                return if (rand.nextInt(10) < 4) HOSTILE else CIVILIAN
+            }
+        }
+    }
 }

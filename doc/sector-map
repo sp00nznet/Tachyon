@@ -1,0 +1,56 @@
+For picking sector types (hostile, friendly, nebula):
+
+* 20% chance of nebula, otherwise:
+* An independent 60% chance of being friendly, 40% hostile
+
+This is handled in StarMap::GetRandomSectorChoice, where:
+0=friendly
+1=hostile
+2=nebula
+
+And >2 seems to involve a grey dot on the sector map, which
+might be somehow related to the crystal homeworlds? Or maybe
+just something cut (this can be seen in RenderSectorMap).
+
+
+StarMap::GenerateSectorMap:
+
+This is responsible for generating the map of all the different
+sectors. It sets up the first and last sectors, and calls
+AddSectorColumn six times to fill in the middle.
+
+
+StarMap::AddSectorColumn:
+
+This is the core of FTL's sector map generation. It builds a column
+of sectors, as seen on the map.
+
+It picks a random number between 2 and 4 inclusive, which
+is the number of sectors in this column. It always picks
+a different number (via re-rolling) than the last column.
+
+The exception is the first column, which always has two
+sectors, presumably to avoid giving the player more than two options.
+
+For each column, consider the number of sectors in the previous
+column to figure out how to link them up:
+
+4 prev, 2 now: 1st sector links to previous 1st/2nd, 2nd links to 3rd/4th
+2 prev, 4 now: 1st and 2nd links to previous 1st, 3rd and 4th link to previous 2nd
+
+Any other case (1 prev, 2 now for the first sector, or between 2/3, 4/3, 3/4, 3/2)
+is handled as follows:
+
+For each new sector:
+ * Find it's 'peer', the sector with the corresponding index in
+   the previous column.
+ * Connect the peer to the previously-added new sector, or do nothing
+   if we're adding the first sector in the column.
+ * Create the new sector, linking it with it's peer
+ * If this column has more sectors than the last column, add a new
+   column in the 2nd position to keep the connections right.
+
+The actual implementation is annoying to read due to inlining, but searching
+for 'FTL sector map' in your favourite search engine should make it obvious
+what's happening here - link up all the sectors without any of the neighbour
+links overlapping.
