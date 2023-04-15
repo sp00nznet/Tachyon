@@ -17,8 +17,7 @@ import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class SlickGame extends BasicGame {
     private static ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(50, 150);
@@ -56,6 +55,10 @@ public class SlickGame extends BasicGame {
 
     private Beacon currentBeacon;
     private boolean paused;
+
+    // The list of all the sectors the ship has visited, including
+    // the current one.
+    private final ArrayList<GameMap.SectorInfo> visitedSectors = new ArrayList<>();
 
     private Image background;
     private Image planet;
@@ -413,6 +416,12 @@ public class SlickGame extends BasicGame {
 
         this.currentBeacon = currentBeacon;
 
+        // Keep track of which sectors we visit, to show on the sector map UI.
+        GameMap.SectorInfo sectorInfo = currentBeacon.getSector().getInfo();
+        if (!visitedSectors.contains(sectorInfo)) {
+            visitedSectors.add(sectorInfo);
+        }
+
         enemyIsHostile = true;
         setEnemy(currentBeacon.getShip());
 
@@ -590,6 +599,10 @@ public class SlickGame extends BasicGame {
 
     public EventManager getEventManager() {
         return eventManager;
+    }
+
+    public List<GameMap.SectorInfo> getVisitedSectors() {
+        return Collections.unmodifiableList(visitedSectors);
     }
 
     @NotNull

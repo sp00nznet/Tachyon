@@ -21,12 +21,13 @@ import kotlin.math.sqrt
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
 // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
 // for us atm.
-class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window() {
+class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (Beacon?) -> Unit) : Window() {
     override val size = ConstPoint(766, 548)
     override val outlineImage = game.getImg("img/window_outline.png")
 
     private val sectorInfoTab = game.getImg("img/map/side_sector.png")
     private val titleTab = game.getImg("img/map/side_beaconmap.png")
+    private val nextSectorTab = game.getImg("img/map/side_nextsector.png")
     private val font = game.getFont("HL2", 3f)
     private val cancelButtonOutline = game.getImg("img/main_menus/button_cancel_base.png")
     private val sectorInfoFont = game.getFont("c&cnew", 2f)
@@ -49,9 +50,15 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window() {
 
     val cancelButton = Buttons.BasicButton(
         position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
-        ConstPoint(124, 30), "CANCEL", game,
+        ConstPoint(124, 30), game.translator["button_cancel"], game,
         3, font, 24,
         ::cancelClicked
+    )
+
+    val nextSectorButton = Buttons.BasicButton(
+        position + ConstPoint(size.x - nextSectorTab.width - 11 + 19, 11 + 8),
+        ConstPoint(226, 36), game.translator["button_nextsector"], game,
+        3, font, 27, showSectorMap
     )
 
     val background = game.getImg("img/map/zone_1.png")
@@ -60,6 +67,9 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window() {
 
     init {
         buttons += cancelButton
+
+        if (game.currentBeacon.isExit)
+            buttons += nextSectorButton
     }
 
     override fun draw(g: Graphics) {
@@ -128,6 +138,12 @@ class JumpWindow(val game: SlickGame, val jump: (Beacon?) -> Unit) : Window() {
         // the cancel button frame.
         cancelButtonOutline.draw(position.x + size.x - cancelButtonOutline.width - 14, position.y + size.y - 7)
         cancelButton.draw(g)
+
+        // Draw the 'next sector' button frame, which has a similar glow trick to the cancel button
+        if (game.currentBeacon.isExit) {
+            nextSectorTab.draw(position.x + size.x - nextSectorTab.width - 11, position.y + 11)
+            nextSectorButton.draw(g)
+        }
 
         // Draw the sector info
         sectorInfoTab.draw(position.x, position.y + size.y - 27)

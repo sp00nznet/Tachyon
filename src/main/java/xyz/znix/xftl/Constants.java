@@ -65,6 +65,29 @@ public class Constants {
     public static final Color CREW_DESELECTED_BG = SYS_ENERGY_REPAIR;
     public static final Color CREW_SELECTED_BG = SYS_ENERGY_ACTIVE;
 
+    // Note: divide the colours by 4 if they're greyed-out because another
+    // sector is hovered.
+    public static final Color SECTOR_CIVILIAN = new Color(135, 199, 74);
+    public static final Color SECTOR_HOSTILE = new Color(214, 50, 50);
+    public static final Color SECTOR_NEBULA = new Color(128, 51, 210);
+
+    // The colours of the branch lines that link up the sectors
+    public static final Color SECTOR_BRANCH = new Color(255, 255, 255);
+    public static final Color SECTOR_BRANCH_GREYED = new Color(125, 125, 125);
+    public static final Color SECTOR_BRANCH_HOVER = SYS_ENERGY_ACTIVE;
+    public static final Color SECTOR_BRANCH_PATH = SYS_ENERGY_REPAIR;
+
+    // The colours of the background and text in the new sector window, which
+    // describes the different sector colours.
+    public static final Color SECTOR_TYPE_CUTOUT = new Color(31, 19, 19);
+    public static final Color SECTOR_TYPE_CUTOUT_TEXT = SECTOR_CUTOUT_TEXT;
+
+    // These describe the name label box that shows the name of the next two sectors
+    public static final Color SECTOR_NAME_BACKGROUND = new Color(0f, 0f, 0f, 0.8f);
+    public static final Color SECTOR_NAME_TEXT = SECTOR_BRANCH;
+    public static final Color SECTOR_NAME_TEXT_GREYED = SECTOR_BRANCH_GREYED;
+    public static final Color SECTOR_NAME_TEXT_HOVER = SYS_ENERGY_REPAIR;
+
     // These numbers took quite some work to obtain
     // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
     // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level

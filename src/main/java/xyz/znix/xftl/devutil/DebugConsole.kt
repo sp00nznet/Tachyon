@@ -48,6 +48,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
         Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
         Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
+        Cmd("sectors", 0, this::cmdSectors, "Open the sector map, regardless of the current beacon"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -317,6 +318,11 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
         enemy.damage(enemy.rooms.random(), 100, 0, 0)
         lines.add("Added 100 points of damage to the enemy ship")
+    }
+
+    private fun cmdSectors(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        game.shipUI.openSectorMap()
+        lines.add("Sector map window opened.")
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {

@@ -17,12 +17,18 @@ class SectorType(private val eventManager: EventManager, elem: Element) {
         EventInfo(name, count, eventManager[name])
     }
 
+    val nameTextId: String
+    val shortTextId: String
+
     val rarityOverrides: Map<String, Int>
 
     init {
-        // TODO store these
         val nameList = elem.getChild("nameList")
         check(nameList.children.size == 1)
+        val nameElem = nameList.getChild("name")
+
+        nameTextId = nameElem.getAttributeValue("id")
+        shortTextId = nameElem.getAttributeValue("short")
 
         // Load the rarity overrides
         check(elem.getChildren("rarityList").size <= 1)

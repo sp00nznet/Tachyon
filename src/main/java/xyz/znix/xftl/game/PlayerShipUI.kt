@@ -98,7 +98,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         var nextPos = ConstPoint(531, 29)
 
         val jump = Buttons.JumpButton(nextPos, ship, game) {
-            currentWindow = JumpWindow(game) {
+            currentWindow = JumpWindow(game, ::openSectorMap) {
                 if (it != null) {
                     // Reset stuff after jumping
                     storeAlreadyOpened = false
@@ -822,6 +822,23 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
      */
     fun teleportSelected(send: Boolean) {
         game.clickEvent = TeleportRoomListener(send)
+    }
+
+    fun openSectorMap() {
+        currentWindow = SectorMapWindow(game) { sectorInfo ->
+            currentWindow = null
+
+            // Null just means the window was closed
+            if (sectorInfo == null)
+                return@SectorMapWindow
+
+            val sector = game.gameMap.generateSector(sectorInfo)
+            game.currentBeacon = sector.startBeacon
+
+            // In case we were at a store
+            // TODO move this into an on-jump handler function
+            updateButtons()
+        }
     }
 
     private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int, size: ConstPoint) :
