@@ -17,11 +17,13 @@ import kotlin.math.max
 import kotlin.random.Random
 
 abstract class AbstractCrew(
-    val codename: String,
+    val blueprint: CrewBlueprint,
     private val anims: Animations,
     var room: Room,
     mode: SlotType
 ) {
+    val codename: String get() = blueprint.name
+
     var icon: Animation
     val backImg: SpriteSheet?
 

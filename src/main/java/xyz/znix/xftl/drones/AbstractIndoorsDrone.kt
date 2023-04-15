@@ -4,6 +4,7 @@ import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.weapons.DroneBlueprint
 
@@ -20,9 +21,10 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     abstract val occupancySlotType: AbstractCrew.SlotType
 
     /**
-     * The name of the fake crew race that's used for drawing the drone.
+     * The name of the blueprint for the fake crew race that's used for drawing the drone.
      *
-     * This matches up with the spritesheets in img/ship/drones.
+     * This matches up with the spritesheets in img/ship/drones, and with
+     * the crewBlueprint in the XML.
      */
     abstract val pawnCodename: String
 
@@ -115,6 +117,10 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         pawn?.onPowerChanged()
     }
 
+    private fun getPawnBlueprint(): CrewBlueprint {
+        return ownerShip.sys.blueprintManager[pawnCodename] as CrewBlueprint
+    }
+
     /**
      * An indoors drone comprises two objects: the drone object itself, and
      * a crewmember 'pawn'. This is to allow drones like boarding drones that
@@ -122,7 +128,8 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
      * immediately spawn. Also, [AbstractCrew] needs the initial room in its
      * constructor, which is inconvenient for us.
      */
-    open inner class Pawn(room: Room) : AbstractCrew(pawnCodename, room.ship.sys.animations, room, occupancySlotType) {
+    open inner class Pawn(room: Room) :
+        AbstractCrew(getPawnBlueprint(), room.ship.sys.animations, room, occupancySlotType) {
 
         var powerUpDuration: Float = 0f
         var onLastUpdate: Boolean = false

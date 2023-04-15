@@ -1,6 +1,7 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
@@ -36,6 +37,7 @@ class BlueprintManager(df: Datafile) {
                 "weaponBlueprint" -> buildWeaponBlueprint(elem)
                 "droneBlueprint" -> buildDroneBlueprint(elem)
                 "systemBlueprint" -> buildSystemBlueprint(elem)
+                "crewBlueprint" -> buildCrewBlueprint(elem)
 
                 // Intentionally ignore itemBlueprint - this contains fuel, drones, and missiles.
                 // The name 'drones' conflicts with the drones system, and it's the only such name
@@ -92,6 +94,10 @@ class BlueprintManager(df: Datafile) {
 
     private fun buildSystemBlueprint(elem: Element): IBlueprint {
         return SystemBlueprint(elem)
+    }
+
+    private fun buildCrewBlueprint(elem: Element): IBlueprint {
+        return CrewBlueprint(elem)
     }
 }
 

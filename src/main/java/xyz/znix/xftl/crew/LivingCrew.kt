@@ -7,8 +7,8 @@ import kotlin.random.Random
 /**
  * Represents a crew member that can be hired by the player.
  */
-abstract class LivingCrew(codename: String, anims: Animations, room: Room, mode: SlotType) :
-    AbstractCrew(codename, anims, room, mode) {
+abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Room, mode: SlotType) :
+    AbstractCrew(blueprint, anims, room, mode) {
 
     /**
      * The player facing name of this crew, eg 'Slocknog' or some

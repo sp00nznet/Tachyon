@@ -7,7 +7,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.crew.HumanCrew
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
@@ -855,7 +855,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             error("No free cells on ship, cannot spawn crew '$race'")
         }
 
-        val crewMember = HumanCrew(sys.animations, freeSpace.room, AbstractCrew.SlotType.CREW)
+        val raceBlueprint = sys.blueprintManager[race] ?: error("Missing crew blueprint for race '$race'")
+        require(raceBlueprint is CrewBlueprint)
+
+        val crewMember = raceBlueprint.spawn(freeSpace.room, AbstractCrew.SlotType.CREW)
         crewMember.jumpTo(freeSpace.room, freeSpace)
         crew.add(crewMember)
         freeSpace.room.reservedPlayerSlots[freeSpace.room.pointToSlot(freeSpace)] = crewMember
