@@ -184,16 +184,53 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             if (hasResources && choice != null && !choice.hidden && !option.event.itemsModifySteal) {
                 val boxSize = findResourceBoxSize(option.resources)
 
-                val boxX = textX + font.getWidth(text) + 10
-                val boxPos = ConstPoint(boxX, textY)
-                drawResourceBox(g, option.resources, boxPos, boxSize, colour)
+                val textResourceMargin = 10
+
+                // To support text wrapping, we do this in three parts:
+                // 1. Figure out the maximum width of the text
+                // 2. Draw the text, which tells us how wide it is
+                // 3. Draw the resource box to line up with the text, or
+                //    at it's maximum x position if the text is multi-line.
+                // This can be tested with the ENGI_REFUGEES or
+                // ZOLTAN_TRADE_HUB events (the latter with a blue option).
+                // (note ENGI_REFUGEES isn't part of the final game, so
+                //  you can't test it there).
+                // This logic might not exactly match the base game for
+                // other events, if so it should be fixed but it's not
+                // likely to be a big problem.
+
+                // Find the maximum box position
+                val maxBoxRHS = position.x + size.x - 34 - 7
+                val maxBoxX = maxBoxRHS - boxSize.x
+                val maxTextX = maxBoxX - textResourceMargin
 
                 // Align the text with the middle of the box
-                // TODO multiline support - this can be tested with the ENGI_REFUGEES event
                 val textTop = textY + (boxSize.y - FONT_HEIGHT) / 2
                 val lineY = textTop + FONT_HEIGHT
-                drawText(lineY, text, colour, rebuildBBs)
-                textY += boxSize.y + RESOURCE_BOTTOM_MARGIN
+                val textEndY = drawText(lineY, text, colour, rebuildBBs, maxTextX)
+
+                if (textEndY == lineY) {
+                    // The event is only one line long, draw the resource
+                    // box after the text.
+                    val boxX = textX + font.getWidth(text) + textResourceMargin
+                    val boxPos = ConstPoint(boxX, textY)
+                    drawResourceBox(g, option.resources, boxPos, boxSize, colour)
+                } else {
+                    // The text was multiple lines long, draw the resource box
+                    // on the right-mode side and centred on the text.
+                    // This does leave a notably larger spacing between the line
+                    // above as space was made for the box, but that's there in
+                    // vanilla FTL too (though slightly shorter - though it's
+                    // close enough, and I've had enough of fiddling with
+                    // layouts to care about this particular inconsistency).
+                    val firstLineTop = lineY - FONT_HEIGHT
+                    val textHeight = textEndY - firstLineTop
+                    val centreY = firstLineTop + textHeight / 2 - boxSize.y / 2
+                    val boxPos = ConstPoint(maxBoxX, centreY)
+                    drawResourceBox(g, option.resources, boxPos, boxSize, colour)
+                }
+
+                textY = max(textEndY + TEXT_OPTION_BOTTOM_MARGIN, boxSize.y + RESOURCE_BOTTOM_MARGIN)
             } else {
                 textY += TEXT_OPTION_TOP_OFFSET
                 textY = drawText(textY, text, colour, rebuildBBs)
@@ -299,8 +336,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         }
     }
 
-    private fun drawText(y: Int, msg: String, colour: Color = Color.white, addOption: Boolean = false): Int {
-        val textFarX = position.x + size.x - 25f
+    private fun drawText(
+        y: Int, msg: String, colour: Color = Color.white,
+        addOption: Boolean = false, maxX: Int = -1
+    ): Int {
+        // The x coordinate where line wrapping is triggered
+        val textFarX = if (maxX != -1) maxX.f else position.x + size.x - 25f
 
         var lineText = ""
         var textY = y
