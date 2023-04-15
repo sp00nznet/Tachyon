@@ -3,6 +3,7 @@ package xyz.znix.xftl.sector
 import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.requireAttributeValue
 import kotlin.random.Random
@@ -185,6 +186,32 @@ class Event(
             val raceName = crew.race ?: CrewBlueprint.PLAYABLE_RACE_NAMES.random()
             val race = game.blueprintManager[raceName] as CrewBlueprint
             resourcesGained.crew.add(AddCrewEval(race, name))
+        }
+
+        // Select crewmembers to kill
+        for (info in removedCrew) {
+            val crew: LivingCrew
+
+            // TODO exclude mind-controlled crew
+            val allCrew = game.player.friendlyCrew.filterIsInstance(LivingCrew::class.java)
+
+            if (allCrew.isEmpty()) {
+                println("Warning: Cannot remove crewmember via event, no crew left.")
+                continue
+            }
+
+            if (info.race == null) {
+                crew = allCrew.random()
+            } else {
+                val ofRace = allCrew.filter { it.blueprint.name == info.race }
+                if (ofRace.isEmpty()) {
+                    println("Warning: Cannot remove crewmember of race '${info.race}', no crew of that race.")
+                    continue
+                }
+                crew = ofRace.random()
+            }
+
+            resourcesGained.lostCrew.add(RemoveCrewEval(crew, info))
         }
 
         // Add the standard type/tier rewards - these are the standard results and most commonly used

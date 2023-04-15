@@ -3,7 +3,9 @@ package xyz.znix.xftl.game
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.sector.AddCrew
+import xyz.znix.xftl.sector.RemoveCrew
 
 enum class Resource {
     FUEL,
@@ -43,6 +45,9 @@ class ResourceSet() : Map<Resource, Int> {
     var scrap: Int = 0
     val items = ArrayList<Blueprint>()
     val crew = ArrayList<AddCrewEval>()
+    val lostCrew = ArrayList<RemoveCrewEval>()
+
+    val hasAnything: Boolean get() = isNotEmpty() || items.isNotEmpty() || crew.isNotEmpty() || lostCrew.isNotEmpty()
 
     constructor(basicResources: Map<Resource, Int>) : this() {
         for ((k, v) in basicResources) {
@@ -125,3 +130,5 @@ class ResourceSet() : Map<Resource, Int> {
  * Evaluated version of [AddCrew].
  */
 class AddCrewEval(val race: CrewBlueprint, val name: String)
+
+class RemoveCrewEval(val crew: LivingCrew, val info: RemoveCrew)

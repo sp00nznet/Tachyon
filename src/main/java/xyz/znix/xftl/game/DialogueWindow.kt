@@ -130,7 +130,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         textY = drawText(textY, currentEvent.text!!)
 
         val resourcesGained = currentEvent.resources
-        if (resourcesGained.isNotEmpty() || resourcesGained.items.isNotEmpty()) {
+        if (resourcesGained.hasAnything) {
             // The box is centred 43 pixels below the baseline of the last line of
             // the event text.
             val boxMiddleY = textY + 43
@@ -180,8 +180,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             }
 
             // Draw the resources for this event, if appropriate
-            val hasResources = (option.resources.isNotEmpty() || option.resources.items.isNotEmpty())
-            if (hasResources && choice != null && !choice.hidden && !option.event.itemsModifySteal) {
+            if (option.resources.hasAnything && choice != null && !choice.hidden && !option.event.itemsModifySteal) {
                 val boxSize = findResourceBoxSize(option.resources)
 
                 val textResourceMargin = 10
@@ -292,6 +291,19 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             height += 32
         }
 
+        for (crew in resourceSet.lostCrew) {
+            val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
+            val message = game.translator[messageKey].replace("\\1", crew.crew.selectedName)
+
+            // There's 30 pixels for the crew member to fit on the left
+            // of the 'so-and-so is gone' message.
+            val crewWidth = 30 + resourceNumFont.getWidth(message) + 14
+            width = max(width, crewWidth)
+
+            // Always 32 pixels high
+            height += 32
+        }
+
         return ConstPoint(width, height)
     }
 
@@ -329,6 +341,10 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
         for (crew in resourceSet.crew) {
             y = drawRewardCrew(crew, pos.x, y, textColour)
+        }
+
+        for (crew in resourceSet.lostCrew) {
+            y = drawLostCrew(crew, pos.x, y)
         }
 
         for (bp in resourceSet.items) {
@@ -405,6 +421,19 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         portrait.draw(x - 2f, y - 2f)
 
         resourceNumFont.drawString(x + 30f, y + 21f, crew.name, textColour)
+
+        return 32
+    }
+
+    private fun drawLostCrew(crew: RemoveCrewEval, x: Int, y: Int): Int {
+        // TODO layers, and unify the crew drawing with stores and ShipWindow
+        val portrait = game.animations["${crew.crew.codename}_portrait"].spriteAt(0)
+
+        portrait.draw(x - 2f, y - 2f)
+
+        val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
+        val message = game.translator[messageKey].replace("\\1", crew.crew.selectedName)
+        resourceNumFont.drawString(x + 30f, y + 21f, message, Constants.SYS_ENERGY_BROKEN)
 
         return 32
     }

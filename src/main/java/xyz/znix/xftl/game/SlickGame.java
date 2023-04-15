@@ -143,7 +143,7 @@ public class SlickGame extends BasicGame {
             int count = Integer.parseInt(elem.getAttributeValue("amount").strip());
             String race = elem.getAttributeValue("class");
             for (int i = 0; i < count; i++) {
-                player.addCrewMember(race, true);
+                player.addCrewMember(race, true, false);
             }
         }
     }
@@ -586,6 +586,13 @@ public class SlickGame extends BasicGame {
     /**
      * Try to avoid using, this is generally indicative of little hacks.
      */
+    public Ship getPlayer() {
+        return player;
+    }
+
+    /**
+     * Try to avoid using, this is generally indicative of little hacks.
+     */
     public Ship getEnemy() {
         return enemy;
     }
@@ -646,8 +653,25 @@ public class SlickGame extends BasicGame {
         }
 
         for (AddCrewEval crewSpec : resources.getCrew()) {
-            LivingCrew crew = player.addCrewMember(crewSpec.getRace().getName(), false);
+            LivingCrew crew = player.addCrewMember(crewSpec.getRace().getName(), false, false);
             crew.setSelectedName(crewSpec.getName());
+        }
+
+        for (RemoveCrewEval removed : resources.getLostCrew()) {
+            LivingCrew crew = removed.getCrew();
+            // TODO clone bay support
+            if (removed.getInfo().getTurnHostile()) {
+                // TODO re-use the same crew member!
+                crew.removeFromShip();
+                LivingCrew intruder = player.addCrewMember(crew.getCodename(), false, true);
+                intruder.setSelectedName(crew.getSelectedName());
+
+                // We have to first set this crew's target slot, before sending them there
+                intruder.setTargetRoom(crew.getRoom());
+                intruder.jumpTo(crew.getRoom(), crew.getPosition());
+            } else {
+                crew.removeFromShip();
+            }
         }
     }
 

@@ -823,7 +823,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
     }
 
-    fun addCrewMember(race: String, initial: Boolean): LivingCrew {
+    fun addCrewMember(race: String, initial: Boolean, isIntruder: Boolean = false): LivingCrew {
         var freeSpace: RoomPoint? = null
 
         // If this crewmember is being created with the ship, put them
@@ -863,10 +863,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         val raceBlueprint = sys.blueprintManager[race] ?: error("Missing crew blueprint for race '$race'")
         require(raceBlueprint is CrewBlueprint)
 
-        val crewMember = raceBlueprint.spawn(freeSpace.room, AbstractCrew.SlotType.CREW)
+        val mode = if (isIntruder) AbstractCrew.SlotType.INTRUDER else AbstractCrew.SlotType.CREW
+        val crewMember = raceBlueprint.spawn(freeSpace.room, mode)
         crewMember.jumpTo(freeSpace.room, freeSpace)
         crew.add(crewMember)
-        freeSpace.room.reservedPlayerSlots[freeSpace.room.pointToSlot(freeSpace)] = crewMember
+        mode.slotsFor(freeSpace.room)[freeSpace.room.pointToSlot(freeSpace)] = crewMember
 
         return crewMember
     }
