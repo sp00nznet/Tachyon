@@ -5,6 +5,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import org.newdawn.slick.Input
 import xyz.znix.xftl.*
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SubSystem
@@ -352,12 +353,13 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
     private fun drawCrewBox(g: Graphics, boxPos: ConstPoint, id: Int) {
         // TODO block mind-controlled crew members, once that's implemented
-        if (ship.friendlyCrew.size <= id) {
+        val crew = ship.friendlyCrew.getOrNull(id) as? LivingCrew
+
+        if (crew == null) {
             val boxEmpty = game.getImg("img/upgradeUI/Equipment/box_crew_off.png")
             boxEmpty.draw(boxPos + position)
             return
         }
-        val crew = ship.friendlyCrew[id]
 
         val dismissButtonBox = game.getImg("img/customizeUI/box_crewcustom_on.png")
         val dismissButtonBoxHover = game.getImg("img/customizeUI/box_crewcustom_selected.png")
@@ -377,7 +379,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                 dismissBox.draw(pos.x.f, pos.y + 62f)
 
                 // Draw the name
-                val name = "Crew name"
+                val name = crew.selectedName
                 val nameX = (96 - crewNameFont.getWidth(name)) / 2
                 crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, Color.white)
 

@@ -6,6 +6,7 @@ import org.newdawn.slick.*;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
+import xyz.znix.xftl.crew.CrewNameManager;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
@@ -24,6 +25,7 @@ public class SlickGame extends BasicGame {
 
     private BlueprintManager blueprintManager;
     private EventManager eventManager;
+    private CrewNameManager nameManager;
     private GameMap gameMap;
     private Ship player;
     private Ship enemy;
@@ -81,6 +83,7 @@ public class SlickGame extends BasicGame {
 
         translator = new Translator(df, "en");
         eventManager = new EventManager(df, translator, blueprintManager);
+        nameManager = new CrewNameManager(df);
         gameMap = new GameMap(df, eventManager);
 
         loadPlayerShip();
@@ -603,6 +606,10 @@ public class SlickGame extends BasicGame {
 
     public List<GameMap.SectorInfo> getVisitedSectors() {
         return Collections.unmodifiableList(visitedSectors);
+    }
+
+    public CrewNameManager getNameManager() {
+        return nameManager;
     }
 
     @NotNull

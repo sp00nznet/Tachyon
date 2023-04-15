@@ -8,6 +8,7 @@ import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.HumanCrew
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.ShipGib
@@ -817,7 +818,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
     }
 
-    fun addCrewMember(race: String, initial: Boolean): AbstractCrew {
+    fun addCrewMember(race: String, initial: Boolean): LivingCrew {
         var freeSpace: RoomPoint? = null
 
         // If this crewmember is being created with the ship, put them
