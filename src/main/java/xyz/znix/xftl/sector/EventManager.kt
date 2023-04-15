@@ -135,7 +135,7 @@ class EventManager(val df: Datafile, private val translator: Translator, private
 
         val text = elem.getChild("text")?.let(::loadText)
         val choices = elem.getChildren("choice").map(::loadChoice)
-        return lazyOf(Event(text, choices, elem, debugId, ::getImageList))
+        return lazyOf(Event(text, choices, elem, debugId, ::getImageList, ::loadText))
     }
 
     private fun loadChoice(elem: Element): Choice {
@@ -153,9 +153,9 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         elem.getAttributeValue("id")?.let {
             return EventText(translator[it])
         }
-        val text = elem.textTrim
-        check(text.isNotEmpty())
-        return EventText(text)
+        // The CRYSTAL_HELP_DIG event has an empty string for
+        // the crew clone message (since that is never triggered).
+        return EventText(elem.textTrim)
     }
 
     private fun loadImageList(elem: Element) {

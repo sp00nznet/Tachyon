@@ -194,6 +194,15 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
             width = max(width, bpWidth)
         }
 
+        for (crew in resourceSet.crew) {
+            // There's 30 pixels for the crew member to fit on the left of their name
+            val crewWidth = 30 + resourceNumFont.getWidth(crew.name) + 14
+            width = max(width, crewWidth)
+
+            // Always 32 pixels high
+            height += 32
+        }
+
         return ConstPoint(width, height)
     }
 
@@ -217,6 +226,10 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
         // If we drew some resources, move the blueprints down so they don't overlap
         if (resourceSet.isNotEmpty()) {
             y += 32
+        }
+
+        for (crew in resourceSet.crew) {
+            y = drawRewardCrew(crew, pos.x, y)
         }
 
         for (bp in resourceSet.items) {
@@ -280,6 +293,17 @@ class DialogueWindow(val game: SlickGame, startingEvent: Event, val close: () ->
 
             else -> TODO("Can't draw non-ship/drone blueprint: $bp")
         }
+    }
+
+    private fun drawRewardCrew(crew: AddCrewEval, x: Int, y: Int): Int {
+        // TODO layers, and unify the crew drawing with stores and ShipWindow
+        val portrait = game.animations["${crew.race.name}_portrait"].spriteAt(0)
+
+        portrait.draw(x - 2f, y - 2f)
+
+        resourceNumFont.drawString(x + 30f, y + 21f, crew.name, Color.white)
+
+        return 32
     }
 
     override fun updateUI(x: Int, y: Int) {

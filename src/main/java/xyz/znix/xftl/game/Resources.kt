@@ -2,6 +2,8 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.sector.AddCrew
 
 enum class Resource {
     FUEL,
@@ -40,6 +42,7 @@ class ResourceSet() : Map<Resource, Int> {
     var droneParts: Int = 0
     var scrap: Int = 0
     val items = ArrayList<Blueprint>()
+    val crew = ArrayList<AddCrewEval>()
 
     constructor(basicResources: Map<Resource, Int>) : this() {
         for ((k, v) in basicResources) {
@@ -117,3 +120,8 @@ class ResourceSet() : Map<Resource, Int> {
         fun of(type: Resource, count: Int) = ResourceSet().apply { this[type] = count }
     }
 }
+
+/**
+ * Evaluated version of [AddCrew].
+ */
+class AddCrewEval(val race: CrewBlueprint, val name: String)

@@ -7,6 +7,7 @@ import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
 import xyz.znix.xftl.crew.CrewNameManager;
+import xyz.znix.xftl.crew.LivingCrew;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
@@ -642,6 +643,11 @@ public class SlickGame extends BasicGame {
 
         for (Blueprint item : resources.getItems()) {
             player.addBlueprint(item, true);
+        }
+
+        for (AddCrewEval crewSpec : resources.getCrew()) {
+            LivingCrew crew = player.addCrewMember(crewSpec.getRace().getName(), false);
+            crew.setSelectedName(crewSpec.getName());
         }
     }
 

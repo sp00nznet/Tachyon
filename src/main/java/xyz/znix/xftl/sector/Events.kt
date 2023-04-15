@@ -2,8 +2,10 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Element
 import org.newdawn.slick.Image
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.requireAttributeValue
+import kotlin.random.Random
 
 // Many of the comments in this file came from ftlwiki.com (now unfortunately
 // offline, but accessable via the wayback machine):
@@ -23,17 +25,24 @@ interface IEvent {
 
 class Event(
     val text: IEventText?, val choices: List<Choice>, elem: Element, override val debugId: String,
-    imageFinder: (String) -> ImageList
+    imageFinder: (String) -> ImageList, loadText: (Element) -> IEventText
 ) : IEvent {
     val isDistressBeacon: Boolean = elem.getChild("distressBeacon") != null
     val isStore: Boolean = elem.getChild("store") != null
 
     val itemsModifySteal: Boolean
     val itemsModify: Map<Resource, IntRange>
+    val addedCrew: List<AddCrew>
+    val removedCrew: List<RemoveCrew>
     val autoRewards: Pair<RewardType, RewardTier>?
     val blueprintRewards: List<String>
 
     init {
+        // Initialise these in the constructor so we can mutate them,
+        // which isn't otherwise possible as they're declared as List.
+        addedCrew = ArrayList()
+        removedCrew = ArrayList()
+
         val modElem = elem.getChild("item_modify")
         if (modElem != null) {
             itemsModifySteal = modElem.getAttributeValue("steal")?.toBoolean() ?: false
@@ -50,6 +59,35 @@ class Event(
         } else {
             itemsModifySteal = false
             itemsModify = emptyMap()
+        }
+
+        val crewElem = elem.getChild("crewMember")
+        if (crewElem != null) {
+            val count = crewElem.getAttributeValue("amount").toInt()
+
+            val race = crewElem.getAttributeValue("class")
+            val nameId = crewElem.getAttributeValue("id")
+
+            for (i in 0 until count) {
+                addedCrew.add(AddCrew(race, nameId))
+
+                // TODO skills, including 'all_skills'
+            }
+
+            // Special-case the crew-removing event used in STATION_SICK
+            if (count < 0) {
+                for (i in 0 until -count) {
+                    removedCrew.add(RemoveCrew(false, null, null, race == "traitor"))
+                }
+            }
+        }
+
+        val killCrew = elem.getChild("removeCrew")
+        if (killCrew != null) {
+            val race = killCrew.getChildText("class")
+            val clone = killCrew.getChildText("clone")!!.toBoolean()
+            val cloneText = loadText(killCrew.getChild("text"))
+            removedCrew.add(RemoveCrew(clone, cloneText, race, false))
         }
 
         val auto = elem.getChild("autoReward")
@@ -128,6 +166,27 @@ class Event(
             }
         }
 
+        // Pick names for the new crewmembers
+        for (crew in addedCrew) {
+            val name: String
+
+            if (crew.nameId != null) {
+                // Specifically named by the event (eg Slocknog)
+                name = game.translator[crew.nameId]
+            } else {
+                // TODO for humans, pick a matching name and gender
+                // TODO language selection
+                name = game.nameManager.getForGender(null, "en", Random.Default)
+            }
+
+            // TODO filter out anaerobic when AE is off
+            // TODO use the proper way of figuring out what crew are given as rewards
+            //  in each sector, so we're not giving out crystals all the time.
+            val raceName = crew.race ?: CrewBlueprint.PLAYABLE_RACE_NAMES.random()
+            val race = game.blueprintManager[raceName] as CrewBlueprint
+            resourcesGained.crew.add(AddCrewEval(race, name))
+        }
+
         // Add the standard type/tier rewards - these are the standard results and most commonly used
         // eg destroying a ship usually gives STANDARD/MEDIUM rewards.
         if (autoRewards != null) {
@@ -147,6 +206,38 @@ class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {
 
     override val debugId: String get() = name
 }
+
+class AddCrew(val race: String?, val nameId: String?)
+
+class RemoveCrew(
+    /**
+     * If true, this crew member will be saved by a clone bay.
+     */
+    val clone: Boolean,
+
+    /**
+     * If the ship has a clone bay, this is the message that either
+     * says your crew has been recovered or explains why they haven't.
+     *
+     * Note: this is empty for the CRYSTAL_HELP_DIG events, we
+     * shouldn't display a popup for those.
+     */
+    val cloneText: IEventText?,
+
+    /**
+     * If this event removes a crewmember of a specific race, for
+     * example the Engi Virus, this specifies it.
+     */
+    val race: String?,
+
+    /**
+     * If true, this crew member is left on the ship and converted
+     * to an enemy, which the infectious space station event uses.
+     *
+     * This is actually set by <crewMember> not <removeCrew>.
+     */
+    val turnHostile: Boolean
+)
 
 class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {
     /**
