@@ -16,6 +16,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
     private val sectorTypes = HashMap<String, SectorType>()
 
     private val specialEvents = SpecialEvents(
+        eventManager["START_GAME"],
         eventManager["NEUTRAL"],
         eventManager["FINISH_BEACON"],
         eventManager["FINISH_BEACON_NEBULA"]
@@ -204,6 +205,11 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
     }
 
     class SpecialEvents(
+        /**
+         * The very first event that appears in the first beacon of the game.
+         */
+        val startGame: IEvent,
+
         /**
          * The event to be used when we've run out of events, but still have more beacons
          * to be filled. After modifying the vanilla FTL event XMLs, this is hardcoded

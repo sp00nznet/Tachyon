@@ -88,6 +88,12 @@ class Sector(
             if (gridPos.x == 0 && tmpStartBeacon == null) {
                 event = type.startEvent.resolve()
                 isStart = true
+
+                // If this is the very first beacon in the game, it's replaced
+                // with the START_GAME event.
+                if (sectorNumber == 0) {
+                    event = specialEvents.startGame.resolve()
+                }
             }
 
             // Otherwise, just use a standard beacon from our event pool - or
