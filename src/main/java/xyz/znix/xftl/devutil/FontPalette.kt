@@ -140,7 +140,7 @@ object FontPalette {
 
             val isLatinChar = c in 'a'..'z' || c in 'A'..'Z'
             val isNum = c in '0'..'9'
-            val isSimplePunc = ", .?!".contains(c)
+            val isSimplePunc = ", .?!;:".contains(c)
 
             if (isLatinChar || isNum || isSimplePunc) {
                 text += c

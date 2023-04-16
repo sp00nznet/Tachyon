@@ -207,7 +207,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
                     g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
 
                     // Draw the name
-                    val name = game.translator[aug.title!!]
+                    val name = aug.translateTitle(game)
                     augmentFont.drawStringCentred(pos.x.f, pos.y.f + 27f, size.x.f, name, Constants.AUGMENT_NAME_TEXT)
                 }
             }

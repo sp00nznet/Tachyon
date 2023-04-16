@@ -5,6 +5,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
@@ -26,6 +27,8 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
     private val resourceNumFont = game.getFont("JustinFont10")
     private val font = game.getFont("JustinFont11Bold")
+
+    private val augmentStringWidth = font.getWidth(game.translator["augment"])
 
     private lateinit var currentEvent: EvaluatedEvent
     private lateinit var options: List<EvaluatedEvent>
@@ -276,7 +279,14 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
                     10 + bp.iconSize.x + 8 + nameWidth + 12 // Approximate numbers
                 }
 
-                else -> TODO("Can't draw non-ship/drone blueprint: $bp")
+                is AugmentBlueprint -> {
+                    height += 32
+
+                    val nameWidth = resourceNumFont.getWidth(bp.translateTitle(game))
+                    10 + augmentStringWidth + 8 + nameWidth + 11
+                }
+
+                else -> TODO("Can't draw non-ship/drone/augment blueprint: $bp")
             }
 
             width = max(width, bpWidth)
@@ -410,7 +420,17 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
                 return 20
             }
 
-            else -> TODO("Can't draw non-ship/drone blueprint: $bp")
+            is AugmentBlueprint -> {
+                val nameX = boxX + 10 + augmentStringWidth + 8
+                val nameY = textY + 21f
+
+                font.drawString(boxX + 10f, nameY, game.translator["augment"], textColour)
+                resourceNumFont.drawString(nameX.f, nameY, bp.translateTitle(game), textColour)
+
+                return textY + 32
+            }
+
+            else -> TODO("Can't draw non-ship/drone/augment blueprint: $bp")
         }
     }
 
