@@ -661,14 +661,7 @@ public class SlickGame extends BasicGame {
             LivingCrew crew = removed.getCrew();
             // TODO clone bay support
             if (removed.getInfo().getTurnHostile()) {
-                // TODO re-use the same crew member!
-                crew.removeFromShip();
-                LivingCrew intruder = player.addCrewMember(crew.getCodename(), false, true);
-                intruder.setSelectedName(crew.getSelectedName());
-
-                // We have to first set this crew's target slot, before sending them there
-                intruder.setTargetRoom(crew.getRoom());
-                intruder.jumpTo(crew.getRoom(), crew.getPosition());
+                crew.setMode(crew.getMode().getOther());
             } else {
                 crew.removeFromShip();
             }

@@ -12,6 +12,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.systems.Oxygen
+import java.util.*
 
 data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: Int, val height: Int) {
 
@@ -57,8 +58,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
     val position = ConstPoint(x, y)
 
-    val reservedPlayerSlots: Array<AbstractCrew?> = Array(width * height) { null }
-    val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
+    private val reservedPlayerSlots: Array<AbstractCrew?> = Array(width * height) { null }
+    private val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
 
     val obstructions = HashSet<ConstPoint>()
 
@@ -232,6 +233,100 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         check(containsRelative(point))
 
         return point.x + point.y * width
+    }
+
+    fun isSlotFree(point: IPoint, type: AbstractCrew.SlotType): Boolean {
+        // Skip obstructed cells - eg, healer in the medbay
+        if (obstructions.contains(point))
+            return false
+
+        val slots = slotsFor(type)
+        return slots[pointToSlot(point)] == null
+    }
+
+    /**
+     * Update all of this rooms crew and intruder slots.
+     *
+     * If two crew are set to the same location, one of them (the one
+     * not put in the slot) will be added to the [conflicts] list.
+     */
+    fun updateCrewReservedSlots(conflicts: ArrayList<AbstractCrew>) {
+        // Clear out all the pathfinding slots, and fill them back in.
+        // This is much better than manually updating the slots, since
+        // they can't get out-of-sync with the current crew.
+        Arrays.fill(reservedPlayerSlots, null)
+        Arrays.fill(reservedEnemySlots, null)
+
+        // Update all the crew and intruder slots. Note we can't
+        // use ship.friendlyCrew or ship.intruders, as they might
+        // not have updated yet (eg four crew teleporting to
+        // a two-peron room; we need to update the slots between
+        // each crew reserving a slot).
+        for (crew in ship.crew) {
+            addCrewReservedSlot(conflicts, crew.mode, crew)
+        }
+    }
+
+    private fun addCrewReservedSlot(
+        conflicts: ArrayList<AbstractCrew>,
+        type: AbstractCrew.SlotType,
+        crew: AbstractCrew
+    ) {
+        val slots = slotsFor(type)
+
+        // Crew standing in one of the slots
+        if (crew.room == this && crew.movement == null) {
+            val slot = pointToSlot(crew.position)
+
+            if (slots[slot] == null) {
+                slots[slot] = crew
+            } else {
+                conflicts.add(crew)
+            }
+        }
+
+        // Crew walking towards one of the slots
+        val target = crew.pathingTarget
+        if (crew.movement != null && target != null && target.room == this) {
+            val slot = pointToSlot(target)
+
+            if (slots[slot] == null) {
+                slots[slot] = crew
+            } else {
+                conflicts.add(crew)
+            }
+        }
+    }
+
+    /**
+     * Find the first free slot in this room that another crewmember
+     * isn't already standing on or pathing to.
+     *
+     * This defines the order in which crew are placed into a room,
+     * and using this ensures crew are always sent to the computer
+     * position first.
+     */
+    fun firstFreeSlot(type: AbstractCrew.SlotType): IPoint? {
+        computerPoint?.let { computer ->
+            if (isSlotFree(computer, type) && type == AbstractCrew.SlotType.CREW) {
+                return computer
+            }
+        }
+
+        val slots = slotsFor(type)
+
+        for (i in slots.indices) {
+            val point = slotToPoint(i)
+            if (isSlotFree(point, type))
+                return point
+        }
+
+        return null
+    }
+
+    private fun slotsFor(type: AbstractCrew.SlotType): Array<AbstractCrew?> = when (type) {
+        AbstractCrew.SlotType.CREW -> reservedPlayerSlots
+        AbstractCrew.SlotType.INTRUDER -> reservedEnemySlots
     }
 
     /**

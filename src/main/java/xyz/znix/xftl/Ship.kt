@@ -813,51 +813,90 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     fun addCrewMember(race: String, initial: Boolean, isIntruder: Boolean = false): LivingCrew {
         var freeSpace: RoomPoint? = null
+        val mode = if (isIntruder) AbstractCrew.SlotType.INTRUDER else AbstractCrew.SlotType.CREW
 
         // If this crewmember is being created with the ship, put them
         // in a system that makes sense.
-        if (initial) {
+        if (initial && !isIntruder) {
             val systems = listOf(piloting, engines, weapons, shields)
             for (system in systems) {
                 if (system == null)
                     continue
 
                 val room = system.room!!
-                if (!room.reservedPlayerSlots.all { it == null })
+
+                // If someone's already at the computer, don't put another person there.
+                val firstSlot = room.computerPoint ?: ConstPoint.ZERO
+                if (!room.isSlotFree(firstSlot, mode))
                     continue
 
                 // Stand by the computer, if possible
-                freeSpace = RoomPoint(room, room.computerPoint ?: ConstPoint.ZERO)
+                freeSpace = RoomPoint(room, firstSlot)
                 break
             }
         }
 
-        // Otherwise just put them whereever they'll fit.
+        // Otherwise just put them wherever they'll fit.
         if (freeSpace == null) {
-            for (room in rooms) {
-                for (i in 0 until (room.width * room.height)) {
-                    if (room.reservedPlayerSlots[i] != null) continue
-
-                    freeSpace = RoomPoint(room, room.slotToPoint(i))
-                    break
-                }
-            }
+            freeSpace = findSpaceForCrew(null, mode)
         }
 
-        if (freeSpace == null) {
-            error("No free cells on ship, cannot spawn crew '$race'")
-        }
-
-        val raceBlueprint = sys.blueprintManager[race] ?: error("Missing crew blueprint for race '$race'")
+        val raceBlueprint = sys.blueprintManager.blueprints[race] ?: error("Missing crew blueprint for race '$race'")
         require(raceBlueprint is CrewBlueprint)
 
-        val mode = if (isIntruder) AbstractCrew.SlotType.INTRUDER else AbstractCrew.SlotType.CREW
         val crewMember = raceBlueprint.spawn(freeSpace.room, mode)
-        crewMember.jumpTo(freeSpace.room, freeSpace)
         crew.add(crewMember)
-        mode.slotsFor(freeSpace.room)[freeSpace.room.pointToSlot(freeSpace)] = crewMember
+        crewMember.jumpTo(freeSpace.room, freeSpace)
 
         return crewMember
+    }
+
+    /**
+     * Find a slot somewhere in the ship (accessible from [startingRoom],
+     * if this ship has some disconnected rooms) that's empty.
+     *
+     * This works with the pathfinding slots - the points that a crewmember
+     * can be sent to by right-clicking. Thus a room that has no crew in
+     * it would be considered full if crew are walking towards every spot.
+     *
+     * Similarly, a room full of crew would be considered empty if they're
+     * all walking elsewhere.
+     */
+    fun findSpaceForCrew(startingRoom: Room?, type: AbstractCrew.SlotType): RoomPoint {
+        val checked = HashSet<Room>()
+
+        // Checks a single room for free space
+        fun checkRoom(room: Room): RoomPoint? {
+            if (checked.contains(room))
+                return null
+            checked.add(room)
+
+            val freeSpot = room.firstFreeSlot(type)
+            if (freeSpot != null) {
+                return RoomPoint(room, freeSpot)
+            }
+
+            for (door in room.doors) {
+                val neighbour = door.other(room) ?: continue
+                checkRoom(neighbour)?.let { return it }
+            }
+
+            return null
+        }
+
+        // If no room has been specified, start at the piloting room.
+        // This is the behaviour used for newly-spawned crew.
+        // This might be called very early on before the systems
+        // are added, so don't require that piloting exists.
+        val firstRoom = startingRoom ?: piloting?.room ?: rooms.first()
+
+        // Check every room via recursion. This will prefer the first
+        // room if it's empty, and will only return a room if every room
+        // in a path from it to piloting is connected.
+        checkRoom(firstRoom)?.let { return it }
+
+        // No free space!
+        error("Couldn't find any free space in ship $name, starting at room $firstRoom")
     }
 
     fun updateAvailableSystems() {
@@ -928,6 +967,30 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // TODO handle forced=true.
 
         return false
+    }
+
+    /**
+     * Update [Room.reservedPlayerSlots] and [Room.reservedEnemySlots]
+     * for every room on the ship.
+     *
+     * This should mainly be called by [AbstractCrew], whenever a change
+     * to their pathfinding target is made. It can also be called whenever
+     * the crew on the ship are changed, such as from deaths or new crew.
+     */
+    fun updateCrewReservedSlots() {
+        val conflicts = ArrayList<AbstractCrew>()
+
+        for (room in rooms) {
+            room.updateCrewReservedSlots(conflicts)
+        }
+
+        // If two crewmembers are in, or set to be in, the same location then
+        // one of them will be in the conflicts list. Make them find a new
+        // free slot.
+        for (conflict in conflicts) {
+            val freeSpot = findSpaceForCrew(conflict.room, conflict.mode)
+            require(conflict.setTargetRoom(freeSpot.room)) { "Failed to set target of empty room!" }
+        }
     }
 
     companion object {

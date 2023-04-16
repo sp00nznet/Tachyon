@@ -54,23 +54,14 @@ abstract class AbstractCrew(
 
             // If we're leaving a room, reset it's reserved slots so we don't keep taking up space there
             // The way it works in FTL (and should here) is that as soon as a crewmember starts walking, their
-            // space is free and another crewmember can start pathing there
+            // space is free and another crewmember can start pathing there.
             //
-            // Likewise, if we start pathing to a room, mark that slot as taken
-
-            // Which room are we coming from. If we were stationary then it's our current room, if we changed
-            // destination then it was our previous destination.
-            val from = old ?: roomPosition
-
-            // Even if we're becoming stationary, free up the space - we'll fill it in later
-            clearFromRoomSlots(slotsFor(from.room))
-
-            // Now mark the slot we're taking up
-            val dest = value ?: roomPosition
-            val slot = dest.room.pointToSlot(dest)
-            val slots = slotsFor(dest.room)
-            check(slots[slot] == null)
-            slots[slot] = this
+            // Likewise, if we start pathing to a room, mark that slot as taken.
+            //
+            // This is done by recalculating all the reserved slots on the ship. Previously
+            // we kept a manually-updated list, but when we were adding and removing
+            // crew it was very easy for it to fall out-of-sync with reality.
+            room.ship.updateCrewReservedSlots()
         }
 
     var movement: Direction? = null
@@ -110,7 +101,12 @@ abstract class AbstractCrew(
         }
 
     var mode: SlotType = mode
-        private set // Warning: you have to update the room slots!
+        set(value) {
+            if (field == value)
+                return
+            field = value
+            room.ship.updateCrewReservedSlots()
+        }
 
     var movementProgress: Float = 0F
         private set
@@ -167,8 +163,6 @@ abstract class AbstractCrew(
         updateAnimation()
     }
 
-    fun slotsFor(room: Room) = mode.slotsFor(room)
-
     open fun update(dt: Float) {
         icon.update((dt * 1000).toLong())
 
@@ -212,6 +206,7 @@ abstract class AbstractCrew(
                 movement = null
                 movementProgress = 0f
                 pathingTarget = null
+                targetDoor = null
 
                 // Flip between being an intruder and a crewmember
                 mode = mode.other
@@ -221,31 +216,20 @@ abstract class AbstractCrew(
                 destination.ship.crew.add(this)
 
                 // Change the room over, preserving our current position if possible
-                room = destination
 
-                val slots = slotsFor(room)
-                var foundSlot = false
-                if (room.containsRelative(position)) {
-                    val slot = room.pointToSlot(position)
-                    if (slots[slot] == null) {
-                        slots[slot] = this
-                        foundSlot = true
-                    }
-                }
-                for ((slot, crew) in slots.withIndex()) {
-                    if (foundSlot)
-                        break
-                    if (crew != null)
-                        continue
-
-                    positionInternal.set(room.slotToPoint(slot))
-                    slots[slot] = this
-                    foundSlot = true
+                if (destination.containsRelative(position) && destination.isSlotFree(position, mode)) {
+                    // The corresponding position in this new room is free
+                    room = destination
+                } else {
+                    // If our preferred location is unavailable, pick another
+                    // spot (potentially in a different room, if required).
+                    val free = destination.ship.findSpaceForCrew(destination, mode)
+                    positionInternal.set(free)
+                    room = free.room
                 }
 
-                // TODO If there's no space in this room, pick another
-                if (!foundSlot)
-                    TODO("Implement teleporting into full rooms")
+                // Mark this slot as now in use
+                room.ship.updateCrewReservedSlots()
 
                 updateAnimation()
             } else {
@@ -293,9 +277,7 @@ abstract class AbstractCrew(
         }
 
         // Check if any enemies are in the room
-        // FIXME attack enemies that are just passing through the room, which
-        //  don't have a reserved slot.
-        val hostiles = mode.other.slotsFor(room).filterNotNull().filter { it.room == room }
+        val hostiles = room.crew.filter { it.mode != mode }
         if (hostiles.isNotEmpty()) {
             // Check if someone is standing in the same cell as us
             val sameCell = hostiles.firstOrNull { it.movement == null && it.position == position }
@@ -362,7 +344,7 @@ abstract class AbstractCrew(
             }
         }
 
-        val computerPoint = room.computerPoint?.let(room::pointToSlot)
+        val computerPoint = room.computerPoint
         if (computerPoint != null && canManSystem && mode == SlotType.CREW) {
             if (room.computerPoint == position) {
                 currentAction = Action.MANNING
@@ -370,7 +352,7 @@ abstract class AbstractCrew(
             }
 
             // Walk to the computer if no-one is occupying that slot.
-            if (room.reservedPlayerSlots[computerPoint] == null) {
+            if (room.isSlotFree(computerPoint, mode)) {
                 setTargetRoom(room)
             }
         }
@@ -567,40 +549,35 @@ abstract class AbstractCrew(
     }
 
     fun setTargetRoom(value: Room): Boolean {
-        val slots = slotsFor(value)
-
         if (value.computerPoint != null)
-            if (setTargetRoom(value, value.pointToSlot(value.computerPoint!!), slots))
+            if (setTargetRoom(value, value.computerPoint!!))
                 return true
 
         if (value == room)
             return true
 
-        for (i in slots.indices) {
-            if (setTargetRoom(value, i, slots))
+        val freeSlot = value.firstFreeSlot(mode)
+        if (freeSlot != null) {
+            if (setTargetRoom(value, freeSlot)) {
                 return true
+            }
         }
 
         return false
     }
 
-    private fun setTargetRoom(value: Room, slot: Int, slots: Array<AbstractCrew?>): Boolean {
+    private fun setTargetRoom(value: Room, pos: IPoint): Boolean {
         // If we're already going to, or are at, this point then do nothing.
-        if (pathingTarget?.room == value && value.pointToSlot(pathingTarget!!) == slot)
+        if (pathingTarget?.room == value && pathingTarget!! == pos)
             return true
-        if (pathingTarget == null && room == value && value.pointToSlot(position) == slot)
+        if (pathingTarget == null && room == value && position == pos)
             return true
 
-        // If this slot is neither empty nor consumed by us (since we're moving anyway), then
-        // it's consumed and we should skip it.
-        val current = slots[slot]
-        if (current != null && current != this)
-            return false
-
-        val pos = value.slotToPoint(slot)
-
-        // Skip obstructed cells - eg, healer in the medbay
-        if (value.obstructions.contains(pos))
+        // If this slot isn't empty, we should skip it.
+        // We should never be in this slot ourselves, the checks above should
+        // filter out those cases.
+        // This also checks for obstructed cells (eg, healer in the medbay)
+        if (!value.isSlotFree(pos, mode))
             return false
 
         // Verify we have a path to this room
@@ -614,13 +591,6 @@ abstract class AbstractCrew(
         return true
     }
 
-    private fun clearFromRoomSlots(slots: Array<AbstractCrew?>) {
-        slots.forEachIndexed { index, crew ->
-            if (crew == this)
-                slots[index] = null
-        }
-    }
-
     /**
      * Set the room and position to the given values.
      *
@@ -631,6 +601,10 @@ abstract class AbstractCrew(
         positionInternal.set(newPoint)
         updateMovement()
         updateAnimation()
+
+        // Unless we're moving (but even then do it just to be safe),
+        // we're now occupying a different slot. Thus update them all.
+        room.ship.updateCrewReservedSlots()
     }
 
     /**
@@ -638,13 +612,8 @@ abstract class AbstractCrew(
      * the dying animation finishes.
      */
     open fun removeFromShip() {
-        val ship = room.ship
-        for (room in ship.rooms) {
-            clearFromRoomSlots(room.reservedPlayerSlots)
-            clearFromRoomSlots(room.reservedEnemySlots)
-        }
-
-        ship.crew.remove(this)
+        room.ship.crew.remove(this)
+        room.ship.updateCrewReservedSlots()
     }
 
     /**
@@ -667,11 +636,6 @@ abstract class AbstractCrew(
                 CREW -> INTRUDER
                 INTRUDER -> CREW
             }
-
-        fun slotsFor(room: Room): Array<AbstractCrew?> = when (this) {
-            CREW -> room.reservedPlayerSlots
-            INTRUDER -> room.reservedEnemySlots
-        }
     }
 
     enum class Action {
