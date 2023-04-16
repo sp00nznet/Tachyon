@@ -10,7 +10,6 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractDrone
-import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
@@ -65,14 +64,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val droneSlots: Int? = shipNode.getChildTextTrim("droneSlots")?.toInt()
 
     val isAutoScout = shipNode.getChild("crewCount")?.getAttributeValue("amount")?.trim() == "0"
+
+    // All the crew currently standing on this ship. This includes drone pawns.
     val crew: MutableList<AbstractCrew> = ArrayList()
 
-    // The subset of the crew that are or aren't intruders
+    // The subset of the crew that are or aren't intruders. This also includes drone pawns.
     val intruders: List<AbstractCrew> = ArrayList()
     val friendlyCrew: List<AbstractCrew> = ArrayList()
-
-    // All the indoors drones, owned by this ship (repair) or not (boarder) on this ship.
-    val dronePawns: MutableList<AbstractIndoorsDrone.Pawn> = ArrayList()
 
     // These are the friendly drones that exist around the ship,
     // even though they're been removed from the drones system. They're
@@ -453,11 +451,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             hardpoints += hardpoint
         }
 
-        // Initialise all the systems
-        for (room in rooms) {
-            room.system?.initialise(this)
-        }
-
         gibs = ArrayList()
         for (node in visualsXML.rootElement.getChild("explosion").children) {
             gibs += ShipGib(sys, this, node)
@@ -702,9 +695,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         for (crew in crew) {
             crew.draw(g)
         }
-        for (pawn in dronePawns) {
-            pawn.draw(g)
-        }
 
         // Draw the system foregrounds
         for (room in rooms)
@@ -750,8 +740,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // by dying or (in the case of drones) the enemy ship blowing up.
         for (crew in crew.toTypedArray())
             crew.update(dt)
-        for (pawn in dronePawns.toTypedArray())
-            pawn.update(dt)
 
         // Update the list of intruders and friendly (non-intruder) crewmembers
         require(intruders is ArrayList)

@@ -118,7 +118,6 @@ class ShipAI(val ship: Ship, val player: Ship) {
             tasks += task
         }
 
-        // TODO fight boarding drones
         val outdatedCombatTasks = combatTasks.keys.filter { !ship.intruders.contains(it) }
         for (task in outdatedCombatTasks)
             combatTasks.remove(task)

@@ -43,6 +43,7 @@ abstract class AbstractCrew(
     open val attackDamageMult: Float get() = 1f
     open val hasDyingAnimation: Boolean get() = true
     open val canSuffocate: Boolean get() = true
+    open val playerControllable: Boolean get() = true
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
@@ -643,10 +644,7 @@ abstract class AbstractCrew(
             clearFromRoomSlots(room.reservedEnemySlots)
         }
 
-        // To support both crew and drones, remove ourselves
-        // from all the crew lists.
         ship.crew.remove(this)
-        ship.dronePawns.remove(this)
     }
 
     /**

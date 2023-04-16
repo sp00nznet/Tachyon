@@ -90,7 +90,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         // TODO fix the drone driving up and down when spawned
 
         pawn = tmpPawn
-        ship.dronePawns += tmpPawn
+        ship.crew += tmpPawn
         return true
     }
 
@@ -138,6 +138,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         override val canManSystem: Boolean get() = false
         override val hasDyingAnimation: Boolean get() = false
         override val canSuffocate: Boolean get() = false
+        override val playerControllable: Boolean get() = false
 
         override fun update(dt: Float) {
             // If a new animation has been selected while paused, apply that now.

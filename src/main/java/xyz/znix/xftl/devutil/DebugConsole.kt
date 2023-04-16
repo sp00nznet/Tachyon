@@ -6,6 +6,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.Buttons
@@ -278,7 +279,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
             }
 
             target.orphanedDrones.clear()
-            target.dronePawns.clear()
+            target.crew.removeIf { it is AbstractIndoorsDrone.Pawn }
         }
 
         clearFor(ship)

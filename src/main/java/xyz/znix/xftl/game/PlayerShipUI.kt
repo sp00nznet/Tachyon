@@ -211,6 +211,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             game.enemy?.let { controllableCrew.addAll(it.intruders) }
 
             for (crew in controllableCrew) {
+                // Skip drones and the like which the player isn't allowed to control
+                if (!crew.playerControllable)
+                    continue
+
                 val crewPos = crewScreenPos(crew, playerShipPosition)
 
                 // If we're in rectangle mode, check that it intersects the centre of the player's body
