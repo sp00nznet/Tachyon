@@ -180,8 +180,8 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             }
 
             // Draw the resources for this event, if appropriate
-            if (option.resources.hasAnything && choice != null && !choice.hidden && !option.event.itemsModifySteal) {
-                val boxSize = findResourceBoxSize(option.resources)
+            if (option.choiceResources.hasAnything) {
+                val boxSize = findResourceBoxSize(option.choiceResources)
 
                 val textResourceMargin = 10
 
@@ -213,7 +213,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
                     // box after the text.
                     val boxX = textX + font.getWidth(text) + textResourceMargin
                     val boxPos = ConstPoint(boxX, textY)
-                    drawResourceBox(g, option.resources, boxPos, boxSize, colour)
+                    drawResourceBox(g, option.choiceResources, boxPos, boxSize, colour)
                 } else {
                     // The text was multiple lines long, draw the resource box
                     // on the right-mode side and centred on the text.
@@ -226,7 +226,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
                     val textHeight = textEndY - firstLineTop
                     val centreY = firstLineTop + textHeight / 2 - boxSize.y / 2
                     val boxPos = ConstPoint(maxBoxX, centreY)
-                    drawResourceBox(g, option.resources, boxPos, boxSize, colour)
+                    drawResourceBox(g, option.choiceResources, boxPos, boxSize, colour)
                 }
 
                 textY = max(textEndY + TEXT_OPTION_BOTTOM_MARGIN, boxSize.y + RESOURCE_BOTTOM_MARGIN)
@@ -602,6 +602,30 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         val event: Event get() = eventInt ?: throw Exception("Continue does not have an event")
         val resources by lazy { event.resolveResources(game) }
         val text by lazy { event.text?.resolve() }
+
+        /**
+         * The resources that should be displayed in a choice. This filters out
+         * crew losses, hidden items, and anything else that shouldn't show up.
+         */
+        val choiceResources: ResourceSet by lazy {
+            val result = ResourceSet()
+
+            // If hidden is set, don't show any resources.
+            if (choice?.hidden == true)
+                return@lazy result
+
+            result += resources
+            result.lostCrew.clear()
+
+            if (event.itemsModifySteal) {
+                result.scrap = 0
+                result.fuel = 0
+                result.droneParts = 0
+                result.missiles = 0
+            }
+
+            return@lazy result
+        }
     }
 
     companion object {
