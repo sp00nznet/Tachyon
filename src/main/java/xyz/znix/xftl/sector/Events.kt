@@ -162,7 +162,7 @@ class Event(
             when (name) {
                 "xftl_rand_weapon" -> game.lootPool.getWeapon()
                 "xftl_rand_drone" -> game.lootPool.getDrone()
-                "xftl_rand_augment" -> TODO()
+                "xftl_rand_augment" -> game.lootPool.getAugment()
                 else -> game.blueprintManager[name].resolve()
             }
         }

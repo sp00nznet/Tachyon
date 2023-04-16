@@ -107,7 +107,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             button.draw(g)
         }
 
-        equipmentPanel.drawDrag()
+        equipmentPanel.drawDrag(g)
     }
 
     override fun shipModified() {

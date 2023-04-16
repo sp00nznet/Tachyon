@@ -89,6 +89,14 @@ public class Constants {
     public static final Color SECTOR_NAME_TEXT_GREYED = SECTOR_BRANCH_GREYED;
     public static final Color SECTOR_NAME_TEXT_HOVER = SYS_ENERGY_REPAIR;
 
+    // These are the colours of the augment box
+    public static final Color AUGMENT_BOX_OUTLINE = SECTOR_CUTOUT_TEXT;
+    public static final Color AUGMENT_BOX_OUTLINE_HOVER = UI_BUTTON_HOVER;
+    public static final Color AUGMENT_BOX_INSIDE = new Color(146, 117, 113, 216);
+    public static final Color AUGMENT_NAME_TEXT = Color.white;
+    public static final Color AUGMENT_EMPTY_OUTLINE = JUMP_DISABLED;
+    public static final Color AUGMENT_EMPTY_INSIDE = new Color(34, 27, 26);
+
     // These numbers took quite some work to obtain
     // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
     // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level

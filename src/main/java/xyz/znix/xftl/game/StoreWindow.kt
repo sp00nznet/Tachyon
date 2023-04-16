@@ -152,7 +152,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             Constants.JUMP_DISABLED_TEXT
         )
 
-        sellPanel.drawDrag()
+        sellPanel.drawDrag(g)
     }
 
     private fun drawBuy(g: Graphics) {

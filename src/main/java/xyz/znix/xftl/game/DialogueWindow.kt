@@ -494,7 +494,9 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             if (playerShip.drones?.drones?.any { it?.type?.type?.name == name } == true) {
                 return true
             }
-            // TODO check augments
+            if (playerShip.augments.any { it.name == name }) {
+                return true
+            }
             return playerShip.cargoBlueprints.any { it?.name == name }
         }
         if (hasBlueprint(req))

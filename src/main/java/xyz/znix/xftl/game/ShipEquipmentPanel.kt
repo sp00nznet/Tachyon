@@ -4,12 +4,14 @@ import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.Drones
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+import kotlin.math.min
 
 /**
  * This contains the drag-and-drop equipment UI used in the equipment tab
@@ -30,10 +32,12 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
     private val missingSystemFont = game.getFont("hl2", 3f)
     private val sellBoxFont = game.getFont("hl1", 2f)
     private val sellPriceFont = game.getFont("num_font")
+    private val augmentFont = game.getFont("JustinFont12Bold")
 
     private val buttons = ArrayList<Button>()
     private val weaponButtons = ArrayList<Buttons.DragDropBlueprintButton>()
     private val droneButtons = ArrayList<Buttons.DragDropBlueprintButton>()
+    private val augmentButtons = ArrayList<Buttons.DragDropBlueprintButton>()
     private val cargoButtons = ArrayList<Buttons.DragDropBlueprintButton>()
     private var sellButton: Button? = null // The box for selling and leaving behind items
 
@@ -89,9 +93,9 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
         }
     }
 
-    fun drawDrag() {
+    fun drawDrag(g: Graphics) {
         // Draw the dragged bit of equipment above everything else
-        draggingBlueprint?.drawDrag()
+        draggingBlueprint?.drawDrag(g)
     }
 
     fun shipModified() {
@@ -147,6 +151,70 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             }
         }
 
+        // Draw the augments area
+        augmentButtons.clear()
+        for (i in 0 until 3) {
+            val augment = ship.augments.getOrNull(i)
+
+            val buttonPos = ConstPoint(323, 293 + i * 60)
+            val size = ConstPoint(235, 40)
+
+            // Use a separate variable so we can use the button in its callback.
+            lateinit var button: Buttons.DragDropBlueprintButton
+            button = object : Buttons.DragDropBlueprintButton(
+                buttonPos, game, null, size,
+                { it is AugmentBlueprint },
+                augment,
+                { draggingBlueprint = button }
+            ) {
+                override fun draw(g: Graphics) {
+                    // Draw the empty box
+                    g.color = Constants.AUGMENT_EMPTY_OUTLINE
+                    g.fillRect(pos.x.f, pos.y.f, size.x.f, size.y.f)
+                    g.color = Constants.AUGMENT_EMPTY_INSIDE
+                    g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
+
+                    // Draw the semi-transparent augment on top of it
+                    if (dragPosition == null) {
+                        drawAugment(g, pos)
+                    }
+                }
+
+                override fun drawDrag(g: Graphics) {
+                    drawAugment(g, dragPosition ?: return)
+                }
+
+                private fun drawAugment(g: Graphics, pos: IPoint) {
+                    val aug = blueprint as AugmentBlueprint? ?: return
+
+                    // Draw the borders. Since the middle is semi-transparent, we can't
+                    // just fill in the whole thing twice to get our border easily.
+                    g.color = when {
+                        dragPosition != null -> Constants.AUGMENT_BOX_OUTLINE
+                        hovered -> Constants.AUGMENT_BOX_OUTLINE_HOVER
+                        else -> Constants.AUGMENT_BOX_OUTLINE
+                    }
+                    // Left and right
+                    g.fillRect(pos.x + 0f, pos.y + 0f, 3f, size.y.f)
+                    g.fillRect(pos.x + size.x - 3f, pos.y + 0f, 3f, size.y.f)
+
+                    // Top and bottom
+                    g.fillRect(pos.x + 3f, pos.y + 0f, size.x - 6f, 3f)
+                    g.fillRect(pos.x + 3f, pos.y + size.y - 3f, size.x - 6f, 3f)
+
+                    // Fill in the background
+                    g.color = Constants.AUGMENT_BOX_INSIDE
+                    g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
+
+                    // Draw the name
+                    val name = game.translator[aug.title!!]
+                    augmentFont.drawStringCentred(pos.x.f, pos.y.f + 27f, size.x.f, name, Constants.AUGMENT_NAME_TEXT)
+                }
+            }
+            buttons += button
+            augmentButtons += button
+        }
+
         // Draw the cargo area
         cargoButtons.clear()
         for (i in 0 until 4) {
@@ -170,7 +238,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             lateinit var button: Buttons.DragDropBlueprintButton
             button = object : Buttons.DragDropBlueprintButton(
                 buttonPos, game, base,
-                { true /* TODO block augments */ },
+                { it !is AugmentBlueprint },
                 blueprint,
                 { draggingBlueprint = button }) {
 
@@ -348,6 +416,29 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
                             ship.orphanedDrones.remove(orphan)
 
                         drones.drones[i] = Drones.DroneInfo(it, orphan)
+                    }
+                )
+            }
+
+            // Check the augments
+            for ((i, button) in augmentButtons.withIndex()) {
+                if (button != target)
+                    continue
+
+                // Grab the augment here, in case the ordering changes
+                val aug = ship.augments.getOrNull(i)
+
+                return SlotAccess(
+                    { aug },
+                    {
+                        require(it is AugmentBlueprint?)
+                        if (aug != null) {
+                            require(ship.augments.remove(aug)) { "Augment '${aug.name}' disappeared while dragging!" }
+                        }
+                        if (it != null) {
+                            val index = min(ship.augments.size, i)
+                            ship.augments.add(index, it)
+                        }
                     }
                 )
             }

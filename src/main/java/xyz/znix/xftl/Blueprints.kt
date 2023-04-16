@@ -1,6 +1,8 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import xyz.znix.xftl.augments.AugEngiMedbots
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.systems.SystemBlueprint
@@ -38,6 +40,7 @@ class BlueprintManager(df: Datafile) {
                 "droneBlueprint" -> buildDroneBlueprint(elem)
                 "systemBlueprint" -> buildSystemBlueprint(elem)
                 "crewBlueprint" -> buildCrewBlueprint(elem)
+                "augBlueprint" -> buildAugmentBlueprint(elem)
 
                 // Intentionally ignore itemBlueprint - this contains fuel, drones, and missiles.
                 // The name 'drones' conflicts with the drones system, and it's the only such name
@@ -90,6 +93,20 @@ class BlueprintManager(df: Datafile) {
 
     private fun buildDroneBlueprint(elem: Element): IBlueprint {
         return DroneBlueprint(elem)
+    }
+
+    private fun buildAugmentBlueprint(elem: Element): IBlueprint {
+        return when (val name = elem.getAttributeValue("name")) {
+            AugEngiMedbots.NAME -> AugEngiMedbots(elem)
+
+            // Augments that use the default AugmentBlueprint and are implemented
+            // as part of another system should be explicitly handled here.
+
+            else -> {
+                println("WARNING: Adding unknown augment '$name'")
+                AugmentBlueprint(elem)
+            }
+        }
     }
 
     private fun buildSystemBlueprint(elem: Element): IBlueprint {

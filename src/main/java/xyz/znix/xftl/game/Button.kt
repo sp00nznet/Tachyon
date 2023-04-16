@@ -231,8 +231,17 @@ object Buttons {
         }
     }
 
-    abstract class BlueprintButton(pos: IPoint, val game: SlickGame, open val image: ButtonImageSet) :
-        Button(pos, image.normal.imageSize) {
+    abstract class BlueprintButton(
+        pos: IPoint, size: IPoint, val game: SlickGame,
+        private val defaultImage: ButtonImageSet?
+    ) :
+        Button(pos, size) {
+
+        constructor(pos: IPoint, game: SlickGame, image: ButtonImageSet) :
+                this(pos, image.normal.imageSize, game, image)
+
+        open val image: ButtonImageSet
+            get() = defaultImage ?: error("BlueprintButton: no background image, image not overridden!")
 
         private val systemNameFont = game.getFont("c&c", 2f)
         private val weaponNameFont = game.getFont("JustinFont8")
@@ -333,10 +342,17 @@ object Buttons {
     }
 
     open class DragDropBlueprintButton(
-        homePos: IPoint, game: SlickGame, image: ButtonImageSet,
+        homePos: IPoint, game: SlickGame,
+        image: ButtonImageSet?, size: IPoint,
         val compatible: (Blueprint) -> Boolean,
         override val blueprint: Blueprint?, val callback: () -> Unit
-    ) : BlueprintButton(homePos, game, image) {
+    ) : BlueprintButton(homePos, size, game, image) {
+
+        constructor(
+            homePos: IPoint, game: SlickGame, image: ButtonImageSet,
+            compatible: (Blueprint) -> Boolean,
+            blueprint: Blueprint?, callback: () -> Unit
+        ) : this(homePos, game, image, image.normal.imageSize, compatible, blueprint, callback)
 
         private val overlay = game.getImg("img/upgradeUI/Equipment/box_overlay_red.png")
 
@@ -373,7 +389,7 @@ object Buttons {
             overlay.draw(pos.x.f, pos.y.f, colour)
         }
 
-        fun drawDrag() {
+        open fun drawDrag(g: Graphics) {
             // Stop dragPosition from changing under us (it actually won't,
             // but Kotlin doesn't know that).
             val dragPosition = dragPosition ?: return

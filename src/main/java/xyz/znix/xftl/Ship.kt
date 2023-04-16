@@ -6,6 +6,7 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
@@ -79,6 +80,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val orphanedDrones = ArrayList<AbstractDrone>()
 
     val cargoBlueprints = ArrayList<Blueprint?>(listOf(null, null, null, null))
+    val augments = ArrayList<AugmentBlueprint>()
 
     val pathFinder: PathFinder
 
@@ -165,10 +167,19 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     var shields: Shields? = null
         private set
 
+    var medbay: Medbay? = null
+        private set
+
     var cloaking: Cloaking? = null
         private set
 
     var teleporter: Teleporter? = null
+        private set
+
+    var hacking: Hacking? = null
+        private set
+
+    var mindControl: MindControl? = null
         private set
 
     var piloting: Piloting? = null
@@ -466,6 +477,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // Load the starting number of missiles
         missilesCount = shipNode.getChild("weaponList")?.getAttributeValue("missiles")?.toInt() ?: 0
 
+        // Load all the drone blueprints
         shipNode.getChild("droneList")?.let { droneList ->
             for ((idx, node) in droneList.children.withIndex()) {
                 val name = node.getAttributeValue("name")
@@ -477,6 +489,14 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             // Load the starting number of drones
             dronesCount = droneList.getAttributeValue("drones")?.toInt() ?: 0
         }
+
+        // Load any augments
+        for (augNode in shipNode.getChildren("aug")) {
+            val name = augNode.getAttributeValue("name")
+            val augment = sys.blueprintManager[name] as AugmentBlueprint
+            augments.add(augment)
+        }
+        require(augments.size <= MAX_AUGMENTS) { "Ship $name has too many augments - ${augments.size}!" }
 
         // Set up the pathfinder after the layout is loaded
         pathFinder = PathFinder(this)
@@ -754,6 +774,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
+
+        for (augment in augments) {
+            augment.update(this, dt)
+        }
     }
 
     private fun updateExterior(dt: Float) {
@@ -906,8 +930,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         drones = systems.mapNotNull { it as? Drones }.firstOrNull()
         engines = systems.mapNotNull { it as? Engines }.firstOrNull()
         shields = systems.mapNotNull { it as? Shields }.firstOrNull()
+        medbay = systems.mapNotNull { it as? Medbay }.firstOrNull()
         cloaking = systems.mapNotNull { it as? Cloaking }.firstOrNull()
         teleporter = systems.mapNotNull { it as? Teleporter }.firstOrNull()
+        hacking = systems.mapNotNull { it as? Hacking }.firstOrNull()
+        mindControl = systems.mapNotNull { it as? MindControl }.firstOrNull()
         piloting = systems.mapNotNull { it as? Piloting }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
 
@@ -932,6 +959,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
      * @return True if the item fits in the ship, false otherwise.
      */
     fun addBlueprint(item: Blueprint, forced: Boolean): Boolean {
+        // Augments can only go in their special area
+        if (item is AugmentBlueprint) {
+            if (augments.size < MAX_AUGMENTS) {
+                augments.add(item)
+                return true
+            }
+            // TODO handle forced=true.
+            return false
+        }
+
         if (item is ShipWeaponBlueprint) {
             for (slot in 0 until weaponSlots!!) {
                 if (hardpoints[slot].weapon != null)
@@ -967,6 +1004,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // TODO handle forced=true.
 
         return false
+    }
+
+    /**
+     * Check if the ship has an augment by name.
+     *
+     * This throws an exception if the named blueprint doesn't exist.
+     */
+    fun hasAugment(name: String): Boolean {
+        val blueprint = sys.blueprintManager[name] as AugmentBlueprint
+        return augments.contains(blueprint)
     }
 
     /**
@@ -1006,6 +1053,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
             return null
         }
+
+        const val MAX_AUGMENTS: Int = 3
     }
 
     data class Hardpoint(
