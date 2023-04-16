@@ -6,6 +6,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.Constants.ROOM_SIZE
+import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Room
@@ -60,7 +61,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         }
 
     open fun update(dt: Float) {
-        if (!damaged || room?.reservedPlayerSlots?.all { it == null } == true)
+        if (!damaged || room?.crew?.none { it.mode == AbstractCrew.SlotType.CREW } == true)
             repairProgress = 0f
 
         // Check both the damage and timer to avoid somehow getting stuck where

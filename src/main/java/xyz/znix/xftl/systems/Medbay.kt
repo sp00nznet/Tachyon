@@ -2,6 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.LivingCrew
 import kotlin.math.min
 
 class Medbay(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
@@ -19,8 +20,8 @@ class Medbay(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, 
 
         val healing = healthPerSec * dt
 
-        for (crew in ship.friendlyCrew) {
-            if (crew.room != room)
+        for (crew in room!!.crew) {
+            if (crew !is LivingCrew)
                 continue
 
             // Don't revive dying crewmembers

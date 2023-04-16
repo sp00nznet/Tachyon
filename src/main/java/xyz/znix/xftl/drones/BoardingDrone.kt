@@ -67,18 +67,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     }
 
     private fun roomContainsHostileCrew(room: Room): Boolean {
-        for (slot in room.reservedPlayerSlots) {
-            if (slot == null)
-                continue
-
-            // Skip crewmembers on their way to the room
-            if (slot.room != room)
-                continue
-
-            return true
-        }
-
-        return false
+        return room.crew.any { it.mode == AbstractCrew.SlotType.CREW }
     }
 
     private fun roomHasWorkingSystem(room: Room): Boolean {

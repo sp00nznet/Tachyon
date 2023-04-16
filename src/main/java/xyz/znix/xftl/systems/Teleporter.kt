@@ -3,6 +3,8 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
+import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.ButtonImageSet
@@ -24,8 +26,7 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
                 return false
 
             // There must be at least one crew member standing in the room
-            // TODO make this work if a crew member is re-targeted while paused
-            return room!!.reservedPlayerSlots.filterNotNull().any { it.room == room && it.movement == null }
+            return room!!.crew.any { it.movement == null && it.mode == AbstractCrew.SlotType.CREW && it is LivingCrew }
         }
 
     val isReceiveAvailable: Boolean
@@ -51,14 +52,12 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
         val command = commandedTeleport ?: return
         commandedTeleport = null
 
-        val enemyShip = command.room.ship
-
         if (command.send) {
             if (!isSendAvailable)
                 return
 
             // TODO support crew that are passing through
-            val ourCrew = room!!.reservedPlayerSlots.filterNotNull().filter { it.room == room }
+            val ourCrew = room!!.crew.filter { it.mode == AbstractCrew.SlotType.CREW && it is LivingCrew }
 
             // Don't waste a cooldown if we're not teleporting anyone
             if (ourCrew.isEmpty())
@@ -71,8 +70,11 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
             if (!isReceiveAvailable)
                 return
 
-            // TODO support crew that are passing through
-            val ourCrew = command.room.reservedEnemySlots.filterNotNull().filter { it.room == command.room }
+            // TODO limit the crew we can teleport to four (at least on
+            //  a two-person teleporter, you can't teleport more than four
+            //  crew, even if they're all inside the same room by walking
+            //  thorough).
+            val ourCrew = command.room.crew.filter { it.mode == AbstractCrew.SlotType.INTRUDER && it is LivingCrew }
 
             // Don't waste a cooldown if we're not teleporting anyone
             if (ourCrew.isEmpty())

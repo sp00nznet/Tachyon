@@ -1,13 +1,14 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.math.ConstPoint
 
 class Piloting(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint, elem) {
     // TODO add crew evasion
     val evasion: Int get() = 0
 
-    private val computerSlot by lazy { room?.computerPoint?.let { room!!.pointToSlot(it) } }
+    private val computerPoint by lazy { room?.computerPoint ?: ConstPoint.ZERO }
 
     override val sortingType = SortingType.PILOTING
 
@@ -23,11 +24,13 @@ class Piloting(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint,
 
             val room = this.room!!
 
-            // Find the pilot at the computer slot, or slot 0 if the computer slot is not defined
-            val pilot = room.reservedPlayerSlots[computerSlot ?: 0]
+            // Find the pilot at the computer point, or the top-left if the computer point is not defined
+            val pilot = room.crew.firstOrNull {
+                it.mode == AbstractCrew.SlotType.CREW && it.position == computerPoint && it.canManSystem
+            }
 
             // If a pilot is present (not just walking there), we get 100% of our original piloting
-            if (pilot != null && pilot.position == room.computerPoint && pilot.room == room)
+            if (pilot != null && pilot.movement == null)
                 return 1f
 
             // At this point, the system is not broken and we don't have a pilot. Use the evasion

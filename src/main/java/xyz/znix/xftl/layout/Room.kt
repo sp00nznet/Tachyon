@@ -35,6 +35,13 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         }
 
     /**
+     * A list of all the crew (friendly or intruders, including drones)
+     * currently inside this room.
+     */
+    private val _crew = ArrayList<AbstractCrew>()
+    val crew: List<AbstractCrew> get() = _crew
+
+    /**
      * Oxygen level from 1-0.
      */
     var oxygen: Float = 1f
@@ -67,6 +74,13 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         // On the observation from the FTL wiki that ships loose ~1% oxygen per second
         val refillRate = (ship.oxygen?.refillRate ?: 0f) - Oxygen.ROOM_DRAIN_RATE
         oxygen = (oxygen + refillRate * dt).coerceAtLeast(0f).coerceAtMost(1f)
+
+        // Update the crew standing in this room
+        _crew.clear()
+        for (crew in ship.crew) {
+            if (crew.room == this)
+                _crew.add(crew)
+        }
     }
 
     fun render(g: Graphics, selected: Boolean) {
