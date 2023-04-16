@@ -418,6 +418,10 @@ abstract class AbstractCrew(
         // Draw the actual image
         val opacityColour = Color(1f, 1f, 1f, opacity)
         cf.draw(x0, y0, x1, y1, 0f, 0f, cf.width.f, cf.height.f, opacityColour)
+    }
+
+    fun drawForeground(g: Graphics) {
+        val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
 
         // Draw the health bar
         if (health < maxHealth || isSelected) {

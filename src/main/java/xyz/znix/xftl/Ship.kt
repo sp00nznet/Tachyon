@@ -716,6 +716,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             crew.draw(g)
         }
 
+        // Draw the health bars on top of all the other crew, so two
+        // fighting crewmembers can't block one of their health bars.
+        for (crew in crew) {
+            crew.drawForeground(g)
+        }
+
         // Draw the system foregrounds
         for (room in rooms)
             room.system?.drawForeground(g)
