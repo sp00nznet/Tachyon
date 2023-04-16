@@ -57,7 +57,11 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
         super.powerStateChanged()
 
         // We have to update the UI, since the button height changes
-        ship.sys.shipUI.updateButtons()
+        // Exclude the enemy AI from this, as they can fiddle with
+        // the power multiple times a frame.
+        if (ship == ship.sys.player) {
+            ship.sys.shipUI.updateButtons()
+        }
     }
 
     override fun update(dt: Float) {
