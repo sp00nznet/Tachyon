@@ -174,6 +174,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         computerPoint = config.computerPoint
 
         system?.room = this
+        system?.initialise(ship)
 
         if (system == null)
             check(computerPoint == null)
