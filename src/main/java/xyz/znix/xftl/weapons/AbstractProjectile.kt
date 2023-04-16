@@ -44,7 +44,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
         calculatePositionFor(distance, mutablePosition)
 
-        if (!passedShields && !type.shieldPiercing) {
+        if (!passedShields) {
             // Check if we're inside the target ships shields
             val s = ship
 
@@ -88,12 +88,19 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         // We're inside the shield!
         passedShields = true
 
-        if ((ship.shields?.activeShields ?: 0) == 0)
+        val activeShields = ship.shields?.activeShields ?: 0
+        if (activeShields == 0)
             return
 
         resolveMissed()
 
         if (missed == true)
+            return
+
+        // Check for shield piercing, which seems to work the same
+        // way across all weapons. Missiles for example just have
+        // a very high shieldPiercing of 5.
+        if (type.shieldPiercing >= activeShields)
             return
 
         hitShields()

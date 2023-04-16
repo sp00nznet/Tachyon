@@ -52,6 +52,10 @@ fun Float.lerp(other: Float, proportion: Float): Float {
     return this + diff * proportion.coerceAtLeast(0f).coerceAtMost(1f)
 }
 
+fun Random.rollChance(percentChance: Int): Boolean {
+    return nextInt(100) < percentChance
+}
+
 /**
  * Interpolate a colour between [this] and [other]. When [proportion] is 0 it's entirely [this], 1 is entirely [other].
  */

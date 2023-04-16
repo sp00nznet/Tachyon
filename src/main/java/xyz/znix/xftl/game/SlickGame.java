@@ -464,8 +464,9 @@ public class SlickGame extends BasicGame {
     public void loadEventShip(Event event) {
         if (event.getLoadShipName() != null) {
             EnemyShipSpec spec = eventManager.getShip(event.getLoadShipName());
-            // TODO use the proper sector number
-            setEnemy(generator.buildShip(this, spec, 0));
+            // TODO use the proper difficulty
+            int sector = currentBeacon.getSector().getSectorNumber();
+            setEnemy(generator.buildShip(this, spec, sector, Difficulty.NORMAL));
         }
         Boolean hostileState = event.getLoadShipHostile();
         if (hostileState != null) {

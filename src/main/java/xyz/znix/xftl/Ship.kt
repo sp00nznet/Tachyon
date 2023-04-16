@@ -976,7 +976,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         if (item is ShipWeaponBlueprint) {
-            for (slot in 0 until weaponSlots!!) {
+            val weaponSlotCount = weaponSlots ?: hardpoints.size
+
+            for (slot in 0 until weaponSlotCount) {
                 if (hardpoints[slot].weapon != null)
                     continue
 
@@ -988,7 +990,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         val drones = drones
         if (item is DroneBlueprint && drones != null) {
-            for (slot in 0 until droneSlots!!) {
+            for (slot in 0 until drones.drones.size) {
                 if (drones.drones[slot] != null)
                     continue
 

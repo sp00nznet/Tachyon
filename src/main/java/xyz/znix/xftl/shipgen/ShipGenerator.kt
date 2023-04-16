@@ -2,15 +2,24 @@ package xyz.znix.xftl.shipgen
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
+import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.sector.EventManager
 import xyz.znix.xftl.sector.IEvent
+import xyz.znix.xftl.systems.*
+import xyz.znix.xftl.weapons.DroneBlueprint
+import xyz.znix.xftl.weapons.LaserBlueprint
+import xyz.znix.xftl.weapons.MissileBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.min
 import kotlin.random.Random
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
-    fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int): Ship {
+    fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int, difficulty: Difficulty): Ship {
+        // Shift everything back a sector on easy.
+        // This is thus -1 for the first sector on easy.
+        val effectiveSector = sector + difficulty.sectorOffset
+
         val elem = spec.autoBlueprint.resolve().let { it as MiscBlueprint }.loadElem(df)
 
         val ship = Ship(df, elem, sys, spec)
@@ -18,11 +27,12 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         ship.escapeHealth = spec.escapeHealth?.pick(Random) ?: 0
         ship.surrenderHealth = spec.surrenderHealth?.pick(Random) ?: 0
 
-        // Don't surrender after trying to escape
-        if (ship.surrenderHealth > 0 && ship.surrenderHealth <= ship.escapeHealth) {
+        // If surrender and escape come to the same health, offset them by 1.
+        if (ship.surrenderHealth == ship.escapeHealth) {
             ship.escapeHealth = ship.surrenderHealth - 1
         }
 
+        // TODO rewrite this to use the reverse-engineed base-game system
         val crewCount = elem.getChild("crewCount")
         crewCount?.let {
             // TODO crew types
@@ -44,71 +54,383 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             }
         }
 
+        // Not 100% sure about this, but it looks like we remove zoltan shields
+        // on the first sector on easy.
+        if (sector == 0 && difficulty == Difficulty.EASY) {
+            ship.augments.remove(sys.blueprintManager["ENERGY_SHIELD"])
+        }
+
+        // If the ship included any weapons or drones, clear them out because
+        // we'll pick them ourselves. This happens if a weapon/drone is set
+        // explicitly in weaponList/droneList, rather than via a list.
+        for (hp in ship.hardpoints) {
+            hp.weapon = null
+        }
+        ship.drones?.let { drones ->
+            for (i in 0 until drones.drones.size) {
+                drones.drones[i] = null
+            }
+        }
+
         // Calculate the power levels for each system
-        // See this fantastic Reddit post breaking down how the ship generation works:
-        // https://www.reddit.com/r/ftlgame/comments/c8qpqk/enemy_power_scaling_infodiscussion/
-        // Even if it's not perfectly accurate, it should be more than good enough.
-        // Go read it before reading the rest of the generation code.
+        // There's a useful Reddit post by someone else who's also been
+        // reverse-engineering FTL, which saves us the effort of a lot
+        // of the reverse-engineering for shipgen:
+        // https://old.reddit.com/r/ftlgame/comments/qu8kz7/details_on_enemy_ship_generation/
 
-        // First pick the total bars over maximum
-        val maxExtraPower = TOTAL_MAX_POWERS[sector]
+        // Pick the power for each category:
+        var offensivePower = (effectiveSector + 1).coerceAtLeast(1)
+        var defensivePower = (effectiveSector + 2).coerceAtLeast(1)
+        var generalPower = ((effectiveSector + 1) / 2).coerceAtLeast(1)
 
-        // Make it available as reactor power for the AI to reallocate. Note this is based off the
-        // power specified by the <maxPower/> tag, so ion storm behaviour is the same - see the post.
-        ship.purchasedReactorPower += maxExtraPower
-
-        // Make a list of all the possible places we could put our extra power
-        val possiblePoints = ArrayList<AbstractSystem>()
-        for (system in ship.rooms.mapNotNull { it.system }) {
-            // The flagship notably doesn't have it's maximum power set
-            val maxPower = system.aiMaxPower ?: system.blueprint.maxPower
-
-            val range = maxPower - system.energyLevels
-            val offset = (range * sector / 8f).toInt()
-
-            val maxExtra = if (sector < 2) 1 else 2
-
-            // Note the count we come up with at the end is to be added to the existing system
-            // power, hence we don't take the current power into account
-            val softMax = min(offset + maxExtra, maxPower)
-
-            val count = (offset..softMax).random()
-            for (i in 1..count) {
-                possiblePoints += system
-            }
+        fun subtractPower(category: SystemCategory, power: Int) = when (category) {
+            SystemCategory.OFFENSIVE -> offensivePower -= power
+            SystemCategory.DEFENSIVE -> defensivePower -= power
+            SystemCategory.GENERAL -> generalPower -= power
         }
 
-        possiblePoints.shuffle()
+        if (difficulty == Difficulty.HARD)
+            generalPower++
 
-        // ... and add all the extra power in
-        for (i in 1..maxExtraPower) {
-            if (possiblePoints.isEmpty()) break
-            val system = possiblePoints.removeAt(possiblePoints.size - 1)
+        // Place the optional systems
+        val optionalSystemChance = (sector * 10 + when (difficulty) {
+            Difficulty.EASY -> 10
+            Difficulty.NORMAL -> 20
+            Difficulty.HARD -> 30
+        }).coerceAtLeast(10)
+
+        for (room in ship.rooms) {
+            if (room.system != null)
+                continue
+            val system = room.purchasableSystem ?: continue
+
+            if (!Random.rollChance(optionalSystemChance))
+                continue
+
+            // Install the system
+            room.setSystem(system)
+
+            // Add a power cost for adding this system.
+            // Don't check the current power here, it's allowed to go negative.
+            val category = getSystemCategory(system.system)
+            val basePowerUse = when {
+                category == SystemCategory.OFFENSIVE /* TODO and not artillery */ -> 1
+                difficulty == Difficulty.HARD -> 1
+                else -> 2
+            }
+            subtractPower(category, basePowerUse)
+        }
+
+        // Find a soft cap for how much power each system can have
+        // This can be exceeded by scripted weapons and drones
+        val softCaps = HashMap<AbstractSystem, Int>()
+        for (room in ship.rooms) {
+            val system = room.system ?: continue
+            softCaps[system] = pickSystemPowerLimit(effectiveSector, difficulty, system)
+        }
+
+        // Spend the power upgrading the systems
+
+        fun getSystem(category: SystemCategory?): AbstractSystem? {
+            val suitable = ship.rooms.mapNotNull {
+                val system = it.system ?: return@mapNotNull null
+
+                val systemCategory = getSystemCategory(system)
+                if (category != null && category != systemCategory)
+                    return@mapNotNull null
+
+                if (system.energyLevels >= softCaps.getValue(system))
+                    return@mapNotNull null
+
+                return@mapNotNull system
+            }
+
+            if (suitable.isEmpty())
+                return null
+            return suitable.random()
+        }
+
+        while (offensivePower > 0) {
+            // Get the system, or stop if we fully upgrade all of them.
+            val system = getSystem(SystemCategory.OFFENSIVE) ?: break
+
             system.energyLevels++
+            offensivePower--
+
+            // Note we track the reactor power separately to everything else.
+            // It's not necessarily just the sum of all the system powers,
+            // and in a plasma storm it would matter.
+            ship.purchasedReactorPower++
         }
 
-        // Build a list of all the weapons the ship is allowed to use
-        val weaponBlueprints = ArrayList<ShipWeaponBlueprint>()
-        val weaponList = elem.getChild("weaponList")
-        weaponList?.getAttributeValue("load")?.let { listName ->
-            weaponBlueprints += bp[listName].list().map { it as ShipWeaponBlueprint }
+        while (defensivePower > 0) {
+            val system = getSystem(SystemCategory.DEFENSIVE) ?: break
+
+            system.energyLevels++
+            defensivePower--
+            ship.purchasedReactorPower++
         }
 
-        for (node in weaponList.children) {
-            val name = node.getAttributeValue("name")
-            weaponBlueprints += bp[name] as ShipWeaponBlueprint
-        }
+        // Add (or subtract, in the case of negative power) the leftover
+        // power from the offensive and defensive pools, and use that
+        // to upgrade everything else.
+        generalPower += offensivePower
+        generalPower += defensivePower
 
-        // Build the random weapons
-        ship.weapons?.let { system ->
-            val weapons = generateWeapons(weaponBlueprints, ship.hardpoints.size, system.energyLevels)
-            check(weapons.size <= ship.hardpoints.size)
-            for ((weapon, hp) in weapons.zip(ship.hardpoints)) {
-                hp.weapon = weapon.buildInstance(ship)
+        while (generalPower > 0) {
+            val system = getSystem(null) ?: break
+            system.energyLevels++
+            generalPower--
+
+            if (system is MainSystem) {
+                ship.purchasedReactorPower++
             }
+        }
+
+        // Select the scripted weapons/drones
+        // Note there's no scripted drones in vanilla, but implement it
+        // since mods likely use it.
+        val weaponOverrides = spec.weaponOverride?.select()?.map { it as ShipWeaponBlueprint }
+        val droneOverrides = spec.droneOverride?.select()?.map { it as DroneBlueprint }
+
+        @Suppress("DuplicatedCode")
+        if (weaponOverrides != null) {
+            // Check if we need to upgrade the weapon power to fit
+            // the scripted weapons.
+            val weapons = ship.weapons!!
+            val scriptedWeaponPower = weaponOverrides.sumBy { it.power }.coerceAtMost(weapons.aiMaxPower)
+            val missingPower = scriptedWeaponPower - weapons.energyLevels
+            if (missingPower > 0) {
+                weapons.energyLevels += missingPower
+                ship.purchasedReactorPower += missingPower
+            }
+            for (weapon in weaponOverrides) {
+                ship.addBlueprint(weapon, false)
+            }
+        }
+
+        @Suppress("DuplicatedCode")
+        if (droneOverrides != null) {
+            // Same goes for drones.
+            val drones = ship.drones!!
+            val scriptedDronePower = droneOverrides.sumBy { it.power }.coerceAtMost(drones.aiMaxPower)
+            val missingPower = scriptedDronePower - drones.energyLevels
+            if (missingPower > 0) {
+                drones.energyLevels += missingPower
+                ship.purchasedReactorPower += missingPower
+            }
+            for (drone in droneOverrides) {
+                ship.addBlueprint(drone, false)
+            }
+        }
+
+        // Spawn the weapons in. Again, see the linked Reddit post near
+        // the top of the function, as it explains what this is doing.
+        val weaponList = parseWeaponsList(elem)
+        var hasHullDamageWeapon = false
+        var hasLaserLikeWeapon = false
+        while (true) {
+            val usedPower = ship.hardpoints.sumBy { it.weapon?.type?.power ?: 0 }
+            val remainingPower = ship.weapons!!.energyLevels - usedPower
+
+            // Ran out of power?
+            if (remainingPower <= 0)
+                break
+
+            // Filled all our hardpoints?
+            val weaponSlots = ship.weaponSlots ?: ship.hardpoints.size
+            if (ship.hardpoints.count { it.weapon != null } >= weaponSlots)
+                break
+
+            val suitable = weaponList.filter {
+                if (it.power > remainingPower)
+                    return@filter false
+
+                // We can't use all the remaining power, except for
+                // with a one-power weapon.
+                if (it.power == remainingPower && it.power != 1)
+                    return@filter false
+
+                // Don't start with one-power weapons
+                if (usedPower == 0 && remainingPower >= 3 && it.power < 2)
+                    return@filter false
+
+                // This weapon must use >25% of the remaining power
+                if (it.power < remainingPower / 4f)
+                    return@filter false
+
+                // Pick weapons such that we can:
+                // * Do hull damage
+                // * Have a laser-style (laser or non-shield-piercing
+                //   missile, which is to say a crystal weapon) weapon.
+
+                val doesHullDamage = it.damage != 0
+                val isLaserStyle = when (it) {
+                    is LaserBlueprint -> true
+                    is MissileBlueprint -> it.shieldPiercing <= 3
+                    else -> false
+                }
+
+                var satisfiesFlags = false
+
+                // If our weapon satisfies either of the unsatisfied
+                // flags, allow it.
+                if (!hasHullDamageWeapon && doesHullDamage) {
+                    satisfiesFlags = true
+                }
+                if (!hasLaserLikeWeapon && isLaserStyle) {
+                    satisfiesFlags = true
+                }
+
+                // Do we already have weapons that can do what's required?
+                if (hasHullDamageWeapon && hasLaserLikeWeapon) {
+                    satisfiesFlags = true
+                }
+
+                if (!satisfiesFlags)
+                    return@filter false
+
+                if (doesHullDamage)
+                    hasHullDamageWeapon = true
+                if (isLaserStyle)
+                    hasLaserLikeWeapon = true
+
+                return@filter true
+            }
+
+            // We should never find ourselves with no suitable weapons,
+            // so print a warning if that occurs (along with hopefully
+            // enough information to diagnose it).
+            if (suitable.isEmpty()) {
+                println("Warning: wasn't able to find any more suitable weapons for ship '${ship.name}'")
+                println("  Current weapons: " + ship.hardpoints.mapNotNull { it.weapon })
+                println("  Weapon system power: ${ship.weapons!!.energyLevels}")
+                break
+            }
+
+            val weapon = suitable.random()
+            require(ship.addBlueprint(weapon, false))
+
+            // Check that it has indeed ended up in a hardpoint.
+            require(ship.cargoBlueprints.all { it == null }) {
+                "A weapon ended up in the cargo hold! ${ship.cargoBlueprints}"
+            }
+        }
+
+        // Spawn the drones in. This works along similar lines to the weapons.
+        val dronesList = parseDronesList(elem)
+        while (true) {
+            val drones = ship.drones ?: break
+
+            val dronePower = drones.drones.sumBy { it?.type?.power ?: 0 }
+            val remainingPower = drones.energyLevels - dronePower
+
+            if (remainingPower <= 0)
+                break
+
+            // Filled all the drone slots?
+            if (drones.drones.all { it != null })
+                break
+
+            fun findSuitable(fallback: Boolean): List<DroneBlueprint> = dronesList.filter {
+                // Must have enough power left
+                if (it.power > remainingPower)
+                    return@filter false
+
+                // Can't use all the power with a single drone
+                if (drones.energyLevels >= 4 && it.power >= drones.energyLevels)
+                    return@filter false
+
+                // If we couldn't find any drones with the last two requirements,
+                // try again without them.
+                if (fallback)
+                    return@filter true
+
+                // Avoid duplicates
+                if (drones.drones.any { info -> info?.type == it })
+                    return@filter false
+
+                // Require combat drones if we don't have proper offensive weapons
+                if (!hasHullDamageWeapon || !hasLaserLikeWeapon) {
+                    if (it.type != DroneBlueprint.DroneType.COMBAT)
+                        return@filter false
+                }
+
+                return@filter true
+            }
+
+            val suitable = findSuitable(false)
+            val drone: DroneBlueprint
+
+            if (suitable.isNotEmpty()) {
+                drone = suitable.random()
+            } else {
+                // If we can't satisfy the last few requirements, try again without them
+                val fallback = findSuitable(true)
+
+                if (fallback.isEmpty()) {
+                    println("Warning: wasn't able to find any more suitable drones for ship '${ship.name}'")
+                    println("  Current drones: " + drones.drones.mapNotNull { it?.type })
+                    println("  Drone system power: ${drones.energyLevels}")
+                    break
+                }
+
+                drone = fallback.random()
+            }
+
+            require(ship.addBlueprint(drone, false))
+            require(ship.cargoBlueprints.all { it == null }) {
+                "A drone ended up in the cargo hold! ${ship.cargoBlueprints}"
+            }
+        }
+
+        // Make sure we have enough drone parts
+        val droneBlueprintCount = ship.drones?.drones?.count { it != null } ?: 0
+        if (ship.dronesCount < droneBlueprintCount * 2) {
+            ship.dronesCount = droneBlueprintCount * 2
+        }
+
+        if (ship.dronesCount == 0 && ship.hacking != null) {
+            ship.dronesCount = 5
         }
 
         return ship
+    }
+
+    /**
+     * Pick the upper limit for the amount of power given a system can start with.
+     *
+     * The [effectiveSector] is the sector number with -1 applied for easy (this
+     * means that on the first sector of easy, the effective sector number is -1).
+     */
+    private fun pickSystemPowerLimit(effectiveSector: Int, difficulty: Difficulty, system: AbstractSystem): Int {
+        // See ShipGenerator::GenerateSystemMaxes
+        // Note that the map the data comes from is a libstdc++ red-blue tree,
+        // whose datatype is std::pair<int_const,_ShipBlueprint::SystemTemplate>.
+        // It may help to define a type putting that after _Rb_tree_node_base.
+
+        val startPower = system.energyLevels
+        val maxPower = system.aiMaxPower
+
+        // Lerp between the min and max power
+        val numSectors = 8
+        val powerRange = maxPower - startPower
+        val baseLimit = startPower + (1f * effectiveSector / numSectors * powerRange).toInt()
+
+        // Add the random offset
+        val offsetMax = when {
+            // First sector on easy is 0, then 1 for all subsequent sectors
+            effectiveSector == -1 -> 0
+            difficulty == Difficulty.EASY -> 1
+
+            // Normal/hard is 1, rising to 2 on sector 3 (id=2 when zero-indexed)
+            effectiveSector < 3 - 1 -> 2
+            else -> 2
+        }
+
+        val offset = (0..offsetMax).random()
+
+        return min(baseLimit + offset, maxPower)
     }
 
     private fun generateWeapons(
@@ -146,6 +468,52 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         error("Failed to generate weapon set")
     }
 
+    private fun getSystemCategory(system: AbstractSystem): SystemCategory {
+        return when (system) {
+            is Shields, is Engines, is Cloaking -> SystemCategory.DEFENSIVE
+            is Weapons, is Drones, is Teleporter -> SystemCategory.OFFENSIVE
+            // TODO artillery is offensive
+            else -> SystemCategory.GENERAL
+        }
+    }
+
+    private fun parseWeaponsList(shipElem: Element): List<ShipWeaponBlueprint> {
+        val weaponBlueprints = ArrayList<ShipWeaponBlueprint>()
+        val weaponList = shipElem.getChild("weaponList") ?: return emptyList()
+
+        weaponList.getAttributeValue("load")?.let { listName ->
+            weaponBlueprints += bp[listName].list().map { it as ShipWeaponBlueprint }
+        }
+
+        for (node in weaponList.children) {
+            val name = node.getAttributeValue("name")
+            weaponBlueprints += bp[name] as ShipWeaponBlueprint
+        }
+
+        return weaponBlueprints
+    }
+
+    private fun parseDronesList(shipElem: Element): List<DroneBlueprint> {
+        val droneBlueprints = ArrayList<DroneBlueprint>()
+        val droneList = shipElem.getChild("droneList") ?: return emptyList()
+
+        droneList.getAttributeValue("load")?.let { listName ->
+            droneBlueprints += bp[listName].list().map { it as DroneBlueprint }
+        }
+
+        for (node in droneList.children) {
+            val name = node.getAttributeValue("name")
+            droneBlueprints += bp[name] as DroneBlueprint
+        }
+
+        return droneBlueprints
+    }
+
+    // The categories that power is allocated from
+    private enum class SystemCategory {
+        OFFENSIVE, DEFENSIVE, GENERAL;
+    }
+
     companion object {
         // This is currently just on normal
         val TOTAL_MAX_POWERS = listOf(4, 6, 8, 11, 13, 15, 18, 20)
@@ -170,11 +538,39 @@ class EnemyShipSpec(elem: Element, bp: BlueprintManager, ev: EventManager) {
     val escapeHealth: RandomWithChance? = elem.getChild("escape")?.let(::RandomWithChance)
     val surrenderHealth: RandomWithChance? = elem.getChild("surrender")?.let(::RandomWithChance)
 
+    val weaponOverride: ShipBlueprintOverride? = elem.getChild("weaponOverride")?.let { ShipBlueprintOverride(it, bp) }
+    val droneOverride: ShipBlueprintOverride? = elem.getChild("droneOverride")?.let { ShipBlueprintOverride(it, bp) }
+
     companion object {
         private fun loadEvent(root: Element, ev: EventManager, name: String, evName: String): Lazy<IEvent?> {
             // TODO is there a default destroyed/deadCrew/gotaway event we should use if one hasn't been set?
             val elem = root.getChild(evName) ?: return lazyOf(null)
             return ev.loadEmbeddedEvent(elem, name)
         }
+    }
+}
+
+/**
+ * For <weaponOverride> and <droneOverride> in <ship>.
+ */
+class ShipBlueprintOverride(elem: Element, bp: BlueprintManager) {
+    val blueprints: List<IBlueprint>
+    val count: Int
+
+    init {
+        blueprints = ArrayList()
+
+        count = elem.getAttributeValue("count").toInt()
+        for (nameElem in elem.children) {
+            require(nameElem.name == "name")
+            blueprints += bp[nameElem.textTrim]
+        }
+    }
+
+    fun select(): List<Blueprint> {
+        // Pick the first (count) random blueprints.
+        // While we try to pick distinct blueprints, if the same blueprint
+        // is resolved twice through separate lists we won't bother to stop that.
+        return blueprints.shuffled().subList(0, count).map { it.resolve() }
     }
 }

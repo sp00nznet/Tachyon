@@ -18,6 +18,10 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     val droneImage: String? = xml.getChildTextTrim("droneImage")
     val iconImage: String? = xml.getChildTextTrim("iconImage")
 
+    init {
+        require(power > 0) { "Drone $name has non-positive power $power" }
+    }
+
     // The size of the icon, as it should appear in the UI. This is for roughly
     // positioning them, and obviously different drones are different sizes.
     // These are mostly guessed, I couldn't find anywhere to measure them and

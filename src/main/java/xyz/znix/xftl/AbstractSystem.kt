@@ -48,7 +48,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     val isIonised: Boolean get() = ionTimer > 0
 
     // Used for calculations by the ship generator.
-    val aiMaxPower: Int? = elem.getAttributeValue("max")?.toInt()
+    // The flagship notably doesn't have it's maximum power set, so
+    // use the maximum specified in the system blueprint in that case.
+    val aiMaxPower: Int = elem.getAttributeValue("max")?.toInt() ?: blueprint.maxPower
 
     /**
      * The number of intact energy bars in the system. Ion damage is subtracted from this.
