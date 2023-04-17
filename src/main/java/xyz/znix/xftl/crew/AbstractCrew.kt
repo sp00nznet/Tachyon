@@ -131,7 +131,7 @@ abstract class AbstractCrew(
         get() {
             val base = room.offsetY + ((position.y + movementOffsetY) * ROOM_SIZE).toInt()
 
-            if (currentAction != Action.FIGHTING || !sharesHostileCell)
+            if (!sharesHostileCell)
                 return base + 3
 
             // When we're fighting in the same cell as an enemy, displace both parties so
@@ -277,14 +277,20 @@ abstract class AbstractCrew(
             return
         }
 
+        // Check if we're standing in the same cell as someone else.
+        // This check is separate to the combat thing, since this
+        // includes dying enemies (so their death animation is visible),
+        // while the combat code doesn't (to avoid attacking
+        // an already-dying enemy).
+        sharesHostileCell = room.crew.any { it.mode != mode && it.movement == null && it.position == position }
+
         // Check if any enemies are in the room
-        val hostiles = room.crew.filter { it.mode != mode }
+        val hostiles = room.crew.filter { it.mode != mode && it.currentAction != Action.DYING }
         if (hostiles.isNotEmpty() && canFight) {
             // Check if someone is standing in the same cell as us
             val sameCell = hostiles.firstOrNull { it.movement == null && it.position == position }
 
             isPunching = sameCell != null && canPunch
-            sharesHostileCell = sameCell != null
 
             currentAction = Action.FIGHTING
 
@@ -333,7 +339,6 @@ abstract class AbstractCrew(
         attackTimer = null
         enemyToAttack = null
         isPunching = false
-        sharesHostileCell = false
 
 
         // Check if the system in this room is broken, and if so repair it.
@@ -422,6 +427,10 @@ abstract class AbstractCrew(
     }
 
     fun drawForeground(g: Graphics) {
+        // It should already be pretty obvious what their health is...
+        if (currentAction == Action.DYING)
+            return
+
         val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
 
         // Draw the health bar
