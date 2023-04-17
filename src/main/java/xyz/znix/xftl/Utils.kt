@@ -133,6 +133,9 @@ object Utils {
             val nativesPath = File("natives").absoluteFile
             System.setProperty("org.lwjgl.librarypath", nativesPath.toString())
 
+            // Support jinput, which needs to know where to load it's DLLs from.
+            System.setProperty("net.java.games.input.librarypath", nativesPath.toString())
+
             if (!nativesPath.exists()) {
                 if (!nativesPath.mkdir())
                     error("Failed to create natives directory")
@@ -141,11 +144,11 @@ object Utils {
             val osName = System.getProperty("os.name").toLowerCase(Locale.UK)
             val libraries: List<String> = if (osName.contains("windows")) {
                 // x86_64 only
-                listOf("lwjgl64.dll", "OpenAL64.dll")
+                listOf("lwjgl64.dll", "OpenAL64.dll", "jinput-dx8_64.dll", "jinput-raw_64.dll")
             } else if (osName.contains("linux")) {
-                listOf("liblwjgl64.so", "libopenal64.so")
+                listOf("liblwjgl64.so", "libopenal64.so", "libjinput-linux64.so")
             } else if (osName.contains("mac os")) {
-                listOf("liblwjgl.dylib", "openal.dylib")
+                listOf("liblwjgl.dylib", "openal.dylib", "libjinput-osx.jnilib")
             } else {
                 error("Cannot compute native library list, unknown OS: '$osName'")
             }
