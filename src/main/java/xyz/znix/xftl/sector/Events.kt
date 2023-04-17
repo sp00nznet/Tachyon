@@ -38,6 +38,9 @@ class Event(
     val autoRewards: Pair<RewardType, RewardTier>?
     val blueprintRewards: List<String>
 
+    val boarderRace: String?
+    val boarderCount: IntRange
+
     init {
         // Initialise these in the constructor so we can mutate them,
         // which isn't otherwise possible as they're declared as List.
@@ -89,6 +92,18 @@ class Event(
             val clone = killCrew.getChildText("clone")!!.toBoolean()
             val cloneText = loadText(killCrew.getChild("text"))
             removedCrew.add(RemoveCrew(clone, cloneText, race, false))
+        }
+
+        val boardersElem = elem.getChild("boarders")
+        if (boardersElem != null) {
+            // TODO what's the default race?
+            boarderRace = boardersElem.getAttributeValue("class") ?: "random"
+            val min = boardersElem.getAttributeValue("min").toInt()
+            val max = boardersElem.getAttributeValue("max").toInt()
+            boarderCount = min..max
+        } else {
+            boarderRace = null
+            boarderCount = 0..0
         }
 
         val auto = elem.getChild("autoReward")
@@ -212,6 +227,24 @@ class Event(
             }
 
             resourcesGained.lostCrew.add(RemoveCrewEval(crew, info))
+        }
+
+        // Spawn boarders
+        if (boarderRace != null) {
+            val count = boarderCount.random()
+            for (i in 0 until count) {
+                // TODO properly filter 'random', eg avoid crystals
+                val effectiveRace =
+                    if (boarderRace == "random") CrewBlueprint.PLAYABLE_RACE_NAMES.random()
+                    else boarderRace
+                val race = game.blueprintManager[effectiveRace] as CrewBlueprint
+
+                // TODO for humans, pick a matching name and gender
+                // TODO language selection
+                val name = game.nameManager.getForGender(null, "en", Random.Default)
+
+                resourcesGained.intruders.add(AddCrewEval(race, name))
+            }
         }
 
         // Add the standard type/tier rewards - these are the standard results and most commonly used

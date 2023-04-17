@@ -314,6 +314,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             height += 32
         }
 
+        if (resourceSet.intruders.isNotEmpty()) {
+            val message = game.translator["intruder_alert"]
+            width = max(width, 32 + resourceNumFont.getWidth(message) + 30)
+            height += 32
+        }
+
         return ConstPoint(width, height)
     }
 
@@ -359,6 +365,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
         for (bp in resourceSet.items) {
             y = drawRewardBlueprint(bp, pos.x, y, textColour)
+        }
+
+        if (resourceSet.intruders.isNotEmpty()) {
+            val message = game.translator["intruder_alert"]
+            resourceNumFont.drawString(pos.x + 32f, y + 21f, message, Constants.SYS_ENERGY_BROKEN)
+            y += 32
         }
     }
 

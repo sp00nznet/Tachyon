@@ -46,8 +46,9 @@ class ResourceSet() : Map<Resource, Int> {
     val items = ArrayList<Blueprint>()
     val crew = ArrayList<AddCrewEval>()
     val lostCrew = ArrayList<RemoveCrewEval>()
+    val intruders = ArrayList<AddCrewEval>()
 
-    val hasAnything: Boolean get() = isNotEmpty() || items.isNotEmpty() || crew.isNotEmpty() || lostCrew.isNotEmpty()
+    val hasAnything: Boolean get() = isNotEmpty() || items.isNotEmpty() || crew.isNotEmpty() || lostCrew.isNotEmpty() || intruders.isNotEmpty()
 
     constructor(basicResources: Map<Resource, Int>) : this() {
         for ((k, v) in basicResources) {
@@ -121,6 +122,7 @@ class ResourceSet() : Map<Resource, Int> {
         this.items += other.items
         this.crew += other.crew
         this.lostCrew += other.lostCrew
+        this.intruders += other.intruders
     }
 
     companion object {

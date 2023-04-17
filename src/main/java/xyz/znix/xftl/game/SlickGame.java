@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game;
 
+import kotlin.random.Random;
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -7,6 +8,7 @@ import org.newdawn.slick.*;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
+import xyz.znix.xftl.crew.AbstractCrew;
 import xyz.znix.xftl.crew.CrewNameManager;
 import xyz.znix.xftl.crew.LivingCrew;
 import xyz.znix.xftl.devutil.DebugConsole;
@@ -471,6 +473,9 @@ public class SlickGame extends BasicGame {
             // TODO use the proper difficulty
             int sector = currentBeacon.getSector().getSectorNumber();
             setEnemy(generator.buildShip(this, spec, sector, Difficulty.NORMAL, null));
+
+            // Ships aren't hostile by default
+            this.enemyIsHostile = false;
         }
         Boolean hostileState = event.getLoadShipHostile();
         if (hostileState != null) {
@@ -705,6 +710,18 @@ public class SlickGame extends BasicGame {
             } else {
                 crew.removeFromShip();
             }
+        }
+
+        // Put all the intruders in the same room, as far as possible.
+        int intruderRoomId = Random.Default.nextInt(player.getRooms().size());
+        Room intruderRoom = player.getRooms().get(intruderRoomId);
+
+        for (AddCrewEval spec : resources.getIntruders()) {
+            LivingCrew intruder = player.addCrewMember(spec.getRace().getName(), false, true);
+            intruder.setSelectedName(spec.getName());
+
+            RoomPoint slot = player.findSpaceForCrew(intruderRoom, AbstractCrew.SlotType.INTRUDER);
+            intruder.jumpTo(slot.getRoom(), slot);
         }
     }
 
