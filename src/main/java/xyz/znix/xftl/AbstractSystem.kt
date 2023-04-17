@@ -14,6 +14,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SystemBlueprint
 import kotlin.math.*
+import kotlin.reflect.KProperty
 
 abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     val codename: String get() = blueprint.name
@@ -27,6 +28,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     var damagedEnergyLevels: Int = 0
     val damaged: Boolean get() = damagedEnergyLevels > 0
     val broken: Boolean get() = damagedEnergyLevels >= energyLevels
+
+    private val onInitValues = ArrayList<OnInitWrapper<*>>()
 
     /**
      * The time remaining until the ion effect wears off.
@@ -93,6 +96,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     }
 
     open fun initialise(ship: Ship) {
+        for (item in onInitValues) {
+            item.doInit(ship.sys)
+        }
     }
 
     fun drawRoom(g: Graphics) {
@@ -344,6 +350,38 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
      */
     open fun makeExtraButtons(powerPos: IPoint): List<Button> {
         return emptyList()
+    }
+
+    /**
+     * This is used to create a delegated property that's initialised
+     * when the system is initialised. This can be used to load stuff
+     * from SlickGame, which is passed as the argument to the lambda.
+     *
+     * This is used very similarly to [lazy]:
+     *
+     * val myImage by onInit { it.getImg("...") }
+     *
+     * This should be preferred to loading images and sounds when
+     * required, as this means missing resources will fail when
+     * the ship is loaded rather than when the system is used.
+     * Obviously this makes finding these issues a lot quicker.
+     */
+    protected fun <T> onInit(initializer: (SlickGame) -> T): OnInitWrapper<T> {
+        val wrapper = OnInitWrapper(initializer)
+        onInitValues += wrapper
+        return wrapper
+    }
+
+    protected class OnInitWrapper<T>(private val fn: (SlickGame) -> T) {
+        private var storedValue: T? = null
+
+        operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+            return storedValue ?: error("On-init property used before initialisation!")
+        }
+
+        fun doInit(game: SlickGame) {
+            storedValue = fn(game)
+        }
     }
 
     companion object {

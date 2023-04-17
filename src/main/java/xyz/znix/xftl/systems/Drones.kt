@@ -11,7 +11,13 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
 
     val drones = ArrayList<DroneInfo?>()
 
+    private val droneLaunchSound by onInit { it.sounds.getSample("droneLaunch") }
+
+    private var playDroneLaunchSound = false
+
     override fun initialise(ship: Ship) {
+        super.initialise(ship)
+
         // Resize the blueprints list to match the ship
         // On some enemy ships (eg REBEL_FAT) there's a drone system but
         // no number of drone slots - in that case assume it's three, though
@@ -100,6 +106,11 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
         for (info in drones) {
             info?.instance?.update(dt)
         }
+
+        if (playDroneLaunchSound) {
+            droneLaunchSound.play()
+            playDroneLaunchSound = false
+        }
     }
 
     /**
@@ -135,6 +146,11 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
             if (info.instance == null) {
                 info.instance = info.type.makeInstance()
                 info.instance!!.init(ship)
+
+                // We should only play the launch sound when unpaused, both
+                // to match vanilla and to only play the sound once if multiple
+                // drones are selected in the same update.
+                playDroneLaunchSound = true
             }
         }
 

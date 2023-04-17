@@ -109,7 +109,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     }
 
     protected open fun hitShields() {
-        ship.shields!!.activeShields--
+        ship.shields!!.popShieldLayer()
         ship.playDamageEffect(type, position)
     }
 

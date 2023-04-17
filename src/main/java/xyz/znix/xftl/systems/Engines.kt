@@ -5,9 +5,28 @@ import org.jdom2.Element
 class Engines(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
     override val sortingType: SortingType get() = SortingType.ENGINES
 
+    private val enginesOnSound by onInit { it.sounds.getSample("enginesOn") }
+    private val enginesOffSound by onInit { it.sounds.getSample("enginesOff") }
+
     // TODO add crew evasion and charge bonus
     val evasion: Int get() = evasions[powerSelected]
     val chargeRate: Float get() = chargeRates[powerSelected]
+
+    private var lastEnginesOn = false
+
+    override fun powerStateChanged() {
+        super.powerStateChanged()
+
+        // Play the sound effect when the engines are turned on and off
+        val enginesOn = powerSelected > 0
+
+        when {
+            enginesOn && !lastEnginesOn -> enginesOnSound.play()
+            !enginesOn && lastEnginesOn -> enginesOffSound.play()
+        }
+
+        lastEnginesOn = enginesOn
+    }
 
     companion object {
         // https://ftl.fandom.com/wiki/Engines

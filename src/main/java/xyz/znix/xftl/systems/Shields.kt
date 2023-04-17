@@ -11,7 +11,12 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
     var activeShields: Int = 0
         set(value) {
+            val old = field
             field = min(selectedShieldBars, value)
+
+            if (value < old) {
+                shieldsDownSound.play()
+            }
         }
 
     override val powerSelected: Int get() = selectedShieldBars * 2
@@ -20,6 +25,9 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         private set
 
     val rechargeDelay: Float get() = 2f
+
+    private val shieldsUpSound by onInit { it.sounds.getSample("shieldsUp") }
+    private val shieldsDownSound by onInit { it.sounds.getSample("shieldsDown") }
 
     override fun update(dt: Float) {
         super.update(dt)
@@ -31,8 +39,19 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         if (rechargeTimer < rechargeDelay)
             return
 
+        if (activeShields == 0) {
+            shieldsUpSound.play()
+        }
+
         rechargeTimer = 0f
         activeShields++
+    }
+
+    fun popShieldLayer() {
+        if (activeShields == 0)
+            return
+
+        activeShields--
     }
 
     override fun powerStateChanged() {

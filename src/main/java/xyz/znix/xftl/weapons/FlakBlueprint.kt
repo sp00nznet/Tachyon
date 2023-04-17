@@ -103,7 +103,7 @@ class FlakBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
 
         override fun hitShields() {
             if (!spec.fake) {
-                ship.shields!!.activeShields--
+                ship.shields!!.popShieldLayer()
             }
             playAnimation()
         }

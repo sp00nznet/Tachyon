@@ -15,6 +15,8 @@ import xyz.znix.xftl.math.IPoint
 class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
     override val sortingType: SortingType get() = SortingType.TELEPORTER
 
+    private val teleportSound by onInit { it.sounds.getSample("teleport") }
+
     val isSendAvailable: Boolean
         get() {
             if (isPowerLocked || powerSelected == 0)
@@ -84,6 +86,8 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
                 crew.teleportAnimatedTo(room!!)
             }
         }
+
+        teleportSound.play()
 
         // Ion-stun for 20s at 1 power, 15s at 2, and 10s at 3.
         ionTimer += 5f * (5 - powerSelected)

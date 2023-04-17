@@ -22,6 +22,11 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
 
     val active: Boolean get() = timeRemaining != null
 
+    private val cloakSound by onInit { it.sounds.getSample("cloak") }
+    private val unCloakSound by onInit { it.sounds.getSample("decloak") }
+
+    private var shouldPlayCloakSound = false
+
     // Note we clamp it to a minimum of one power, to avoid divide-by-zero errors
     // in unexpected conditions.
     val duration: Float get() = max(powerSelected, 1) * TIME_PER_POWER
@@ -67,6 +72,11 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
     override fun update(dt: Float) {
         super.update(dt)
 
+        if (shouldPlayCloakSound) {
+            shouldPlayCloakSound = false
+            cloakSound.play()
+        }
+
         animationTimer = max(0f, animationTimer - dt)
 
         if (timeRemaining != null) {
@@ -90,6 +100,8 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
                 ionTimer += COOLDOWN
 
                 animationTimer = FADE_TIMER
+
+                unCloakSound.play()
             }
         }
     }
@@ -167,6 +179,9 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
 
             timeRemaining = duration
             animationTimer = FADE_TIMER
+
+            // The cloak sound only plays when the user unpauses
+            shouldPlayCloakSound = true
         }
     }
 
