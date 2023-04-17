@@ -29,13 +29,8 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         val rand = Random(effectiveSeed)
 
         if (seed == null) {
-            // Base64-encode the seed to make it less painful to type in
-            val bytes = ByteBuffer.allocate(6)
-            bytes.put(sector.toByte())
-            bytes.put(difficulty.ordinal.toByte())
-            bytes.putInt(effectiveSeed)
-            val base64seed = Base64.getEncoder().encodeToString(bytes.array()).trim('=')
-            println("Generating ship from spec '${spec.name}' with seed $base64seed")
+            val seedStr = seedToString(sector, difficulty, effectiveSeed)
+            println("Generating ship from spec '${spec.name}' with seed $seedStr")
         }
 
         val elem = spec.autoBlueprint.resolve(rand).let { it as MiscBlueprint }.loadElem(df)
@@ -502,6 +497,17 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     // The categories that power is allocated from
     private enum class SystemCategory {
         OFFENSIVE, DEFENSIVE, GENERAL;
+    }
+
+    companion object {
+        fun seedToString(sector: Int, difficulty: Difficulty, seed: Int): String {
+            // Base64-encode the seed to make it less painful to type in
+            val bytes = ByteBuffer.allocate(6)
+            bytes.put(sector.toByte())
+            bytes.put(difficulty.ordinal.toByte())
+            bytes.putInt(seed)
+            return Base64.getEncoder().encodeToString(bytes.array()).trim('=')
+        }
     }
 }
 

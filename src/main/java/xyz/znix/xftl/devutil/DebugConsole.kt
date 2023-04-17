@@ -15,10 +15,12 @@ import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.shipgen.EnemyShipSpec
+import xyz.znix.xftl.shipgen.ShipGenerator
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.nio.ByteBuffer
 import java.util.*
+import kotlin.random.Random
 
 /**
  * A development console, to quickly do stuff like load events or get scrap.
@@ -391,6 +393,34 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
             return
         }
         val spec: EnemyShipSpec = game.eventManager.getShip(specName)
+
+        if (seedB64.getOrNull(1) == '.') {
+            // sector.difficulty mode, with a random seed
+
+            // Make the sector one-indexed
+            val sector = seedB64[0].toString().toInt() - 1
+            if (sector < 0) {
+                lines.add("In sector.difficulty mode, the sector must be one-indexed.")
+                return
+            }
+
+            val difficultyStr = seedB64.substring(2)
+            val difficulty = Difficulty.values().firstOrNull { it.name.equals(difficultyStr, ignoreCase = true) }
+
+            if (difficulty == null) {
+                val difficultyList = Difficulty.values().joinToString(", ") { it.name }
+                lines.add("Invalid difficulty name '$difficultyStr', should be one of: $difficultyList")
+                return
+            }
+
+            val seed = Random.nextInt()
+
+            game.debugSpawnShip(spec, difficulty, sector, seed)
+
+            val seedStr = ShipGenerator.seedToString(sector, difficulty, seed)
+            lines.add("Spawning ship from spec '${spec.name}' with seed '$seedStr'")
+            return
+        }
 
         val seedBytes = try {
             Base64.getDecoder().decode(seedB64)
