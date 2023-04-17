@@ -55,6 +55,7 @@ public class SlickGame extends BasicGame {
     private HostileShipUI hostileShipUI;
 
     private boolean enemyIsHostile;
+    private boolean enemyInteriorVisible;
 
     private Beacon currentBeacon;
     private boolean paused;
@@ -215,7 +216,7 @@ public class SlickGame extends BasicGame {
             return;
 
         // Hovering over the enemy
-        if (enemy != null && (enemyIsHostile || !enemy.getIntruders().isEmpty())) {
+        if (enemy != null && enemyInteriorVisible) {
             tempPoint.setX(container.getInput().getMouseX());
             tempPoint.setY(container.getInput().getMouseY());
             tempPoint.minusAssign(hostileShipUI.getShipPos());
@@ -285,9 +286,10 @@ public class SlickGame extends BasicGame {
         if (enemy != null) {
             // If the enemy ship is neutral but we still have crew inside,
             // allow the user to control and recover them.
-            boolean renderShip = enemyIsHostile || !enemy.getIntruders().isEmpty();
+            boolean anyLivingBoarders = enemy.getIntruders().stream().anyMatch(crew -> crew instanceof LivingCrew);
+            enemyInteriorVisible = enemyIsHostile || anyLivingBoarders;
 
-            hostileShipUI.render(container, g, hoveredRoom, renderShip);
+            hostileShipUI.render(container, g, hoveredRoom, enemyInteriorVisible);
         }
 
         // Draw the paused text before the UI, so the UI goes on top.
@@ -385,8 +387,9 @@ public class SlickGame extends BasicGame {
             }
 
             // Check if the enemy crew is dead (including any aboard the player ship).
-            if (enemy.getFriendlyCrew().isEmpty() && player.getIntruders().isEmpty()
-                    && !enemy.isAutoScout() && enemyIsHostile) {
+            boolean anyCrewLeft = enemy.getFriendlyCrew().stream().anyMatch(crew -> crew instanceof LivingCrew);
+            boolean anyBoardersLeft = player.getIntruders().stream().anyMatch(crew -> crew instanceof LivingCrew);
+            if (!anyCrewLeft && !anyBoardersLeft && !enemy.isAutoScout() && enemyIsHostile) {
 
                 if (enemy.getSpec() != null) {
                     IEvent event = enemy.getSpec().getDeadCrew();
