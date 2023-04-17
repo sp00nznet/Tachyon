@@ -847,6 +847,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     fun playInsufficientScrapAnimation() {
         // Three flashes: on-off-on-off-on
         insufficientScrapTimer = INSUFFICIENT_SCRAP_FLASH_TIME * 5
+
+        // I think this is the right sound?
+        powerUpFailSound.play()
     }
 
     fun shipModified() {

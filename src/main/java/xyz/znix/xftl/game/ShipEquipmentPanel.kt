@@ -34,6 +34,8 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
     private val sellPriceFont = game.getFont("num_font")
     private val augmentFont = game.getFont("JustinFont12Bold")
 
+    private val sellSound = game.sounds.getSample("sell")
+
     private val buttons = ArrayList<Button>()
     private val weaponButtons = ArrayList<Buttons.DragDropBlueprintButton>()
     private val droneButtons = ArrayList<Buttons.DragDropBlueprintButton>()
@@ -461,6 +463,8 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
                     ship.scrap += (it?.cost ?: 0) / 2
 
                     // Do nothing with it, thus destroying it.
+
+                    sellSound.play()
                 }
             }
 

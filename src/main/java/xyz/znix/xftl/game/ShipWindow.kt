@@ -23,6 +23,8 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     private val crewNameFont = game.getFont("JustinFont8")
     private val dismissFont = game.getFont("hl1")
 
+    private val upgradeSystemSound = game.sounds.getSample("upgradeSystem")
+
     private var tab: Tab = Tab.UPGRADES
 
     private val equipmentPanel = ShipEquipmentPanel(game, ship)
@@ -331,6 +333,8 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
             // Replace this button to reflect the upgrade
             updateButtons()
+
+            upgradeSystemSound.play()
         }
     }
 

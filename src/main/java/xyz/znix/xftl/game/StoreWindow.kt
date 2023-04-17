@@ -23,6 +23,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val sectionFont = game.getFont("HL2", 2f)
     private val numberFont = game.getFont("num_font")
 
+    private val buySound = game.sounds.getSample("buy")
+
     private val sellPanel = ShipEquipmentPanel(game, ship).apply { sellUI = true }
 
     private val buyTabButton = SimpleButton(
@@ -410,6 +412,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             }
             ship.scrap -= price
 
+            buySound.play()
+
             buy()
         }
     }
@@ -464,6 +468,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             game.givePlayerResources(resourceSet)
 
             store.availableResources[resource] = numAvailable - 1
+
+            buySound.play()
         }
     }
 
