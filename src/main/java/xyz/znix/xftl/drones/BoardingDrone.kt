@@ -5,6 +5,7 @@ import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.draw
+import xyz.znix.xftl.f
 import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -25,15 +26,10 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
     private var projectile: FlyingDrone? = null
 
-    // Same as 'ship', but works when the drone is flying.
-    // Used to destroy the drone if we jump away.
-    private lateinit var enemyShip: Ship
-
     override fun init(ownerShip: Ship) {
         super.init(ownerShip)
 
-        // TODO support enemy-to-player boarding
-        enemyShip = ownerShip.sys.enemy
+        val enemyShip = ownerShip.sys.getEnemyOf(ownerShip)!!
         val target = enemyShip.rooms.random()
         projectile = FlyingDrone(target)
         enemyShip.inboundProjectiles += projectile!!
@@ -66,6 +62,27 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         pawn.setTargetRoom(candidates.random())
     }
 
+    override fun update(dt: Float) {
+        super.update(dt)
+
+        // Check if the player ship jumped away or shot down the projectile
+        if (pawn != null)
+            return
+
+        val projectile = this.projectile
+        if (projectile == null) {
+            // No projectile and no pawn? This probably shouldn't happen.
+            destroy()
+            return
+        }
+
+        if (!projectile.ship.inboundProjectiles.contains(projectile)) {
+            // The projectile has been removed from the ship's incoming
+            // projectiles list.
+            destroy()
+        }
+    }
+
     private fun roomContainsHostileCrew(room: Room): Boolean {
         return room.crew.any { it.mode == AbstractCrew.SlotType.CREW }
     }
@@ -77,16 +94,11 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         return system.damagedEnergyLevels != system.energyLevels
     }
 
-    override fun onEnemyShipUpdated() {
-        super.onEnemyShipUpdated()
+    override fun destroy() {
+        super.destroy()
 
-        // Destroy the drone when we jump away, and when the enemy ship is killed.
-        if (ownerShip.sys.enemy != enemyShip) {
-            destroy()
-
-            // If a flying drone was sent out, get rid of it in case we jump back.
-            projectile?.destroyFlying()
-        }
+        // If a flying drone was sent out, get rid of it.
+        projectile?.destroyFlying()
     }
 
     override fun drawPawn() {
@@ -100,10 +112,26 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         val proj = this.projectile ?: return
 
         // Start in the centre of the shields, for lack of a better place.
-        val startingPoint = ownerShip.shieldOffset + ownerShip.shieldHalfSize
+        val startingPoint = ownerShip.shieldOrigin
         val dist = proj.initialDistance - proj.distance
 
-        proj.render(g, startingPoint.x + dist, startingPoint.y.toFloat(), 0f)
+        var x = startingPoint.x.f
+        var y = startingPoint.y.f
+        var rotation = 0f
+
+        // The direction the drone flies in depends on whether this is
+        // a player ship or an enemy ship, as it's supposed to go
+        // forwards out of both of them.
+        if (ownerShip.isPlayerShip) {
+            // Fly right
+            x += dist
+        } else {
+            // Fly upwards
+            y -= dist
+            rotation = -90f
+        }
+
+        proj.render(g, x, y, rotation)
     }
 
     override fun makePawn(room: Room): Pawn = BoardingPawn(room)

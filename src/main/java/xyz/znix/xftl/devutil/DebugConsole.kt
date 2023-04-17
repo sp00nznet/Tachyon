@@ -278,14 +278,23 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
     private fun cmdClearDrones(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         fun clearFor(target: Ship) {
-            val drones = target.drones ?: return
-
-            for (info in drones.drones) {
-                info?.instance = null
+            val drones = target.drones
+            if (drones != null) {
+                for (info in drones.drones) {
+                    info?.instance?.destroy()
+                }
             }
 
             target.orphanedDrones.clear()
-            target.crew.removeIf { it is AbstractIndoorsDrone.Pawn }
+
+            // Clone the crew list, since we'll be modifying it if
+            // we find any drones.
+            for (crew in ArrayList(target.crew)) {
+                if (crew !is AbstractIndoorsDrone.Pawn)
+                    continue
+
+                crew.removeFromShip()
+            }
         }
 
         clearFor(ship)

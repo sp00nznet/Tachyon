@@ -44,6 +44,9 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
         // TODO cooldown
     }
 
+    open fun update(dt: Float) {
+    }
+
     protected open fun onPowerChanged() {
     }
 

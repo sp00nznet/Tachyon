@@ -94,6 +94,14 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
         // No drones are currently powered.
     }
 
+    override fun update(dt: Float) {
+        super.update(dt)
+
+        for (info in drones) {
+            info?.instance?.update(dt)
+        }
+    }
+
     /**
      * Attempt to set the power status of the drone in the nth slot,
      * considering the system and reactor power limits.

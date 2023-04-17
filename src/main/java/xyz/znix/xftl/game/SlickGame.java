@@ -2,6 +2,7 @@ package xyz.znix.xftl.game;
 
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.newdawn.slick.*;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
@@ -606,6 +607,34 @@ public class SlickGame extends BasicGame {
      */
     public Ship getEnemy() {
         return enemy;
+    }
+
+    /**
+     * Find the ship that's the enemy of the specified one.
+     * <p>
+     * This should be used for things like drones and teleporters
+     * which need to access the enemy ship if installed on the player,
+     * or the player ship if installed on the enemey.
+     */
+    @Nullable
+    public Ship getEnemyOf(Ship source) {
+        if (source == player) {
+            return enemy;
+        } else {
+            return player;
+        }
+    }
+
+    /**
+     * Check if the given ship is either the player or enemy.
+     * <p>
+     * This is intended for drones, which need to self-destruct
+     * when the ship powering them is gone (regardless of which
+     * ship had the system installed, or who jumped away).
+     */
+    public boolean isShipPresent(@NotNull Ship ship) {
+        Objects.requireNonNull(ship);
+        return ship == enemy || ship == player;
     }
 
     /**

@@ -107,6 +107,17 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         // TODO play the explosion animation
     }
 
+    override fun update(dt: Float) {
+        super.update(dt)
+
+        // If something weird happens and our pawn disappears
+        // from the enemy ship, assume it was destroyed.
+        val pawn = this.pawn
+        if (pawn != null && !pawn.room.ship.crew.contains(pawn)) {
+            destroy()
+        }
+    }
+
     protected abstract fun updatePawn(dt: Float)
 
     protected abstract fun drawPawn()
@@ -142,6 +153,15 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         override val playerControllable: Boolean get() = false
 
         override fun update(dt: Float) {
+            // If the ship powering this drone has jumped away, destroy it.
+            // Also self-destruct if the pawn field no longer points to this
+            // pawn for whatever reason. It shouldn't happen, but this could
+            // avoid a drone getting stuck on the player ship.
+            if (!ship.sys.isShipPresent(ownerShip) || pawn != this) {
+                removeFromShip()
+                return
+            }
+
             // If a new animation has been selected while paused, apply that now.
             // This avoids stuff changing while paused, which makes paused not
             // feel properly paused, for lack of a better term.
