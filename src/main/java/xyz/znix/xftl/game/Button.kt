@@ -159,14 +159,16 @@ object Buttons {
         override fun contains(x: Int, y: Int) = super.contains(x - 5, y - 7)
     }
 
-    class BasicButton(
+    open class BasicButton(
         pos: IPoint, size: IPoint, val label: String, game: SlickGame,
         private val radius: Int, private val font: Font, private val yOffset: Int,
         private val cb: () -> Unit
     ) : Button(pos, size) {
 
+        open val colour: Color get() = if (hovered) Constants.UI_BUTTON_HOVER else Constants.SECTOR_CUTOUT_TEXT
+
         override fun draw(g: Graphics) {
-            g.color = if (hovered) Constants.UI_BUTTON_HOVER else Constants.SECTOR_CUTOUT_TEXT
+            g.color = colour
             drawRounded(g, pos.x, pos.y, size.x, size.y, radius)
 
             val x = (size.x - font.getWidth(label)) / 2f

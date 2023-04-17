@@ -11,11 +11,16 @@ import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SubSystem
 import xyz.znix.xftl.systems.SystemBlueprint
 
+private typealias UndoFn = () -> Unit
+
 class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> Unit) :
     Window() {
     override val size = ConstPoint(587, 464)
 
     override val outlineImage get() = error("Ship UI uses a pre-made background image")
+
+    private val acceptButtonImage = game.getImg("img/upgradeUI/buttons_accept_base.png")
+    private val undoButtonImage = game.getImg("img/upgradeUI/buttons_undo_base.png")
 
     private val shipNameFont = game.getFont("c&c", 3f)
     private val numberFont = game.getFont("num_font")
@@ -24,10 +29,16 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     private val dismissFont = game.getFont("hl1")
 
     private val upgradeSystemSound = game.sounds.getSample("upgradeSystem")
+    private val downgradeSystemSound = game.sounds.getSample("downgradeSystem")
 
     private var tab: Tab = Tab.UPGRADES
 
     private val equipmentPanel = ShipEquipmentPanel(game, ship)
+
+    // These store functions that each undo the last
+    // upgrade of a system or the reactor.
+    private val systemUpgradeUndos = HashMap<AbstractSystem, ArrayList<UndoFn>>()
+    private var reactorUpgradeUndo = ArrayList<UndoFn>()
 
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
@@ -75,6 +86,12 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         if (tab != Tab.EQUIPMENT)
             buttons += createTab(Tab.EQUIPMENT, ConstPoint(175, -GLOW_WIDTH), ConstPoint(123, 48))
 
+        // Switching tabs away from upgrades commits the system upgrades
+        if (tab != Tab.UPGRADES) {
+            systemUpgradeUndos.clear()
+            reactorUpgradeUndo.clear()
+        }
+
         // Update the button window offsets
         positionUpdated()
 
@@ -90,8 +107,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             position.y - GLOW_WIDTH
         )
 
-        val acceptImage = game.getImg("img/upgradeUI/buttons_accept_base.png")
-        acceptImage.draw(position.x + 405f, position.y + 464f)
+        acceptButtonImage.draw(position.x + 405f, position.y + 464f)
 
         when (tab) {
             Tab.UPGRADES -> drawUpgrades(g)
@@ -129,6 +145,25 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             name,
             Color.white
         )
+
+        undoButtonImage.draw(position.x + 3f, position.y + 464f)
+        if (updatingButtons) {
+            buttons += object : Buttons.BasicButton(
+                ConstPoint(26, 471),
+                ConstPoint(97, 32), game.translator["button_undo"], game,
+                4, game.getFont("hl2", 3f), 25,
+                this::undoAllSystems
+            ) {
+                override val colour: Color
+                    get() {
+                        // Grey the button out when there's nothing to undo
+                        if (systemUpgradeUndos.all { it.value.isEmpty() } && reactorUpgradeUndo.isEmpty())
+                            return Constants.JUMP_DISABLED
+
+                        return super.colour
+                    }
+            }
+        }
 
         // Draw the systems
         val systems = ship.rooms.mapNotNull { it.system as? MainSystem }.sortedBy { it.sortingType }
@@ -212,10 +247,15 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                         reactorImg.draw(pos)
                     }
 
+                    // Figure out the power range that should show as downgrades
+                    val lastNonRefundablePower = ship.purchasedReactorPower - reactorUpgradeUndo.size
+                    val refundRange = lastNonRefundablePower until ship.purchasedReactorPower
+
                     // Draw the energy bars
                     for (level in 0 until 25) {
                         g.color = when {
-                            ship.purchasedReactorPower >= (level + 1) -> Constants.SYS_ENERGY_ACTIVE
+                            level in refundRange -> Constants.SYS_ENERGY_PURCHASE_UNDOABLE
+                            ship.purchasedReactorPower > level -> Constants.SYS_ENERGY_ACTIVE
                             hovered -> Constants.SYS_ENERGY_PURCHASE_HOVER
                             else -> Constants.SYS_ENERGY_PURCHASE
                         }
@@ -248,6 +288,14 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                 }
 
                 override fun click(button: Int) {
+                    if (button == Input.MOUSE_RIGHT_BUTTON) {
+                        val undoLast = reactorUpgradeUndo.lastOrNull() ?: return
+                        reactorUpgradeUndo.remove(undoLast)
+                        undoLast()
+                        downgradeSystemSound.play()
+                        return
+                    }
+
                     if (button != Input.MOUSE_LEFT_BUTTON)
                         return
 
@@ -264,6 +312,14 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                     ship.scrap -= price
 
                     ship.purchasedReactorPower++
+
+                    // This is how the user can revert an upgrade
+                    reactorUpgradeUndo += {
+                        ship.scrap += price
+                        ship.purchasedReactorPower--
+                    }
+
+                    upgradeSystemSound.play()
                 }
             }
         }
@@ -291,9 +347,15 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                 pos.y + size.y - SystemBlueprint.ICON_GLOW - 65f
             )
 
+            // Figure out the power range that should show as downgrades
+            val undoablePower = systemUpgradeUndos[system]?.size ?: 0
+            val lastNonRefundablePower = system.energyLevels - undoablePower + 1 // Power here is 1-indexed
+            val refundRange = lastNonRefundablePower..system.energyLevels
+
             // Draw the energy bars
             for (level in 1..system.blueprint.maxPower) {
                 g.color = when {
+                    level in refundRange -> Constants.SYS_ENERGY_PURCHASE_UNDOABLE
                     system.energyLevels >= level -> Constants.SYS_ENERGY_ACTIVE
                     hovered -> Constants.SYS_ENERGY_PURCHASE_HOVER
                     else -> Constants.SYS_ENERGY_PURCHASE
@@ -317,6 +379,15 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         }
 
         override fun click(button: Int) {
+            if (button == Input.MOUSE_RIGHT_BUTTON) {
+                val undos = systemUpgradeUndos[system] ?: return
+                val undoLast = undos.lastOrNull() ?: return
+                undos.remove(undoLast)
+                undoLast()
+                downgradeSystemSound.play()
+                return
+            }
+
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
@@ -330,6 +401,13 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             ship.scrap -= upgradePrice
 
             system!!.energyLevels++
+
+            val undos = systemUpgradeUndos.getOrPut(system) { ArrayList() }
+            undos += {
+                system.energyLevels--
+                ship.scrap += upgradePrice
+                updateButtons()
+            }
 
             // Replace this button to reflect the upgrade
             updateButtons()
@@ -438,6 +516,21 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
     override fun escapePressed() {
         close()
+    }
+
+    private fun undoAllSystems() {
+        for (undos in systemUpgradeUndos.values) {
+            for (undo in undos) {
+                undo()
+            }
+        }
+        for (undo in reactorUpgradeUndo) {
+            undo()
+        }
+        systemUpgradeUndos.clear()
+        reactorUpgradeUndo.clear()
+
+        downgradeSystemSound.play()
     }
 
     private enum class Tab(val textureName: String) {
