@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
 
@@ -18,6 +19,11 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val shieldPiercing: Int = xml.getChildTextTrim("sp")?.toInt() ?: 0
 
     val power = xml.getChildTextTrim("power").toInt()
+
+    val launchSounds = xml.getChild("launchSounds")?.let { SoundList(it) }
+    val hitShipSounds = xml.getChild("hitShipSounds")?.let { SoundList(it) }
+    val hitShieldSounds = xml.getChild("hitShieldSounds")?.let { SoundList(it) }
+    val missSounds = xml.getChild("missSounds")?.let { SoundList(it) }
 
     fun getLauncher(game: SlickGame): Animations.WeaponAnimationSpec {
         game.animations.weaponAnimations[launcher]?.let { return it }
@@ -47,5 +53,36 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
         // Note we have to add the width (height, but we've rotated it 90°) to fix
         // up the offset caused by the rotation
         spr.draw(x + spr.height, y)
+    }
+
+    override fun finishSetup(game: SlickGame) {
+        super.finishSetup(game)
+
+        // Load all the sounds
+        launchSounds?.load(game)
+        hitShipSounds?.load(game)
+        hitShieldSounds?.load(game)
+        missSounds?.load(game)
+    }
+
+    class SoundList(elem: Element) {
+        private val names: List<String> = elem.getChildren("sound").map { it.textTrim }
+        private var soundsInternal: List<FTLSound>? = null
+
+        val sounds: List<FTLSound> get() = soundsInternal ?: error("SoundList not yet loaded!")
+
+        fun load(game: SlickGame) {
+            if (soundsInternal != null) {
+                error("Cannot re-initialise sound list!")
+            }
+
+            soundsInternal = names.map { game.sounds.getSample(it) }
+        }
+
+        fun get(): FTLSound? {
+            if (sounds.isEmpty())
+                return null
+            return sounds.random()
+        }
     }
 }

@@ -1,3 +1,5 @@
+// Overwrite Slick's version.
+// This must come first on the classpath!
 package org.newdawn.slick.openal;
 
 import com.jcraft.jogg.Packet;
@@ -20,10 +22,15 @@ import java.nio.ByteOrder;
  * An input stream that can extract ogg data. This class is a bit of an experiment with continuations
  * so uses thread where possibly not required. It's just a test to see if continuations make sense in
  * some cases.
+ * <p>
+ * znix: Modified to load FTL's OGG files. In particular, audio/waves/weapons/bp_laser_3.ogg.
  *
  * @author kevin
  */
 public class OggInputStream extends InputStream implements AudioInputStream {
+    // Use this to make sure we've loaded our modified class
+    public static int FTL_MARKER = 1;
+
     /**
      * The conversion buffer size
      */
@@ -197,7 +204,8 @@ public class OggInputStream extends InputStream implements AudioInputStream {
             endOfStream = true;
             return false;
         }
-        syncState.wrote(bytes);
+        // znix: Use Math.max to avoid subtracting 1 at EOF
+        syncState.wrote(Math.max(bytes, 0));
 
         // Get the first page.
         if (syncState.pageout(page) != 1) {
@@ -298,12 +306,14 @@ public class OggInputStream extends InputStream implements AudioInputStream {
                 endOfStream = true;
                 return false;
             }
-            if (bytes == 0 && i < 2) {
+            // znix: was bytes == 0 && i < 2 here, bytes=-1 at EOF
+            if (bytes <= 0 && i < 2) {
                 Log.error("End of file before finding all Vorbis headers!");
                 endOfStream = true;
                 return false;
             }
-            syncState.wrote(bytes);
+            // znix: Use Math.max to avoid subtracting 1 at EOF
+            syncState.wrote(Math.max(bytes, 0));
         }
 
         convsize = 4096 / oggInfo.channels;
@@ -452,8 +462,12 @@ public class OggInputStream extends InputStream implements AudioInputStream {
                     } else {
                         bytes = 0;
                     }
-                    syncState.wrote(bytes);
-                    if (bytes == 0) {
+                    // znix: bytes=-1 if we hit end-of-stream, previously this checked if bytes==0 and
+                    // wrote -1 bytes, which later caused getPageAndPacket to get an invalid index
+                    // of -1 and try reading from it.
+                    // To test this, load audio/waves/weapons/bp_laser_3.ogg.
+                    syncState.wrote(Math.max(bytes, 0));
+                    if (bytes <= 0) {
                         endOfBitStream = true;
                     }
                 }

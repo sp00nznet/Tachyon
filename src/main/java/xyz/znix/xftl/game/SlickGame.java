@@ -93,6 +93,8 @@ public class SlickGame extends BasicGame {
         nameManager = new CrewNameManager(df);
         gameMap = new GameMap(df, eventManager);
 
+        blueprintManager.initialiseGame(this);
+
         loadPlayerShip();
         shipUI = new PlayerShipUI(df, translator, player, this);
 

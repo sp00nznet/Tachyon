@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import org.jdom2.Element
 import org.newdawn.slick.SlickException
 import org.newdawn.slick.Sound
+import org.newdawn.slick.openal.OggInputStream
 import xyz.znix.xftl.Datafile
 
 class SoundManager(private val df: Datafile) {
@@ -13,7 +14,15 @@ class SoundManager(private val df: Datafile) {
     private val loops = HashMap<String, SoundSpec>()
 
     init {
-        val doc = df.parseXML(df["data/sounds.xml"])
+        // Make sure we've classloaded our modified copy of OggInputStream
+        OggInputStream.FTL_MARKER = 2
+
+        loadXml("data/sounds.xml")
+        loadXml("data/dlcSounds.xml")
+    }
+
+    private fun loadXml(path: String) {
+        val doc = df.parseXML(df[path])
         for (elem in doc.rootElement.children) {
             if (elem.name == "music") {
                 // TODO load music

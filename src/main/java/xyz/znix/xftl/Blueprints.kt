@@ -28,6 +28,16 @@ class BlueprintManager(df: Datafile) {
         }
     }
 
+    // Required to bind sounds to the weapons
+    fun initialiseGame(game: SlickGame) {
+        for (bp in blueprints.values) {
+            if (bp !is Blueprint)
+                continue
+
+            bp.finishSetup(game)
+        }
+    }
+
     operator fun get(name: String): IBlueprint = blueprints[name] ?: error("Unknown blueprint $name")
 
     private fun loadFile(df: Datafile, name: String) {
@@ -158,6 +168,13 @@ open class Blueprint(elem: Element) : IBlueprint {
 
     override fun resolve(random: Random): Blueprint = this
     override fun list(): List<Blueprint> = listOf(this)
+
+    /**
+     * Finish setting up this blueprint, loading any other
+     * required resources (eg, sounds).
+     */
+    open fun finishSetup(game: SlickGame) {
+    }
 }
 
 class MiscBlueprint(elem: Element, val file: FTLFile) : Blueprint(elem) {
