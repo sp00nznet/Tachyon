@@ -292,8 +292,6 @@ abstract class AbstractCrew(
 
             isPunching = sameCell != null && canPunch
 
-            currentAction = Action.FIGHTING
-
             // Has the enemy walked out of the room?
             enemyToAttack?.let { target ->
                 if (!hostiles.contains(target)) {
@@ -302,35 +300,30 @@ abstract class AbstractCrew(
                 }
             }
 
-            if (attackTimer != null) {
-                attackTimer = attackTimer!! - dt
-            }
-
-            if (attackTimer != null && attackTimer!! <= damageTime) {
-                damageTime = -1f
-
+            updateAttack(Action.FIGHTING, dt, {
                 // Apply damage
                 val damage = (3f..7f).random(Random.Default) * attackDamageMult
                 enemyToAttack!!.dealDamage(damage)
-
-                // TODO if shooting, play the little laser graphic animation
-            }
-
-            if (attackTimer == null || attackTimer!! <= 0f) {
+            }, {
                 // If we're punching someone always attack them, otherwise pick
                 // someone in the room at random to shoot.
                 // For boarding drones that don't punch, still attack the person
                 // in the same slot instead of sharing the damage around.
                 enemyToAttack = sameCell ?: hostiles.random()
+            })
 
-                attackTimer = (1.0f..1.3f).random(Random.Default)
+            return
+        }
 
-                // Apply the damage half-way through the animation
-                damageTime = attackTimer!! / 2f
+        val system = room.system
+        if (mode == SlotType.INTRUDER && system != null && !system.broken) {
+            isPunching = false
+            enemyToAttack = null
 
-                // Restart the fighting animation, and set its duration equal to that of the attack.
-                updateAnimation()
-            }
+            updateAttack(Action.SABOTAGE, dt, {}, {})
+
+            // Sabotage doesn't deal damage in bursts - it's constant 16% damage/second.
+            system.attack(dt * 0.16f)
 
             return
         }
@@ -342,7 +335,7 @@ abstract class AbstractCrew(
 
 
         // Check if the system in this room is broken, and if so repair it.
-        room.system?.let { sys ->
+        system?.let { sys ->
             if (sys.damaged && mode == SlotType.CREW) {
                 currentAction = Action.REPAIRING
                 sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
@@ -456,6 +449,45 @@ abstract class AbstractCrew(
     }
 
     /**
+     * Update the attack animation for fighting and sabotage actions.
+     */
+    private fun updateAttack(action: Action, dt: Float, dealDamage: () -> Unit, onAnimationStart: () -> Unit) {
+        // Reset everything if we switch between attacking and sabotaging
+        // Otherwise we could end up doing damage after we started attacking
+        // a system, and have a null enemy we're shooting at.
+        if (currentAction != action) {
+            attackTimer = null
+            enemyToAttack = null
+            isPunching = false
+        }
+        currentAction = action
+
+        if (attackTimer != null) {
+            attackTimer = attackTimer!! - dt
+        }
+
+        if (attackTimer != null && attackTimer!! <= damageTime) {
+            damageTime = -1f
+
+            dealDamage()
+
+            // TODO if shooting, play the little laser graphic animation
+        }
+
+        if (attackTimer == null || attackTimer!! <= 0f) {
+            attackTimer = (1.0f..1.3f).random(Random.Default)
+
+            // Apply the damage half-way through the animation
+            damageTime = attackTimer!! / 2f
+
+            onAnimationStart()
+
+            // Restart the fighting animation, and set its duration equal to that of the attack.
+            updateAnimation()
+        }
+    }
+
+    /**
      * Recalculate (via pathfinding) the player's current [movement] to get to
      * their desired target.
      */
@@ -508,9 +540,25 @@ abstract class AbstractCrew(
 
             Action.MANNING -> anims["${codename}_type_${dirAsString(room.computerDirection!!)}"].start()
             Action.REPAIRING -> anims["${codename}_repair"].start()
-            Action.FIGHTING -> {
+            Action.FIGHTING, Action.SABOTAGE -> {
                 // Figure out the direction.
                 val dir: Direction = when {
+                    // When sabotaging, boarders in a two-cell room face the obvious
+                    // centre, and in a four-cell room the top two point down, the
+                    // bottom-left boarder faces right, and the bottom-right one
+                    // faces left.
+                    currentAction == Action.SABOTAGE -> when {
+                        room.width == 1 && position.y == 0 -> Direction.DOWN
+                        room.width == 1 && position.y == 1 -> Direction.UP
+
+                        room.height == 1 && position.x == 0 -> Direction.RIGHT
+                        room.height == 1 && position.x == 1 -> Direction.LEFT
+
+                        position.y == 0 -> Direction.DOWN
+                        position.x == 0 -> Direction.RIGHT
+                        else -> Direction.UP
+                    }
+
                     // If two parties are in the same cell, the crewmember stands
                     // at the top and the intruder stands at the bottom.
                     sharesHostileCell && mode == SlotType.CREW -> Direction.DOWN
@@ -663,6 +711,7 @@ abstract class AbstractCrew(
         MANNING, // Working at a computer
         REPAIRING,
         FIGHTING,
+        SABOTAGE,
         TELEPORTING,
         DYING,
     }

@@ -26,6 +26,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     var energyLevels: Int = 1
     var damagedEnergyLevels: Int = 0
     val damaged: Boolean get() = damagedEnergyLevels > 0
+    val broken: Boolean get() = damagedEnergyLevels >= energyLevels
 
     /**
      * The time remaining until the ion effect wears off.
@@ -62,9 +63,17 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
             field = if (damaged) value else 0f
         }
 
+    var sabotageProgress: Float = 0f
+        private set(value) {
+            field = if (broken) 0f else value
+        }
+
     open fun update(dt: Float) {
         if (!damaged || room?.crew?.none { it.mode == AbstractCrew.SlotType.CREW } == true)
             repairProgress = 0f
+
+        if (broken || room?.crew?.none { it.mode == AbstractCrew.SlotType.INTRUDER } == true)
+            sabotageProgress = 0f
 
         // Check both the damage and timer to avoid somehow getting stuck where
         // one of them is zero and the other isn't.
@@ -132,6 +141,28 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         repairProgress = 0f
 
         damagedEnergyLevels--
+    }
+
+    /**
+     * Attack this room with sabotage or fire damage.
+     */
+    fun attack(damage: Float) {
+        if (broken) {
+            sabotageProgress = 0f
+            return
+        }
+
+        sabotageProgress += damage
+
+        if (sabotageProgress < 1f)
+            return
+
+        sabotageProgress = 0f
+
+        // When the system breaks, it takes a hull point
+        ship.damage(room!!, 1, 1, 0)
+
+        // TODO explosion animation
     }
 
     open val icon: String = "img/icons/s_${codename}_overlay.png"
@@ -236,6 +267,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         }
 
         val barX = x + 24f
+        val topBarY = baseY + 8f - (energyLevels - 1) * 8
 
         for (i in 0 until energyLevels) {
             val y = baseY + 8 - i * 8
@@ -269,16 +301,23 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
                 }
             }
 
+            // The repair bar
             if (i == energyLevels - damagedEnergyLevels) {
                 g.color = Constants.SYS_ENERGY_REPAIR
                 val width = (16 * repairProgress).toInt()
                 g.fillRect(barX + 16 - width, y.f, width.f, 6f)
             }
+
+            // The sabotage bar
+            if (i == energyLevels - damagedEnergyLevels - 1) {
+                g.color = Constants.SYS_ENERGY_SABOTAGE
+                val width = (16 * sabotageProgress).toInt()
+                g.fillRect(barX, y.f, width.f, 6f)
+            }
         }
 
         // If the system is ionised, draw the 'locked' bar around it
         if (isIonised) {
-            val topBarY = baseY + 8f - (energyLevels - 1) * 8
             val barsHeight = energyLevels * 8 - 2
 
             // Two-pixel-wide rectangle around the energy bars
@@ -289,6 +328,12 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
             // Draw the padlock icon at the top
             val lockImg = game.getImg("img/icons/locking/s_lock.png")
             lockImg.draw(barX + 2f - 6f, topBarY - 21f - 6f)
+        }
+
+        // If the system is being sabotaged, draw the fist above it
+        if (sabotageProgress != 0f) {
+            val sabotageIcon = game.getImg("img/icons/s_sabatoge.png") // (sic)
+            sabotageIcon.draw(barX - 9, topBarY - 29)
         }
     }
 

@@ -24,6 +24,11 @@ This means that each frame increases the image stretch by 10%. The bottom of the
 the top animates upwards.
 
 
+Sabotaging can be found in CrewMember::UpdateRepair, and it does
+a constant 1 damage per time unit (16 damage per second), regardless
+of the shooting animation.
+
+
 Player animations:
 CrewAnimation.anims is vector<vector<Animation>>, and means anims[direction][type]
 direction:

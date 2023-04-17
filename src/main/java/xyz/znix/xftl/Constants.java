@@ -29,6 +29,7 @@ public class Constants {
     public static final Color SYS_ENERGY_ACTIVE = new Color(100, 255, 100);
     public static final Color SYS_ENERGY_DEPOWERED = new Color(251, 251, 251);
     public static final Color SYS_ENERGY_BROKEN = new Color(255, 50, 50);
+    public static final Color SYS_ENERGY_SABOTAGE = new Color(252, 53, 49);
     public static final Color SYS_ENERGY_REPAIR = new Color(255, 255, 50);
     public static final Color SYS_ENERGY_PURCHASE = new Color(104, 98, 59);
     public static final Color SYS_ENERGY_PURCHASE_HOVER = new Color(164, 146, 108);
