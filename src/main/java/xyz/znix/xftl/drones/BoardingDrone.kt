@@ -196,7 +196,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     private inner class BoardingPawn(room: Room) : AbstractIndoorsDrone.Pawn(room) {
         // Always fight by shooting a laser
         override val canPunch: Boolean get() = false
-
+        override val canFight: Boolean get() = true
         override val attackDamageMult: Float get() = 1.2f
 
         override val maxHealth: Float get() = 150f

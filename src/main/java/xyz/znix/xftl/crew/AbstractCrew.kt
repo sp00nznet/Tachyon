@@ -40,6 +40,7 @@ abstract class AbstractCrew(
     open val canManSystem: Boolean get() = true
     open val repairSpeed: Float get() = 1f
     open val canPunch: Boolean get() = true
+    open val canFight: Boolean get() = true
     open val attackDamageMult: Float get() = 1f
     open val hasDyingAnimation: Boolean get() = true
     open val canSuffocate: Boolean get() = true
@@ -278,7 +279,7 @@ abstract class AbstractCrew(
 
         // Check if any enemies are in the room
         val hostiles = room.crew.filter { it.mode != mode }
-        if (hostiles.isNotEmpty()) {
+        if (hostiles.isNotEmpty() && canFight) {
             // Check if someone is standing in the same cell as us
             val sameCell = hostiles.firstOrNull { it.movement == null && it.position == position }
 

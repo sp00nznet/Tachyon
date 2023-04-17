@@ -136,6 +136,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         var newPowerAnimation: Animation? = null
 
         override val canManSystem: Boolean get() = false
+        override val canFight: Boolean get() = false
         override val hasDyingAnimation: Boolean get() = false
         override val canSuffocate: Boolean get() = false
         override val playerControllable: Boolean get() = false
