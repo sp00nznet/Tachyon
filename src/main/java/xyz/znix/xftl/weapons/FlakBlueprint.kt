@@ -55,6 +55,8 @@ class FlakBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
                     weapons!!.launchProjectile(hp, projectile)
                 }
             }
+
+            type.launchSounds?.get()?.play()
         }
     }
 
@@ -104,6 +106,10 @@ class FlakBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
         override fun hitShields() {
             if (!spec.fake) {
                 ship.shields!!.popShieldLayer()
+
+                // Surely there would be way too much sound if all the fake
+                // bits of flak hit.
+                type.hitShieldSounds?.get()?.play()
             }
             playAnimation()
         }
@@ -119,6 +125,8 @@ class FlakBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             // We always have to use our custom animation, so the explosion
             // animation isn't in the centre of the room.
             playAnimation()
+
+            type.hitShipSounds?.get()?.play()
         }
 
         private fun playAnimation() {

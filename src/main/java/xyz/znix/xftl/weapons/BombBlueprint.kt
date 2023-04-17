@@ -62,6 +62,8 @@ class BombBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
             val fa = this.animation.shoot()
             firingAnimation = fa
             fa.setLooping(false)
+
+            type.launchSounds?.get()?.play()
         }
     }
 

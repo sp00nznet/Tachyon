@@ -813,6 +813,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         val centreX = target.offsetX + target.width * ROOM_SIZE / 2
         val centreY = target.offsetY + target.height * ROOM_SIZE / 2
         playDamageEffect(type, ConstPoint(centreX, centreY))
+
+        type.hitShipSounds?.get()?.play()
     }
 
     fun playDamageEffect(type: AbstractWeaponBlueprint, position: IPoint) {

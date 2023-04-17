@@ -12,6 +12,8 @@ import kotlin.math.sin
 abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val travelTime: Float) :
     IProjectile {
 
+    private val defaultMissSound = target.ship.sys.sounds.getSample("miss")
+
     // The angle we are approaching the target at, in radians
     var angle: Float = (Math.random() * Math.PI * 2).toFloat()
 
@@ -94,8 +96,11 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
         resolveMissed()
 
-        if (missed == true)
+        if (missed == true) {
+            val missSound = type.missSounds?.get() ?: defaultMissSound
+            missSound.play()
             return
+        }
 
         // Check for shield piercing, which seems to work the same
         // way across all weapons. Missiles for example just have
@@ -111,6 +116,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     protected open fun hitShields() {
         ship.shields!!.popShieldLayer()
         ship.playDamageEffect(type, position)
+        type.hitShieldSounds?.get()?.play()
     }
 
     protected open fun hitHull() {

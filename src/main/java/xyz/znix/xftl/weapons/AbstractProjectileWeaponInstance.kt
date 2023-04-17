@@ -57,6 +57,8 @@ abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship:
         lastProjectile?.run { projectile.angle = angle }
         weapons!!.launchProjectile(hp, projectile)
         lastProjectile = projectile
+
+        type.launchSounds?.get()?.play()
     }
 
     override fun fire(weapons: Weapons, target: Room) {
