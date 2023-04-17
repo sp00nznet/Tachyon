@@ -282,12 +282,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
                 // * Have a laser-style (laser or non-shield-piercing
                 //   missile, which is to say a crystal weapon) weapon.
 
-                val doesHullDamage = it.damage != 0
-                val isLaserStyle = when (it) {
-                    is LaserBlueprint -> true
-                    is MissileBlueprint -> it.shieldPiercing <= 3
-                    else -> false
-                }
+                val (doesHullDamage, isLaserStyle) = getWeaponFlags(it)
 
                 var satisfiesFlags = false
 
@@ -305,15 +300,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
                     satisfiesFlags = true
                 }
 
-                if (!satisfiesFlags)
-                    return@filter false
-
-                if (doesHullDamage)
-                    hasHullDamageWeapon = true
-                if (isLaserStyle)
-                    hasLaserLikeWeapon = true
-
-                return@filter true
+                return@filter satisfiesFlags
             }
 
             // We should never find ourselves with no suitable weapons,
@@ -327,6 +314,13 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             }
 
             val weapon = suitable.random(rand)
+
+            val (doesHullDamage, isLaserStyle) = getWeaponFlags(weapon)
+            if (doesHullDamage)
+                hasHullDamageWeapon = true
+            if (isLaserStyle)
+                hasLaserLikeWeapon = true
+
             require(ship.addBlueprint(weapon, false))
 
             // Check that it has indeed ended up in a hardpoint.
@@ -492,6 +486,17 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         }
 
         return droneBlueprints
+    }
+
+    private fun getWeaponFlags(weapon: ShipWeaponBlueprint): Pair<Boolean, Boolean> {
+        val doesHullDamage = weapon.damage != 0
+        val isLaserStyle = when (weapon) {
+            is LaserBlueprint -> true
+            is MissileBlueprint -> weapon.shieldPiercing <= 3
+            else -> false
+        }
+
+        return Pair(doesHullDamage, isLaserStyle)
     }
 
     // The categories that power is allocated from
