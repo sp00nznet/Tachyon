@@ -4,6 +4,7 @@ import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.Weapons
+import kotlin.math.max
 
 abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: Ship) {
     // The time spent charging thus far
@@ -11,6 +12,9 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
 
     // Is this weapon selected as powered
     var isPowered: Boolean = false
+
+    // Turn missile weapons off once their ship runs out of missiles
+    val hasEnoughMissiles: Boolean get() = ship.missilesCount >= type.missilesUsed
 
     // How far out is this weapon, on a scale of 0-1. Used for making weapons slide in and out when
     // powered up and down.
@@ -23,6 +27,9 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
 
     open fun update(dt: Float, canCharge: Boolean) {
         if (isPowered) {
+            if (!hasEnoughMissiles)
+                isPowered = false
+
             if (canCharge)
                 timeCharged += dt
         } else {
@@ -37,6 +44,11 @@ abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: S
 
     protected fun fire() {
         timeCharged = 0f
+
+        // Deduct a missile (or multiple), if this weapon uses them
+        // This really shouldn't be going negative here, but guard
+        // it just in case.
+        ship.missilesCount = max(0, ship.missilesCount - type.missilesUsed)
     }
 
     open fun render(g: Graphics) {

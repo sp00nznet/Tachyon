@@ -278,6 +278,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 powerUpFailSound.play()
                 return
             }
+            if (!weapon.hasEnoughMissiles) {
+                // TODO warn the player there isn't enough missiles.
+                powerUpFailSound.play()
+                return
+            }
             powerUpSound.play()
             weapon.isPowered = true
             return

@@ -164,6 +164,9 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             if (weapon.type.power > powerUnused)
                 continue
 
+            if (!weapon.hasEnoughMissiles)
+                continue
+
             weapon.isPowered = true
             powerStateChanged()
             return
