@@ -57,6 +57,8 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("sectors", 0, this::cmdSectors, "Open the sector map, regardless of the current beacon"),
         Cmd("system", 1, this::cmdSystem, "Unlock a system on the current ship, or 'list' or 'all'"),
         Cmd("spawn-ship", 2, this::cmdSpawnShip, "Spawn an enemy ship directly from a seed"),
+        Cmd("upall", 0, this::cmdUpgradeAll, "UPgrade ALL systems on the player ship to the maximum level"),
+        Cmd("downall", 0, this::cmdDowngradeAll, "Downgrade all systems on the player ship to their starting level"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -450,6 +452,24 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
         lines.add("Spawning ship, and setting it as hostile.")
         game.debugSpawnShip(spec, difficulty, sector, seed)
+    }
+
+    private fun cmdUpgradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        for (room in ship.rooms) {
+            val system = room.system ?: continue
+            system.energyLevels = system.blueprint.maxPower
+        }
+        ship.purchasedReactorPower = 25
+        lines.add("Upgraded all systems to maximum level")
+    }
+
+    private fun cmdDowngradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        for (room in ship.rooms) {
+            val system = room.system ?: continue
+            system.energyLevels = system.blueprint.startPower
+        }
+        ship.purchasedReactorPower = 5
+        lines.add("Downgraded all systems to their starting level")
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {
