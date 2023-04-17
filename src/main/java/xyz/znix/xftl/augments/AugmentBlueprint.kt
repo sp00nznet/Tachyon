@@ -16,6 +16,7 @@ import kotlin.math.min
  */
 open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
     override val cost: Int = elem.getChildTextTrim("cost").toInt()
+    val stackable: Boolean = elem.getChildTextTrim("stackable")!!.toBoolean()
 
     open fun update(ship: Ship, dt: Float) {}
 }

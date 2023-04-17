@@ -970,7 +970,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // Augments can only go in their special area
         if (item is AugmentBlueprint) {
             if (augments.size < MAX_AUGMENTS) {
+                // TODO break down non-stackable duplicated augments
+                //  to scrap, using the AUGMENT_FULL event.
                 augments.add(item)
+                cargoUpdated()
                 return true
             }
             // TODO handle forced=true.

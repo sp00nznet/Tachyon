@@ -22,6 +22,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val buySellTabFont = game.getFont("HL2", 3f)
     private val sectionFont = game.getFont("HL2", 2f)
     private val numberFont = game.getFont("num_font")
+    private val augmentNameFont = game.getFont("c&cnew", 2f)
 
     private val buySound = game.sounds.getSample("buy")
 
@@ -335,7 +336,73 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private fun drawBuyAugments(pos: ConstPoint, buyButtons: ArrayList<BuyButton>) {
-        // TODO implement
+        // We only need to add buy buttons, no custom drawing.
+        if (!updatingBuyButtons)
+            return
+
+        val images = ButtonImageSet.select2(game, "img/storeUI/store_weapons")
+
+        for ((i, augment) in store.augments.withIndex()) {
+            val buttonPos = pos + ConstPoint(5, 17 + i * 53)
+            buyButtons.add(object : BuyButton(buttonPos, images, ConstPoint(345, 27)) {
+                override val blueprint: Blueprint? get() = augment
+
+                override val price: Int get() = augment?.cost ?: 0
+
+                override val disabled: Boolean
+                    get() {
+                        // Don't let the player buy multiple of a non-stackable augment.
+                        if (augment?.stackable == false) {
+                            if (ship.augments.contains(augment))
+                                return true
+                        }
+
+                        // Check if the user's augments are full
+                        return ship.augments.size >= Ship.MAX_AUGMENTS
+                    }
+
+                override fun buy() {
+                    store.augments[i] = null
+                    updateButtons() // Make this button show as sold out
+
+                    if (!ship.addBlueprint(augment!!, false))
+                        error("Couldn't find space to place purchased augment!")
+                }
+
+                override fun draw(g: Graphics) {
+                    // There's no one way to draw augments, here for example they're just text.
+                    // Thus we have to override it because BlueprintButton doesn't know how to.
+
+                    val image = when {
+                        empty || disabled -> image.off
+                        hovered -> image.hover
+                        else -> image.normal
+                    }
+                    image.draw(this.pos)
+
+                    if (empty)
+                        return
+
+                    val name = augment!!.translateTitle(game)
+                    augmentNameFont.drawString(
+                        this.pos.x + 48f,
+                        this.pos.y + 26f,
+                        name,
+                        textColour
+                    )
+
+                    // Draw the price
+                    if (!disabled) {
+                        numberFont.drawString(
+                            this.pos.x + priceOffset.x.toFloat(),
+                            this.pos.y + priceOffset.y.toFloat(),
+                            price.toString(),
+                            textColour
+                        )
+                    }
+                }
+            })
+        }
     }
 
     private fun drawSell(g: Graphics) {
