@@ -38,9 +38,10 @@ public class SlickGame extends BasicGame {
     private Image floorPlan;
     private Image outside;
 
-    private Map<String, Image> images = new HashMap<>();
-    private Map<String, SILFontLoader> fonts = new HashMap<>();
+    private final Map<String, Image> images = new HashMap<>();
+    private final Map<String, SILFontLoader> fonts = new HashMap<>();
     private Animations animations;
+    private SoundManager sounds;
     private ShipGenerator generator;
     private LootPool lootPool;
 
@@ -84,6 +85,7 @@ public class SlickGame extends BasicGame {
     public void init(GameContainer container) throws SlickException {
         blueprintManager = new BlueprintManager(df);
         animations = new Animations(df);
+        sounds = new SoundManager(df);
         generator = new ShipGenerator(df, blueprintManager);
 
         translator = new Translator(df, "en");
@@ -560,6 +562,10 @@ public class SlickGame extends BasicGame {
 
     public Animations getAnimations() {
         return animations;
+    }
+
+    public SoundManager getSounds() {
+        return sounds;
     }
 
     public RoomClickListener getClickEvent() {

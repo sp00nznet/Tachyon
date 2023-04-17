@@ -30,6 +30,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     private val numberFont = SILFontLoader(df, df["fonts/num_font.font"])
     private val oxygenEvadeFont = SILFontLoader(df, df["fonts/JustinFont10.font"])
 
+    private val powerUpSound = game.sounds.getSample("powerUpSystem")
+    private val powerUpFailSound = game.sounds.getSample("powerUpFail")
+    private val powerDownSound = game.sounds.getSample("powerDownSystem")
+
     private var selectWeaponClickEvent: RoomClickListener? = null
     private var targetingSelectedWeapon: Int? = null
 
@@ -271,8 +275,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val weapons = ship.weapons!!
             if (weapon.type.power > weapons.powerUnused) {
                 // TODO warn the player there is not enough energy
+                powerUpFailSound.play()
                 return
             }
+            powerUpSound.play()
             weapon.isPowered = true
             return
         }
@@ -298,11 +304,25 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             val sys = room.system as? MainSystem ?: continue
             if (sys.javaClass != type) continue
 
-            if (powerUp) {
-                sys.increasePower()
-            } else {
-                sys.decreasePower()
-            }
+            changeSystemPower(sys, powerUp)
+        }
+    }
+
+    private fun changeSystemPower(sys: MainSystem, increasePower: Boolean) {
+        val prevPower = sys.powerSelected
+
+        if (increasePower) {
+            sys.increasePower()
+        } else {
+            sys.decreasePower()
+        }
+
+        if (sys.powerSelected > prevPower) {
+            powerUpSound.play()
+        } else if (sys.powerSelected < prevPower) {
+            powerDownSound.play()
+        } else if (increasePower) {
+            powerUpFailSound.play()
         }
     }
 
@@ -540,11 +560,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 override val hasChargeBar: Boolean get() = true
 
                 override fun click(button: Int) {
+                    val weapon = ship.hardpoints[i].weapon
                     if (button == MOUSE_LEFT_BUTTON) {
                         weaponHotkeyPressed(i)
                     }
-                    if (button == MOUSE_RIGHT_BUTTON) {
-                        ship.hardpoints[i].weapon?.isPowered = false
+                    if (weapon != null && weapon.isPowered && button == MOUSE_RIGHT_BUTTON) {
+                        weapon.isPowered = false
+                        powerDownSound.play()
                     }
                 }
             }
@@ -582,11 +604,20 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     override val hasChargeBar: Boolean get() = false
 
                     override fun click(button: Int) {
+                        val wasPowered = info?.instance?.isPowered ?: false
+
                         if (button == MOUSE_LEFT_BUTTON) {
                             drones.setDronePower(i, true)
                         }
                         if (button == MOUSE_RIGHT_BUTTON) {
                             drones.setDronePower(i, false)
+                        }
+
+                        val nowPowered = info?.instance?.isPowered ?: false
+                        when {
+                            wasPowered && !nowPowered -> powerDownSound.play()
+                            !wasPowered && nowPowered -> powerUpSound.play()
+                            !wasPowered && button == MOUSE_LEFT_BUTTON -> powerUpFailSound.play()
                         }
                     }
                 }
@@ -963,10 +994,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             if (system !is MainSystem)
                 return
 
-            if (button == MOUSE_LEFT_BUTTON && system.powerUnused > 0) {
-                system.increasePower()
-            } else if (button == MOUSE_RIGHT_BUTTON && system.powerSelected > 0) {
-                system.decreasePower()
+            if (button == MOUSE_LEFT_BUTTON) {
+                changeSystemPower(system, true)
+            } else if (button == MOUSE_RIGHT_BUTTON) {
+                changeSystemPower(system, false)
             }
         }
     }
