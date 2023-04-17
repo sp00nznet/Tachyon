@@ -170,17 +170,21 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         // Go through the crew, matching whoever is currently doing the least important task to work
         // on the most important as-of-yet unmanned task.
-        // TODO support multi-crew repairs - if shields are down, don't have someone fixing doors
         for ((crew, current) in candidates) {
             if (tasks.isEmpty()) break
 
-            // Pop the most important task
-            val task = tasks.removeAt(tasks.size - 1)
+            // Grab the most important task this crewmember can respond to
+            val task = tasks.lastOrNull { crewSuitableFor(crew, it) } ?: continue
 
-            // If we're busy with something more important, stop here since the tasks will continue
-            // to decrease in priority and the crew will continue to increase
-            if (current != null && allTasks.contains(current) && current.priority <= task.priority) break
+            // If we're busy with something more important, leave it as-is.
+            // Although the tasks will continue to decrease in priority and
+            // the crew's tasks will continue to increase, we can't just stop
+            // the loop here, as we might not be able to do a very important
+            // task (for example, a defence drone when the shields are broken).
+            if (current != null && allTasks.contains(current) && current.priority <= task.priority)
+                continue
 
+            tasks.remove(task)
             check(task.assignee == null)
 
             // Swap over the assignment
@@ -193,6 +197,14 @@ class ShipAI(val ship: Ship, val player: Ship) {
         for (task in assignments.values) {
             task?.update()
         }
+    }
+
+    @Suppress("RedundantIf")
+    private fun crewSuitableFor(crew: AbstractCrew, task: AITask): Boolean {
+        if (task is CombatTask && !crew.canFight)
+            return false
+
+        return true
     }
 
     companion object {
