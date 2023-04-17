@@ -10,11 +10,14 @@ import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.Buttons
+import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.sector.*
+import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+import java.nio.ByteBuffer
 import java.util.*
 
 /**
@@ -51,6 +54,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
         Cmd("sectors", 0, this::cmdSectors, "Open the sector map, regardless of the current beacon"),
         Cmd("system", 1, this::cmdSystem, "Unlock a system on the current ship, or 'list' or 'all'"),
+        Cmd("spawn-ship", 2, this::cmdSpawnShip, "Spawn an enemy ship directly from a seed"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -376,6 +380,37 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
 
         lines.add("No such system named '$systemName' on the current ship, try using 'system list'.")
+    }
+
+    private fun cmdSpawnShip(args: List<String>) {
+        val specName = args[1]
+        val seedB64 = args[2]
+
+        if (!game.eventManager.hasShip(specName)) {
+            lines.add("Unknown ship spec '$specName'.")
+            return
+        }
+        val spec: EnemyShipSpec = game.eventManager.getShip(specName)
+
+        val seedBytes = try {
+            Base64.getDecoder().decode(seedB64)
+        } catch (ex: IllegalArgumentException) {
+            lines.add("Invalid base64 seed '$seedB64': ${ex.localizedMessage}")
+            return
+        }
+
+        if (seedBytes.size != 6) {
+            lines.add("Non-six-byte seed: ${seedBytes.size}")
+            return
+        }
+
+        val buf = ByteBuffer.wrap(seedBytes)
+        val sector = buf.get().toInt()
+        val difficulty = Difficulty.values()[buf.get().toInt()]
+        val seed = buf.getInt()
+
+        lines.add("Spawning ship, and setting it as hostile.")
+        game.debugSpawnShip(spec, difficulty, sector, seed)
     }
 
     private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {

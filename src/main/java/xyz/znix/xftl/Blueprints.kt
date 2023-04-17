@@ -7,6 +7,7 @@ import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
+import kotlin.random.Random
 
 class BlueprintManager(df: Datafile) {
     val blueprints: Map<String, IBlueprint>
@@ -119,12 +120,12 @@ class BlueprintManager(df: Datafile) {
 }
 
 interface IBlueprint {
-    fun resolve(): Blueprint
+    fun resolve(random: Random = Random): Blueprint
     fun list(): List<Blueprint>
 }
 
 class BlueprintList(private val blueprints: ArrayList<String>, private val manager: BlueprintManager) : IBlueprint {
-    override fun resolve(): Blueprint = manager[blueprints.random()].resolve()
+    override fun resolve(random: Random): Blueprint = manager[blueprints.random(random)].resolve(random)
     override fun list(): List<Blueprint> = blueprints.flatMap { manager[it].list() }
 
     fun cleanup() {
@@ -155,7 +156,7 @@ open class Blueprint(elem: Element) : IBlueprint {
     fun translateTitle(game: SlickGame): String = title?.let { game.translator[it] } ?: "MISSING TITLE: $name"
     fun translateShort(game: SlickGame): String = short?.let { game.translator[it] } ?: "MISSING SHORT: $name"
 
-    override fun resolve(): Blueprint = this
+    override fun resolve(random: Random): Blueprint = this
     override fun list(): List<Blueprint> = listOf(this)
 }
 

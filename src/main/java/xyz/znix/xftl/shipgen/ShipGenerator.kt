@@ -11,21 +11,39 @@ import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.LaserBlueprint
 import xyz.znix.xftl.weapons.MissileBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+import java.nio.ByteBuffer
+import java.util.*
 import kotlin.math.min
 import kotlin.random.Random
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
-    fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int, difficulty: Difficulty): Ship {
+    fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int, difficulty: Difficulty, seed: Int? = null): Ship {
         // Shift everything back a sector on easy.
         // This is thus -1 for the first sector on easy.
         val effectiveSector = sector + difficulty.sectorOffset
 
-        val elem = spec.autoBlueprint.resolve().let { it as MiscBlueprint }.loadElem(df)
+        // Use a specific random instance to generate this ship, and
+        // print out it's seed. This will let us diagnose ships where
+        // something went wrong with the generation.
+        val effectiveSeed = seed ?: Random.nextInt()
+        val rand = Random(effectiveSeed)
+
+        if (seed == null) {
+            // Base64-encode the seed to make it less painful to type in
+            val bytes = ByteBuffer.allocate(6)
+            bytes.put(sector.toByte())
+            bytes.put(difficulty.ordinal.toByte())
+            bytes.putInt(effectiveSeed)
+            val base64seed = Base64.getEncoder().encodeToString(bytes.array()).trim('=')
+            println("Generating ship from spec '${spec.name}' with seed $base64seed")
+        }
+
+        val elem = spec.autoBlueprint.resolve(rand).let { it as MiscBlueprint }.loadElem(df)
 
         val ship = Ship(df, elem, sys, spec)
 
-        ship.escapeHealth = spec.escapeHealth?.pick(Random) ?: 0
-        ship.surrenderHealth = spec.surrenderHealth?.pick(Random) ?: 0
+        ship.escapeHealth = spec.escapeHealth?.pick(rand) ?: 0
+        ship.surrenderHealth = spec.surrenderHealth?.pick(rand) ?: 0
 
         // If surrender and escape come to the same health, offset them by 1.
         if (ship.surrenderHealth == ship.escapeHealth) {
@@ -47,7 +65,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             val range = max - min
             val softMin = min + (range * sector / 8f).toInt()
             val softMax = min(softMin + maxExtra, max)
-            val amount = (softMin..softMax).random()
+            val amount = (softMin..softMax).random(rand)
 
             for (i in 1..amount) {
                 ship.addCrewMember("human", true)
@@ -104,7 +122,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
                 continue
             val system = room.purchasableSystem ?: continue
 
-            if (!Random.rollChance(optionalSystemChance))
+            if (!rand.rollChance(optionalSystemChance))
                 continue
 
             // Install the system
@@ -126,7 +144,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         val softCaps = HashMap<AbstractSystem, Int>()
         for (room in ship.rooms) {
             val system = room.system ?: continue
-            softCaps[system] = pickSystemPowerLimit(effectiveSector, difficulty, system)
+            softCaps[system] = pickSystemPowerLimit(effectiveSector, difficulty, system, rand)
         }
 
         // Spend the power upgrading the systems
@@ -147,7 +165,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
             if (suitable.isEmpty())
                 return null
-            return suitable.random()
+            return suitable.random(rand)
         }
 
         while (offensivePower > 0) {
@@ -190,8 +208,8 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         // Select the scripted weapons/drones
         // Note there's no scripted drones in vanilla, but implement it
         // since mods likely use it.
-        val weaponOverrides = spec.weaponOverride?.select()?.map { it as ShipWeaponBlueprint }
-        val droneOverrides = spec.droneOverride?.select()?.map { it as DroneBlueprint }
+        val weaponOverrides = spec.weaponOverride?.select(rand)?.map { it as ShipWeaponBlueprint }
+        val droneOverrides = spec.droneOverride?.select(rand)?.map { it as DroneBlueprint }
 
         @Suppress("DuplicatedCode")
         if (weaponOverrides != null) {
@@ -308,7 +326,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
                 break
             }
 
-            val weapon = suitable.random()
+            val weapon = suitable.random(rand)
             require(ship.addBlueprint(weapon, false))
 
             // Check that it has indeed ended up in a hardpoint.
@@ -363,7 +381,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             val drone: DroneBlueprint
 
             if (suitable.isNotEmpty()) {
-                drone = suitable.random()
+                drone = suitable.random(rand)
             } else {
                 // If we can't satisfy the last few requirements, try again without them
                 val fallback = findSuitable(true)
@@ -375,7 +393,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
                     break
                 }
 
-                drone = fallback.random()
+                drone = fallback.random(rand)
             }
 
             require(ship.addBlueprint(drone, false))
@@ -403,7 +421,9 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
      * The [effectiveSector] is the sector number with -1 applied for easy (this
      * means that on the first sector of easy, the effective sector number is -1).
      */
-    private fun pickSystemPowerLimit(effectiveSector: Int, difficulty: Difficulty, system: AbstractSystem): Int {
+    private fun pickSystemPowerLimit(
+        effectiveSector: Int, difficulty: Difficulty, system: AbstractSystem, rand: Random
+    ): Int {
         // See ShipGenerator::GenerateSystemMaxes
         // Note that the map the data comes from is a libstdc++ red-blue tree,
         // whose datatype is std::pair<int_const,_ShipBlueprint::SystemTemplate>.
@@ -428,44 +448,9 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             else -> 2
         }
 
-        val offset = (0..offsetMax).random()
+        val offset = (0..offsetMax).random(rand)
 
         return min(baseLimit + offset, maxPower)
-    }
-
-    private fun generateWeapons(
-        list: List<ShipWeaponBlueprint>,
-        slots: Int,
-        targetPower: Int
-    ): List<ShipWeaponBlueprint> {
-        for (i in 1..1000) {
-            val weapons = ArrayList<ShipWeaponBlueprint>()
-            var remainingPower = targetPower
-
-            // While we have >1 slots remaining, and still have power remaining, select another weapon
-            while (weapons.size < slots - 1 && remainingPower > 1) {
-                val w = list.filter { it.power <= remainingPower }.random()
-                weapons += w
-                remainingPower -= w.power
-            }
-
-            // If we've run out of power to assign, yay we're done
-            check(targetPower >= 0)
-            if (targetPower == 0)
-                return weapons
-
-            // Otherwise pick one weapon to fill in the remaining power. If we can't find one, just
-            // start the generation fresh.
-            val candidates = list.filter { it.power == remainingPower }
-            if (candidates.isEmpty()) continue
-
-            weapons += candidates.random()
-
-            check(targetPower >= 0)
-            return weapons
-        }
-
-        error("Failed to generate weapon set")
     }
 
     private fun getSystemCategory(system: AbstractSystem): SystemCategory {
@@ -512,11 +497,6 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     // The categories that power is allocated from
     private enum class SystemCategory {
         OFFENSIVE, DEFENSIVE, GENERAL;
-    }
-
-    companion object {
-        // This is currently just on normal
-        val TOTAL_MAX_POWERS = listOf(4, 6, 8, 11, 13, 15, 18, 20)
     }
 }
 
@@ -567,10 +547,10 @@ class ShipBlueprintOverride(elem: Element, bp: BlueprintManager) {
         }
     }
 
-    fun select(): List<Blueprint> {
+    fun select(rand: Random): List<Blueprint> {
         // Pick the first (count) random blueprints.
         // While we try to pick distinct blueprints, if the same blueprint
         // is resolved twice through separate lists we won't bother to stop that.
-        return blueprints.shuffled().subList(0, count).map { it.resolve() }
+        return blueprints.shuffled(rand).subList(0, count).map { it.resolve(rand) }
     }
 }

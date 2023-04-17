@@ -44,6 +44,8 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     fun getShip(name: String): EnemyShipSpec = ships[name] ?: error("Missing enemy ship spec '$name'")
     fun getImageList(name: String): ImageList = imageLists[name] ?: error("Missing image list '$name'")
 
+    fun hasShip(name: String): Boolean = ships.containsKey(name)
+
     private fun loadEvents(doc: Document, resourcePass: Boolean) {
         val root = doc.rootElement
         check(root.name == "FTL")
