@@ -371,6 +371,10 @@ abstract class AbstractCrew(
         // Bit of a hack, since we're drawn from the ship
         val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
 
+        // Intruders on the player ship and crew on the enemy ship are hostile.
+        // This isn't very nice to read, but it gets the job done.
+        val isHostileToPlayer = (mode == SlotType.INTRUDER) == (room.ship == room.ship.sys.player)
+
         val cf = icon.currentFrame
 
         var spriteY = screenY
@@ -414,6 +418,7 @@ abstract class AbstractCrew(
                 cf.height
             )
             val backColour = when {
+                isHostileToPlayer -> Color(CREW_HOSTILE_BG)
                 isSelected -> Color(CREW_SELECTED_BG)
                 else -> Color(CREW_DESELECTED_BG)
             }

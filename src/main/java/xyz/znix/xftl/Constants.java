@@ -65,6 +65,7 @@ public class Constants {
 
     public static final Color CREW_DESELECTED_BG = SYS_ENERGY_REPAIR;
     public static final Color CREW_SELECTED_BG = SYS_ENERGY_ACTIVE;
+    public static final Color CREW_HOSTILE_BG = SYS_ENERGY_BROKEN;
 
     // Note: divide the colours by 4 if they're greyed-out because another
     // sector is hovered.
