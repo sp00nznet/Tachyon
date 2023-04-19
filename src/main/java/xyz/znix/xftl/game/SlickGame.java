@@ -447,6 +447,35 @@ public class SlickGame extends BasicGame {
             shipUI.showEventDialogue(currentBeacon.getEvent());
         }
 
+        // Spawn in a new rebel elite every jump for overtaken beacons
+        if (currentBeacon.getState() == Beacon.State.OVERTAKEN) {
+            // See doc/sector-map for information on these events
+
+            Difficulty difficulty = Difficulty.NORMAL; // TODO set this properly
+            boolean isAE = true; // TODO set this properly
+
+            String eventName;
+
+            if (currentBeacon.isExit()) {
+                eventName = "FLEET_EASY_BEACON";
+                if (difficulty != Difficulty.EASY) {
+                    // This is correct - use _DLC for non-easy difficulties!
+                    eventName += "_DLC";
+                }
+            } else {
+                eventName = "FLEET_EASY";
+
+                if (currentBeacon.getEnvironmentType() == Beacon.EnvironmentType.NEBULA) {
+                    eventName += "_NEBULA";
+                } else if (isAE) {
+                    eventName += "_DLC";
+                }
+            }
+
+            Event event = eventManager.get(eventName).resolve();
+            shipUI.showEventDialogue(event);
+        }
+
         currentBeacon.setVisited(true);
 
         background = eventManager.getImageList("BACKGROUND").get(this);
@@ -465,6 +494,9 @@ public class SlickGame extends BasicGame {
         ImageList backList = currentBeacon.getEvent().getBackImg();
         if (backList != null)
             background = backList.get(this);
+
+        // TODO show the rebel fleet in the background if we're at an overtaken beacon
+        // TODO show the flagship rebel/fed mixed fight backgrounds
 
         // TODO load image settings from text tags
 
@@ -730,6 +762,26 @@ public class SlickGame extends BasicGame {
 
             RoomPoint slot = player.findSpaceForCrew(intruderRoom, AbstractCrew.SlotType.INTRUDER);
             intruder.jumpTo(slot.getRoom(), slot);
+        }
+    }
+
+    /**
+     * Advance the fleet pursuit by the amount determined by the current beacon.
+     */
+    public void advanceFleet() {
+        Sector sector = currentBeacon.getSector();
+        Point dangerZone = sector.getDangerZoneCentre();
+
+        int advance = sector.getFleetAdvanceFor(currentBeacon);
+
+        dangerZone.setX(dangerZone.getX() + advance);
+
+        for (Beacon beacon : sector.getBeacons()) {
+            int distSq = beacon.getPos().distToSq(dangerZone);
+            if (distSq > Sector.DANGER_ZONE_RADIUS_SQUARED)
+                continue;
+
+            beacon.setOvertaken(true);
         }
     }
 

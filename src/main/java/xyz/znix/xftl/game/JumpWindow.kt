@@ -4,15 +4,13 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import org.newdawn.slick.Input
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.draw
-import xyz.znix.xftl.drawSection
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Beacon
+import xyz.znix.xftl.sector.Sector
 import kotlin.math.atan2
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -36,11 +34,24 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
     private val lineImg = game.getImg("img/map/dotted_line.png")
     private val targetBox = game.getImg("img/map/map_targetbox.png")
 
+    private val fleetAdvanceImg = game.getImg("img/map/map_warningcircle_point.png")
+    private val fleetAdvanceColour = Color(246, 128, 125, 21)
+    private val fleetControlImg = game.getImg("img/map/map_warningcircle.png")
+    private val fleetControlTile = game.getImg("img/map/map_warningcircle_tile.png")
+
     private val beaconShadow = game.getImg("img/map/map_icon_diamond_shadow.png")
     private val beaconYellow = game.getImg("img/map/map_icon_diamond_yellow.png")
     private val beaconBlue = game.getImg("img/map/map_icon_diamond_blue.png")
     private val beaconDanger = game.getImg("img/map/map_icon_triangle_red.png")
-    private val beaconOffset = Point(11, 11) - Point(beaconYellow.width / 2, beaconYellow.height / 2)
+    private val beaconWillOvertakeCircle = game.getImg("img/tutorial/player_circle.png") // This is the right image!
+    private val beaconOvertaken = game.getImg("img/map/map_icon_warning.png")
+
+    private val mapOffset = ConstPoint(11, 11)
+    private val beaconOffset = mapOffset - Point(beaconYellow.width / 2, beaconYellow.height / 2)
+
+    private val sector = game.currentBeacon.sector
+
+    private val flashTimerBase = System.nanoTime()
 
     private val labelWhite = (1..3).map { "img/map/map_box_white_$it.png" }.map {
         game.getImg(it).copy().apply {
@@ -49,14 +60,14 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
     }
 
     val cancelButton = Buttons.BasicButton(
-        game, position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
+        game, size + ConstPoint(10 - cancelButtonOutline.width, 1),
         ConstPoint(124, 30), game.translator["button_cancel"],
         3, font, 24,
         ::cancelClicked
     )
 
     val nextSectorButton = Buttons.BasicButton(
-        game, position + ConstPoint(size.x - nextSectorTab.width - 11 + 19, 11 + 8),
+        game, ConstPoint(size.x - nextSectorTab.width - 11 + 19, 11 + 8),
         ConstPoint(226, 36), game.translator["button_nextsector"],
         3, font, 27, showSectorMap
     )
@@ -72,10 +83,14 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
             buttons += nextSectorButton
     }
 
-    override fun draw(g: Graphics) {
+    /**
+     * Draw the insides of the window. This must be done with a stencil.
+     */
+    private fun drawMapContent(g: Graphics) {
         // Draw the background image
-        // TODO use a stencil to cut off the bits poking outside the window
-        background.draw(position.x + 11, position.y + 11)
+        val mapBaseX = position.x + mapOffset.x
+        val mapBaseY = position.y + mapOffset.y
+        background.draw(mapBaseX, mapBaseY)
 
         // Test drawing the beacon path
         drawBeaconLinesTo(game.currentBeacon, Constants.WEAPONS_ITEM_CHARGED) { true }
@@ -89,17 +104,41 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
             drawBeaconLinesTo(hovered, Color.yellow) { it != game.currentBeacon }
         }
 
+        val nextFleetPos = Point(sector.dangerZoneCentre)
+        nextFleetPos.x += sector.getFleetAdvanceFor(game.currentBeacon)
+
         // Draw the beacons
-        for (beacon in game.currentBeacon.sector.beacons) {
+        for (beacon in sector.beacons) {
             val pos = position + beacon.pos + beaconOffset
+
+            // Draw the flashing background if this beacon
+            // will be overtaken after this jump.
+            val willBeOvertaken = beacon.pos.distToSq(nextFleetPos) < Sector.DANGER_ZONE_RADIUS_SQUARED
+            if (willBeOvertaken && beacon.state != Beacon.State.OVERTAKEN) {
+                val baseTimer = (System.nanoTime() - flashTimerBase) / 1000000000f
+                val flashTimer = (baseTimer + beacon.overtakeFlashAnimationOffset).rem(2)
+
+                val opacity = if (flashTimer < 1f) flashTimer else 2f - flashTimer
+
+                val colour = Color(1f, 1f, 1f, opacity)
+                beaconWillOvertakeCircle.draw(
+                    pos.x + 1f, pos.y + 2f, pos.x + 31f, pos.y + 32f,
+                    0f, 0f, 40f, 40f,
+                    colour
+                )
+            }
+
             beaconShadow.draw(pos)
 
             val beaconImg = when (beacon.state) {
                 Beacon.State.UNVISITED -> beaconYellow
                 Beacon.State.VISITED_CLEAR -> beaconBlue
                 Beacon.State.VISITED_DANGER -> beaconDanger
+                Beacon.State.OVERTAKEN -> beaconOvertaken
             }
             beaconImg.draw(pos)
+
+            // TODO should we hide the distress/store labels if this beacon is being overtaken?
 
             if (beacon.event.isDistressBeacon)
                 drawBeaconLabel(pos, game.translator["map_icon_distress"])
@@ -114,6 +153,55 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
                 drawTargetBox(pos)
             }
         }
+
+        // TODO draw the fleet advance after the beacons and the circling ship,
+        //  but before the labels (which we currently draw at the same time
+        //  as the beacons).
+        val dangerZoneRHS = sector.dangerZoneCentre.x + Sector.DANGER_ZONE_RADIUS
+        val nextDangerZoneRHS = dangerZoneRHS + sector.getFleetAdvanceFor(game.currentBeacon)
+        fleetAdvanceImg.draw(
+            mapBaseX + nextDangerZoneRHS - 181f,
+            mapBaseY + sector.dangerZoneCentre.y - 498f
+        )
+        g.color = fleetAdvanceColour
+        g.fillRect(
+            mapBaseX.f,
+            mapBaseY.f,
+            nextDangerZoneRHS - 181f,
+            size.y.f
+        )
+
+        var fleetControlX = mapBaseX + dangerZoneRHS - 181f
+        val fleetControlY = mapBaseY + sector.dangerZoneCentre.y - 498f
+        fleetControlImg.draw(fleetControlX, fleetControlY)
+
+        // Draw a bunch of tiles filling in the area controlled by
+        // the fleet but not covered by the curved front image.
+        while (fleetControlX >= mapBaseX) {
+            fleetControlX -= fleetControlTile.width
+
+            var tileY = fleetControlY
+            while (tileY < position.y + size.y) {
+                tileY += fleetControlTile.height
+
+                fleetControlTile.draw(fleetControlX, tileY)
+            }
+        }
+    }
+
+    override fun draw(g: Graphics) {
+        Utils.drawStenciled(Utils.StencilMode.MASKING, {
+            // Draw the stencil
+            g.color = Color.red // Any non-transparent colour will work
+
+            // The glow means the inside of the window has an 11-pixel boundary
+            // This does leave a tiny area in the bevelled right-hand corner unstenciled,
+            // but it seems unlikely anything will actually draw there.
+            g.fillRect(position.x + 11f, position.y + 11f, size.x - 22f, size.y - 22f)
+        }, {
+            // Draw the contents of the map
+            drawMapContent(g)
+        })
 
         // Draw the top-left map label tab
         val tab = "BEACON MAP"
@@ -168,7 +256,7 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
         font.drawStringLegacy(position.x + 13f, position.y + size.y + 8f, "SECTOR", Constants.JUMP_DISABLED_TEXT)
 
         // TODO use the real sector number once multiple sectors are implemented
-        val sectorName = game.translator["sectorname_" + game.currentBeacon.sector.type.name]
+        val sectorName = game.translator["sectorname_" + sector.type.name]
         drawCutout(position.x + 141, position.y + size.y - 8, 38, "1")
         drawCutout(position.x + 190, position.y + size.y - 8, 276, sectorName)
 
@@ -181,7 +269,7 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
 
         hovered = null
 
-        val closest = game.currentBeacon.sector.beacons.map {
+        val closest = sector.beacons.map {
             val bp = it.pos + position + beaconOffset + ConstPoint(16, 16)
             val dist = bp.distToSq(ConstPoint(x, y))
             Pair(it, dist)
@@ -206,6 +294,10 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
             return
 
         jump(hovered)
+
+        // Advance the fleet pursuit *before* changing the beacon, since
+        // if we're in a nebula that slows down the fleet pursuit.
+        game.advanceFleet()
 
         // Make sure we set the beacon after we've called the jump callback, so that the event
         // dialogue window doesn't get closed by the callback.

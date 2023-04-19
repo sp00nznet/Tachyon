@@ -13,6 +13,45 @@ might be somehow related to the crystal homeworlds? Or maybe
 just something cut (this can be seen in RenderSectorMap).
 
 
+Rebel fleet advance
+
+This is internally referred to as the danger zone. It's drawn
+using img/map/map_warningcircle.png, with map_warningcircle_tile.png
+repeated behind it. To show the area the fleet will capture
+next turn, map_warningcircle_point.png is used, with the area
+behind the image filled with the pixel colour that can be taken
+from the semi-transparent part of that image.
+
+They are drawn after all the beacons and the current beacon
+ship icon are drawn, but before the hovered cursor marker, store
+and exit labels are drawn.
+
+The danger zone can be modelled as a circle of radius of 767.
+
+The Y position of the centre of the circle is picked at random
+in the range of 50-300, and it's X starts at -959.
+
+The X position proceeds 64px for a jump from a normal beacon,
+51px for a jump from a nebula in a nebula sector, and 32px
+for a nebula beacon in a normal sector.
+
+The danger zone images have a point at 181,498 which matches
+up with the right-most point of the danger zone circle (767,0).
+
+When a beacon is overtaken, it's event is switched to one
+of (in StarMap::TurnIntoFleetLocation):
+
+FLEET_EASY, for non-exit-beacons
+FLEET_EASY_DLC, the above but with AE enabled
+FLEET_EASY_NEBULA, for non-exit nebula beacons
+FLEET_EASY_BEACON, for the exit beacon on easy
+FLEET_EASY_BEACON_DLC, for the exit beacon on normal/hard (not tied to AE!)
+
+Note there is no separate nebula exit beacon event. Instead, the
+nebula effect is applied to FLEET_EASY_BEACON[_DLC], overwriting
+the ASB/PDS hazard.
+
+
 StarMap::GenerateSectorMap:
 
 This is responsible for generating the map of all the different

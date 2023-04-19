@@ -4,6 +4,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
+import kotlin.random.Random
 
 /**
  * Represents a single beacon on the star map.
@@ -34,12 +35,24 @@ class Beacon(
      */
     val state: State
         get() = when {
+            isOvertaken -> State.OVERTAKEN
             !visited -> State.UNVISITED
             ship != null -> State.VISITED_DANGER
             else -> State.VISITED_CLEAR
         }
 
-    val environmentType: EnvironmentType get() = event.environment ?: EnvironmentType.NORMAL
+    val environmentType: EnvironmentType
+        get() {
+            val type = event.environment ?: EnvironmentType.NORMAL
+            return when {
+                !isOvertaken -> type
+
+                // If this beacon has been overtaken, clear any special events,
+                // though preserving the nebula-ness of this beacon.
+                type == EnvironmentType.NEBULA || type == EnvironmentType.ION_STORM -> EnvironmentType.NEBULA
+                else -> EnvironmentType.NORMAL
+            }
+        }
 
     /**
      * The sector this beacon resides within.
@@ -77,6 +90,22 @@ class Beacon(
 
     private var internalStore: StoreData? = null
 
+    /**
+     * This is a random value between 0-1 that's used to offset
+     * the timings of the 'this beacon will be overtaken' flash
+     * animation on the beacon map, to ensure all the beacons
+     * aren't flashing in sync.
+     */
+    val overtakeFlashAnimationOffset: Float = Random.nextFloat()
+
+    var isOvertaken: Boolean = false
+        set(value) {
+            field = value
+            if (value) {
+                hasStore = false
+            }
+        }
+
     fun getStore(game: SlickGame): StoreData? {
         if (!hasStore)
             return null
@@ -99,6 +128,11 @@ class Beacon(
         UNVISITED,
         VISITED_CLEAR,
         VISITED_DANGER,
+
+        /**
+         * Overtaken by the rebel fleet.
+         */
+        OVERTAKEN,
     }
 
     enum class EnvironmentType(val backgroundName: String?, val isDangerous: Boolean) {
@@ -110,5 +144,7 @@ class Beacon(
         ION_STORM("low_storm", false);
 
         // TODO how should we represent PDS/ABSes, given they can be targed at the player or enemy (or both?)
+
+        val isNebula: Boolean get() = this == NEBULA || this == ION_STORM
     }
 }

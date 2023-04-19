@@ -40,6 +40,11 @@ class Sector(
     val startBeacon: Beacon
     val finishBeacon: Beacon?
 
+    // The position of the centre of the danger zone circle.
+    // See doc/sector-map (heading 'Rebel fleet advance') for more
+    // information about this.
+    val dangerZoneCentre: Point
+
     init {
         val eventPool = ArrayDeque(events.shuffled())
 
@@ -119,11 +124,35 @@ class Sector(
 
         startBeacon = tmpStartBeacon ?: error("Failed to place a starting beacon!")
         finishBeacon = tmpFinishBeacon
+
+        dangerZoneCentre = Point(-959, rand.nextInt(50, 300))
+    }
+
+    fun getFleetAdvanceFor(beacon: Beacon): Int {
+        val isNebula = beacon.environmentType.isNebula
+
+        return when {
+            // Non-nebula beacons use normal advance
+            !isNebula -> DANGER_ZONE_ADVANCE
+
+            // Nebula beacons in normal sectors use half the normal advance
+            info.sectorClass != GameMap.SectorClass.NEBULA -> DANGER_ZONE_ADVANCE / 2
+
+            // In nebula beacons, they use 80% of the normal advance.
+            else -> (DANGER_ZONE_ADVANCE * 0.8f).toInt()
+        }
     }
 
     companion object {
         val OFFSET = ConstPoint(40, 35)
         var GRID_SIZE = ConstPoint(6, 4)
         val CELL_SIZE = ConstPoint(110, 100)
+
+        const val DANGER_ZONE_RADIUS = 767
+        const val DANGER_ZONE_RADIUS_SQUARED = DANGER_ZONE_RADIUS * DANGER_ZONE_RADIUS
+
+        // The amount the x position of the danger zone increases by
+        // per jump in a normal sector.
+        const val DANGER_ZONE_ADVANCE = 64
     }
 }
