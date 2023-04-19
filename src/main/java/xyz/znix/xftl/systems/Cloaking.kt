@@ -106,13 +106,15 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
         }
     }
 
-    private inner class CloakButton(val powerPos: IPoint, pos: IPoint, size: IPoint) : Button(pos, size) {
+    private inner class CloakButton(val powerPos: IPoint, pos: IPoint, size: IPoint) : Button(ship.sys, pos, size) {
         // If the system is unpowered, it shows the disabled level-1 image
         val pwr = max(powerSelected, 1)
 
         val base = ship.sys.getImg("img/systemUI/button_cloaking${pwr}_base.png")
         val buttonImage = ButtonImageSet.select2(ship.sys, "img/systemUI/button_cloaking${pwr}")
         val timerIcon = ship.sys.getImg("img/systemUI/button_cloaking${pwr}_charging_on.png")
+
+        override val disabled: Boolean get() = timeRemaining != null || powerSelected == 0 || isPowerLocked
 
         override fun draw(g: Graphics) {
             // Note all the images are the same size
@@ -132,7 +134,7 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
             // Draw the button itself
             val image = when {
                 active -> timerIcon
-                powerSelected == 0 -> buttonImage.off
+                powerSelected == 0 || isPowerLocked -> buttonImage.off
                 hovered -> buttonImage.hover
                 else -> buttonImage.normal
             }

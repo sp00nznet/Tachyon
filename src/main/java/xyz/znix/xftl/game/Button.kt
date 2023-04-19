@@ -8,7 +8,7 @@ import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
-abstract class Button(pos: IPoint, size: IPoint) {
+abstract class Button(protected val game: SlickGame, pos: IPoint, size: IPoint) {
     val basePos = pos.const
     var windowOffset: IPoint = ConstPoint.ZERO
         set(value) {
@@ -22,6 +22,18 @@ abstract class Button(pos: IPoint, size: IPoint) {
 
     var hovered: Boolean = false
         private set
+
+    /**
+     * True if the 'hoverBeep' sound should play when this button is moused over.
+     */
+    open val makesHoverNoise: Boolean get() = true
+
+    /**
+     * True if this button is disabled and can't be hovered.
+     *
+     * Note this doesn't prevent [click] from being called.
+     */
+    open val disabled: Boolean get() = false
 
     abstract fun draw(g: Graphics)
 
@@ -45,7 +57,17 @@ abstract class Button(pos: IPoint, size: IPoint) {
     }
 
     fun update(x: Int, y: Int) {
+        if (disabled) {
+            hovered = false
+            return
+        }
+
+        val lastHover = hovered
         hovered = contains(x, y)
+
+        if (hovered && !lastHover && makesHoverNoise) {
+            game.sounds.getSample("hoverBeep").play()
+        }
     }
 
     protected open fun positionUpdated() {
@@ -54,9 +76,10 @@ abstract class Button(pos: IPoint, size: IPoint) {
 }
 
 class SimpleButton(
-    pos: IPoint, size: IPoint, imgOffset: IPoint, val normal: Image, val hover: Image?,
+    game: SlickGame, pos: IPoint, size: IPoint, imgOffset: IPoint,
+    val normal: Image, val hover: Image?,
     private val callback: (Int) -> Unit
-) : Button(pos, size) {
+) : Button(game, pos, size) {
     val imgOffset = imgOffset.const
     private var imagePos = pos - imgOffset
 
@@ -78,11 +101,11 @@ class SimpleButton(
         // Create a new button by specifying the clickable region within it,
         // rather than using pos and imgOffset to achive it.
         fun byRegion(
-            pos: IPoint, buttonOffset: IPoint, buttonSize: IPoint,
+            game: SlickGame, pos: IPoint, buttonOffset: IPoint, buttonSize: IPoint,
             normal: Image, hover: Image?,
             callback: (Int) -> Unit
         ): SimpleButton {
-            return SimpleButton(pos + buttonOffset, buttonSize, buttonOffset, normal, hover, callback)
+            return SimpleButton(game, pos + buttonOffset, buttonSize, buttonOffset, normal, hover, callback)
         }
     }
 }
@@ -117,10 +140,12 @@ object Buttons {
         }
     }
 
-    class JumpButton(pos: IPoint, val ship: Ship, private val game: SlickGame, private val callback: () -> Unit) :
-        Button(pos, ConstPoint(74, 29)) {
+    class JumpButton(pos: IPoint, val ship: Ship, game: SlickGame, private val callback: () -> Unit) :
+        Button(game, pos, ConstPoint(74, 29)) {
 
         private val font = game.getFont("HL2", 2f)
+
+        override val disabled: Boolean get() = !ship.isFtlReady || ship.engines!!.powerSelected == 0
 
         override fun draw(g: Graphics) {
             val ftlX = pos.x + 6
@@ -160,15 +185,17 @@ object Buttons {
     }
 
     open class BasicButton(
-        pos: IPoint, size: IPoint, val label: String, game: SlickGame,
+        game: SlickGame, pos: IPoint, size: IPoint, val label: String,
         private val radius: Int, private val font: Font, private val yOffset: Int,
         private val cb: () -> Unit
-    ) : Button(pos, size) {
-
-        open val colour: Color get() = if (hovered) Constants.UI_BUTTON_HOVER else Constants.SECTOR_CUTOUT_TEXT
+    ) : Button(game, pos, size) {
 
         override fun draw(g: Graphics) {
-            g.color = colour
+            g.color = when {
+                disabled -> Constants.JUMP_DISABLED
+                hovered -> Constants.UI_BUTTON_HOVER
+                else -> Constants.SECTOR_CUTOUT_TEXT
+            }
             drawRounded(g, pos.x, pos.y, size.x, size.y, radius)
 
             val x = (size.x - font.getWidth(label)) / 2f
@@ -181,16 +208,18 @@ object Buttons {
         }
     }
 
-    class ShipButton(pos: IPoint, val game: SlickGame, private val cb: () -> Unit) : Button(pos, ConstPoint(60, 41)) {
+    class ShipButton(pos: IPoint, game: SlickGame, private val cb: () -> Unit) : Button(game, pos, ConstPoint(60, 41)) {
         private val imgPos = pos - ConstPoint(7, 7)
 
         private val imgOff = game.getImg("img/statusUI/top_ship_off.png")
         private val imgOn = game.getImg("img/statusUI/top_ship_on.png")
         private val imgHighlight = game.getImg("img/statusUI/top_ship_select2.png")
 
+        override val disabled: Boolean get() = game.isInDanger
+
         override fun draw(g: Graphics) {
             val img = when {
-                game.isInDanger -> imgOff
+                disabled -> imgOff
                 hovered -> imgHighlight
                 else -> imgOn
             }
@@ -204,8 +233,8 @@ object Buttons {
         }
     }
 
-    class StoreButton(pos: IPoint, val game: SlickGame, private val callback: () -> Unit) :
-        Button(pos, ConstPoint(88, 41)) {
+    class StoreButton(pos: IPoint, game: SlickGame, private val callback: () -> Unit) :
+        Button(game, pos, ConstPoint(88, 41)) {
 
         private val imgPos = pos - ConstPoint(7, 7)
 
@@ -234,10 +263,10 @@ object Buttons {
     }
 
     abstract class BlueprintButton(
-        pos: IPoint, size: IPoint, val game: SlickGame,
+        pos: IPoint, size: IPoint, game: SlickGame,
         private val defaultImage: ButtonImageSet?
     ) :
-        Button(pos, size) {
+        Button(game, pos, size) {
 
         constructor(pos: IPoint, game: SlickGame, image: ButtonImageSet) :
                 this(pos, image.normal.imageSize, game, image)
@@ -255,20 +284,22 @@ object Buttons {
          * not having an associated blueprint - for example, you can't buy
          * more weapons when your weapons and cargo bay are full.
          */
-        open val disabled: Boolean get() = false
+        open val customDisabled: Boolean get() = false
 
         val empty: Boolean get() = blueprint == null
 
+        override val disabled: Boolean get() = empty || customDisabled
+
         protected val textColour: Color
             get() = when {
-                empty || disabled -> Constants.SECTOR_CUTOUT_TEXT
+                disabled -> Constants.SECTOR_CUTOUT_TEXT
                 hovered -> Constants.STORE_BUY_HOVER
                 else -> Constants.SECTOR_CUTOUT_TEXT
             }
 
         override fun draw(g: Graphics) {
             val image = when {
-                empty || disabled -> image.off
+                disabled -> image.off
                 hovered -> image.hover
                 else -> image.normal
             }
@@ -355,6 +386,8 @@ object Buttons {
             compatible: (Blueprint) -> Boolean,
             blueprint: Blueprint?, callback: () -> Unit
         ) : this(homePos, game, image, image.normal.imageSize, compatible, blueprint, callback)
+
+        override val makesHoverNoise: Boolean get() = false
 
         private val overlay = game.getImg("img/upgradeUI/Equipment/box_overlay_red.png")
 

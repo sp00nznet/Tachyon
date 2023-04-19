@@ -128,7 +128,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
 
         val settings = SimpleButton(
-            nextPos, ConstPoint(41, 41), ConstPoint(7, 7),
+            game, nextPos, ConstPoint(41, 41), ConstPoint(7, 7),
             game.getImg("img/statusUI/top_optionswrench_on.png"),
             game.getImg("img/statusUI/top_optionswrench_select2.png")
         ) {
@@ -885,7 +885,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int, size: ConstPoint) :
-        Button(pos, size) {
+        Button(game, pos, size) {
+
         abstract val empty: Boolean
         abstract val name: String
         abstract val chargeTime: Float
@@ -897,6 +898,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         abstract val isTargeted: Boolean
         abstract val isSelectingTarget: Boolean
         abstract val hasChargeBar: Boolean
+
+        override val disabled: Boolean get() = empty
 
         override fun draw(g: Graphics) {
             val mainColour = when {
@@ -992,7 +995,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     /**
      * This is the button that adjusts a system's power.
      */
-    private inner class SystemPowerButton(pos: IPoint, val system: AbstractSystem) : Button(pos, ConstPoint(26, 26)) {
+    private inner class SystemPowerButton(pos: IPoint, val system: AbstractSystem) :
+        Button(game, pos, ConstPoint(26, 26)) {
+
         override fun draw(g: Graphics) {
             system.drawIconAndPower(game, g, pos.x - 19, pos.y - 19)
         }

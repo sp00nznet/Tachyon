@@ -46,8 +46,8 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     private val closeButton = Buttons.BasicButton(
         // As an interesting note, in the base game it's one pixel too far right so
         // where it meets up with the side of the ship panel has a small ledge.
-        position + ConstPoint(428, 471),
-        ConstPoint(132, 32), game.translator["button_accept"], game,
+        game, position + ConstPoint(428, 471),
+        ConstPoint(132, 32), game.translator["button_accept"],
         4, game.getFont("hl2", 3f), 25,
         this::escapePressed
     )
@@ -70,7 +70,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             val current = this.tab.textureName
             val new = tab.textureName
             return SimpleButton(
-                pos, size, ConstPoint.ZERO,
+                game, pos, size, ConstPoint.ZERO,
                 game.getImg("img/upgradeUI/Equipment/tabButtons/${current}_${new}_on.png"),
                 game.getImg("img/upgradeUI/Equipment/tabButtons/${current}_${new}_select2.png")
             ) {
@@ -149,19 +149,13 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         undoButtonImage.draw(position.x + 3f, position.y + 464f)
         if (updatingButtons) {
             buttons += object : Buttons.BasicButton(
-                ConstPoint(26, 471),
-                ConstPoint(97, 32), game.translator["button_undo"], game,
+                game, ConstPoint(26, 471), ConstPoint(97, 32),
+                game.translator["button_undo"],
                 4, game.getFont("hl2", 3f), 25,
                 this::undoAllSystems
             ) {
-                override val colour: Color
-                    get() {
-                        // Grey the button out when there's nothing to undo
-                        if (systemUpgradeUndos.all { it.value.isEmpty() } && reactorUpgradeUndo.isEmpty())
-                            return Constants.JUMP_DISABLED
-
-                        return super.colour
-                    }
+                // Grey the button out when there's nothing to undo
+                override val disabled: Boolean get() = systemUpgradeUndos.all { it.value.isEmpty() } && reactorUpgradeUndo.isEmpty()
             }
         }
 
@@ -239,7 +233,9 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         if (updatingButtons) {
             val reactorImg = game.getImg("img/upgradeUI/Equipment/equipment_reactor_on.png")
             val reactorHighlight = game.getImg("img/upgradeUI/Equipment/equipment_reactor_select2.png")
-            buttons += object : Button(ConstPoint(298, 327), reactorImg.imageSize) {
+            buttons += object : Button(game, ConstPoint(298, 327), reactorImg.imageSize) {
+                override val disabled: Boolean get() = ship.purchasedReactorPower >= 25
+
                 override fun draw(g: Graphics) {
                     if (hovered) {
                         reactorHighlight.draw(pos)
@@ -299,7 +295,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                     if (button != Input.MOUSE_LEFT_BUTTON)
                         return
 
-                    if (ship.purchasedReactorPower >= 25)
+                    if (disabled)
                         return
 
                     // TODO calculate the price
@@ -331,7 +327,9 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         private val baseImage: Image,
         private val system: AbstractSystem?,
         private val upgradePrice: Int?
-    ) : Button(pos, size) {
+    ) : Button(game, pos, size) {
+        override val disabled: Boolean get() = system == null
+
         override fun draw(g: Graphics) {
             // Draw the main button image
             val image = if (hovered) selectImage else baseImage
@@ -452,7 +450,9 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         if (!updatingButtons)
             return
 
-        buttons += object : Button(boxPos, boxNormal.imageSize) {
+        buttons += object : Button(game, boxPos, boxNormal.imageSize) {
+            override val makesHoverNoise: Boolean get() = false
+
             override fun draw(g: Graphics) {
                 val box = if (hovered) boxHover else boxNormal
                 box.draw(pos)
@@ -485,8 +485,8 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         }
 
         buttons += Buttons.BasicButton(
-            boxPos + ConstPoint(4, 70), ConstPoint(92, 12),
-            game.translator["crewbox_dismiss"], game,
+            game, boxPos + ConstPoint(4, 70), ConstPoint(92, 12),
+            game.translator["crewbox_dismiss"],
             2, dismissFont, 9
         ) {
             // TODO show the crewmember dismiss warning box

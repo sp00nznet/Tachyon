@@ -29,8 +29,8 @@ class SectorMapWindow(private val game: SlickGame, private val selectedCallback:
     private val targetBoxOption = game.getImg("img/map/map_targetbox_sector_y.png")
 
     private val closeButton = Buttons.BasicButton(
-        size + ConstPoint(-132, 7),
-        ConstPoint(103, 32), game.translator["button_close"], game,
+        game, size + ConstPoint(-132, 7),
+        ConstPoint(103, 32), game.translator["button_close"],
         4, titleFont, 25,
         this::escapePressed
     )

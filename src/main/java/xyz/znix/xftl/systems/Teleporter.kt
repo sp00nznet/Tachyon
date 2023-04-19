@@ -117,12 +117,17 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
         val isSend: Boolean,
         val images: ButtonImageSet
     ) :
-        Button(base + offset, ConstPoint(20, 20)) {
+        Button(ship.sys, base + offset, ConstPoint(20, 20)) {
+
+        override val disabled: Boolean
+            get() = when {
+                isSend -> !isSendAvailable
+                else -> !isReceiveAvailable
+            }
 
         override fun draw(g: Graphics) {
             val img = when {
-                isSend && !isSendAvailable -> images.off
-                !isSend && !isReceiveAvailable -> images.off
+                disabled -> images.off
                 hovered -> images.hover
 
                 // If we're selecting, or have selected, a teleport of this type,
@@ -139,6 +144,9 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
+            if (disabled)
+                return
+
             // If there's already an order queued up, clear it out.
             commandedTeleport = null
 
@@ -146,7 +154,9 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
         }
     }
 
-    private inner class TeleporterButtonBackground(pos: IPoint) : Button(pos, ConstPoint.ZERO) {
+    private inner class TeleporterButtonBackground(pos: IPoint) : Button(ship.sys, pos, ConstPoint.ZERO) {
+        override val makesHoverNoise: Boolean get() = false
+
         override fun draw(g: Graphics) {
             val img = ship.sys.getImg("img/systemUI/button_teleport_base.png")
             img.draw(pos.x.f - BASE_GLOW, pos.y.f - BASE_GLOW)

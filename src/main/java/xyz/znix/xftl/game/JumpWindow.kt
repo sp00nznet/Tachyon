@@ -49,15 +49,15 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
     }
 
     val cancelButton = Buttons.BasicButton(
-        position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
-        ConstPoint(124, 30), game.translator["button_cancel"], game,
+        game, position + size + ConstPoint(10 - cancelButtonOutline.width, 1),
+        ConstPoint(124, 30), game.translator["button_cancel"],
         3, font, 24,
         ::cancelClicked
     )
 
     val nextSectorButton = Buttons.BasicButton(
-        position + ConstPoint(size.x - nextSectorTab.width - 11 + 19, 11 + 8),
-        ConstPoint(226, 36), game.translator["button_nextsector"], game,
+        game, position + ConstPoint(size.x - nextSectorTab.width - 11 + 19, 11 + 8),
+        ConstPoint(226, 36), game.translator["button_nextsector"],
         3, font, 27, showSectorMap
     )
 

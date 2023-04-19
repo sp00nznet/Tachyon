@@ -271,7 +271,9 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             val normal = game.getImg("img/dropbox_sell_on.png")
             val hover = game.getImg("img/dropbox_sell_select2.png")
 
-            sellButton = object : Button(ConstPoint(-275, 107), ConstPoint(258, 191)) {
+            sellButton = object : Button(game, ConstPoint(-275, 107), ConstPoint(258, 191)) {
+                override val makesHoverNoise: Boolean get() = false
+
                 override fun draw(g: Graphics) {
                     val hoverActive = hovered && draggingBlueprint != null
                     val image = if (hoverActive) hover else normal

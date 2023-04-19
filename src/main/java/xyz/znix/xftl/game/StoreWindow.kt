@@ -29,7 +29,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private val sellPanel = ShipEquipmentPanel(game, ship).apply { sellUI = true }
 
     private val buyTabButton = SimpleButton(
-        ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
+        game, ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
         game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_select2.png")
     ) {
@@ -37,7 +37,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private val sellTabButton = SimpleButton(
-        ConstPoint(163, 0), ConstPoint(179, 46), ConstPoint(0, 0),
+        game, ConstPoint(163, 0), ConstPoint(179, 46), ConstPoint(0, 0),
         game.getImg("img/upgradeUI/Equipment/tabButtons/buy_sell_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/buy_sell_select2.png")
     ) {
@@ -45,7 +45,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     }
 
     private val buySubTab1Button = SimpleButton.byRegion(
-        ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
+        game, ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
         ConstPoint(5, 5), ConstPoint(111, 24),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_select2.png")
@@ -53,7 +53,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         secondBuyTab = false
     }
     private val buySubTab2Button = SimpleButton.byRegion(
-        ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
+        game, ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
         ConstPoint(119, 5), ConstPoint(111, 24),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_on.png"),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_select2.png")
@@ -74,8 +74,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
     private var updatingBuyButtons = false
 
     private val closeButton = Buttons.BasicButton(
-        position + ConstPoint(466, 472),
-        ConstPoint(103, 32), game.translator["button_close"], game,
+        game, position + ConstPoint(466, 472),
+        ConstPoint(103, 32), game.translator["button_close"],
         4, buySellTabFont, 25,
         this::escapePressed
     )
@@ -267,7 +267,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
                 override val price: Int get() = system?.cost ?: 0
 
-                override val disabled: Boolean
+                override val customDisabled: Boolean
                     get() {
                         // Stop the user from installing more than eight systems
                         val numSystems = ship.rooms.count { it.system is MainSystem }
@@ -314,7 +314,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                 override val blueprint: Blueprint? get() = weapon
                 override val price: Int get() = weapon?.cost ?: 0
 
-                override val disabled: Boolean
+                override val customDisabled: Boolean
                     get() {
                         for (slot in 0 until ship.weaponSlots!!) {
                             if (ship.hardpoints[slot].weapon == null)
@@ -349,7 +349,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
                 override val price: Int get() = augment?.cost ?: 0
 
-                override val disabled: Boolean
+                override val customDisabled: Boolean
                     get() {
                         // Don't let the player buy multiple of a non-stackable augment.
                         if (augment?.stackable == false) {
@@ -374,7 +374,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                     // Thus we have to override it because BlueprintButton doesn't know how to.
 
                     val image = when {
-                        empty || disabled -> image.off
+                        disabled -> image.off
                         hovered -> image.hover
                         else -> image.normal
                     }
@@ -392,7 +392,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                     )
 
                     // Draw the price
-                    if (!disabled) {
+                    if (!customDisabled) {
                         numberFont.drawString(
                             this.pos.x + priceOffset.x.toFloat(),
                             this.pos.y + priceOffset.y.toFloat(),
@@ -470,7 +470,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
-            if (empty || disabled)
+            if (disabled)
                 return
 
             if (ship.scrap < price) {
@@ -485,13 +485,15 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
         }
     }
 
-    inner class ResourceButton(pos: IPoint, val resource: Resource) : Button(pos, ConstPoint(169, 40)) {
+    inner class ResourceButton(pos: IPoint, val resource: Resource) : Button(game, pos, ConstPoint(169, 40)) {
         private val nameBase = "img/storeUI/store_items_${resourceTextureName(resource)}"
         private val normal = game.getImg(nameBase + "_on.png")
         private val soldOut = game.getImg(nameBase + "_off.png")
         private val hover = game.getImg(nameBase + "_select2.png")
 
         val numAvailable: Int get() = store.availableResources[resource] ?: 0
+
+        override val disabled: Boolean get() = numAvailable == 0
 
         val price: Int get() = 5 // TODO implement the price
 
