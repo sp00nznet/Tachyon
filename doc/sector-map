@@ -93,3 +93,41 @@ The actual implementation is annoying to read due to inlining, but searching
 for 'FTL sector map' in your favourite search engine should make it obvious
 what's happening here - link up all the sectors without any of the neighbour
 links overlapping.
+
+
+StarMap::GenerateMap
+
+This generates the beacon map of the current sector. It repeatedly
+calls StarMap::PopulateGrid once for each potential beacon it can place in
+a 6x4 grid. See https://twitter.com/subsetgames/status/1234309658854084608 for
+an image from the devs.
+
+The order of the beacon generation is that the outer loop is for x, and
+the inner loop is for y, increasing (as in, the loops count up). This may
+be important for empty cells in PopulateGrid.
+
+
+StarMap::PopulateGrid
+
+This generates a single beacon.
+
+There's a 20% chance for a cell on the map to not have a beacon. If this
+20% chance is rolled, then there's an additional check to ensure there
+aren't too many empty cells: if at least one empty cell has been
+placed, and at least 20% of the cells populated thus far are empty (that
+is, there are four times as many filled in beacons as empty ones),
+then this cell will be generated normally.
+
+The x,y coordinates of the beacon on the map are then picked. Each cell
+represents a 110x110px area, and the beacon is placed randomly inside that
+with 10px of margin around the outside.
+
+(These coordinates are offset such that 0,0 is drawn at 45,40 relative
+ to the outer edge of the window, not including the glow)
+
+The y coordinate is then limited to at most 415, and if it's in the two
+top-right cells, the y is limited to at least 30 (presumably to make way
+for the next sector button).
+
+It then connects this beacon with all the beacons in adjacent cells that
+are within 165px (via StarMap::ConnectLocations).

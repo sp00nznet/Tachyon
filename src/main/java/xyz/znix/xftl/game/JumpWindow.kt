@@ -46,8 +46,10 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
     private val beaconWillOvertakeCircle = game.getImg("img/tutorial/player_circle.png") // This is the right image!
     private val beaconOvertaken = game.getImg("img/map/map_icon_warning.png")
 
-    private val mapOffset = ConstPoint(11, 11)
-    private val beaconOffset = mapOffset - Point(beaconYellow.width / 2, beaconYellow.height / 2)
+    private val beaconOffset = Point(-beaconYellow.width / 2, -beaconYellow.height / 2)
+
+    // The offsets to the coordinate system the beacons are positioned on
+    private val mapBase = Point(0, 0)
 
     private val sector = game.currentBeacon.sector
 
@@ -88,9 +90,10 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
      */
     private fun drawMapContent(g: Graphics) {
         // Draw the background image
-        val mapBaseX = position.x + mapOffset.x
-        val mapBaseY = position.y + mapOffset.y
-        background.draw(mapBaseX, mapBaseY)
+        background.draw(position.x + 11f, position.y + 11f)
+
+        mapBase.x = position.x + GLOW + Sector.OFFSET.x
+        mapBase.y = position.y + GLOW + Sector.OFFSET.y
 
         // Test drawing the beacon path
         drawBeaconLinesTo(game.currentBeacon, Constants.WEAPONS_ITEM_CHARGED) { true }
@@ -109,7 +112,7 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
 
         // Draw the beacons
         for (beacon in sector.beacons) {
-            val pos = position + beacon.pos + beaconOffset
+            val pos = mapBase + beacon.pos + beaconOffset
 
             // Draw the flashing background if this beacon
             // will be overtaken after this jump.
@@ -160,24 +163,24 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
         val dangerZoneRHS = sector.dangerZoneCentre.x + Sector.DANGER_ZONE_RADIUS
         val nextDangerZoneRHS = dangerZoneRHS + sector.getFleetAdvanceFor(game.currentBeacon)
         fleetAdvanceImg.draw(
-            mapBaseX + nextDangerZoneRHS - 181f,
-            mapBaseY + sector.dangerZoneCentre.y - 498f
+            mapBase.x + nextDangerZoneRHS - 181f,
+            mapBase.y + sector.dangerZoneCentre.y - 498f
         )
         g.color = fleetAdvanceColour
         g.fillRect(
-            mapBaseX.f,
-            mapBaseY.f,
-            nextDangerZoneRHS - 181f,
+            position.x.f,
+            position.y.f,
+            nextDangerZoneRHS + Sector.OFFSET.x - 181f,
             size.y.f
         )
 
-        var fleetControlX = mapBaseX + dangerZoneRHS - 181f
-        val fleetControlY = mapBaseY + sector.dangerZoneCentre.y - 498f
+        var fleetControlX = mapBase.x + dangerZoneRHS - 181f
+        val fleetControlY = mapBase.y + sector.dangerZoneCentre.y - 498f
         fleetControlImg.draw(fleetControlX, fleetControlY)
 
         // Draw a bunch of tiles filling in the area controlled by
         // the fleet but not covered by the curved front image.
-        while (fleetControlX >= mapBaseX) {
+        while (fleetControlX >= mapBase.x) {
             fleetControlX -= fleetControlTile.width
 
             var tileY = fleetControlY
@@ -187,6 +190,14 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
                 fleetControlTile.draw(fleetControlX, tileY)
             }
         }
+
+        // For debugging, this can draw the grid the sectors fit in
+        // for (x in 0 until Sector.GRID_SIZE.x) {
+        //     for (y in 0 until Sector.GRID_SIZE.y) {
+        //         g.color = Color.red
+        //         g.drawRect(mapBase.x + x * 110f, mapBase.y + y * 110f, 110f, 110f)
+        //     }
+        // }
     }
 
     override fun draw(g: Graphics) {
@@ -270,7 +281,7 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
         hovered = null
 
         val closest = sector.beacons.map {
-            val bp = it.pos + position + beaconOffset + ConstPoint(16, 16)
+            val bp = it.pos + mapBase
             val dist = bp.distToSq(ConstPoint(x, y))
             Pair(it, dist)
         }.minBy { it.second } ?: return
@@ -334,8 +345,8 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
     }
 
     private fun drawBeaconLine(from: Beacon, to: Beacon, colour: Color) {
-        val fromPos = from.pos + position + beaconOffset
-        val toPos = to.pos + position + beaconOffset
+        val fromPos = from.pos + mapBase + beaconOffset
+        val toPos = to.pos + mapBase + beaconOffset
 
         // Find the delta vector between the two points we're drawing between, and the length of said vector
         val delta = toPos - fromPos
@@ -379,5 +390,10 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
 
     private fun cancelClicked() {
         jump(null)
+    }
+
+    companion object {
+        // The width of the glow around the edge of the window
+        private const val GLOW = 7
     }
 }

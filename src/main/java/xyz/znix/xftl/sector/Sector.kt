@@ -4,6 +4,8 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Represents an in-game sector. Handles the placement of the beacons within it.
@@ -67,14 +69,38 @@ class Sector(
         var tmpStartBeacon: Beacon? = null
         var tmpFinishBeacon: Beacon? = null
 
+        var skipped = 0
         val beaconCount = GRID_SIZE.x * GRID_SIZE.y - rand.nextInt(3)
         for (i in 1..beaconCount) {
             val gridPos = grid.random()
             grid.remove(gridPos)
+
+            // There's a 20% chance to omit a given beacon. See doc/sector-map.
+            if (rand.nextInt(5) == 0) {
+                // Find the number of beacons that haven't been skipped.
+                // -1 here so we don't count the one we're currently generating.
+                val alreadyGenerated = i - 1 - skipped
+
+                // Use this to avoid skipping >= 20% of the beacons.
+                // (Note 20% is n/4 since n doesn't include skipped)
+                if (skipped == 0 || skipped < alreadyGenerated / 4) {
+                    skipped++
+                    continue
+                }
+            }
+
             val pos = Point(gridPos.x * CELL_SIZE.x, gridPos.y * CELL_SIZE.y)
-            pos += OFFSET
-            pos.x += rand.nextInt(CELL_SIZE.x)
-            pos.y += rand.nextInt(CELL_SIZE.y)
+            pos.x += rand.nextInt(PADDING, CELL_SIZE.x - PADDING)
+            pos.y += rand.nextInt(PADDING, CELL_SIZE.y - PADDING)
+
+            // Limit y to at most 415 so it cleanly fits on the map
+            pos.y = min(pos.y, 415)
+
+            // In the two top-left-most cells, limit the Y to at least 30
+            // to keep space clear for the next sector button.
+            if (gridPos.y == 0 && gridPos.x >= 4) {
+                pos.y = max(pos.y, 30)
+            }
 
             var event: Event? = null
             var isFinish = false
@@ -117,8 +143,24 @@ class Sector(
                 tmpStartBeacon = beacon
         }
 
+        // TODO check this sector is valid (has a path from start to finish)
+
         for (b in beacons) {
-            val neighbours = beacons.filter { cells[it]!!.distToSq(cells[b]!!) <= 2 && it != b }
+            // Find the position of our beacon on the grid
+            val bPos = cells[b]!!
+
+            val neighbours = beacons.filter {
+                // Beacons must be adjacent or on a diagonal on the grid.
+                if (cells[it]!!.distToSq(bPos) > 2)
+                    return@filter false
+
+                // Beacons must be within 165px of each other (see doc/sector-map)
+                if (it.pos.distToSq(b.pos) > CONNECTION_DISTANCE * CONNECTION_DISTANCE)
+                    return@filter false
+
+                // Don't link beacons to themselves
+                return@filter it != b
+            }
             b.bindSector(this, neighbours)
         }
 
@@ -144,9 +186,11 @@ class Sector(
     }
 
     companion object {
-        val OFFSET = ConstPoint(40, 35)
+        val OFFSET = ConstPoint(45, 40)
         var GRID_SIZE = ConstPoint(6, 4)
-        val CELL_SIZE = ConstPoint(110, 100)
+        val CELL_SIZE = ConstPoint(110, 110)
+        const val PADDING = 10
+        const val CONNECTION_DISTANCE = 165
 
         const val DANGER_ZONE_RADIUS = 767
         const val DANGER_ZONE_RADIUS_SQUARED = DANGER_ZONE_RADIUS * DANGER_ZONE_RADIUS
