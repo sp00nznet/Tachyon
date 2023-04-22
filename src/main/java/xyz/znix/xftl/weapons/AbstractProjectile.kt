@@ -114,7 +114,12 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
     }
 
     protected open fun hitShields() {
-        ship.shields!!.popShieldLayer()
+        if (type.ionDamage > 0) {
+            ship.shields!!.dealDamage(0, type.ionDamage)
+        } else {
+            ship.shields!!.popShieldLayer()
+        }
+
         ship.playDamageEffect(type, position)
         type.hitShieldSounds?.get()?.play()
     }
