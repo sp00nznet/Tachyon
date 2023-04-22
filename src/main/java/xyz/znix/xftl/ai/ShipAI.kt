@@ -214,10 +214,8 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 // TODO Artillery=2
                 is Oxygen -> 3
                 is Engines, is Drones, is Piloting -> 4
-                is Cloaking -> 5
-                // TODO mind control, hacking = 5
-                is Sensors -> 6
-                // TODO battery=6
+                is Cloaking, is MindControl, is Hacking -> 5
+                is Sensors, is BackupBattery -> 6
                 is Doors -> 7
                 else -> 8
             }
