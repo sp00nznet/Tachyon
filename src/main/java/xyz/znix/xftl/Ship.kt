@@ -897,7 +897,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         val crewMember = raceBlueprint.spawn(freeSpace.room, mode)
         crew.add(crewMember)
-        crewMember.jumpTo(freeSpace.room, freeSpace)
+        crewMember.jumpTo(freeSpace)
 
         return crewMember
     }

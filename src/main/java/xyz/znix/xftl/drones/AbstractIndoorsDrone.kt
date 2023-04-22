@@ -44,54 +44,17 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     protected fun spawn(targetRoom: Room) {
         ship = targetRoom.ship
 
-        // Try spawning in the preferred room
-        if (trySpawn(targetRoom))
-            return
+        val emptySpace = ship.findSpaceForCrew(targetRoom, occupancySlotType)
 
-        // Otherwise try the neighbouring rooms
-        for (room in targetRoom.doors.mapNotNull { it.other(targetRoom) }) {
-            if (trySpawn(room))
-                return
-        }
+        pawn = makePawn(emptySpace.room)
+        ship.crew += pawn!!
 
-        // This is getting a bit silly, just pick some arbitrary room in the ship.
-        for (room in ship.rooms) {
-            if (trySpawn(room))
-                return
-        }
-
-        error("Couldn't find any free space in ship ${ship.name} to deploy indoors drone ${type.name}")
+        // Move the drone to it's starting position
+        pawn!!.jumpTo(emptySpace)
     }
 
     protected open fun makePawn(room: Room): Pawn {
         return Pawn(room)
-    }
-
-    private fun trySpawn(targetRoom: Room): Boolean {
-        // Pick a different room to create the drone in, so we can set
-        // its target room properly.
-        val otherRoom = ship.rooms.first { it != targetRoom }
-
-        // While we create the pawn now, if there's no space
-        // in this room we'll throw it away.
-        val tmpPawn = makePawn(otherRoom)
-
-        // Check if there's space in this room. If there is, this
-        // pawn is added to that room's occupied slot array. Thus
-        // we're committed to using this instance if this call
-        // is successful.
-        if (!tmpPawn.setTargetRoom(targetRoom)) {
-            return false
-        }
-
-        // Move the drone to it's starting position
-        tmpPawn.jumpTo(targetRoom, tmpPawn.pathingTarget!!)
-
-        // TODO fix the drone driving up and down when spawned
-
-        pawn = tmpPawn
-        ship.crew += tmpPawn
-        return true
     }
 
     override fun destroy() {

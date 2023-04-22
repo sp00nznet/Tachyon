@@ -658,6 +658,8 @@ abstract class AbstractCrew(
         return true
     }
 
+    fun jumpTo(newPoint: RoomPoint): Unit = jumpTo(newPoint.room, newPoint)
+
     /**
      * Set the room and position to the given values.
      *

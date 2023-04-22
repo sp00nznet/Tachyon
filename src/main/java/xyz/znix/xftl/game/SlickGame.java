@@ -750,10 +750,11 @@ public class SlickGame extends BasicGame {
             intruder.setSelectedName(spec.getName());
 
             RoomPoint slot = player.findSpaceForCrew(intruderRoom, AbstractCrew.SlotType.INTRUDER);
-            intruder.jumpTo(slot.getRoom(), slot);
+            intruder.jumpTo(slot);
         }
 
         // Apply the hull damage
+        // TODO play the damage sound effect
         for (EventHullDamage damage : resources.getDamage()) {
             String system = damage.getSystem();
             if (system == null) {
