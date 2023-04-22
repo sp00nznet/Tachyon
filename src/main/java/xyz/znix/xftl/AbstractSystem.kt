@@ -32,6 +32,16 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     private val onInitValues = ArrayList<OnInitWrapper<*>>()
 
     /**
+     * The power limit applied by a <status/> effect at the current beacon,
+     * or null if no limit is imposed.
+     */
+    var scriptedPowerLimit: Int? = null
+        set(value) {
+            field = value?.coerceIn(0..energyLevels)
+            powerStateChanged()
+        }
+
+    /**
      * The time remaining until the ion effect wears off.
      */
     var ionTimer: Float = 0f
@@ -59,7 +69,25 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     /**
      * The number of intact energy bars in the system. Ion damage is subtracted from this.
      */
-    open val undamagedEnergy get() = max(energyLevels - damagedEnergyLevels - ionDamage, 0)
+    open val undamagedEnergy: Int
+        get() {
+            var available = energyLevels
+
+            // Subtract of normal damage *before* applying the power limit,
+            // since the unavailable levels act as buffer points.
+            available -= damagedEnergyLevels
+
+            scriptedPowerLimit?.let { limit ->
+                available = min(limit, available)
+            }
+
+            // Ion damage doesn't work similarly to normal damage,
+            // and any ion damage will immediately reduce the power even if
+            // there is a scripted limit.
+            available -= ionDamage
+
+            return max(available, 0)
+        }
 
     var repairProgress: Float = 0f
         private set(value) {
@@ -275,6 +303,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         val barX = x + 24f
         val topBarY = baseY + 8f - (energyLevels - 1) * 8
 
+        // Need to grab this as a local so the compiler knows it won't change
+        val scriptedPowerLimit = this.scriptedPowerLimit
+
         for (i in 0 until energyLevels) {
             val y = baseY + 8 - i * 8
 
@@ -282,6 +313,13 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
                 i >= energyLevels - damagedEnergyLevels -> {
                     // System damaged/broken
                     g.color = Constants.SYS_ENERGY_BROKEN
+                    g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
+                    g.drawLine(barX, (y + 6).f, barX + 16f, y.f)
+                }
+
+                scriptedPowerLimit != null && i >= scriptedPowerLimit -> {
+                    // System power limited by a scripted event
+                    g.color = Constants.SYS_ENERGY_EVENT_LOCKED
                     g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
                     g.drawLine(barX, (y + 6).f, barX + 16f, y.f)
                 }

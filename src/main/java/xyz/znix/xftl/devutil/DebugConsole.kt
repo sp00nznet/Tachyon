@@ -260,6 +260,11 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
     private fun cmdEvent(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         getEvent { event ->
+            // Clear any previously-set beacon power limits, left over
+            // from a previous event.
+            game.currentBeacon.powerLimitEffects.clear()
+            game.player.updateScriptedPowerLimits()
+
             game.shipUI.showEventDialogue(event.resolve())
         }
     }

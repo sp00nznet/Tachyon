@@ -12,6 +12,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Choice
 import xyz.znix.xftl.sector.Event
+import xyz.znix.xftl.sector.EventStatus
 import xyz.znix.xftl.sector.EventSystemUpgrade
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
@@ -659,6 +660,52 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
     private fun addResources(event: EvaluatedEvent) {
         game.givePlayerResources(event.resources)
+
+        // Apply the status effects
+        effectLoop@ for (effect in event.event.statuses) {
+            val ship = when (effect.target) {
+                EventStatus.Target.PLAYER -> playerShip
+                EventStatus.Target.ENEMY -> game.enemy
+                    ?: error("Cannot add enemy status in event '${event.event.debugId}' where no enemy is present!")
+            }
+
+            val beacon = game.currentBeacon
+
+            // Find the system this effect applies to
+            val system = ship.systems.firstOrNull { it.codename == effect.system }
+            if (system == null) {
+                println("Warning: event '${event.event.debugId}' is applying a status effect to system '${effect.system}', which ship ${effect.target} doesn't have!")
+                continue
+            }
+
+            // Note: we currently don't apply effects cumulatively. I don't know
+            // if vanilla FTL does, but it seems quite unlikely that it'd matter.
+
+            val maxPower: Int? = when (effect.op) {
+                EventStatus.Operation.CLEAR -> {
+                    // Clear removes all effects from a given system
+                    null
+                }
+
+                EventStatus.Operation.DIVIDE -> system.energyLevels / effect.amount
+                EventStatus.Operation.LIMIT -> effect.amount
+                EventStatus.Operation.LOSS -> system.energyLevels - effect.amount
+            }
+
+            if (effect.target == EventStatus.Target.PLAYER) {
+                if (maxPower == null) {
+                    beacon.powerLimitEffects.remove(system.codename)
+                } else {
+                    beacon.powerLimitEffects[system.codename] = maxPower.coerceIn(0..system.energyLevels)
+                }
+
+                // It's a bit unnecessary to call this multiple times if multiple
+                // effects are applied, but it's not a notable waste of resources.
+                ship.updateScriptedPowerLimits()
+            } else {
+                system.scriptedPowerLimit = maxPower
+            }
+        }
     }
 
     private fun getHullDamageText(resourceSet: ResourceSet): Pair<String, Color> {

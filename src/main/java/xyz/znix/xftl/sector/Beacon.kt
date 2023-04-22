@@ -91,6 +91,15 @@ class Beacon(
     private var internalStore: StoreData? = null
 
     /**
+     * For all the status effects applied at this beacon, this states what
+     * the final power limit is for each system by name.
+     *
+     * Enemy ship effects are left in place and never cleared, while the player
+     * can jump between beacons and these need to be preserved.
+     */
+    val powerLimitEffects = HashMap<String, Int>()
+
+    /**
      * This is a random value between 0-1 that's used to offset
      * the timings of the 'this beacon will be overtaken' flash
      * animation on the beacon map, to ensure all the beacons

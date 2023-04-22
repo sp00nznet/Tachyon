@@ -860,6 +860,24 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         for (hp in hardpoints) {
             hp.weapon?.timeCharged = 0f
         }
+
+        // Clear any previously-set scripted power limits, and re-apply
+        // any that were previously set at this beacon.
+        updateScriptedPowerLimits()
+    }
+
+    /**
+     * This updates the power limits imposed on systems by scripted events.
+     *
+     * This must only be called on the player ship - on the enemy ship, systems
+     * should be limited directly. This is because the player can jump between
+     * beacons, and the effects need to be cleared and re-applied as appropriate.
+     */
+    fun updateScriptedPowerLimits() {
+        for (system in systems) {
+            val limit = sys.currentBeacon.powerLimitEffects[system.codename]
+            system.scriptedPowerLimit = limit
+        }
     }
 
     fun addCrewMember(race: String, initial: Boolean, isIntruder: Boolean = false): LivingCrew {

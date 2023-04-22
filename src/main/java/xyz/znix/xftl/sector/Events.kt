@@ -45,6 +45,8 @@ class Event(
     val boarderRace: String?
     val boarderCount: IntRange
 
+    val statuses: List<EventStatus>
+
     init {
         // Initialise these in the constructor so we can mutate them,
         // which isn't otherwise possible as they're declared as List.
@@ -144,6 +146,36 @@ class Event(
             val amount = upgradeElem.getAttributeValue("amount")!!.toInt()
             val system = upgradeElem.getAttributeValue("system")!!
             systemUpgrades.add(EventSystemUpgrade(amount, system))
+        }
+
+        statuses = ArrayList()
+        statusLoop@ for (statusElem in elem.getChildren("status")) {
+            val op = when (val type = statusElem.getAttributeValue("type")) {
+                "limit" -> EventStatus.Operation.LIMIT
+                "clear" -> EventStatus.Operation.CLEAR
+                "divide" -> EventStatus.Operation.DIVIDE
+                "loss" -> EventStatus.Operation.LOSS
+                else -> {
+                    println("Warning: unimplemented status type '$type' in event '$debugId'")
+                    continue@statusLoop
+                }
+            }
+
+            val target = when (val tgt = statusElem.getAttributeValue("target")) {
+                "player" -> EventStatus.Target.PLAYER
+                "enemy" -> EventStatus.Target.ENEMY
+                else -> {
+                    println("Warning: unimplemented target '$tgt' in event '$debugId'")
+                    continue@statusLoop
+                }
+            }
+
+            val system = statusElem.getAttributeValue("system")
+
+            // In the case of type=clear, no amount is needed.
+            val amount = statusElem.getAttributeValue("amount")?.toInt() ?: 0
+
+            statuses.add(EventStatus(system, op, target, amount))
         }
     }
 
@@ -349,6 +381,40 @@ class EventHullDamage(
 )
 
 class EventSystemUpgrade(val amount: Int, val system: String)
+
+/**
+ * Defines some status effect (or removal thereof) for a ship at the current beacon.
+ *
+ * This is what's used to limit systems during events, for example
+ * the slugs that hack your medbay or oxygen.
+ */
+class EventStatus(
+    /**
+     * The name of the system to affect.
+     */
+    val system: String,
+
+    /**
+     * The type of effect to place on the system.
+     */
+    val op: Operation,
+
+    /**
+     * Who is this status applying to?
+     */
+    val target: Target,
+
+    val amount: Int
+) {
+    enum class Operation {
+        CLEAR, // Remove any prior status effect
+        DIVIDE, // Divide the system power by a set amount
+        LIMIT, // Limit the system power to at most a set amount
+        LOSS, // Subtract the given amount from the system power
+    }
+
+    enum class Target { PLAYER, ENEMY }
+}
 
 class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {
     /**
