@@ -42,8 +42,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     /**
      * The currently shown window. When a window is shown, the main UI is darkened, buttons are locked
      * and all input is sent to the window.
-     *
-     * TODO pause the game when a window is present
      */
     private var currentWindow: Window? = null
 
@@ -794,14 +792,29 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun showEventDialogue(event: Event) {
+        var hasImmediatelyClosed = false
+
         currentWindow = DialogueWindow(game, ship, event) {
             currentWindow = null
+            hasImmediatelyClosed = true
 
             // If a store was made available by the dialogue, open it
             if (game.currentBeacon.hasStore && !storeAlreadyOpened) {
                 updateButtons() // Make the store button show up
                 showStoreWindow()
             }
+        }
+
+        // It's possible for DialogueWindow to call close in its constructor,
+        // in which case we have to close it not to avoid it being rendered
+        // while in an invalid state.
+        // (This is because the constructor would run before currentWindow
+        //  is set).
+        // This can be tested with the TRADER_LIST event, or any other
+        // event list whose purpose is to pick one of several events and
+        // close without any text set.
+        if (hasImmediatelyClosed) {
+            currentWindow = null
         }
     }
 
