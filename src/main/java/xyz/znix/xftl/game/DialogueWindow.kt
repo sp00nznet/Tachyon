@@ -12,6 +12,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.sector.Choice
 import xyz.znix.xftl.sector.Event
+import xyz.znix.xftl.sector.EventSystemUpgrade
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.max
@@ -327,6 +328,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             height += 32
         }
 
+        for (upgrade in resourceSet.upgrades) {
+            val (message, _) = getUpgradeText(upgrade)
+            width = max(width, 25 + resourceNumFont.getWidth(message) + 30)
+            height += 32
+        }
+
         return ConstPoint(width, height)
     }
 
@@ -383,6 +390,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         if (resourceSet.damage.isNotEmpty()) {
             val (message, colour) = getHullDamageText(resourceSet)
             resourceNumFont.drawString(pos.x + 30f, y + 21f, message, colour)
+            y += 32
+        }
+
+        for (upgrade in resourceSet.upgrades) {
+            val (message, colour) = getUpgradeText(upgrade)
+            resourceNumFont.drawString(pos.x + 25f, y + 21f, message, colour)
             y += 32
         }
     }
@@ -653,6 +666,31 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         return Pair(message, Constants.SYS_ENERGY_BROKEN)
     }
 
+    private fun getUpgradeText(upgrade: EventSystemUpgrade): Pair<String, Color> {
+        val isReactor = upgrade.system == "reactor"
+        val system = playerShip.systems.firstOrNull { it.codename == upgrade.system }
+        val systemName = game.translator[upgrade.system]
+
+        if (system == null && !isReactor) {
+            val message = game.translator["upgrade_fail_missing"].replace("\\1", systemName)
+            return Pair(message, Color.white)
+        }
+
+        val isMaxed = when {
+            isReactor -> playerShip.purchasedReactorPower >= playerShip.maxReactorPower
+            else -> system!!.energyLevels >= system.blueprint.maxPower
+        }
+
+        if (isMaxed) {
+            val message = game.translator["upgrade_fail_max"].replace("\\1", systemName)
+            return Pair(message, Color.white)
+        }
+
+        val message = game.translator["upgrade_success"]
+            .replace("\\1", systemName).replace("\\2", upgrade.amount.toString())
+        return Pair(message, Constants.SYS_ENERGY_ACTIVE)
+    }
+
     /**
      * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)
      */
@@ -681,6 +719,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             result += resources
             result.lostCrew.clear()
             result.damage.clear()
+            result.upgrades.clear()
 
             if (event.itemsModifySteal) {
                 result.scrap = 0

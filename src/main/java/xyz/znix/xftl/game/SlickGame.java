@@ -789,6 +789,25 @@ public class SlickGame extends BasicGame {
             // TODO apply the fire and breach damage.
             // TEST_EVENT is a good way to test this, as it spawns both of them.
         }
+
+        // Apply system/reactor upgrades
+        for (EventSystemUpgrade upgrade : resources.getUpgrades()) {
+            if (upgrade.getSystem().equals("reactor")) {
+                int newPower = player.getPurchasedReactorPower() + upgrade.getAmount();
+                player.setPurchasedReactorPower(Math.min(newPower, player.getMaxReactorPower()));
+                continue;
+            }
+
+            AbstractSystem system = player.getSystems().stream()
+                    .filter(s -> s.getCodename().equals(upgrade.getSystem()))
+                    .findFirst().orElse(null);
+
+            if (system == null)
+                continue;
+
+            int newPower = system.getEnergyLevels() + upgrade.getAmount();
+            system.setEnergyLevels(Math.min(system.getBlueprint().getMaxPower(), newPower));
+        }
     }
 
     /**

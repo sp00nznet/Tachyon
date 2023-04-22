@@ -37,8 +37,8 @@ class Event(
     val removedCrew: List<RemoveCrew>
     val autoRewards: Pair<RewardType, RewardTier>?
     val blueprintRewards: List<String>
-
     val hullDamage: List<EventHullDamage>
+    val systemUpgrades: List<EventSystemUpgrade>
 
     val boarderRace: String?
     val boarderCount: IntRange
@@ -135,6 +135,13 @@ class Event(
             val isBreach = effect == "breach" || effect == "all"
 
             hullDamage.add(EventHullDamage(amount, system, isFire, isBreach))
+        }
+
+        systemUpgrades = ArrayList()
+        for (upgradeElem in elem.getChildren("upgrade")) {
+            val amount = upgradeElem.getAttributeValue("amount")!!.toInt()
+            val system = upgradeElem.getAttributeValue("system")!!
+            systemUpgrades.add(EventSystemUpgrade(amount, system))
         }
     }
 
@@ -266,6 +273,9 @@ class Event(
         // when the damage is actually applied.
         resourcesGained.damage += hullDamage
 
+        // System upgrades aren't randomised, so we can just copy them over as-is.
+        resourcesGained.upgrades += systemUpgrades
+
         // Add the standard type/tier rewards - these are the standard results and most commonly used
         // eg destroying a ship usually gives STANDARD/MEDIUM rewards.
         if (autoRewards != null) {
@@ -333,6 +343,8 @@ class EventHullDamage(
     val effectFire: Boolean,
     val effectBreach: Boolean
 )
+
+class EventSystemUpgrade(val amount: Int, val system: String)
 
 class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {
     /**

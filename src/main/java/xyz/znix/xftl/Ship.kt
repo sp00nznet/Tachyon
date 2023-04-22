@@ -109,6 +109,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val isFtlCharged get() = ftlChargeProgress >= 1f
     val isFtlReady get() = isFtlCharged && engines!!.powerSelected > 0
 
+    val maxReactorPower: Int get() = 25
+
     // The raw amount of reactor power purchased by the player
     var purchasedReactorPower: Int = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()
 

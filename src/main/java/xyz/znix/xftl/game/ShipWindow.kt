@@ -233,7 +233,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             val reactorImg = game.getImg("img/upgradeUI/Equipment/equipment_reactor_on.png")
             val reactorHighlight = game.getImg("img/upgradeUI/Equipment/equipment_reactor_select2.png")
             buttons += object : Button(game, ConstPoint(298, 327), reactorImg.imageSize) {
-                override val disabled: Boolean get() = ship.purchasedReactorPower >= 25
+                override val disabled: Boolean get() = ship.purchasedReactorPower >= ship.maxReactorPower
 
                 override fun draw(g: Graphics) {
                     if (hovered) {
@@ -247,7 +247,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                     val refundRange = lastNonRefundablePower until ship.purchasedReactorPower
 
                     // Draw the energy bars
-                    for (level in 0 until 25) {
+                    for (level in 0 until ship.maxReactorPower) {
                         g.color = when {
                             level in refundRange -> Constants.SYS_ENERGY_PURCHASE_UNDOABLE
                             ship.purchasedReactorPower > level -> Constants.SYS_ENERGY_ACTIVE

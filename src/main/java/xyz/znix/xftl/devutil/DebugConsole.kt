@@ -456,7 +456,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         for (system in ship.systems) {
             system.energyLevels = system.blueprint.maxPower
         }
-        ship.purchasedReactorPower = 25
+        ship.purchasedReactorPower = ship.maxReactorPower
         lines.add("Upgraded all systems to maximum level")
     }
 
