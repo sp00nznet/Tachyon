@@ -808,6 +808,10 @@ public class SlickGame extends BasicGame {
             int newPower = system.getEnergyLevels() + upgrade.getAmount();
             system.setEnergyLevels(Math.min(system.getBlueprint().getMaxPower(), newPower));
         }
+
+        // Apply the fleet pursuit modifier
+        Sector currentSector = currentBeacon.getSector();
+        currentSector.setFleetAdvanceModifier(currentSector.getFleetAdvanceModifier() + resources.getModifyPursuit());
     }
 
     /**
@@ -828,6 +832,15 @@ public class SlickGame extends BasicGame {
 
             beacon.setOvertaken(true);
         }
+
+        // The modifier is a counter of how long we apply no or double pursuit,
+        // so we have to bring it back towards zero.
+        int modifier = sector.getFleetAdvanceModifier();
+        if (modifier < 0)
+            modifier++;
+        if (modifier > 0)
+            modifier--;
+        sector.setFleetAdvanceModifier(modifier);
     }
 
     public interface RoomClickListener {

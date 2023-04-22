@@ -334,6 +334,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             height += 32
         }
 
+        if (resourceSet.modifyPursuit != 0) {
+            val (message, _) = getFleetPursuitText(resourceSet.modifyPursuit)
+            width = max(width, 24 + resourceNumFont.getWidth(message) + 31)
+            height += 32
+        }
+
         return ConstPoint(width, height)
     }
 
@@ -396,6 +402,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         for (upgrade in resourceSet.upgrades) {
             val (message, colour) = getUpgradeText(upgrade)
             resourceNumFont.drawString(pos.x + 25f, y + 21f, message, colour)
+            y += 32
+        }
+
+        if (resourceSet.modifyPursuit != 0) {
+            val (message, colour) = getFleetPursuitText(resourceSet.modifyPursuit)
+            resourceNumFont.drawString(pos.x + 24f, y + 21f, message, colour)
             y += 32
         }
     }
@@ -691,6 +703,30 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         return Pair(message, Constants.SYS_ENERGY_ACTIVE)
     }
 
+    private fun getFleetPursuitText(amount: Int): Pair<String, Color> {
+        when {
+            amount == 1 -> {
+                val message = game.translator["fleet_speed_1"]
+                return Pair(message, Constants.SYS_ENERGY_BROKEN)
+            }
+
+            amount > 1 -> {
+                val message = game.translator["fleet_speed"].replace("\\1", amount.toString())
+                return Pair(message, Constants.SYS_ENERGY_BROKEN)
+            }
+
+            amount == -1 -> {
+                val message = game.translator["fleet_delayed_1"]
+                return Pair(message, Constants.SYS_ENERGY_BROKEN)
+            }
+
+            else -> {
+                val message = game.translator["fleet_delayed"].replace("\\1", (-amount).toString())
+                return Pair(message, Constants.SYS_ENERGY_BROKEN)
+            }
+        }
+    }
+
     /**
      * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)
      */
@@ -720,6 +756,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             result.lostCrew.clear()
             result.damage.clear()
             result.upgrades.clear()
+            result.modifyPursuit = 0
 
             if (event.itemsModifySteal) {
                 result.scrap = 0

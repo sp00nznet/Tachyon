@@ -52,9 +52,12 @@ class ResourceSet() : Map<Resource, Int> {
     val damage = ArrayList<EventHullDamage>()
     val upgrades = ArrayList<EventSystemUpgrade>()
 
+    // Should this really be here? It's convenient for the dialogue stuff.
+    var modifyPursuit: Int = 0
+
     val hasAnything: Boolean
         get() = isNotEmpty() || items.isNotEmpty() || crew.isNotEmpty() || lostCrew.isNotEmpty()
-                || intruders.isNotEmpty() || damage.isNotEmpty() || upgrades.isNotEmpty()
+                || intruders.isNotEmpty() || damage.isNotEmpty() || upgrades.isNotEmpty() || modifyPursuit != 0
 
     constructor(basicResources: Map<Resource, Int>) : this() {
         for ((k, v) in basicResources) {
@@ -130,6 +133,7 @@ class ResourceSet() : Map<Resource, Int> {
         this.lostCrew += other.lostCrew
         this.intruders += other.intruders
         this.damage += other.damage
+        this.modifyPursuit += other.modifyPursuit
     }
 
     companion object {

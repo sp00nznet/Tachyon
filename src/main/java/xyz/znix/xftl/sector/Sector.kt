@@ -47,6 +47,15 @@ class Sector(
     // information about this.
     val dangerZoneCentre: Point
 
+    /**
+     * This is added to by the <modifyPursuit> event tag.
+     *
+     * A positive number means the pursuit is doubled for that many
+     * jumps, while a negative number means there's no pursuit for
+     * that many jumps.
+     */
+    var fleetAdvanceModifier: Int = 0
+
     init {
         val eventPool = ArrayDeque(events.shuffled())
 
@@ -173,7 +182,7 @@ class Sector(
     fun getFleetAdvanceFor(beacon: Beacon): Int {
         val isNebula = beacon.environmentType.isNebula
 
-        return when {
+        val base = when {
             // Non-nebula beacons use normal advance
             !isNebula -> DANGER_ZONE_ADVANCE
 
@@ -182,6 +191,12 @@ class Sector(
 
             // In nebula beacons, they use 80% of the normal advance.
             else -> (DANGER_ZONE_ADVANCE * 0.8f).toInt()
+        }
+
+        return when {
+            fleetAdvanceModifier < 0 -> 0
+            fleetAdvanceModifier > 0 -> base * 2
+            else -> base
         }
     }
 

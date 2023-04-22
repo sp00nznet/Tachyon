@@ -40,6 +40,8 @@ class Event(
     val hullDamage: List<EventHullDamage>
     val systemUpgrades: List<EventSystemUpgrade>
 
+    val modifyPursuit: Int = elem.getChild("modifyPursuit")?.getAttributeValue("amount")?.toInt() ?: 0
+
     val boarderRace: String?
     val boarderCount: IntRange
 
@@ -275,6 +277,8 @@ class Event(
 
         // System upgrades aren't randomised, so we can just copy them over as-is.
         resourcesGained.upgrades += systemUpgrades
+
+        resourcesGained.modifyPursuit = modifyPursuit
 
         // Add the standard type/tier rewards - these are the standard results and most commonly used
         // eg destroying a ship usually gives STANDARD/MEDIUM rewards.
