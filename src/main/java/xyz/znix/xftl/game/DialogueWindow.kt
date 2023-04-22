@@ -545,7 +545,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         }
 
         // Check for any matching systems
-        val matchingSystem = playerShip.rooms.firstOrNull { it.system?.codename == req }?.system
+        val matchingSystem = playerShip.systems.firstOrNull { it.codename == req }
         if (matchingSystem != null) {
             // Check if we're outside the level bounds of this system
             choice.minLevel?.let { minLevel ->

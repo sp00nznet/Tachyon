@@ -15,8 +15,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
             return
 
         // Power up all the systems
-        for (room in ship.rooms) {
-            val sys = room.system as? MainSystem ?: continue
+        for (sys in ship.mainSystems) {
             for (i in 1..sys.energyLevels) sys.increasePower()
         }
 
@@ -95,9 +94,8 @@ class ShipAI(val ship: Ship, val player: Ship) {
         // Create manning tasks for all systems, even those where crew won't
         // do anything - those just have very low priorities, and serve
         // to disperse thee crew throughout the ship.
-        for (room in ship.rooms) {
-            if (room.system != null)
-                tasks += ManningTask(room)
+        for (system in ship.systems) {
+            tasks += ManningTask(system.room!!)
         }
     }
 
@@ -111,9 +109,8 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         val tasks = ArrayList<AITask>(manningTasks)
 
-        for (room in ship.rooms) {
-            val sys = room.system ?: continue
-            if (!sys.damaged) continue
+        for (sys in ship.systems) {
+            val room = sys.room!!
             val task = repairTasks[room] ?: RepairTask(room).also { repairTasks[room] = it }
             tasks += task
         }

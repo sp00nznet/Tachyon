@@ -270,7 +270,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                 override val customDisabled: Boolean
                     get() {
                         // Stop the user from installing more than eight systems
-                        val numSystems = ship.rooms.count { it.system is MainSystem }
+                        val numSystems = ship.mainSystems.size
                         if (numSystems >= 8)
                             return true
 

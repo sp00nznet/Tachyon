@@ -155,6 +155,23 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             return used
         }
 
+    var systems: List<AbstractSystem> = emptyList()
+        private set
+
+    /**
+     * The list of all the [MainSystem]s in the ship, sorted into the order
+     * they appear left-to-right in the power UI.
+     */
+    var mainSystems: List<MainSystem> = emptyList()
+        private set
+
+    /**
+     * The list of all the [SubSystem]s in the ship, sorted into the order
+     * they appear in the subsystem tray.
+     */
+    var subSystems: List<SubSystem> = emptyList()
+        private set
+
     var weapons: Weapons? = null
         private set
 
@@ -541,8 +558,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             }
         }
 
-        for (room in rooms)
-            room.system?.drawBackground(g)
+        for (system in systems)
+            system.drawBackground(g)
 
         // If the ship is exploding, draw no further
         if (isDead) {
@@ -723,8 +740,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         // Draw the system foregrounds
-        for (room in rooms)
-            room.system?.drawForeground(g)
+        for (system in systems)
+            system.drawForeground(g)
     }
 
     fun screenPosToShipPos(point: Point) {
@@ -932,7 +949,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     fun updateAvailableSystems() {
-        val systems = rooms.mapNotNull { it.system }
+        systems = rooms.mapNotNull { it.system }
+        mainSystems = systems.mapNotNull { it as? MainSystem }.sortedBy { it.sortingType }
+        subSystems = systems.mapNotNull { it as? SubSystem }.sortedBy { it.sortingType }
 
         weapons = systems.mapNotNull { it as? Weapons }.firstOrNull()
         drones = systems.mapNotNull { it as? Drones }.firstOrNull()

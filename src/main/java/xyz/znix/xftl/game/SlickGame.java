@@ -105,11 +105,7 @@ public class SlickGame extends BasicGame {
         Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0));
         setCurrentBeacon(firstSector.getStartBeacon());
 
-        for (Room room : player.getRooms()) {
-            AbstractSystem system = room.getSystem();
-            if (system == null)
-                continue;
-
+        for (AbstractSystem system : player.getSystems()) {
             getImg(system.getIcon());
 
             String img = system.getImg();
@@ -117,14 +113,7 @@ public class SlickGame extends BasicGame {
                 getImg(img);
         }
 
-        for (Room r : player.getRooms()) {
-            AbstractSystem system = r.getSystem();
-            if (system == null)
-                continue;
-
-            if (!(system instanceof MainSystem))
-                continue;
-
+        for (MainSystem system : player.getMainSystems()) {
             getImg("img/icons/s_" + system.getCodename() + "_red1.png");
             getImg("img/icons/s_" + system.getCodename() + "_orange1.png");
             getImg("img/icons/s_" + system.getCodename() + "_grey1.png");

@@ -19,8 +19,6 @@ import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
-import java.util.stream.Collectors
-import java.util.stream.Stream
 import kotlin.math.*
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
@@ -305,8 +303,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
     }
 
     fun systemPowerHotkeyPressed(type: Class<*>, powerUp: Boolean) {
-        for (room in ship.rooms) {
-            val sys = room.system as? MainSystem ?: continue
+        for (sys in ship.mainSystems) {
             if (sys.javaClass != type) continue
 
             changeSystemPower(sys, powerUp)
@@ -456,13 +453,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
 
         // Draw the systems and the wires under them
-        val sortedSystems = sortedMainSystems().collect(Collectors.toList())
-
         var weaponPowerX: Int? = null
         var dronePowerX: Int? = null
         var powerX = 58
         val powerY = height - 69
-        for ((i, system) in sortedSystems.withIndex()) {
+        for ((i, system) in ship.mainSystems.withIndex()) {
             // Draw the power bar to the next item
             val wireX = powerX + 31
             val wireY = powerY +
@@ -493,10 +488,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             // Don't draw the bar under the last item - since each item draws the
             // wire to the next item, this would result in a wire sticking out.
-            if (i == sortedSystems.size - 1)
+            if (i == ship.mainSystems.size - 1)
                 continue
 
-            val lastSystem = i == sortedSystems.size - 2
+            val lastSystem = i == ship.mainSystems.size - 2
 
             val wireWidth = when (system) {
                 // Remember that we'll only run this if this isn't the last system,
@@ -771,12 +766,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         font.drawString(textX + 1f, textY + 15f, name, UI_TEXT_COLOUR_1)
     }
-
-    private fun sortedMainSystems(): Stream<MainSystem> = ship.rooms.stream()
-        .map { it.system }
-        .filter { MainSystem::class.java.isInstance(it) }
-        .map { MainSystem::class.java.cast(it) }
-        .sorted(Comparator.comparing<MainSystem, MainSystem.SortingType> { it.sortingType })
 
     private fun drawWeaponString(g: Graphics, str: String, x: Int, y: Int) {
         var y = y

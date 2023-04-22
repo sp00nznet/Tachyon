@@ -265,9 +265,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     }
 
     private fun cmdFix(@Suppress("UNUSED_PARAMETER") args: List<String>) {
-        for (room in ship.rooms) {
-            val system = room.system ?: continue
-
+        for (system in ship.systems) {
             system.damagedEnergyLevels = 0
             system.ionTimer = 0f
             system.ionDamage = 0
@@ -455,8 +453,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     }
 
     private fun cmdUpgradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
-        for (room in ship.rooms) {
-            val system = room.system ?: continue
+        for (system in ship.systems) {
             system.energyLevels = system.blueprint.maxPower
         }
         ship.purchasedReactorPower = 25
@@ -464,8 +461,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
     }
 
     private fun cmdDowngradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
-        for (room in ship.rooms) {
-            val system = room.system ?: continue
+        for (system in ship.systems) {
             system.energyLevels = system.blueprint.startPower
         }
         ship.purchasedReactorPower = 5

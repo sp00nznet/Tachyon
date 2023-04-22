@@ -160,12 +160,11 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
         }
 
         // Draw the systems
-        val systems = ship.rooms.mapNotNull { it.system as? MainSystem }.sortedBy { it.sortingType }
         for (i in 0 until 8) {
             if (!updatingButtons)
                 continue
 
-            val system = if (i < systems.size) systems[i] else null
+            val system = ship.mainSystems.getOrNull(i)
 
             val price: Int? = when {
                 system == null -> null

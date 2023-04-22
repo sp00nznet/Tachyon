@@ -137,25 +137,19 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         // Find a soft cap for how much power each system can have
         // This can be exceeded by scripted weapons and drones
         val softCaps = HashMap<AbstractSystem, Int>()
-        for (room in ship.rooms) {
-            val system = room.system ?: continue
+        for (system in ship.systems) {
             softCaps[system] = pickSystemPowerLimit(effectiveSector, difficulty, system, rand)
         }
 
         // Spend the power upgrading the systems
 
         fun getSystem(category: SystemCategory?): AbstractSystem? {
-            val suitable = ship.rooms.mapNotNull {
-                val system = it.system ?: return@mapNotNull null
-
-                val systemCategory = getSystemCategory(system)
+            val suitable = ship.systems.filter {
+                val systemCategory = getSystemCategory(it)
                 if (category != null && category != systemCategory)
-                    return@mapNotNull null
+                    return@filter false
 
-                if (system.energyLevels >= softCaps.getValue(system))
-                    return@mapNotNull null
-
-                return@mapNotNull system
+                return@filter it.energyLevels < softCaps.getValue(it)
             }
 
             if (suitable.isEmpty())

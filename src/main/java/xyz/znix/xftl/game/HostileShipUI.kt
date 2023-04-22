@@ -81,7 +81,7 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
 
         // Draw the enemy's systems
         // TODO sorting
-        for ((i, sys) in enemy.rooms.asSequence().mapNotNull { it.system }.withIndex()) {
+        for ((i, sys) in enemy.systems.withIndex()) {
             val y = boxY + box.height - 85
             val x = boxX + i * 30 + 40
 
