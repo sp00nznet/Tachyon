@@ -170,7 +170,7 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
         g.fillRect(
             position.x.f,
             position.y.f,
-            nextDangerZoneRHS + Sector.OFFSET.x - 181f,
+            (mapBase.x + nextDangerZoneRHS - 181f) - position.x,
             size.y.f
         )
 
