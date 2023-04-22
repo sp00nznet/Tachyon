@@ -15,6 +15,7 @@ import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.max
+import kotlin.math.min
 
 class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: Event, val close: () -> Unit) :
     Window() {
@@ -320,6 +321,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
             height += 32
         }
 
+        if (resourceSet.damage.isNotEmpty()) {
+            val (message, _) = getHullDamageText(resourceSet)
+            width = max(width, 30 + resourceNumFont.getWidth(message) + 30)
+            height += 32
+        }
+
         return ConstPoint(width, height)
     }
 
@@ -370,6 +377,12 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         if (resourceSet.intruders.isNotEmpty()) {
             val message = game.translator["intruder_alert"]
             resourceNumFont.drawString(pos.x + 32f, y + 21f, message, Constants.SYS_ENERGY_BROKEN)
+            y += 32
+        }
+
+        if (resourceSet.damage.isNotEmpty()) {
+            val (message, colour) = getHullDamageText(resourceSet)
+            resourceNumFont.drawString(pos.x + 30f, y + 21f, message, colour)
             y += 32
         }
     }
@@ -623,6 +636,23 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         game.givePlayerResources(event.resources)
     }
 
+    private fun getHullDamageText(resourceSet: ResourceSet): Pair<String, Color> {
+        val baseDamage = resourceSet.damage.sumBy { it.amount }
+
+        if (baseDamage < 0) {
+            // Limit the displayed health gain if some will be wasted
+            // because the player will have full health.
+            val realHealing = min(playerShip.maxHealth - playerShip.health, -baseDamage)
+
+            val message = game.translator["heal_alert"].replace("\\1", realHealing.toString())
+            return Pair(message, Constants.SYS_ENERGY_ACTIVE)
+        }
+
+        val realDamage = min(playerShip.health, baseDamage)
+        val message = game.translator["damage_alert"].replace("\\1", realDamage.toString())
+        return Pair(message, Constants.SYS_ENERGY_BROKEN)
+    }
+
     /**
      * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)
      */
@@ -650,6 +680,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
             result += resources
             result.lostCrew.clear()
+            result.damage.clear()
 
             if (event.itemsModifySteal) {
                 result.scrap = 0

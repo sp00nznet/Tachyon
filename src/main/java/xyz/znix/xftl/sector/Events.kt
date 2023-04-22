@@ -38,6 +38,8 @@ class Event(
     val autoRewards: Pair<RewardType, RewardTier>?
     val blueprintRewards: List<String>
 
+    val hullDamage: List<EventHullDamage>
+
     val boarderRace: String?
     val boarderCount: IntRange
 
@@ -122,6 +124,18 @@ class Event(
             blueprintRewards += if (name == "RANDOM") "xftl_rand_${e.name.toLowerCase()}" else name
         }
         blueprintRewards.trimToSize()
+
+        hullDamage = ArrayList()
+        for (damageElem in elem.getChildren("damage")) {
+            val amount = damageElem.getAttributeValue("amount")!!.toInt()
+            val system: String? = damageElem.getAttributeValue("system")
+
+            val effect: String? = damageElem.getAttributeValue("effect")
+            val isFire = effect == "fire" || effect == "all"
+            val isBreach = effect == "breach" || effect == "all"
+
+            hullDamage.add(EventHullDamage(amount, system, isFire, isBreach))
+        }
     }
 
     val loadShipName: String?
@@ -247,6 +261,11 @@ class Event(
             }
         }
 
+        // For hull damage, we don't need to resolve it - the rooms and systems
+        // that are damaged aren't displayed, we only have to evaluate that
+        // when the damage is actually applied.
+        resourcesGained.damage += hullDamage
+
         // Add the standard type/tier rewards - these are the standard results and most commonly used
         // eg destroying a ship usually gives STANDARD/MEDIUM rewards.
         if (autoRewards != null) {
@@ -297,6 +316,22 @@ class RemoveCrew(
      * This is actually set by <crewMember> not <removeCrew>.
      */
     val turnHostile: Boolean
+)
+
+class EventHullDamage(
+    val amount: Int,
+
+    /**
+     * The system this damage should be inflicted to.
+     *
+     * Null means hull damage only, "random" means a random system, and
+     * "room" means a random room (regardless of whether it has a system
+     * in it or not).
+     */
+    val system: String?,
+
+    val effectFire: Boolean,
+    val effectBreach: Boolean
 )
 
 class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {

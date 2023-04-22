@@ -5,6 +5,7 @@ import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.sector.AddCrew
+import xyz.znix.xftl.sector.EventHullDamage
 import xyz.znix.xftl.sector.RemoveCrew
 
 enum class Resource {
@@ -47,8 +48,11 @@ class ResourceSet() : Map<Resource, Int> {
     val crew = ArrayList<AddCrewEval>()
     val lostCrew = ArrayList<RemoveCrewEval>()
     val intruders = ArrayList<AddCrewEval>()
+    val damage = ArrayList<EventHullDamage>()
 
-    val hasAnything: Boolean get() = isNotEmpty() || items.isNotEmpty() || crew.isNotEmpty() || lostCrew.isNotEmpty() || intruders.isNotEmpty()
+    val hasAnything: Boolean
+        get() = isNotEmpty() || items.isNotEmpty() || crew.isNotEmpty() || lostCrew.isNotEmpty()
+                || intruders.isNotEmpty() || damage.isNotEmpty()
 
     constructor(basicResources: Map<Resource, Int>) : this() {
         for ((k, v) in basicResources) {
@@ -123,6 +127,7 @@ class ResourceSet() : Map<Resource, Int> {
         this.crew += other.crew
         this.lostCrew += other.lostCrew
         this.intruders += other.intruders
+        this.damage += other.damage
     }
 
     companion object {

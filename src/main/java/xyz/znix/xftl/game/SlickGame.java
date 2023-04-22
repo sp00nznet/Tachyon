@@ -752,6 +752,43 @@ public class SlickGame extends BasicGame {
             RoomPoint slot = player.findSpaceForCrew(intruderRoom, AbstractCrew.SlotType.INTRUDER);
             intruder.jumpTo(slot.getRoom(), slot);
         }
+
+        // Apply the hull damage
+        for (EventHullDamage damage : resources.getDamage()) {
+            String system = damage.getSystem();
+            if (system == null) {
+                // A null system means hull damage only
+                player.setHealth(player.getHealth() - damage.getAmount());
+                continue;
+            }
+
+            Room targetRoom;
+
+            if (system.equals("random")) {
+                AbstractSystem randomSystem = player.getSystems().get(Random.Default.nextInt(player.getSystems().size()));
+                targetRoom = randomSystem.getRoom();
+            } else if (system.equals("room")) {
+                targetRoom = player.getRooms().get(Random.Default.nextInt(player.getRooms().size()));
+            } else {
+                Optional<AbstractSystem> foundSystem = player.getSystems().stream()
+                        .filter(s -> s.getCodename().equals(system))
+                        .findFirst();
+                if (foundSystem.isPresent()) {
+                    targetRoom = foundSystem.get().getRoom();
+                } else {
+                    // Just pick a random room if this system isn't installed
+                    // TODO check how FTL does it
+                    targetRoom = player.getRooms().get(Random.Default.nextInt(player.getRooms().size()));
+                }
+            }
+
+            Objects.requireNonNull(targetRoom);
+
+            player.damage(targetRoom, damage.getAmount(), damage.getAmount(), 0);
+
+            // TODO apply the fire and breach damage.
+            // TEST_EVENT is a good way to test this, as it spawns both of them.
+        }
     }
 
     /**
