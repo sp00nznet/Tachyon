@@ -737,6 +737,10 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
                 system.scriptedPowerLimit = maxPower
             }
         }
+
+        if (event.event.revealMap) {
+            game.currentBeacon.sector.mapRevealed = true
+        }
     }
 
     private fun getHullDamageText(resourceSet: ResourceSet): Pair<String, Color> {

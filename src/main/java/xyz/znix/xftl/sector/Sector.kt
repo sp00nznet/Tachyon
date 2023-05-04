@@ -57,6 +57,15 @@ class Sector(
      */
     var fleetAdvanceModifier: Int = 0
 
+    /**
+     * If true, all beacons are displayed with their full information
+     * visible (environmental hazards, ship presence, store/distress
+     * labels, etc).
+     *
+     * This is set by events with the <reveal_map/> tag.
+     */
+    var mapRevealed: Boolean = false
+
     init {
         val eventPool = ArrayDeque(events.shuffled())
 

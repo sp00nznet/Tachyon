@@ -120,6 +120,7 @@ class Beacon(
             field = value
             if (value) {
                 hasStore = false
+                hasQuest = false
             }
         }
 

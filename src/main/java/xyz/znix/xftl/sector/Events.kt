@@ -52,6 +52,8 @@ class Event(
      */
     val questName: String? = elem.getChild("quest")?.getAttributeValue("event")
 
+    val revealMap: Boolean = elem.getChild("reveal_map") != null
+
     init {
         // Initialise these in the constructor so we can mutate them,
         // which isn't otherwise possible as they're declared as List.

@@ -40,9 +40,11 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
     private val fleetControlTile = game.getImg("img/map/map_warningcircle_tile.png")
 
     private val beaconShadow = game.getImg("img/map/map_icon_diamond_shadow.png")
+    private val beaconEnvironmentHazard = game.getImg("img/map/map_icon_hazard.png")
     private val beaconYellow = game.getImg("img/map/map_icon_diamond_yellow.png")
     private val beaconBlue = game.getImg("img/map/map_icon_diamond_blue.png")
     private val beaconDanger = game.getImg("img/map/map_icon_triangle_red.png")
+    private val beaconShipPresent = game.getImg("img/map/map_icon_triangle_yellow.png")
     private val beaconWillOvertakeCircle = game.getImg("img/tutorial/player_circle.png") // This is the right image!
     private val beaconOvertaken = game.getImg("img/map/map_icon_warning.png")
 
@@ -54,6 +56,10 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
     private val sector = game.currentBeacon.sector
 
     private val flashTimerBase = System.nanoTime()
+
+    // The set of all the beacons we've visited a neighbour of - this
+    // is used to figure out which beacons to display information about.
+    private val neighbourVisSet = sector.beacons.filter { it.visited }.flatMap { it.neighbours }.toSet()
 
     private val labelWhite = (1..3).map { "img/map/map_box_white_$it.png" }.map {
         game.getImg(it).copy().apply {
@@ -110,9 +116,20 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
         val nextFleetPos = Point(sector.dangerZoneCentre)
         nextFleetPos.x += sector.getFleetAdvanceFor(game.currentBeacon)
 
+        // Whether or not the ship is equipped with long-range scanners
+        val hasLRS = game.player.hasAugment("ADV_SCANNERS")
+
         // Draw the beacons
         for (beacon in sector.beacons) {
             val pos = mapBase + beacon.pos + beaconOffset
+
+            val isNeighbour = neighbourVisSet.contains(beacon)
+            val showBasicInfo = beacon.visited || sector.mapRevealed || isNeighbour
+            val showAdvInfo = beacon.visited || sector.mapRevealed || (isNeighbour && hasLRS)
+
+            if (showAdvInfo && beacon.environmentType.isDangerous) {
+                beaconEnvironmentHazard.draw(pos.x - 5, pos.y - 5)
+            }
 
             // Draw the flashing background if this beacon
             // will be overtaken after this jump.
@@ -134,22 +151,26 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
             beaconShadow.draw(pos)
 
             val beaconImg = when (beacon.state) {
-                Beacon.State.UNVISITED -> beaconYellow
+                Beacon.State.UNVISITED -> when {
+                    showAdvInfo && beacon.event.loadShipName != null -> beaconShipPresent
+                    else -> beaconYellow
+                }
+
                 Beacon.State.VISITED_CLEAR -> beaconBlue
                 Beacon.State.VISITED_DANGER -> beaconDanger
                 Beacon.State.OVERTAKEN -> beaconOvertaken
             }
             beaconImg.draw(pos)
 
-            // TODO should we hide the distress/store labels if this beacon is being overtaken?
-
-            if (beacon.event.isDistressBeacon && !beacon.visited)
+            if (beacon.event.isDistressBeacon && !beacon.visited && showBasicInfo && !willBeOvertaken)
                 drawBeaconLabel(pos, game.translator["map_icon_distress"])
 
+            // Note that quests and stores are cleared when the beacon is overrun,
+            // so we don't have to check if willBeOvertaken is set.
             if (beacon.hasQuest && !beacon.visited)
                 drawBeaconLabel(pos, game.translator["map_icon_quest"])
 
-            if (beacon.hasStore)
+            if (beacon.hasStore && showBasicInfo)
                 drawBeaconLabel(pos, game.translator["map_icon_store"])
 
             if (beacon.isExit)
@@ -269,9 +290,8 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
 
         font.drawStringLegacy(position.x + 13f, position.y + size.y + 8f, "SECTOR", Constants.JUMP_DISABLED_TEXT)
 
-        // TODO use the real sector number once multiple sectors are implemented
         val sectorName = game.translator["sectorname_" + sector.type.name]
-        drawCutout(position.x + 141, position.y + size.y - 8, 38, "1")
+        drawCutout(position.x + 141, position.y + size.y - 8, 38, (sector.sectorNumber + 1).toString())
         drawCutout(position.x + 190, position.y + size.y - 8, 276, sectorName)
 
         // The top and bottom tabs are slightly different sizes, this compensates for them
