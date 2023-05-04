@@ -106,6 +106,22 @@ The order of the beacon generation is that the outer loop is for x, and
 the inner loop is for y, increasing (as in, the loops count up). This may
 be important for empty cells in PopulateGrid.
 
+It picks the end beacon: this has a random Y, and the X is randomised between
+the two right-most columns (columns {4,5} when zero-indexed). It requires the
+distance from the start beacon to the finish beacon be at least five jumps.
+
+In the last stand, this logic is used to pick the federation base location.
+On easy/normal, the base's x is picked from {2,3} while on hard it's picked
+from {3,4}. On easy/normal, the path to the base must be 4 jumps long, while
+on hard it must be between 5-6 jumps (inclusive).
+
+(Note that these path length constants are defined in the code as being
+exclusive, so for example normal fed base must be between 3-5 jumps, but
+both the min,max values are exclusive).
+
+The game will try upto 16 times to satisfy these length constraints, but
+will give up after that.
+
 
 StarMap::PopulateGrid
 
@@ -131,3 +147,31 @@ for the next sector button).
 
 It then connects this beacon with all the beacons in adjacent cells that
 are within 165px (via StarMap::ConnectLocations).
+
+
+StarMap::AddQuest
+
+This filters all the beacons in the sector, looking for those that:
+* Have not been visited
+* Are not nebula beacons
+* Is not the exit beacon
+* Have not been overtaken by the rebel fleet
+* Do not already have a quest at them
+* Is not a store
+* Is not a distress beacon
+* Is not the player's current beacon
+
+The path from the player to this beacon is then calculated. If there is
+no path, the beacon is skipped.
+
+There's then a further requirement that unless the 'force' argument is set,
+the number of jumps away from the player must be less than the number of
+jumps until this quest is overtaken by the rebels.
+
+(The force argument is true when adding quests delayed from a previous sector)
+
+
+One of the beacons matching the above requirements is then picked. If
+there are no suitable beacons, the quest is delayed until the next sector.
+The exception is that if such a quest is found in sector 7 or later, it's
+not delayed for obvious reasons.

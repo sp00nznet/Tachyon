@@ -6,6 +6,7 @@ import xyz.znix.xftl.math.Point
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 /**
  * Represents an in-game sector. Handles the placement of the beacons within it.
@@ -198,6 +199,108 @@ class Sector(
             fleetAdvanceModifier > 0 -> base * 2
             else -> base
         }
+    }
+
+    /**
+     * Attempt to add a quest to this sector.
+     *
+     * This may fail if it can't find space for the event, there isn't
+     * anywhere to put it where the player can reach it before the fleet
+     * overruns it, etc.
+     *
+     * If [ignoreDistance] is not set, then beacons that the player can't
+     * reach before they're overtaken will not be used.
+     */
+    fun addQuest(currentBeacon: Beacon, questEvent: Event, ignoreDistance: Boolean = false): Boolean {
+        // See doc/sector-map for how this works.
+
+        val suitable = beacons.filter {
+            if (it.visited || it.environmentType.isNebula || it == currentBeacon)
+                return@filter false
+            if (it.isExit || it.hasQuest || it.hasStore || it.event.isDistressBeacon)
+                return@filter false
+            if (it.isOvertaken)
+                return@filter false
+
+            // Check the path length, to check that we can reach the beacon before
+            // the rebel fleet does, and to check there is a valid path.
+            val path = findShortestPath(currentBeacon, it) ?: return@filter false
+
+            if (!ignoreDistance) {
+                val distToFleet = sqrt(it.pos.distToSq(dangerZoneCentre).toFloat()).toInt() - DANGER_ZONE_RADIUS
+                val timeUntilFleet = distToFleet / DANGER_ZONE_ADVANCE
+
+                // We must be able to reach the beacon *before* it's overrun
+                if (timeUntilFleet <= path.size)
+                    return@filter false
+            }
+
+            return@filter true
+        }
+
+        if (suitable.isEmpty())
+            return false
+
+        val beacon = suitable.random()
+        beacon.hasQuest = true
+        beacon.event = questEvent
+
+        return true
+    }
+
+    /**
+     * Find the shortest path between the two beacons. This contains
+     * each beacon the ship must jump to on the way - that is, when
+     * there's a path between two different beacons [start] and [end],
+     * the path won't contain [start] but will contain [end].
+     *
+     * If there is no suitable path, null is returned.
+     */
+    fun findShortestPath(start: Beacon, end: Beacon): List<Beacon>? {
+        // Find the path using a simple wavefront system
+
+        val distances = HashMap<Beacon, Int>()
+        val wavefront = HashSet<Beacon>()
+        val nextWavefront = HashSet<Beacon>()
+        wavefront += end
+
+        // Build a map of distances from any given beacon to the end
+        while (wavefront.isNotEmpty()) {
+            for (beacon in wavefront) {
+                // Update this beacon's weight
+                val distance: Int = if (beacon == end) {
+                    0
+                } else {
+                    val lowestNeighbour = beacon.neighbours.mapNotNull { distances[it] }.min()
+                    requireNotNull(lowestNeighbour) { "Beacon in path search was in wavefront, but had no set neighbours!" }
+                    lowestNeighbour + 1
+                }
+
+                if (distances[beacon] == distance)
+                    continue
+
+                distances[beacon] = distance
+                nextWavefront += beacon.neighbours
+            }
+
+            wavefront.clear()
+            wavefront += nextWavefront
+            nextWavefront.clear()
+        }
+
+        // If the start beacon doesn't have a distance, there's no valid path.
+        if (!distances.containsKey(start))
+            return null
+
+        // Follow the lowest weight to find the path.
+        val path = ArrayList<Beacon>()
+        var current = start
+        while (current != end) {
+            current = current.neighbours.sortedBy { distances[it] }.first()
+            path += current
+        }
+
+        return path
     }
 
     companion object {

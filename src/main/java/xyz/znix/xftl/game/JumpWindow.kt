@@ -143,8 +143,11 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
 
             // TODO should we hide the distress/store labels if this beacon is being overtaken?
 
-            if (beacon.event.isDistressBeacon)
+            if (beacon.event.isDistressBeacon && !beacon.visited)
                 drawBeaconLabel(pos, game.translator["map_icon_distress"])
+
+            if (beacon.hasQuest && !beacon.visited)
+                drawBeaconLabel(pos, game.translator["map_icon_quest"])
 
             if (beacon.hasStore)
                 drawBeaconLabel(pos, game.translator["map_icon_store"])

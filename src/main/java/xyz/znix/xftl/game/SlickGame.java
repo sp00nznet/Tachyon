@@ -76,6 +76,12 @@ public class SlickGame extends BasicGame {
 
     private float asteroidAnimationTimer;
 
+    /**
+     * The quest events that couldn't be fit in the current sector,
+     * and were delayed to the next one.
+     */
+    private final ArrayList<Event> delayedQuests = new ArrayList<>();
+
     public SlickGame(Datafile df) {
         super("Subluminal");
         this.df = df;
@@ -415,6 +421,12 @@ public class SlickGame extends BasicGame {
     public void setCurrentBeacon(Beacon currentBeacon) {
         if (this.currentBeacon == null || this.currentBeacon.getSector() != currentBeacon.getSector()) {
             lootPool = new LootPool(blueprintManager, currentBeacon.getSector().getType());
+
+            // Add any quests we didn't have time for last time
+            for (Event quest : delayedQuests) {
+                currentBeacon.getSector().addQuest(currentBeacon, quest, true);
+            }
+            delayedQuests.clear();
         }
 
         this.currentBeacon = currentBeacon;
@@ -540,6 +552,27 @@ public class SlickGame extends BasicGame {
             return true;
 
         return currentBeacon.getEnvironmentType().isDangerous();
+    }
+
+    /**
+     * Add a quest event marker, as required by an event.
+     */
+    @NotNull
+    public QuestAddResult addQuest(Event questEvent) {
+        Sector sector = currentBeacon.getSector();
+        boolean wasAdded = sector.addQuest(currentBeacon, questEvent, false);
+
+        if (wasAdded) {
+            return QuestAddResult.CURRENT_SECTOR;
+        } else if (sector.getSectorNumber() >= 6) {
+            // If we're on sector 7 (6 when zero-indexed) or later,
+            // the quest is skipped as we shouldn't put quests into
+            // the last stand.
+            return QuestAddResult.TOO_LATE;
+        } else {
+            delayedQuests.add(questEvent);
+            return QuestAddResult.NEXT_SECTOR;
+        }
     }
 
     @NotNull
@@ -846,5 +879,11 @@ public class SlickGame extends BasicGame {
 
     public interface RoomClickListener {
         void roomClicked(Room room, GameContainer gc);
+    }
+
+    public enum QuestAddResult {
+        CURRENT_SECTOR,
+        NEXT_SECTOR,
+        TOO_LATE,
     }
 }

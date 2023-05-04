@@ -19,7 +19,7 @@ class Beacon(
      * The event at this beacon. Even empty beacons have events, which set stuff like
      * the background and flavour text.
      */
-    val event: Event,
+    var event: Event,
 
     /**
      * True if this is the exit beacon to progress to the next sector.
@@ -89,6 +89,14 @@ class Beacon(
     var hasStore: Boolean = event.isStore
 
     private var internalStore: StoreData? = null
+
+    /**
+     * True if the event at this beacon was created by an event.
+     *
+     * This is used to display the quest label in the map screen,
+     * if this beacon is unvisited.
+     */
+    var hasQuest: Boolean = false
 
     /**
      * For all the status effects applied at this beacon, this states what

@@ -21,7 +21,7 @@ import kotlin.random.Random
 interface IEvent {
     fun resolve(): Event
 
-    abstract val debugId: String
+    val debugId: String
 }
 
 class Event(
@@ -46,6 +46,11 @@ class Event(
     val boarderCount: IntRange
 
     val statuses: List<EventStatus>
+
+    /**
+     * If this event triggers a quest, this is its event name.
+     */
+    val questName: String? = elem.getChild("quest")?.getAttributeValue("event")
 
     init {
         // Initialise these in the constructor so we can mutate them,

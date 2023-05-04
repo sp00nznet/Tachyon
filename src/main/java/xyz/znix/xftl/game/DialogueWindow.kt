@@ -41,17 +41,35 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
     private val textX get() = position.x + 25
 
+    private var extraText = ""
+
     init {
         loadEvent(EvaluatedEvent(startingEvent, game, null))
     }
 
     private fun loadEvent(event: EvaluatedEvent) {
+        extraText = ""
+
         game.loadEventShip(event.event)
 
         if (event.event.isStore) {
             // This does a few things: show the store on the map, enable the store button
             // and cause the store window to open when this window is closed.
             game.currentBeacon.hasStore = true
+        }
+
+        // If this event triggers a quest, we have to evaluate it now to find out
+        // what text to display (whether it was added to the current or next
+        // sector, or there's no time as the next sector is the last stand).
+        val questName = event.event.questName
+        if (questName != null) {
+            val quest = game.eventManager[questName].resolve()
+            val messageId = when (game.addQuest(quest)) {
+                SlickGame.QuestAddResult.CURRENT_SECTOR -> "added_quest"
+                SlickGame.QuestAddResult.NEXT_SECTOR -> "added_quest_sector"
+                SlickGame.QuestAddResult.TOO_LATE -> "no_time"
+            }
+            extraText += "\n\n" + game.translator[messageId]
         }
 
         // Events that have no text are valid, usually they are the result of a choice
@@ -133,7 +151,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         //val ev = "The space station here has a traveling merchant who shows you his wares."
 
         var textY = position.y + 42
-        textY = drawText(textY, currentEvent.text!!)
+        textY = drawText(textY, currentEvent.text!! + extraText)
 
         val resourcesGained = currentEvent.resources
         if (resourcesGained.hasAnything) {
@@ -423,15 +441,28 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         var lineText = ""
         var textY = y
         var longestLine = 0
-        for (word in msg.split(" ")) {
-            if (font.getWidth(lineText + word) + textX > textFarX) {
-                longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
-                font.drawString(textX.f, textY.f, lineText, colour)
-                lineText = ""
-                textY += 20
+
+        fun breakLine() {
+            longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
+            font.drawString(textX.f, textY.f, lineText, colour)
+            lineText = ""
+            textY += 20
+        }
+
+        for ((lineNum, line) in msg.split("\n").withIndex()) {
+            if (lineNum != 0) {
+                // Every line other than the first one needs to advance from
+                // the starting position, including empty ones.
+                breakLine()
             }
 
-            lineText += "$word "
+            for (word in line.split(" ")) {
+                if (font.getWidth(lineText + word) + textX > textFarX) {
+                    breakLine()
+                }
+
+                lineText += "$word "
+            }
         }
         longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
         font.drawString(textX.f, textY.f, lineText, colour)
