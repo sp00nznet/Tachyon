@@ -924,6 +924,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         crew.add(crewMember)
         crewMember.jumpTo(freeSpace)
 
+        // If this is an intruder, make sure they don't count as being
+        // 'owned' by the player. This means they can't use the player's
+        // augments, for example.
+        if (isIntruder) {
+            crewMember.ownerShip = null
+        }
+
         return crewMember
     }
 

@@ -240,12 +240,7 @@ abstract class AbstractCrew(
 
                 updateAnimation()
 
-                // Apply the reconstructive teleport effect now, since this
-                // is both the mid-point of our animation, and we can't take
-                // any more damage on the enemy ship.
-                if (currentAction != Action.DYING && room.ship.hasAugment(AugmentBlueprint.RECONSTRUCTIVE_TELEPORT)) {
-                    health = maxHealth
-                }
+                onMidTeleport()
             } else {
                 // Step 2 - we're done
                 teleportingTo = null
@@ -707,6 +702,13 @@ abstract class AbstractCrew(
 
         teleportingTo = room
         teleportTimer = 0f
+    }
+
+    /**
+     * A hook function for subclasses, called just after the crew swaps
+     * between the two ships.
+     */
+    protected open fun onMidTeleport() {
     }
 
     enum class SlotType {
