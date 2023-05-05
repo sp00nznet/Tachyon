@@ -5,13 +5,12 @@ import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.f
-import xyz.znix.xftl.game.ButtonImageSet
-import xyz.znix.xftl.game.Buttons
-import xyz.znix.xftl.game.Difficulty
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.shipgen.EnemyShipSpec
@@ -48,6 +47,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("rich", 0, this::cmdRich, "Get a huge amount of scrap, fuel, drones, and missiles"),
         Cmd("weapon", 0, this::cmdWeapon, "Select a weapon, and add it to the ship's cargo area"),
         Cmd("drone", 0, this::cmdDrone, "Select a drone, and add it to the ship's cargo area"),
+        Cmd("aug", 0, this::cmdAugment, "Select an augment, and add it to the ship's cargo area"),
         Cmd("store", 0, this::cmdStore, "Create a store at this beacon"),
         Cmd("event", 0, this::cmdEvent, "Load an event at this beacon"),
         Cmd("fix", 0, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
@@ -247,6 +247,16 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                 lines.add("Added drone ${drone.translateTitle(game)} to ship inventory.")
             } else {
                 lines.add("No space in cargo hold, can't add drone.")
+            }
+        }
+    }
+
+    private fun cmdAugment(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        getAugment { augment ->
+            if (ship.addBlueprint(augment, false)) {
+                lines.add("Added augment ${augment.translateTitle(game)} to ship inventory.")
+            } else {
+                lines.add("No space in cargo hold, can't add augment.")
             }
         }
     }
@@ -656,6 +666,154 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
                 visibleDrones.clear()
                 visibleDrones.addAll(drones)
+            }
+        }
+    }
+
+    private fun getAugment(callback: (AugmentBlueprint) -> Unit) {
+        val augmentSize = ConstPoint(235, 40)
+        val margin = 5
+        val augmentFont = game.getFont("JustinFont12Bold")
+
+        val allAugments = game.blueprintManager.blueprints.values.mapNotNull { it as? AugmentBlueprint }
+
+        class AugmentButton(val aug: Blueprint) : Button(game, ConstPoint.ZERO, augmentSize) {
+            override fun click(button: Int) {
+                historyCursor = -1
+                input = aug.name
+                runCommand()
+            }
+
+            override fun draw(g: Graphics) {
+                // FIXME this is copied from ShipEquipmentPanel.
+
+                // Draw the empty box
+                g.color = Constants.AUGMENT_EMPTY_OUTLINE
+                g.fillRect(pos.x.f, pos.y.f, size.x.f, size.y.f)
+                g.color = Constants.AUGMENT_EMPTY_INSIDE
+                g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
+
+                // Draw the semi-transparent augment on top of it
+
+                // Draw the borders. Since the middle is semi-transparent, we can't
+                // just fill in the whole thing twice to get our border easily.
+                g.color = when {
+                    // dragPosition != null -> Constants.AUGMENT_BOX_OUTLINE
+                    hovered -> Constants.AUGMENT_BOX_OUTLINE_HOVER
+                    else -> Constants.AUGMENT_BOX_OUTLINE
+                }
+                // Left and right
+                g.fillRect(pos.x + 0f, pos.y + 0f, 3f, size.y.f)
+                g.fillRect(pos.x + size.x - 3f, pos.y + 0f, 3f, size.y.f)
+
+                // Top and bottom
+                g.fillRect(pos.x + 3f, pos.y + 0f, size.x - 6f, 3f)
+                g.fillRect(pos.x + 3f, pos.y + size.y - 3f, size.x - 6f, 3f)
+
+                // Fill in the background
+                g.color = Constants.AUGMENT_BOX_INSIDE
+                g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
+
+                // Draw the name
+                val name = aug.translateTitle(game)
+                augmentFont.drawStringCentred(pos.x.f, pos.y.f + 27f, size.x.f, name, Constants.AUGMENT_NAME_TEXT)
+            }
+        }
+
+        // FIXME this is partially copy-pasted from getWeapon
+        continued = object : ContinuedCommand() {
+            // A little caching for the search
+            var lastInput: String? = null
+            val visibleAugments = ArrayList<AugmentButton>()
+
+            override val prompt: String get() = "AUGMENT> "
+
+            var lastLeftClick = false
+
+            override fun run(line: String) {
+                val bp = game.blueprintManager.blueprints[line]
+                if (bp == null) {
+                    lines.add("No such blueprint '$line'")
+                    return
+                }
+                if (bp !is AugmentBlueprint) {
+                    lines.add("Blueprint '$line' is not an augment - ${bp.javaClass.name}")
+                    return
+                }
+                callback(bp)
+            }
+
+            override fun render(gc: GameContainer, g: Graphics, height: Float) {
+                updateSearch()
+
+                val mouseX = gc.input.mouseX
+                val mouseY = gc.input.mouseY
+
+                val leftDown = gc.input.isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)
+                val clicking = leftDown && !lastLeftClick
+                lastLeftClick = leftDown
+
+                var row = 0
+                var column = 0
+
+                val basePos = ConstPoint(10, height.toInt() + 10)
+                val effectiveSize = augmentSize + ConstPoint(margin, margin)
+
+                for (button in visibleAugments) {
+                    var x = basePos.x + effectiveSize.x * column
+                    var y = basePos.y + effectiveSize.y * row
+
+                    column++
+
+                    if (x + effectiveSize.x > gc.width) {
+                        x = basePos.x
+                        y += effectiveSize.y
+                        column = 0
+                        row++
+                    }
+
+                    if (y > gc.height) {
+                        break
+                    }
+
+                    button.windowOffset = ConstPoint(x, y)
+                    button.update(mouseX, mouseY)
+                    button.draw(g)
+
+                    if (clicking) {
+                        button.mouseDown(Input.MOUSE_LEFT_BUTTON, mouseX, mouseY)
+                    }
+                }
+            }
+
+            private fun updateSearch() {
+                val line = currentLine
+
+                if (lastInput == line)
+                    return
+                lastInput = line
+
+                visibleAugments.clear()
+
+                // If no search is entered, show all the augments alphabetically
+                if (line.isBlank()) {
+                    visibleAugments += allAugments.sortedBy { it.translateTitle(game) }.map { AugmentButton(it) }
+                    return
+                }
+
+                val searcher = FuzzySearcher(line)
+
+                val blueprints = allAugments.mapNotNull {
+                    val score = searcher.rank(it.translateTitle(game))
+
+                    return@mapNotNull if (score == 0) {
+                        null
+                    } else {
+                        Pair(it, score)
+                    }
+                }.sortedByDescending { it.second }.map { it.first }
+
+                visibleAugments.addAll(blueprints.map { AugmentButton(it) })
             }
         }
     }

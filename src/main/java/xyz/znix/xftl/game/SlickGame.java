@@ -183,6 +183,13 @@ public class SlickGame extends BasicGame {
         for (int i = 0; i < 3; i++) {
             boolean prev = mouseDownPrev[i];
             boolean now = in.isMouseButtonDown(i);
+
+            // Block mouse input while the debug console is open, to avoid
+            // accidentally clicking on something under the console.
+            if (debugConsoleVisible) {
+                now = false;
+            }
+
             if (now && !prev) {
                 if (i == Input.MOUSE_RIGHT_BUTTON) {
                     clickEvent = null;
@@ -239,8 +246,7 @@ public class SlickGame extends BasicGame {
         if (rp != null)
             hoveredRoom = rp.getRoom();
 
-        if (hoveredRoom != null && clickEvent != null
-                && container.getInput().isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)) {
+        if (hoveredRoom != null && clickEvent != null && mouseDownPrev[Input.MOUSE_LEFT_BUTTON]) {
             var prev = clickEvent;
             clickEvent = null;
             prev.roomClicked(hoveredRoom, container);
