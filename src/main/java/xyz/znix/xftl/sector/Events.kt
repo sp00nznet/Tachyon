@@ -329,6 +329,30 @@ class Event(
 
         return resourcesGained
     }
+
+    init {
+        // Check for and print out warnings for unknown elements
+        for (child in elem.children) {
+            if (child.name in KNOWN_TAGS)
+                continue
+
+            println("Warning: Unknown element '${child.name}' in event '$debugId'")
+        }
+    }
+
+    companion object {
+        private val KNOWN_TAGS = setOf(
+            "distressBeacon", "store", "item_modify",
+            "crewMember", "removeCrew", "boarders",
+            "autoReward", "weapon", "drone", "augment",
+            "ship", "img", "environment", "damage",
+            "upgrade", "modifyPursuit", "status",
+            "quest", "reveal_map",
+
+            // Used by the code loading the event
+            "text", "choice"
+        )
+    }
 }
 
 class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {
