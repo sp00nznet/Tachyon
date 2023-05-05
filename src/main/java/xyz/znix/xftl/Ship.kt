@@ -871,6 +871,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // Clear any previously-set scripted power limits, and re-apply
         // any that were previously set at this beacon.
         updateScriptedPowerLimits()
+
+        for (augment in augments) {
+            augment.onJump(this)
+        }
     }
 
     /**

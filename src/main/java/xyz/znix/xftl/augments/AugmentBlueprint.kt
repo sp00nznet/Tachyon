@@ -20,6 +20,8 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
 
     open fun update(ship: Ship, dt: Float) {}
 
+    open fun onJump(ship: Ship) {}
+
     companion object {
         const val LONG_RANGE_SCANNERS: String = "ADV_SCANNERS"
         const val RECONSTRUCTIVE_TELEPORT: String = "TELEPORT_HEAL"
@@ -51,5 +53,25 @@ class AugEngiMedbots(elem: Element) : AugmentBlueprint(elem) {
 
     companion object {
         const val NAME = "NANO_MEDBAY"
+    }
+}
+
+class AugPreigniter(elem: Element) : AugmentBlueprint(elem) {
+    override fun onJump(ship: Ship) {
+        super.onJump(ship)
+
+        for (hp in ship.hardpoints) {
+            val weapon = hp.weapon ?: continue
+
+            // We don't charge up unpowered weapons
+            if (!weapon.isPowered)
+                continue
+
+            weapon.timeCharged = weapon.type.chargeTime
+        }
+    }
+
+    companion object {
+        const val NAME: String = "WEAPON_PREIGNITE"
     }
 }
