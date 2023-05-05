@@ -5,6 +5,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import org.newdawn.slick.Input
 import xyz.znix.xftl.*
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -117,7 +118,7 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
         nextFleetPos.x += sector.getFleetAdvanceFor(game.currentBeacon)
 
         // Whether or not the ship is equipped with long-range scanners
-        val hasLRS = game.player.hasAugment("ADV_SCANNERS")
+        val hasLRS = game.player.hasAugment(AugmentBlueprint.LONG_RANGE_SCANNERS)
 
         // Draw the beacons
         for (beacon in sector.beacons) {

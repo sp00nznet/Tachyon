@@ -6,6 +6,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
@@ -238,6 +239,13 @@ abstract class AbstractCrew(
                 room.ship.updateCrewReservedSlots()
 
                 updateAnimation()
+
+                // Apply the reconstructive teleport effect now, since this
+                // is both the mid-point of our animation, and we can't take
+                // any more damage on the enemy ship.
+                if (currentAction != Action.DYING && room.ship.hasAugment(AugmentBlueprint.RECONSTRUCTIVE_TELEPORT)) {
+                    health = maxHealth
+                }
             } else {
                 // Step 2 - we're done
                 teleportingTo = null

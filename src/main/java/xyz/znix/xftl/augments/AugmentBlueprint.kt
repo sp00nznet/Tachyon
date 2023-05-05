@@ -19,6 +19,11 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
     val stackable: Boolean = elem.getChildTextTrim("stackable")!!.toBoolean()
 
     open fun update(ship: Ship, dt: Float) {}
+
+    companion object {
+        const val LONG_RANGE_SCANNERS: String = "ADV_SCANNERS"
+        const val RECONSTRUCTIVE_TELEPORT: String = "TELEPORT_HEAL"
+    }
 }
 
 class AugEngiMedbots(elem: Element) : AugmentBlueprint(elem) {

@@ -112,6 +112,8 @@ class BlueprintManager(df: Datafile) {
 
             // Augments that use the default AugmentBlueprint and are implemented
             // as part of another system should be explicitly handled here.
+            AugmentBlueprint.LONG_RANGE_SCANNERS -> AugmentBlueprint(elem)
+            AugmentBlueprint.RECONSTRUCTIVE_TELEPORT -> AugmentBlueprint(elem)
 
             else -> {
                 println("WARNING: Adding unknown augment '$name'")
