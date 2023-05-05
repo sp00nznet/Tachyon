@@ -21,7 +21,12 @@ class Medbay(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, 
         val healing = healthPerSec * dt
 
         for (crew in room!!.crew) {
+            // Don't heal drones
             if (crew !is LivingCrew)
+                continue
+
+            // Only heal friendly crew
+            if (crew.mode == AbstractCrew.SlotType.INTRUDER)
                 continue
 
             // Don't revive dying crewmembers
