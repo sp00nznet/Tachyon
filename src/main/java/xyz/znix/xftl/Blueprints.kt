@@ -114,6 +114,7 @@ class BlueprintManager(df: Datafile) {
             // as part of another system should be explicitly handled here.
             AugmentBlueprint.LONG_RANGE_SCANNERS -> AugmentBlueprint(elem)
             AugmentBlueprint.RECONSTRUCTIVE_TELEPORT -> AugmentBlueprint(elem)
+            AugmentBlueprint.OXYGEN_MASKS -> AugmentBlueprint(elem)
 
             else -> {
                 println("WARNING: Adding unknown augment '$name'")

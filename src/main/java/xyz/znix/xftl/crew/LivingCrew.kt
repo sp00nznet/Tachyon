@@ -25,6 +25,14 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
      */
     var ownerShip: Ship? = room.ship
 
+    override val suffocationMultiplier: Float
+        get() {
+            if (hasAugment(AugmentBlueprint.OXYGEN_MASKS)) {
+                return 0.5f
+            }
+            return 1f
+        }
+
     init {
         // TODO make this a bit cleaner
         selectedName = room.ship.sys.nameManager.getForGender(null, "en", Random.Default)

@@ -112,7 +112,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         override val canManSystem: Boolean get() = false
         override val canFight: Boolean get() = false
         override val hasDyingAnimation: Boolean get() = false
-        override val canSuffocate: Boolean get() = false
+        override val suffocationMultiplier: Float get() = 0f
         override val playerControllable: Boolean get() = false
 
         override fun update(dt: Float) {

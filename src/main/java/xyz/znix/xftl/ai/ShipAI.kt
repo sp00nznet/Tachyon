@@ -231,7 +231,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
             // - This room is the medbay, and it's being hacked
 
             val healthFraction = crew.health / crew.maxHealth
-            if (healthFraction < 0.25f && room.oxygen < 0.10f && crew.canSuffocate) {
+            if (healthFraction < 0.25f && room.oxygen < 0.10f && crew.suffocationMultiplier > 0f) {
                 return true
             }
 

@@ -44,7 +44,7 @@ abstract class AbstractCrew(
     open val canFight: Boolean get() = true
     open val attackDamageMult: Float get() = 1f
     open val hasDyingAnimation: Boolean get() = true
-    open val canSuffocate: Boolean get() = true
+    open val suffocationMultiplier: Float get() = 1f
     open val playerControllable: Boolean get() = true
 
     var pathingTarget: RoomPoint? = null
@@ -168,8 +168,8 @@ abstract class AbstractCrew(
     open fun update(dt: Float) {
         icon.update((dt * 1000).toLong())
 
-        if (room.oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL && canSuffocate) {
-            dealDamage(6.4f * dt)
+        if (room.oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL) {
+            dealDamage(6.4f * dt * suffocationMultiplier)
         }
 
         if (health == 0f) {
