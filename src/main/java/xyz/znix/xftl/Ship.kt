@@ -443,6 +443,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             }
         }
 
+        // If we don't have an oxygen system, the rooms start with no oxygen by default
+        if (oxygen == null) {
+            for (room in rooms) {
+                room.oxygen = 0f
+            }
+        }
+
         val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"])
 
         // The stage-2 and stage-3 boss layouts don't have an offsets tag, but everything else does
