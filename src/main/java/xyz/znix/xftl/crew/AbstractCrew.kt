@@ -209,11 +209,16 @@ abstract class AbstractCrew(
                 pathingTarget = null
                 targetDoor = null
 
+                // Before we swap modes, we have to remove ourselves
+                // from the current ship - otherwise when we swap modes, we may
+                // conflict with the other crew (both standing on the same cell)
+                // and thus force someone to move.
+                removeFromShip()
+
                 // Flip between being an intruder and a crewmember
                 mode = mode.other
 
                 // Move to the other ship
-                removeFromShip()
                 destination.ship.crew.add(this)
 
                 // Change the room over, preserving our current position if possible
