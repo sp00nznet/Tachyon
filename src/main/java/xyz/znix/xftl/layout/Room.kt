@@ -53,8 +53,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val isOxygenCritical: Boolean get() = oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL
 
     // Offset of this room from the ship's 0,0 screen position
-    val offsetX get() = ROOM_SIZE * (x + ship.offset.x) - ship.hullOffset.x
-    val offsetY get() = ROOM_SIZE * (y + ship.offset.y) - ship.hullOffset.y
+    val offsetX get() = ROOM_SIZE * (x + ship.offset.x)
+    val offsetY get() = ROOM_SIZE * (y + ship.offset.y)
 
     val position = ConstPoint(x, y)
 

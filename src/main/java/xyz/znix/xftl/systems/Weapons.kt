@@ -129,7 +129,7 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     }
 
     private fun translateHardpoint(g: Graphics, hp: Ship.Hardpoint) {
-        g.translate(hp.x.f, hp.y.f)
+        g.translate(hp.position.x.f, hp.position.y.f)
 
         // We are now in hardpoint-xy space - x and y are relative to the hardpoint's xy,
         // but rotation is independant

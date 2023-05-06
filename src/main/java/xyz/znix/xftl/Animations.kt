@@ -92,8 +92,8 @@ class Animations(df: Datafile) {
             val chargedFrame = xml.getChild("chargedFrame").textTrim.toInt()
             val fireFrame = xml.getChild("fireFrame").textTrim.toInt()
 
-            val mountPoint = parsePosElem(xml.getChild("mountPoint"))
-            val firePoint = parsePosElem(xml.getChild("firePoint"))
+            val mountPoint = Utils.parsePosElem(xml.getChild("mountPoint"))
+            val firePoint = Utils.parsePosElem(xml.getChild("firePoint"))
 
             val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage("img/$i") }
 
@@ -130,12 +130,6 @@ class Animations(df: Datafile) {
         val time = xml.getChild("time").textTrim.toFloat() / length
 
         return AnimationSpec(sheet, x, y, length, time)
-    }
-
-    private fun parsePosElem(elem: Element): ConstPoint {
-        val x = elem.getAttributeValue("x").toInt()
-        val y = elem.getAttributeValue("y").toInt()
-        return ConstPoint(x, y)
     }
 
     operator fun get(name: String): AnimationSpec {

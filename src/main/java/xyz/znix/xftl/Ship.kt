@@ -31,6 +31,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     val offset: ConstPoint
     val floorOffset: ConstPoint
+    val cloakOffset: ConstPoint
     val hullOffset: ConstPoint
 
     val imageName: String = shipNode.getAttributeValue("img")
@@ -292,12 +293,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         shieldOffset = ConstPoint(found_ellipse.x, found_ellipse.y)
         selectedShieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
 
-        val origin = Point(hullImage.width, hullImage.height)
-        origin.divide(2)
-        if (isPlayerShip)
-            origin += shieldOffset
-        shieldOrigin = origin.const
-
         for (node in shipNode.getChild("systemList").children) {
             if (node.name == "clonebay") {
                 // TODO support
@@ -450,36 +445,35 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             }
         }
 
-        val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"])
+        val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"]).rootElement
 
         // The stage-2 and stage-3 boss layouts don't have an offsets tag, but everything else does
-        val offsets = visualsXML.rootElement.getChildren("offsets")
-        check(offsets.size <= 1)
-        val floors = offsets.firstOrNull()?.getChildren("floor") ?: emptyList()
-        check(floors.size <= 1)
-        floorOffset = if (floors.size == 1) {
-            ConstPoint(floors[0].getAttributeValue("x").toInt(), floors[0].getAttributeValue("y").toInt())
-        } else {
-            ConstPoint.ZERO
-        }
+        val offsets = visualsXML.getChild("offsets")
+        floorOffset = offsets?.getChild("floor")?.let { Utils.parsePosElem(it) } ?: ConstPoint.ZERO
+        cloakOffset = offsets?.getChild("cloak")?.let { Utils.parsePosElem(it) } ?: ConstPoint.ZERO
 
-        val imgTag = visualsXML.rootElement.getChild("img")
-        hullOffset = ConstPoint(
-            imgTag.getAttributeValue("x").toInt() + ROOM_SIZE * offset.x,
-            imgTag.getAttributeValue("y").toInt() + ROOM_SIZE * offset.y
-        )
+        val imgTag = visualsXML.getChild("img")
+        hullOffset = Utils.parsePosElem(imgTag) + ConstPoint(ROOM_SIZE * offset.x, ROOM_SIZE * offset.y)
+
+        // We can only calculate the shield origin after we've got the hull offset
+        val origin = Point(hullImage.width, hullImage.height)
+        origin.divide(2)
+        origin += hullOffset
+        if (isPlayerShip)
+            origin += shieldOffset
+        shieldOrigin = origin.const
 
         // Load the hardpoints
         hardpoints = ArrayList()
 
-        for (node in visualsXML.rootElement.getChild("weaponMounts").children) {
+        for (node in visualsXML.getChild("weaponMounts").children) {
             // In rebel_long.xml the hardpoint direction is missing for some testing stuff.
             // Artillery (used in the boss and federation cruiser) has slide set to 'no'
             val dirName = node.getAttributeValue("slide")?.toUpperCase() ?: continue
+            val pos = Utils.parsePosElem(node) + hullOffset
             val dir = if (dirName == "NO") null else dirName.let(Direction::valueOf)
             val hardpoint = Hardpoint(
-                node.getAttributeValue("x").toInt(),
-                node.getAttributeValue("y").toInt(),
+                pos,
                 node.getAttributeValue("rotate")!!.toBoolean(),
                 node.getAttributeValue("mirror")!!.toBoolean(),
                 node.getAttributeValue("gib").toInt(),
@@ -489,7 +483,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
 
         gibs = ArrayList()
-        for (node in visualsXML.rootElement.getChild("explosion").children) {
+        for (node in visualsXML.getChild("explosion").children) {
             gibs += ShipGib(sys, this, node)
         }
 
@@ -533,38 +527,19 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         shieldImage.alpha = SHIELD_OPACITY_BASE + SHIELD_OPACITY_LEVEL * level
 
         // Draw the shield
-        when {
-            level == 0 -> {
-                // Do nothing, shields disabled
-            }
+        if (level == 0) {
+            // Do nothing, shields disabled
+        } else {
+            val basePosX = shieldOrigin.x - shieldHalfSize.x
+            val basePosY = shieldOrigin.y - shieldHalfSize.y
 
-            isPlayerShip -> {
-                // This is centerpointOfHull - centerpointOfShield + shieldPos
-                val shieldPos = Point(hullImage.width, hullImage.height)
-                shieldPos.sub(shieldImage.width, shieldImage.height)
-                shieldPos.divide(2)
-                shieldPos += shieldOffset
-                g.drawImage(shieldImage, shieldPos.x.f, shieldPos.y.f)
-            }
-
-            else -> {
-                // This is centerpointOfHull - centerpointOfShield + shieldPos
-                val shieldPos = Point(hullImage.width, hullImage.height)
-                shieldPos.divide(2)
-                shieldPos.sub(shieldHalfSize.x, shieldHalfSize.y)
-
-                // FIXME the pirate interceptor has a shield point of 0,-130 which clearly makes
-                // no sense. Are we just supposed to ignore this?
-                // shieldPos += shieldOffset
-
-                g.drawImage(
-                    shieldImage,
-                    shieldPos.x.f, shieldPos.y.f,
-                    shieldPos.x.f + shieldHalfSize.x * 2, shieldPos.y.f + shieldHalfSize.y * 2,
-                    0f, 0f,
-                    shieldImage.width.f, shieldImage.height.f
-                )
-            }
+            g.drawImage(
+                shieldImage,
+                basePosX.f, basePosY.f,
+                basePosX.f + shieldHalfSize.x * 2, basePosY.f + shieldHalfSize.y * 2,
+                0f, 0f,
+                shieldImage.width.f, shieldImage.height.f
+            )
         }
 
         for (system in systems)
@@ -578,7 +553,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 return
             }
             for (gib in gibs.asReversed()) {
-                gib.draw(g, ConstPoint.ZERO)
+                gib.draw(g, hullOffset)
             }
         } else {
             // Animate between cloaked and uncloaked
@@ -587,18 +562,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             val cloakFade = cloaking?.cloakFade ?: 0f
 
             val hullOpacity = 1f - cloakFade * 0.2f
-            g.drawImage(hullImage, 0f, 0f, Color(1f, 1f, 1f, hullOpacity))
+            g.drawImage(hullImage, hullOffset.x.f, hullOffset.y.f, Color(1f, 1f, 1f, hullOpacity))
 
             if (cloakFade != 0f) {
                 requireNotNull(cloakImage) { "Ship '$name' cloaked, but it doesn't have a cloak image!" }
 
-                // The cloak image isn't always the same size as the background image :(
-                // Thus we have to centre it or they won't line up.
-                val offset = Point(hullImage.imageSize)
-                offset -= cloakImage.imageSize
-                offset.divideFloor(2)
-
-                g.drawImage(cloakImage, offset.x.f, offset.y.f, Color(1f, 1f, 1f, cloakFade))
+                g.drawImage(
+                    cloakImage,
+                    hullOffset.x.f + cloakOffset.x.f, hullOffset.y.f + cloakOffset.y.f,
+                    Color(1f, 1f, 1f, cloakFade)
+                )
             }
 
             if (interiorVisible)
@@ -690,8 +663,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     private fun drawInterior(g: Graphics, selected: Room?) {
-        if (floorImage != null)
-            g.drawImage(floorImage, floorOffset.x.f, floorOffset.y.f)
+        if (floorImage != null) {
+            g.drawImage(floorImage, floorOffset.x.f + hullOffset.x.f, floorOffset.y.f + hullOffset.y.f)
+        }
 
         // Draw the rooms
         for (room in rooms) {
@@ -754,7 +728,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     fun screenPosToShipPos(point: Point) {
-        point.add(hullOffset.x, hullOffset.y)
         point.x = Math.floorDiv(point.x, ROOM_SIZE)
         point.y = Math.floorDiv(point.y, ROOM_SIZE)
         point.sub(offset.x, offset.y)
@@ -1128,8 +1101,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     data class Hardpoint(
-        val x: Int,
-        val y: Int,
+        val position: IPoint,
         val rotate: Boolean,
         val mirror: Boolean,
         val gib: Int,

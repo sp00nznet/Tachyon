@@ -25,7 +25,7 @@ import xyz.znix.xftl.systems.*;
 import java.util.*;
 
 public class SlickGame extends BasicGame {
-    private static ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(50, 150);
+    private static final ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(100, 150);
 
     private BlueprintManager blueprintManager;
     private EventManager eventManager;
@@ -35,8 +35,6 @@ public class SlickGame extends BasicGame {
     private Ship enemy;
     private ShipAI enemyAI;
     private final Datafile df;
-    private Image floorPlan;
-    private Image outside;
 
     private final Map<String, Image> images = new HashMap<>();
     private final Map<String, SILFontLoader> fonts = new HashMap<>();

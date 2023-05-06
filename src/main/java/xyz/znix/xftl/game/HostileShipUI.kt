@@ -29,6 +29,7 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
         // It's not quite the same as FTL, but works well enough for now
         mutableShipPos.x = boxX + (box.width - enemy.hullImage.width) / 2
         mutableShipPos.y = boxY + (box.height - enemy.hullImage.height) / 2
+        mutableShipPos -= enemy.hullOffset
 
         box.draw(boxX, boxY)
 

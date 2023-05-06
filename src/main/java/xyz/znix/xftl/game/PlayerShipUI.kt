@@ -167,7 +167,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         shipMousePos -= playerShipPosition
 
         val roomPoint = Point(shipMousePos)
-        roomPoint += ship.hullOffset
         roomPoint.divideFloor(ROOM_SIZE)
         roomPoint -= ship.offset
         for (room in ship.rooms) {

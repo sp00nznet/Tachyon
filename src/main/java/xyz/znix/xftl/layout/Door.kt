@@ -15,8 +15,8 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     val ship: Ship = left?.ship ?: right!!.ship
 
     // Offset of this room from the ship's 0,0 screen position
-    val offsetX get() = ROOM_SIZE * (position.x + ship.offset.x) - ship.hullOffset.x
-    val offsetY get() = ROOM_SIZE * (position.y + ship.offset.y) - ship.hullOffset.y
+    val offsetX get() = ROOM_SIZE * (position.x + ship.offset.x)
+    val offsetY get() = ROOM_SIZE * (position.y + ship.offset.y)
 
     val leftPos: RoomPoint? = if (left == null) null else RoomPoint(left, position - left.position + offsetFor(left))
     val rightPos: RoomPoint? =

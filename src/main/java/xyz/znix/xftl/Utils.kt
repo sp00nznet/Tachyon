@@ -185,6 +185,15 @@ object Utils {
         gc.start()
     }
 
+    /**
+     * Given an element with the attributes 'x' and 'y', return a ConstPoint matching them.
+     */
+    fun parsePosElem(elem: Element): ConstPoint {
+        val x = elem.getAttributeValue("x").toInt()
+        val y = elem.getAttributeValue("y").toInt()
+        return ConstPoint(x, y)
+    }
+
     enum class StencilMode {
         BLOCKING,
         MASKING,
