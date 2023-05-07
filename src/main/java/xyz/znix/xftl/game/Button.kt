@@ -399,6 +399,18 @@ object Buttons {
         // drones and weapons).
         var currentlyDraggedBlueprint: Blueprint? = null
 
+        override val disabled: Boolean
+            get() {
+                // Un-disable the button when a blueprint is being dragged.
+                // Otherwise, hovered will always be false and dropping won't work.
+                val bp = currentlyDraggedBlueprint
+                if (bp != null && compatible(bp)) {
+                    return false
+                }
+
+                return super.disabled
+            }
+
         override fun draw(g: Graphics) {
             val isCompatible: Boolean? = currentlyDraggedBlueprint?.let(compatible)
 
