@@ -110,6 +110,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
         val tasks = ArrayList<AITask>(manningTasks)
 
         for (sys in ship.systems) {
+            if (!sys.damaged)
+                continue
+
             val room = sys.room!!
             val task = repairTasks[room] ?: RepairTask(room).also { repairTasks[room] = it }
             tasks += task
