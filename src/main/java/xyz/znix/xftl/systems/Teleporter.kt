@@ -28,7 +28,7 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
                 return false
 
             // There must be at least one crew member standing in the room
-            return room!!.crew.any { it.movement == null && it.mode == AbstractCrew.SlotType.CREW && it is LivingCrew }
+            return room!!.crew.any { it.standingPosition != null && it.mode == AbstractCrew.SlotType.CREW && it is LivingCrew }
         }
 
     val isReceiveAvailable: Boolean

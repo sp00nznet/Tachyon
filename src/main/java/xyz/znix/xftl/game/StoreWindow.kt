@@ -8,7 +8,6 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.systems.MainSystem
 
 class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, private val close: () -> Unit) : Window() {
 

@@ -26,11 +26,12 @@ class Piloting(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint,
 
             // Find the pilot at the computer point, or the top-left if the computer point is not defined
             val pilot = room.crew.firstOrNull {
-                it.mode == AbstractCrew.SlotType.CREW && it.position == computerPoint && it.canManSystem
+                it.mode == AbstractCrew.SlotType.CREW && it.standingPosition?.posEq(computerPoint) == true && it.canManSystem
             }
 
-            // If a pilot is present (not just walking there), we get 100% of our original piloting
-            if (pilot != null && pilot.movement == null)
+            // If a pilot is present (not just walking there), we get 100% of our original piloting.
+            // We've filtered out anyone walking by checking standingPosition.
+            if (pilot != null)
                 return 1f
 
             // At this point, the system is not broken and we don't have a pilot. Use the evasion

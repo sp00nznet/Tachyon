@@ -6,21 +6,18 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Constants.*
-import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.f
-import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.random
 import xyz.znix.xftl.systems.Oxygen
-import kotlin.math.ceil
-import kotlin.math.max
+import kotlin.math.*
 import kotlin.random.Random
 
 abstract class AbstractCrew(
     val blueprint: CrewBlueprint,
     private val anims: Animations,
-    var room: Room,
+    initialRoom: Room,
     mode: SlotType
 ) {
     val codename: String get() = blueprint.name
@@ -28,11 +25,59 @@ abstract class AbstractCrew(
     var icon: Animation
     val backImg: SpriteSheet?
 
-    // The cell position in the current room
-    private var positionInternal = Point(0, 0)
-    val position: IPoint get() = positionInternal
+    // When you set the room, be sure to call positionChanged!
+    var room: Room = initialRoom
+        private set
 
-    val roomPosition: RoomPoint get() = RoomPoint(room, position)
+    // The position of the top-left corner of the 35x35 sprite relative
+    // to the ship's 0,0 screen position (NOT relative to the room).
+    // These are measured in pixels, NOT in units of 35x35 cells.
+    private var pixelSpaceX: Float = room.offsetX.f
+        set(value) {
+            field = value
+            positionChanged()
+        }
+    private var pixelSpaceY: Float = room.offsetY.f
+        set(value) {
+            field = value
+            positionChanged()
+        }
+    private val pixelPosition = Point(0, 0)
+    private val pixelPositionCentre = Point(0, 0)
+
+    /**
+     * If this crewmember is exactly aligned with a cell, this is non-null.
+     *
+     * Note that this being null does NOT mean the unit is not moving! It's
+     * very unlikely - the position would have to be an exact int value - but
+     * it's not impossible.
+     *
+     * You should usually use [standingPosition] instead, unless you have
+     * a good reason. This is because this might be non-null when we are
+     * attacking doors (or some future movement-like action), which this
+     * won't account for.
+     */
+    private var roomPosition: RoomPoint? = null
+
+    /**
+     * Get [roomPosition], but null if this unit is moving (when doors
+     * are implemented properly, this will also be null if the crewmember
+     * is attacking a door).
+     *
+     * This is also null if we've been set to move, but haven't since updated.
+     */
+    val standingPosition: RoomPoint?
+        get() {
+            if (currentAction == Action.MOVING || pathingTarget != null) {
+                return null
+            }
+            return roomPosition
+        }
+
+    init {
+        // Initialise pixelPosition, pixelPositionCentre, and roomPosition
+        positionChanged()
+    }
 
     @Suppress("LeakingThis")
     var health: Float = maxHealth
@@ -49,10 +94,9 @@ abstract class AbstractCrew(
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
-            val old = field
             field = value
-            if (old == null)
-                updateMovement()
+
+            updateMovement()
 
             // If we're leaving a room, reset it's reserved slots so we don't keep taking up space there
             // The way it works in FTL (and should here) is that as soon as a crewmember starts walking, their
@@ -66,40 +110,19 @@ abstract class AbstractCrew(
             room.ship.updateCrewReservedSlots()
         }
 
-    var movement: Direction? = null
+    var nextTargetPos: IPoint? = null
         set(value) {
             field = value
 
-            // If we're stopping but are targeting to walk through a door, this will be handled for us, as
-            // we're currently in an invalid position
-            if (value != null || targetDoor == null)
-                updateAnimation()
-
-            if (value == null)
-                return
-
-            val target = positionInternal.copy()
-            target += value
-
-            if (room.containsRelative(target))
-                return
-
-            require(!value.isDiagonal) { "Cannot move diagonally through a doorway" }
-
-            targetDoor = null
-            for (door in room.doors) {
-                // note can only walk horizontally through a vertical doorway and vice versa, since horizontal
-                // and vertical refer to the door's orientation on the player's screen, not the direction
-                // crew can travel through it
-                if (door.roomPos(room) posEq position && door.dirFor(room) == value) {
-                    targetDoor = door
-                    break
-                }
+            // In order to preserve the invariant that moving
+            // implies a non-null nextTargetPos, immediately switch
+            // to idle, even if we'll switch back next frame.
+            if (value == null && currentAction == Action.MOVING) {
+                currentAction = Action.IDLE
             }
 
-            requireNotNull(targetDoor) { "Cannot walk outside room" }
-
-            requireNotNull(targetDoor!!.other(room)) { "Cannot walk through airlock door" }
+            // The direction may have changed
+            updateAnimation()
         }
 
     var mode: SlotType = mode
@@ -110,9 +133,6 @@ abstract class AbstractCrew(
             room.ship.updateCrewReservedSlots()
         }
 
-    var movementProgress: Float = 0F
-        private set
-
     // If we're currently attacking someone, the time until our next
     // punch or shot is fired.
     private var attackTimer: Float? = null
@@ -121,16 +141,13 @@ abstract class AbstractCrew(
     private var isPunching: Boolean = false
     private var sharesHostileCell: Boolean = false
 
-    // The door we're walking through
-    private var targetDoor: Door? = null
-
     private var teleportingTo: Room? = null
     private var teleportTimer: Float = 0f
 
-    val screenX: Int get() = room.offsetX + ((position.x + movementOffsetX) * ROOM_SIZE).toInt()
+    val screenX: Int get() = pixelPosition.x
     val screenY: Int
         get() {
-            val base = room.offsetY + ((position.y + movementOffsetY) * ROOM_SIZE).toInt()
+            val base = pixelPosition.y
 
             if (!sharesHostileCell)
                 return base + 3
@@ -143,9 +160,6 @@ abstract class AbstractCrew(
                 SlotType.INTRUDER -> base + 10
             }
         }
-
-    val movementOffsetX: Float get() = movement?.x?.times(movementProgress) ?: 0f
-    val movementOffsetY: Float get() = movement?.y?.times(movementProgress) ?: 0f
 
     /**
      * The action this crewmember is currently performing.
@@ -205,10 +219,8 @@ abstract class AbstractCrew(
 
                 // Clear out any movement, as the pathfinding system
                 // is understandably unhappy about walking between ships.
-                movement = null
-                movementProgress = 0f
+                nextTargetPos = null
                 pathingTarget = null
-                targetDoor = null
 
                 // Before we swap modes, we have to remove ourselves
                 // from the current ship - otherwise when we swap modes, we may
@@ -222,18 +234,28 @@ abstract class AbstractCrew(
                 // Move to the other ship
                 destination.ship.crew.add(this)
 
-                // Change the room over, preserving our current position if possible
+                // Change the room over, preserving our current position if possible.
 
-                if (destination.containsRelative(position) && destination.isSlotFree(position, mode)) {
+                val roomPosition = standingPosition
+                if (roomPosition != null && destination.containsRelative(roomPosition)
+                    && destination.isSlotFree(roomPosition, mode)
+                ) {
                     // The corresponding position in this new room is free
+                    val newPosition = RoomPoint(destination, roomPosition)
+                    pixelSpaceX = newPosition.offsetX.f
+                    pixelSpaceY = newPosition.offsetY.f
                     room = destination
                 } else {
                     // If our preferred location is unavailable, pick another
                     // spot (potentially in a different room, if required).
                     val free = destination.ship.findSpaceForCrew(destination, mode)
-                    positionInternal.set(free)
+                    pixelSpaceX = free.offsetX.f
+                    pixelSpaceY = free.offsetY.f
                     room = free.room
                 }
+
+                // Update our position to account for the room change
+                positionChanged()
 
                 // Mark this slot as now in use
                 room.ship.updateCrewReservedSlots()
@@ -254,34 +276,65 @@ abstract class AbstractCrew(
                 return
         }
 
-        val pos = positionInternal
-        if (movement != null) {
+        val nextTargetPos = this.nextTargetPos // Avoid mutability errors
+        if (nextTargetPos != null) {
             currentAction = Action.MOVING
-            movementProgress += dt * 2
 
-            if (movementProgress > 1) {
-                movementProgress = 0f
-                pos += movement!!
-                movement = null
-                currentAction = Action.IDLE
+            val deltaX = nextTargetPos.x - pixelSpaceX
+            val deltaY = nextTargetPos.y - pixelSpaceY
 
-                // If we've walked through a doorway, switch over
-                if (targetDoor != null) {
-                    val newRoom = targetDoor!!.other(room)!!
+            val distance = sqrt(deltaX * deltaX + deltaY * deltaY)
+            if (distance > 0.001f) {
+                val directionX = deltaX / distance
+                val directionY = deltaY / distance
 
-                    // Move our position into the new room
-                    pos += room.position
-                    pos -= newRoom.position
+                // Move closer towards our position
+                val movement = min(distance, dt * BASE_MOVEMENT_SPEED)
+                pixelSpaceX += directionX * movement
+                pixelSpaceY += directionY * movement
+            }
 
-                    check(newRoom.containsRelative(pos))
+            // Check if we've now reached our destination. If we're
+            // very close, snap to the exact position.
+            val newDistance = sqrt((nextTargetPos.x - pixelSpaceX).pow(2) + (nextTargetPos.y - pixelSpaceY).pow(2))
+            if (newDistance < 0.01f) {
+                pixelSpaceX = nextTargetPos.x.f
+                pixelSpaceY = nextTargetPos.y.f
 
-                    room = newRoom
-                    targetDoor = null
-                }
+                this.nextTargetPos = null
+
+                // TODO get stuck on locked doors
 
                 // Calculate the next movement
                 updateMovement()
             }
+
+            // Check if we've switched room. Use our centre position, so
+            // we switch room when we appear half-way across.
+            @Suppress("FoldInitializerAndIfToElvis")
+            if (!room.containsShipSpace(pixelPositionCentre)) {
+                val newRoom = room.ship.rooms.firstOrNull { it.containsShipSpace(pixelPositionCentre) }
+
+                if (newRoom == null) {
+                    throw IllegalStateException("Crewmember '$this' on ship '${room.ship.name}' walked into roomless position $pixelPosition")
+                }
+
+                room = newRoom
+
+                // We should never be aligned to the grid while walking through
+                // a door so we shouldn't have a roomPosition set, but check for
+                // that just in case - if so, we need to update the room.
+                positionChanged()
+            }
+
+            return
+        }
+
+        // If we're not centred but not moving, start walking to align ourselves to a cell.
+        // This probably shouldn't happen, but check just in case.
+        val roomPosition = this.roomPosition
+        if (roomPosition == null) {
+            this.nextTargetPos = pixelPositionCentre.divideTruncate(ROOM_SIZE.f) * ROOM_SIZE
             return
         }
 
@@ -290,13 +343,13 @@ abstract class AbstractCrew(
         // includes dying enemies (so their death animation is visible),
         // while the combat code doesn't (to avoid attacking
         // an already-dying enemy).
-        sharesHostileCell = room.crew.any { it.mode != mode && it.movement == null && it.position == position }
+        sharesHostileCell = room.crew.any { it.mode != mode && it.standingPosition == roomPosition }
 
         // Check if any enemies are in the room
         val hostiles = room.crew.filter { it.mode != mode && it.currentAction != Action.DYING }
         if (hostiles.isNotEmpty() && canFight) {
             // Check if someone is standing in the same cell as us
-            val sameCell = hostiles.firstOrNull { it.movement == null && it.position == position }
+            val sameCell = hostiles.firstOrNull { it.standingPosition == roomPosition }
 
             isPunching = sameCell != null && canPunch
 
@@ -353,7 +406,7 @@ abstract class AbstractCrew(
 
         val computerPoint = room.computerPoint
         if (computerPoint != null && canManSystem && mode == SlotType.CREW) {
-            if (room.computerPoint == position) {
+            if (room.computerPoint == roomPosition) {
                 currentAction = Action.MANNING
                 return
             }
@@ -496,22 +549,44 @@ abstract class AbstractCrew(
     }
 
     /**
-     * Recalculate (via pathfinding) the player's current [movement] to get to
+     * Recalculate (via pathfinding) the player's current [nextTargetPos] to get to
      * their desired target.
      */
     private fun updateMovement() {
-        if (pathingTarget == roomPosition) {
+        val currentTarget = pathingTarget ?: return
+
+        // It's fine to compare floats, since we snap into position.
+        if (currentTarget.offsetX.f == pixelSpaceX && currentTarget.offsetY.f == pixelSpaceY) {
             pathingTarget = null
-            movement = null
+            return
         }
 
-        val immPt = pathingTarget ?: return
+        // If we're being told to walk somewhere within this room, go straight there.
+        if (currentTarget.room == room) {
+            nextTargetPos = ConstPoint(currentTarget.offsetX, currentTarget.offsetY)
+            return
+        }
+
+        // Rather than using roomPosition, recalculate it here from our centre.
+        // This is because we might have our movement changed when we're already moving.
+        val roomPos = findNearestRoomPos()
 
         val pf = room.ship.pathFinder
-        pf.path(immPt)
-        val current = pf.nodes.getValue(roomPosition)
-        val tgt = current.next!!
-        movement = Direction.fromPoint(tgt.pos.shipPoint - roomPosition.shipPoint)
+        pf.path(currentTarget)
+        val current = pf.nodes.getValue(roomPos)
+        val next = current.next!!.pos
+
+        // TODO handle the case where we start walking through a door, and
+        //  our target then changes.
+
+        // If we're being told to walk to another position in the same room,
+        // we can always do that regardless of if we're grid-aligned or not. But
+        // if we're walking through a door, we have to get lined up first.
+        if (next.room == room || roomPosition != null) {
+            nextTargetPos = ConstPoint(next.offsetX, next.offsetY)
+        } else {
+            nextTargetPos = ConstPoint(roomPos.offsetX, roomPos.offsetY)
+        }
     }
 
     private fun dirAsString(dir: Direction): String {
@@ -544,7 +619,11 @@ abstract class AbstractCrew(
             // Guard against movement being null, which could potentially
             // happen if the user cancels the movement while paused at the
             // perfect moment?
-            Action.MOVING -> anims["${codename}_walk_${dirAsString(movement ?: Direction.UP)}"].start()
+            Action.MOVING -> {
+                val deltaX = nextTargetPos!!.x - pixelSpaceX
+                val deltaY = nextTargetPos!!.y - pixelSpaceY
+                anims["${codename}_walk_${dirAsString(Direction.bestFit(deltaX, deltaY))}"].start()
+            }
 
             Action.MANNING -> anims["${codename}_type_${dirAsString(room.computerDirection!!)}"].start()
             Action.REPAIRING -> anims["${codename}_repair"].start()
@@ -556,14 +635,14 @@ abstract class AbstractCrew(
                     // bottom-left boarder faces right, and the bottom-right one
                     // faces left.
                     currentAction == Action.SABOTAGE -> when {
-                        room.width == 1 && position.y == 0 -> Direction.DOWN
-                        room.width == 1 && position.y == 1 -> Direction.UP
+                        room.width == 1 && roomPosition!!.y == 0 -> Direction.DOWN
+                        room.width == 1 && roomPosition!!.y == 1 -> Direction.UP
 
-                        room.height == 1 && position.x == 0 -> Direction.RIGHT
-                        room.height == 1 && position.x == 1 -> Direction.LEFT
+                        room.height == 1 && roomPosition!!.x == 0 -> Direction.RIGHT
+                        room.height == 1 && roomPosition!!.x == 1 -> Direction.LEFT
 
-                        position.y == 0 -> Direction.DOWN
-                        position.x == 0 -> Direction.RIGHT
+                        roomPosition!!.y == 0 -> Direction.DOWN
+                        roomPosition!!.x == 0 -> Direction.RIGHT
                         else -> Direction.UP
                     }
 
@@ -576,7 +655,7 @@ abstract class AbstractCrew(
                     enemyToAttack == null -> Direction.UP
 
                     // Otherwise we're standing in the open, shooting at someone.
-                    else -> Direction.fromPoint(enemyToAttack!!.position - position) ?: Direction.UP
+                    else -> Direction.bestFit(pixelPosition, enemyToAttack!!.pixelPosition)
                 }
 
                 val icon = when (isPunching) {
@@ -628,8 +707,15 @@ abstract class AbstractCrew(
             if (setTargetRoom(value, value.computerPoint!!))
                 return true
 
-        if (value == room)
-            return true
+        // If we're being told to go to our current room, see if our
+        // current position is still valid. This might not be the case
+        // if this was called by updateCrewReservedSlots.
+        val currentPos = standingPosition
+        if (value == room && currentPos != null) {
+            if (setTargetRoom(room, currentPos)) {
+                return true
+            }
+        }
 
         val freeSlot = value.firstFreeSlot(mode)
         if (freeSlot != null) {
@@ -643,9 +729,9 @@ abstract class AbstractCrew(
 
     private fun setTargetRoom(value: Room, pos: IPoint): Boolean {
         // If we're already going to, or are at, this point then do nothing.
-        if (pathingTarget?.room == value && pathingTarget!! == pos)
+        if (pathingTarget?.room == value && pathingTarget!! posEq pos)
             return true
-        if (pathingTarget == null && room == value && position == pos)
+        if (room == value && standingPosition?.posEq(pos) == true)
             return true
 
         // If this slot isn't empty, we should skip it.
@@ -658,7 +744,7 @@ abstract class AbstractCrew(
         // Verify we have a path to this room
         val pf = room.ship.pathFinder
         pf.path(RoomPoint(value, ConstPoint.ZERO))
-        val pNode = pf.nodes.getValue(roomPosition)
+        val pNode = pf.nodes.getValue(findNearestRoomPos())
         if (pNode.next == null && value != room)
             return false
 
@@ -672,10 +758,18 @@ abstract class AbstractCrew(
      * Set the room and position to the given values.
      *
      * This ensures movement is updated appropriately and only once.
+     *
+     * [newPoint] is given in units of cells, not pixels.
      */
     fun jumpTo(newRoom: Room, newPoint: IPoint) {
         room = newRoom
-        positionInternal.set(newPoint)
+        pixelSpaceX = newRoom.offsetX.f + newPoint.x * ROOM_SIZE
+        pixelSpaceY = newRoom.offsetY.f + newPoint.y * ROOM_SIZE
+
+        // This has already been done when we updated the pixel positions,
+        // but make it explicit since we changed rooms.
+        positionChanged()
+
         updateMovement()
         updateAnimation()
 
@@ -711,6 +805,47 @@ abstract class AbstractCrew(
     protected open fun onMidTeleport() {
     }
 
+    /**
+     * Find the RoomPos that best fits our current pixel position.
+     *
+     * This is distinct from [roomPosition], which is null unless
+     * we're exactly pixel-aligned.
+     */
+    fun findNearestRoomPos(): RoomPoint {
+        return RoomPoint(
+            room,
+            (pixelPositionCentre.x - room.offsetX) / ROOM_SIZE,
+            (pixelPositionCentre.y - room.offsetY) / ROOM_SIZE
+        )
+    }
+
+    private fun positionChanged() {
+        pixelPosition.set(pixelSpaceX.toInt(), pixelSpaceY.toInt())
+        pixelPositionCentre.x = pixelPosition.x + ROOM_SIZE / 2
+        pixelPositionCentre.y = pixelPosition.y + ROOM_SIZE / 2
+
+        // Check we're pixel-aligned. Being exact about floats is fine
+        // since we snap into position anyway.
+        if (pixelSpaceX.toInt().toFloat() != pixelSpaceX || pixelSpaceY.toInt().toFloat() != pixelSpaceY) {
+            roomPosition = null
+            return
+        }
+
+        // Calculate our cell-aligned position, if we are cell-aligned.
+        val roomPosX = pixelPosition.x - room.offsetX
+        val roomPosY = pixelPosition.y - room.offsetY
+        if (roomPosX % ROOM_SIZE == 0 && roomPosY % ROOM_SIZE == 0) {
+            val cellX = roomPosX / ROOM_SIZE
+            val cellY = roomPosY / ROOM_SIZE
+
+            // Only update the position if it has changed
+            val currentPos = roomPosition
+            if (currentPos == null || currentPos.x != cellX || currentPos.y != cellY || currentPos.room != room) {
+                roomPosition = RoomPoint(room, cellX, cellY)
+            }
+        }
+    }
+
     enum class SlotType {
         CREW,
         INTRUDER;
@@ -736,5 +871,10 @@ abstract class AbstractCrew(
     companion object {
         const val TELEPORT_ANIMATION_TIME: Float = 0.5f
         const val TELEPORT_IMAGE_STRETCH: Float = 0.1f
+
+        // See https://mikehopley.github.io/ftl-crew-speed/
+        // This is in pixels per second, taken from the fastest
+        // speed, converted to pixels and rounded from 79.8 to 80.
+        const val BASE_MOVEMENT_SPEED: Float = 80f
     }
 }

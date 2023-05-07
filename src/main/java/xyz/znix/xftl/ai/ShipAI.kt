@@ -268,7 +268,7 @@ class RepairTask(val room: Room) : AITask() {
 
     override fun update() {
         val crew = assignee ?: return
-        if (crew.pathingTarget?.room == room) return
+        if (crew.pathingTarget?.room == room || crew.room == room) return
         crew.setTargetRoom(room)
     }
 }
@@ -296,7 +296,7 @@ class ManningTask(val room: Room) : AITask() {
 
     override fun update() {
         val crew = assignee ?: return
-        if (crew.pathingTarget?.room == room) return
+        if (crew.pathingTarget?.room == room || crew.room == room) return
         crew.setTargetRoom(room)
     }
 
@@ -319,7 +319,7 @@ class CombatTask(val enemy: AbstractCrew) : AITask() {
 
     override fun update() {
         val crew = assignee ?: return
-        if (crew.pathingTarget?.room == enemy.room) return
+        if (crew.pathingTarget?.room == enemy.room || crew.room == enemy.room) return
         crew.setTargetRoom(enemy.room)
     }
 

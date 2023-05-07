@@ -150,7 +150,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             val slot = slotToPoint(i)
 
             // If the crewmember is in their assigned position, don't draw the box
-            if (crew.position == slot && crew.room == this)
+            if (crew.standingPosition?.posEq(slot) == true && crew.room == this)
                 return@draw
 
             val point = Point(slot)
@@ -222,6 +222,19 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         return true
     }
 
+    /**
+     * Check if a point (relative to the ship's origin) is inside this room.
+     *
+     * Unlike [containsAbsolute], this works in pixels rather than cells.
+     */
+    fun containsShipSpace(target: IPoint): Boolean {
+        if (target.x !in offsetX until offsetX + width * ROOM_SIZE)
+            return false
+
+        return target.y in offsetY until offsetY + height * ROOM_SIZE
+    }
+
+
     fun slotToPoint(slot: Int): IPoint {
         if (slot >= width * height)
             throw ArrayIndexOutOfBoundsException("Invalid slot $slot for $width*$height room - range is 0 to ${width * height}")
@@ -275,19 +288,24 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val slots = slotsFor(type)
 
         // Crew standing in one of the slots
-        if (crew.room == this && crew.movement == null) {
-            val slot = pointToSlot(crew.position)
+        val crewPos = crew.standingPosition
+        if (crewPos != null && crewPos.room == this) {
+            val slot = pointToSlot(crewPos)
 
             if (slots[slot] == null) {
                 slots[slot] = crew
             } else {
                 conflicts.add(crew)
             }
+
+            // This shouldn't be required, as standingPosition should
+            // be null if pathingTarget isn't, but leave it here just in case.
+            return
         }
 
         // Crew walking towards one of the slots
         val target = crew.pathingTarget
-        if (crew.movement != null && target != null && target.room == this) {
+        if (target != null && target.room == this) {
             val slot = pointToSlot(target)
 
             if (slots[slot] == null) {

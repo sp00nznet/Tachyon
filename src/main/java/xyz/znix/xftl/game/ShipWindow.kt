@@ -7,7 +7,6 @@ import org.newdawn.slick.Input
 import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SubSystem
 import xyz.znix.xftl.systems.SystemBlueprint
 

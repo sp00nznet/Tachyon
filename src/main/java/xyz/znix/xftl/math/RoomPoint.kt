@@ -1,5 +1,6 @@
 package xyz.znix.xftl.math
 
+import xyz.znix.xftl.Constants
 import xyz.znix.xftl.layout.Room
 
 class RoomPoint(val room: Room, override val x: Int, override val y: Int) : IPoint {
@@ -16,6 +17,9 @@ class RoomPoint(val room: Room, override val x: Int, override val y: Int) : IPoi
             shipPointCache = cache
             return cache
         }
+
+    val offsetX: Int get() = room.offsetX + x * Constants.ROOM_SIZE
+    val offsetY: Int get() = room.offsetY + y * Constants.ROOM_SIZE
 
     private var shipPointCache: ConstPoint? = null
 
