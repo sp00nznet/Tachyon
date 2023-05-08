@@ -3,7 +3,7 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
 
-class UknShipWeaponBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
+class UknWeaponBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     init {
         val type = xml.getChildTextTrim("type")
         println("Unsupported ship weapon blueprint name '$name' of type '$type'")

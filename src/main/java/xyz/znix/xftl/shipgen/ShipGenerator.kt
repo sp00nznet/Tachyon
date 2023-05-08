@@ -7,10 +7,10 @@ import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.sector.EventManager
 import xyz.znix.xftl.sector.IEvent
 import xyz.znix.xftl.systems.*
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.LaserBlueprint
 import xyz.znix.xftl.weapons.MissileBlueprint
-import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.min
@@ -197,7 +197,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         // Select the scripted weapons/drones
         // Note there's no scripted drones in vanilla, but implement it
         // since mods likely use it.
-        val weaponOverrides = spec.weaponOverride?.select(rand)?.map { it as ShipWeaponBlueprint }
+        val weaponOverrides = spec.weaponOverride?.select(rand)?.map { it as AbstractWeaponBlueprint }
         val droneOverrides = spec.droneOverride?.select(rand)?.map { it as DroneBlueprint }
 
         @Suppress("DuplicatedCode")
@@ -445,17 +445,17 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         }
     }
 
-    private fun parseWeaponsList(shipElem: Element): List<ShipWeaponBlueprint> {
-        val weaponBlueprints = ArrayList<ShipWeaponBlueprint>()
+    private fun parseWeaponsList(shipElem: Element): List<AbstractWeaponBlueprint> {
+        val weaponBlueprints = ArrayList<AbstractWeaponBlueprint>()
         val weaponList = shipElem.getChild("weaponList") ?: return emptyList()
 
         weaponList.getAttributeValue("load")?.let { listName ->
-            weaponBlueprints += bp[listName].list().map { it as ShipWeaponBlueprint }
+            weaponBlueprints += bp[listName].list().map { it as AbstractWeaponBlueprint }
         }
 
         for (node in weaponList.children) {
             val name = node.getAttributeValue("name")
-            weaponBlueprints += bp[name] as ShipWeaponBlueprint
+            weaponBlueprints += bp[name] as AbstractWeaponBlueprint
         }
 
         return weaponBlueprints
@@ -477,7 +477,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         return droneBlueprints
     }
 
-    private fun getWeaponFlags(weapon: ShipWeaponBlueprint): Pair<Boolean, Boolean> {
+    private fun getWeaponFlags(weapon: AbstractWeaponBlueprint): Pair<Boolean, Boolean> {
         val doesHullDamage = weapon.damage != 0
         val isLaserStyle = when (weapon) {
             is LaserBlueprint -> true

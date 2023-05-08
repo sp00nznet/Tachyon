@@ -6,7 +6,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.Weapons
 
-abstract class AbstractProjectileWeaponInstance(type: ShipWeaponBlueprint, ship: Ship) :
+abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
     val isFiring: Boolean get() = !(firingAnimation?.isStopped ?: true)
 

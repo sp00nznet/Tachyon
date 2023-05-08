@@ -5,8 +5,8 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
-import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 
 abstract class Button(protected val game: SlickGame, pos: IPoint, size: IPoint) {
     val basePos = pos.const
@@ -324,7 +324,7 @@ object Buttons {
                     )
                 }
 
-                is ShipWeaponBlueprint -> {
+                is AbstractWeaponBlueprint -> {
                     // Draw the weapon name
                     val name = blueprint.translateShort(game)
                     val nameWindowWidth = 96
@@ -443,7 +443,7 @@ object Buttons {
 
             // Draw only the item itself being dragged, without the whole card.
             when (val blueprint = blueprint) {
-                is ShipWeaponBlueprint -> {
+                is AbstractWeaponBlueprint -> {
                     val icon = blueprint.getLauncher(game).chargedImage
 
                     // The sprite is rotated 90°, so swap the width and height.

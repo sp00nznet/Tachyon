@@ -9,8 +9,8 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.Drones
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
-import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.min
 
 /**
@@ -122,7 +122,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
             lateinit var button: Buttons.DragDropBlueprintButton
             button = Buttons.DragDropBlueprintButton(
                 buttonPos, game, images,
-                { it is ShipWeaponBlueprint },
+                { it is AbstractWeaponBlueprint },
                 weapon?.type
             ) {
                 draggingBlueprint = button
@@ -253,7 +253,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
                             return base
 
                         return when (this.blueprint) {
-                            is ShipWeaponBlueprint -> weapons
+                            is AbstractWeaponBlueprint -> weapons
                             is DroneBlueprint -> drones
                             else -> base
                         }
@@ -387,7 +387,7 @@ class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
 
                 return SlotAccess(
                     { ship.hardpoints[i].weapon?.type },
-                    { ship.hardpoints[i].weapon = (it as? ShipWeaponBlueprint)?.buildInstance(ship) }
+                    { ship.hardpoints[i].weapon = (it as? AbstractWeaponBlueprint)?.buildInstance(ship) }
                 )
             }
 

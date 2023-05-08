@@ -2,7 +2,7 @@ package xyz.znix.xftl.game
 
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.systems.SystemBlueprint
-import xyz.znix.xftl.weapons.ShipWeaponBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import java.util.*
 
 /**
@@ -21,7 +21,7 @@ class StoreData(game: SlickGame) {
     /**
      * If this store has a weapons section, this contains the weapons, or null if they're sold out.
      */
-    val weapons: MutableList<ShipWeaponBlueprint?>
+    val weapons: MutableList<AbstractWeaponBlueprint?>
 
     /**
      * If this store has an augments section, this contains the augments, or null if they're sold out.
@@ -40,7 +40,7 @@ class StoreData(game: SlickGame) {
         systems = ArrayList(systemNames.map { game.blueprintManager[it] as SystemBlueprint })
 
         val weaponNames = listOf("BEAM_1", "BEAM_2", "BOMB_BREACH_2")
-        weapons = ArrayList(weaponNames.map { game.blueprintManager[it] as ShipWeaponBlueprint })
+        weapons = ArrayList(weaponNames.map { game.blueprintManager[it] as AbstractWeaponBlueprint })
 
         val augmentNames = listOf("ADV_SCANNERS", "NANO_MEDBAY", "ROCK_ARMOR")
         augments = ArrayList(augmentNames.map { game.blueprintManager[it] as AugmentBlueprint })

@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
@@ -17,8 +18,13 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val sysDamage = xml.getChildTextTrim("sysDamage")?.toInt() ?: damage
     val ionDamage = xml.getChildTextTrim("ion")?.toInt() ?: 0
     val shieldPiercing: Int = xml.getChildTextTrim("sp")?.toInt() ?: 0
+    val missilesUsed: Int = xml.getChildTextTrim("missiles")?.toInt() ?: 0
 
-    val power = xml.getChildTextTrim("power").toInt()
+    // Power, charge time and cost are null for drone blueprints.
+    // Use some semi-sane defaults to avoid having to check everywhere.
+    val power = xml.getChildTextTrim("power")?.toInt() ?: 1
+    val chargeTime: Float = xml.getChildTextTrim("cooldown")?.toFloat() ?: 5f
+    override val cost: Int = xml.getChildTextTrim("cost")?.toInt() ?: 0
 
     val launchSounds = xml.getChild("launchSounds")?.let { SoundList(it) }
     val hitShipSounds = xml.getChild("hitShipSounds")?.let { SoundList(it) }
@@ -64,6 +70,8 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
         hitShieldSounds?.load(game)
         missSounds?.load(game)
     }
+
+    abstract fun buildInstance(ship: Ship): AbstractWeaponInstance
 
     class SoundList(elem: Element) {
         private val names: List<String> = elem.getChildren("sound").map { it.textTrim }

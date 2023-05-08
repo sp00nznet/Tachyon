@@ -18,7 +18,7 @@ import kotlin.math.*
 import kotlin.random.Random
 import kotlin.random.nextInt
 
-class BeamBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
+class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     val length: Int = xml.getChildTextTrim("length").toInt()
 
     // See the note on SPEED_MULTIPLIER.

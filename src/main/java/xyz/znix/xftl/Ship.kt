@@ -489,7 +489,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         for ((nextHardpoint, node) in shipNode.getChild("weaponList").children.withIndex()) {
             val name = node.getAttributeValue("name")
-            val weapon = sys.blueprintManager[name] as ShipWeaponBlueprint
+            val weapon = sys.blueprintManager[name] as AbstractWeaponBlueprint
 
             hardpoints[nextHardpoint].weapon = weapon.buildInstance(this)
         }
@@ -1010,7 +1010,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             return false
         }
 
-        if (item is ShipWeaponBlueprint) {
+        if (item is AbstractWeaponBlueprint) {
             val weaponSlotCount = weaponSlots ?: hardpoints.size
 
             for (slot in 0 until weaponSlotCount) {

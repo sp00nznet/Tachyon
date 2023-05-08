@@ -14,8 +14,8 @@ import xyz.znix.xftl.sector.Choice
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.sector.EventStatus
 import xyz.znix.xftl.sector.EventSystemUpgrade
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
-import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import kotlin.math.max
 import kotlin.math.min
 
@@ -284,7 +284,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
         for (bp in resourceSet.items) {
             val bpWidth: Int = when (bp) {
-                is ShipWeaponBlueprint -> {
+                is AbstractWeaponBlueprint -> {
                     val nameWidth = resourceNumFont.getWidth(game.translator[bp.title!!])
                     val img = bp.getLauncher(game).chargedImage
                     height += img.width + 9
@@ -476,7 +476,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
 
     private fun drawRewardBlueprint(bp: Blueprint, boxX: Int, textY: Int, textColour: Color): Int {
         when (bp) {
-            is ShipWeaponBlueprint -> {
+            is AbstractWeaponBlueprint -> {
                 val anim = bp.getLauncher(game)
 
                 bp.drawLauncherUI(game, boxX + 10f, textY + 2f)

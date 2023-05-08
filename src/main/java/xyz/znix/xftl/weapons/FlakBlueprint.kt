@@ -16,7 +16,7 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 
 // Implementation for flak-style weapons, including the swarm missiles.
-class FlakBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
+class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_missile1"
     val radius: Int = xml.getChildTextTrim("radius").toInt()
 

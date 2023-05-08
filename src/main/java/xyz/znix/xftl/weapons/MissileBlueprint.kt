@@ -6,7 +6,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 
-class MissileBlueprint(xml: Element) : ShipWeaponBlueprint(xml) {
+class MissileBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_random"
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {

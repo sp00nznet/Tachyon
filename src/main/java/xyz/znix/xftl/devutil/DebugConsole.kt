@@ -15,8 +15,8 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.shipgen.ShipGenerator
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
-import xyz.znix.xftl.weapons.ShipWeaponBlueprint
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.random.Random
@@ -483,7 +483,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         lines.add("Downgraded all systems to their starting level")
     }
 
-    private fun getWeapon(callback: (ShipWeaponBlueprint) -> Unit) {
+    private fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {
         continued = object : ContinuedCommand() {
             // A little caching for the search
             var lastInput: String? = null
@@ -499,7 +499,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     lines.add("No such blueprint '$line'")
                     return
                 }
-                if (weapon !is ShipWeaponBlueprint) {
+                if (weapon !is AbstractWeaponBlueprint) {
                     lines.add("Blueprint '$line' is not a weapon - ${weapon.javaClass.name}")
                     return
                 }
@@ -566,7 +566,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
                 val weapons: List<DummyButton> = names.mapNotNull {
                     val bp = game.blueprintManager.blueprints[it]
-                    val weapon = bp as? ShipWeaponBlueprint ?: return@mapNotNull null
+                    val weapon = bp as? AbstractWeaponBlueprint ?: return@mapNotNull null
                     return@mapNotNull DummyButton(weapon)
                 }
 

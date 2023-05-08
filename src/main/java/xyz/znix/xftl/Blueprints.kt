@@ -89,17 +89,13 @@ class BlueprintManager(df: Datafile) {
     private fun buildWeaponBlueprint(elem: Element): IBlueprint? {
         val type = elem.getChildTextTrim("type")
 
-        // Anything without a cooldown is a drone weapon, skip it
-        if (elem.getChild("cooldown") == null)
-            return null
-
         return when (type) {
             "LASER" -> LaserBlueprint(elem)
             "MISSILES" -> MissileBlueprint(elem)
             "BEAM" -> BeamBlueprint(elem)
             "BOMB" -> BombBlueprint(elem)
             "BURST" -> FlakBlueprint(elem)
-            else -> UknShipWeaponBlueprint(elem)
+            else -> UknWeaponBlueprint(elem)
         }
     }
 

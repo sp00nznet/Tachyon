@@ -6,7 +6,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.Weapons
 import kotlin.math.max
 
-abstract class AbstractWeaponInstance(val type: ShipWeaponBlueprint, val ship: Ship) {
+abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val ship: Ship) {
     // The time spent charging thus far
     var timeCharged: Float = 0f
 
