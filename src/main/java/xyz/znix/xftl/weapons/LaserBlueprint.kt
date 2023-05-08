@@ -17,7 +17,7 @@ class LaserBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun buildProjectile(target: Room): AbstractProjectile = LaserProjectile(target)
     }
 
-    inner class LaserProjectile(room: Room) : AbstractProjectile(this, room, 1f) {
+    inner class LaserProjectile(room: Room) : AbstractWeaponProjectile(this, room, 1f) {
         override fun render(g: Graphics, x: Float, y: Float, rotation: Float) {
             val img = target.ship.sys.animations[projectile!!]
             val spr = img.spriteAt(0)

@@ -1,7 +1,6 @@
 package xyz.znix.xftl.drones
 
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.draw
@@ -9,11 +8,8 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.DroneBlueprint
-import xyz.znix.xftl.weapons.IProjectile
-import kotlin.math.cos
-import kotlin.math.sin
 
 class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     // TODO support the Ion Intruder drone, which I can't find anything other
@@ -113,7 +109,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
         // Start in the centre of the shields, for lack of a better place.
         val startingPoint = ownerShip.shieldOrigin
-        val dist = proj.initialDistance - proj.distance
+        val dist = 1000f - proj.distance
 
         var x = startingPoint.x.f
         var y = startingPoint.y.f
@@ -140,20 +136,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
      * The projectile that represents the drone flying through space towards
      * the target ship.
      */
-    inner class FlyingDrone(val target: Room) : IProjectile {
-        // The angle we are approaching the target at, in radians
-        var angle: Float = (Math.random() * Math.PI * 2).toFloat()
-
-        // The angle the projectile is heading in, in radians
-        // Copied from AbstractProjectile
-        override val projectileAngle: Float
-            get() {
-                val shift = angle - Math.PI
-                return (if (shift < 0) shift + Math.PI * 2 else shift).toFloat()
-            }
-
-        override val position = Point(0, 0)
-
+    inner class FlyingDrone(target: Room) : AbstractProjectile(target, 4f) {
         // The portrait frame of the robot, which is shown on top
         // of the thruster sprite
         val portrait = ship.sys.animations["battle_portrait"].spriteAt(0)
@@ -164,28 +147,19 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
             return false
         }
 
-        override fun update(dt: Float) {
-            // Copied from AbstractProjectile.calculatePositionFor
-            val offX = cos(angle.toDouble()) * distance
-            val offY = sin(angle.toDouble()) * distance
-            position.x = offX.toInt() + target.offsetX + target.width * ROOM_SIZE / 2
-            position.y = offY.toInt() + target.offsetY + target.height * ROOM_SIZE / 2
+        override fun reachedTarget() {
+            // We've hit our target room.
 
-            timeInFlight += dt
+            destroyFlying()
 
-            // Have we hit our destination room?
-            if (timeInFlight >= travelTime) {
-                destroyFlying()
+            // Spawn the drone pawn in the target room
+            spawn(target)
 
-                // Spawn the drone pawn in the target room
-                spawn(target)
-
-                // If the drone ended up in a different room due to
-                // the target being full, move it back but leave it
-                // pathing to somewhere else.
-                if (pawn!!.room != target) {
-                    pawn!!.jumpTo(target, ConstPoint.ZERO)
-                }
+            // If the drone ended up in a different room due to
+            // the target being full, move it back but leave it
+            // pathing to somewhere else.
+            if (pawn!!.room != target) {
+                pawn!!.jumpTo(target, ConstPoint.ZERO)
             }
         }
 
@@ -211,14 +185,6 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
             g.popTransform()
         }
-
-        val travelTime = 4f
-
-        // Mostly copied from AbstractProjectile
-        val ship: Ship get() = target.ship
-        var timeInFlight: Float = 0f
-        val initialDistance: Float get() = 1000f
-        val distance: Float get() = initialDistance * (1 - timeInFlight / travelTime)
     }
 
     private inner class BoardingPawn(room: Room) : AbstractIndoorsDrone.Pawn(room) {

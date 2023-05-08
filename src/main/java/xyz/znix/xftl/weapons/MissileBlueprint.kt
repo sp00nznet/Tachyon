@@ -17,7 +17,7 @@ class MissileBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun buildProjectile(target: Room): AbstractProjectile = MissileProjectile(target)
     }
 
-    inner class MissileProjectile(room: Room) : AbstractProjectile(this, room, 2f) {
+    inner class MissileProjectile(room: Room) : AbstractWeaponProjectile(this, room, 2f) {
         override fun render(g: Graphics, x: Float, y: Float, rotation: Float) {
             val img = target.ship.sys.animations[projectile!!]
             val spr = img.spriteAt(0)

@@ -60,7 +60,9 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
     }
 
-    private inner class FlakProjectile(room: Room, val spec: ProjectileSpec) : AbstractProjectile(this, room, 3f) {
+    private inner class FlakProjectile(room: Room, val spec: ProjectileSpec) :
+        AbstractWeaponProjectile(this, room, 3f) {
+
         private val animation = room.ship.sys.animations[spec.animation].start()
 
         private val destinationOffset: IPoint

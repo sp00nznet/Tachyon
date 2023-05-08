@@ -9,10 +9,7 @@ import xyz.znix.xftl.math.Point
 import kotlin.math.cos
 import kotlin.math.sin
 
-abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target: Room, val travelTime: Float) :
-    IProjectile {
-
-    private val defaultMissSound = target.ship.sys.sounds.getSample("miss")
+abstract class AbstractProjectile(val target: Room, val travelTime: Float) : IProjectile {
 
     // The angle we are approaching the target at, in radians
     var angle: Float = (Math.random() * Math.PI * 2).toFloat()
@@ -30,9 +27,8 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
     val distance: Float get() = 1000f * (1 - timeInFlight / travelTime)
 
-    private var missed: Boolean? = null
-
-    private var passedShields: Boolean = false
+    private var hasReachedTarget: Boolean = false
+    private var hasPassedShields: Boolean = false
 
     // Helper for maths
     val Float.squared get() = this * this
@@ -46,7 +42,7 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
         calculatePositionFor(distance, mutablePosition)
 
-        if (!passedShields) {
+        if (!hasPassedShields) {
             // Check if we're inside the target ships shields
             val s = ship
 
@@ -55,19 +51,15 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
 
             val shieldSize = s.shieldHalfSize
 
-            if (rel.x.f.squared / shieldSize.x.f.squared + rel.y.f.squared / shieldSize.y.f.squared < 1)
+            if (rel.x.f.squared / shieldSize.x.f.squared + rel.y.f.squared / shieldSize.y.f.squared < 1) {
+                hasPassedShields = true
                 crossedShieldLine()
+            }
         }
 
-        if (distance <= 0) {
-            resolveMissed()
-
-            if (missed == true)
-                return
-
-            hitHull()
-
-            ship.inboundProjectiles.remove(this)
+        if (distance <= 0 && !hasReachedTarget) {
+            hasReachedTarget = true
+            reachedTarget()
         }
     }
 
@@ -82,25 +74,52 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         return false
     }
 
-    private fun resolveMissed() {
-        missed = missed ?: (Math.random() * 100 < target.ship.evasion)
+    /**
+     * Called once when the projectile reaches the target room.
+     */
+    protected abstract fun reachedTarget()
+
+    /**
+     * Called once when the projectile crosses the enemy shields,
+     * regardless of whether they're up (or even turned on) or not.
+     */
+    protected open fun crossedShieldLine() {
     }
 
-    private fun crossedShieldLine() {
+    protected open fun calculatePositionFor(dist: Float, output: Point) {
+        val offX = cos(angle.toDouble()) * dist
+        val offY = sin(angle.toDouble()) * dist
+        output.x = offX.toInt() + target.offsetX + target.width * ROOM_SIZE / 2
+        output.y = offY.toInt() + target.offsetY + target.height * ROOM_SIZE / 2
+    }
+}
+
+abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, target: Room, travelTime: Float) :
+    AbstractProjectile(target, travelTime) {
+
+    private val defaultMissSound = target.ship.sys.sounds.getSample("miss")
+
+    private var missed: Boolean? = null
+
+    override fun reachedTarget() {
+        resolveMissed()
+
+        if (missed == true)
+            return
+
+        hitHull()
+
+        ship.inboundProjectiles.remove(this)
+    }
+
+    override fun crossedShieldLine() {
         // We're inside the shield!
-        passedShields = true
 
         val activeShields = ship.shields?.activeShields ?: 0
         if (activeShields == 0)
             return
 
         resolveMissed()
-
-        if (missed == true) {
-            val missSound = type.missSounds?.get() ?: defaultMissSound
-            missSound.play()
-            return
-        }
 
         // Check for shield piercing, which seems to work the same
         // way across all weapons. Missiles for example just have
@@ -128,10 +147,16 @@ abstract class AbstractProjectile(val type: AbstractWeaponBlueprint, val target:
         ship.damage(target, type)
     }
 
-    protected open fun calculatePositionFor(dist: Float, output: Point) {
-        val offX = cos(angle.toDouble()) * dist
-        val offY = sin(angle.toDouble()) * dist
-        output.x = offX.toInt() + target.offsetX + target.width * ROOM_SIZE / 2
-        output.y = offY.toInt() + target.offsetY + target.height * ROOM_SIZE / 2
+    private fun resolveMissed() {
+        if (missed == null)
+            return
+
+        missed = Math.random() * 100 < target.ship.evasion
+
+        if (missed == true) {
+            val missSound = type.missSounds?.get() ?: defaultMissSound
+            missSound.play()
+            return
+        }
     }
 }
