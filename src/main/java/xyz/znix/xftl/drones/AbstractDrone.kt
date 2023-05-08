@@ -56,12 +56,4 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
      */
     open fun onEnemyShipUpdated() {
     }
-
-    /**
-     * Draw something on the owning ship, in the background.
-     *
-     * This is intended for departing boarding drones.
-     */
-    open fun drawBackground(g: Graphics) {
-    }
 }

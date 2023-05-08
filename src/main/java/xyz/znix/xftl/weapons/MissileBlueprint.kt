@@ -17,19 +17,17 @@ class MissileBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun buildProjectile(target: Room): AbstractProjectile = MissileProjectile(target)
     }
 
-    inner class MissileProjectile(room: Room) : AbstractWeaponProjectile(this, room, 2f) {
-        override fun render(g: Graphics, x: Float, y: Float, rotation: Float) {
+    inner class MissileProjectile(room: Room) : AbstractWeaponProjectile(this, room) {
+        override val defaultSpeed: Int get() = 35
+
+        override fun renderPreTranslated(g: Graphics) {
+            g.rotate(0f, 0f, 90f)
+
             val img = target.ship.sys.animations[projectile!!]
             val spr = img.spriteAt(0)
-            g.pushTransform()
-            g.translate(x, y)
-            g.rotate(0f, 0f, rotation + 90f)
 
             // TODO is the quarter length translation the same as vanilla FTL?
-            g.translate(-spr.width.f / 2, -spr.height.f / 4)
-            spr.draw(0f, 0f)
-
-            g.popTransform()
+            spr.draw(-spr.width.f / 2, -spr.height.f / 4)
         }
     }
 }

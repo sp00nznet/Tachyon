@@ -17,18 +17,14 @@ class LaserBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun buildProjectile(target: Room): AbstractProjectile = LaserProjectile(target)
     }
 
-    inner class LaserProjectile(room: Room) : AbstractWeaponProjectile(this, room, 1f) {
-        override fun render(g: Graphics, x: Float, y: Float, rotation: Float) {
+    inner class LaserProjectile(room: Room) : AbstractWeaponProjectile(this, room) {
+        override val defaultSpeed: Int get() = 60
+
+        override fun renderPreTranslated(g: Graphics) {
             val img = target.ship.sys.animations[projectile!!]
             val spr = img.spriteAt(0)
-            g.pushTransform()
-            g.translate(x, y)
-            g.rotate(0f, 0f, rotation)
 
-            g.translate(-spr.width.f, -spr.height.f / 2)
-            spr.draw(0f, 0f)
-
-            g.popTransform()
+            spr.draw(-spr.width.f, -spr.height.f / 2)
         }
     }
 }

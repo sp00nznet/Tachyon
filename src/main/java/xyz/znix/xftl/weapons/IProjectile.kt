@@ -1,27 +1,31 @@
 package xyz.znix.xftl.weapons
 
 import org.newdawn.slick.Graphics
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.math.IPoint
 
 interface IProjectile {
     /**
-     * The angle the projectile is heading in, in radians
-     */
-    val projectileAngle: Float
-
-    /**
-     * The position of this projectile on the screen, relative to the target ship
+     * The position of this projectile on the screen, relative
+     * to the ship in whose projectiles list it's in.
      */
     val position: IPoint
 
     /**
-     * Is this projectile 'dead' and can be safely removed?
+     * If true, this projectile should be drawn underneath the
+     * ship whose space it occupies.
      *
-     * This happens when the projectile has missed it's target and is now offscreen.
+     * This is intended for departing shots.
      */
-    fun isDead(): Boolean
+    val drawUnderShip: Boolean get() = false
 
-    fun update(dt: Float)
+    /**
+     * Called to update this projectile.
+     *
+     * [currentSpace] is the ship in whose space this projectile
+     * is currently residing.
+     */
+    fun update(dt: Float, currentSpace: Ship)
 
-    fun render(g: Graphics, x: Float, y: Float, rotation: Float)
+    fun render(g: Graphics)
 }

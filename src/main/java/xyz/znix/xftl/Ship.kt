@@ -87,7 +87,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     val hardpoints: List<Hardpoint>
 
-    val inboundProjectiles: MutableList<IProjectile> = ArrayList()
+    // This contains all the projectiles, both incoming and outgoing.
+    val projectiles: MutableList<IProjectile> = ArrayList()
+
     val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val inboundBeams: MutableList<BeamBlueprint.BeamInstance> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
@@ -542,6 +544,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             )
         }
 
+        // Draw departing shots. We'll draw the rest of them later.
+        for (proj in projectiles) {
+            if (proj.drawUnderShip) {
+                proj.render(g)
+            }
+        }
+
         for (system in systems)
             system.drawBackground(g)
 
@@ -578,11 +587,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 drawInterior(g, selected)
         }
 
-        // Draw the projectiles
-        for (proj in inboundProjectiles) {
-            val pos = proj.position
-            val angle = (proj.projectileAngle * 180 / Math.PI).toFloat()
-            proj.render(g, pos.x.f, pos.y.f, angle)
+        // Draw the projectiles, except for those we already
+        // drew underneath the ship earlier.
+        for (proj in projectiles) {
+            if (!proj.drawUnderShip) {
+                proj.render(g)
+            }
         }
 
         for (bomb in inboundBombs) {
@@ -786,22 +796,18 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     private fun updateExterior(dt: Float) {
-        // Walk backwards, since missiles remove themselves when they hit
-        // FIXME update weapons targeted at this ship after it's been destroyed,
-        //  otherwise they just sit there in space which obviously looks weird.
-        for (i in inboundProjectiles.size - 1 downTo 0) {
-            inboundProjectiles[i].update(dt)
+        // Walk backwards, since projectiles may remove themselves
+        for (i in projectiles.size - 1 downTo 0) {
+            projectiles[i].update(dt, this)
         }
         for (i in inboundBombs.size - 1 downTo 0) {
             inboundBombs[i].update(dt)
         }
 
-        // Remove any projectiles that are now off-screen
-        inboundProjectiles.removeIf { it.isDead() }
-
         // Update the animations
-        for (a in animations)
+        for (a in animations) {
             a.update(dt)
+        }
     }
 
     fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
@@ -833,8 +839,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // And reset the FTL drive
         ftlChargeProgress = 0f
 
-        // Remove all incoming projectiles
-        inboundProjectiles.clear()
+        // Remove all incoming and outgoing projectiles
+        projectiles.clear()
 
         // Reset the weapon charge times
         for (hp in hardpoints) {

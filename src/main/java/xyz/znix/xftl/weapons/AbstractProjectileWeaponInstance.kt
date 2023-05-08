@@ -54,7 +54,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     protected open fun fireFrameHit() {
         val projectile = buildProjectile(target!!)
         val hp = weapons!!.findHardpoint(this)
-        lastProjectile?.run { projectile.angle = angle }
+        lastProjectile?.run { projectile.entryAngle = entryAngle }
         weapons!!.launchProjectile(hp, projectile)
         lastProjectile = projectile
 

@@ -1,7 +1,6 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.weapons.DroneBlueprint
@@ -26,14 +25,6 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
         while (drones.size < droneSlots)
             drones.add(null)
     }
-
-    override fun drawBackground(g: Graphics) {
-        // Draw the departing boarding drones
-        for (info in drones) {
-            info?.instance?.drawBackground(g)
-        }
-    }
-
 
     // Custom power-management (right-clicking turning drones on and off)
 

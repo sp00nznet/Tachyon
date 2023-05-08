@@ -1,55 +1,85 @@
 package xyz.znix.xftl.weapons
 
+import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
-abstract class AbstractProjectile(val target: Room, val travelTime: Float) : IProjectile {
+abstract class AbstractProjectile(val target: Room) : IProjectile {
 
-    // The angle we are approaching the target at, in radians
-    var angle: Float = (Math.random() * Math.PI * 2).toFloat()
+    /**
+     * The projectile's speed, in pixels per second.
+     */
+    abstract val speed: Int
 
-    // The angle the projectile is heading in, in radians
-    override val projectileAngle: Float
-        get() {
-            val shift = angle - Math.PI
-            return (if (shift < 0) shift + Math.PI * 2 else shift).toFloat()
-        }
+    // The angle we are approaching the target at, in radians.
+    // This is only used if and when we exit the space of the
+    // ship that fired us, and enter the target's space.
+    var entryAngle: Float = (Math.random() * Math.PI * 2).toFloat()
 
     val ship: Ship get() = target.ship
-
-    var timeInFlight: Float = 0f
-
-    val distance: Float get() = 1000f * (1 - timeInFlight / travelTime)
 
     private var hasReachedTarget: Boolean = false
     private var hasPassedShields: Boolean = false
 
+    /**
+     * If true, this projectile will be removed on the next update.
+     */
+    protected var dead: Boolean = false
+
     // Helper for maths
     val Float.squared get() = this * this
 
+    // The position of this projectile, whether it's inside
+    // the player or enemy ship space.
+    private var posX: Float = 0f
+        set(value) {
+            field = value
+            mutablePosition.x = posX.toInt()
+        }
+    private var posY: Float = 0f
+        set(value) {
+            field = value
+            mutablePosition.y = posY.toInt()
+        }
+
+    // The position this projectile is flying towards.
+    private var targetPos: IPoint = ConstPoint.ZERO
+
+    // The rotation of this projectile.
+    // In radians, where 0 is pointing right.
+    // Note this can't be trivially computed from the current
+    // and target positions - if we miss, for example, that
+    // would point in the wrong direction.
+    var rotation: Float = 0f
+        private set
+
+    // The position point. This isn't authoritative, and is
+    // updated from the floating-point x,y values.
     private val mutablePosition = Point(0, 0)
 
     override val position: IPoint get() = mutablePosition
 
-    override fun update(dt: Float) {
-        timeInFlight += dt
+    override fun update(dt: Float, currentSpace: Ship) {
+        if (dead) {
+            currentSpace.projectiles.remove(this)
+            return
+        }
 
-        calculatePositionFor(distance, mutablePosition)
-
-        if (!hasPassedShields) {
-            // Check if we're inside the target ships shields
-            val s = ship
-
+        // If we're in the target ship's space, check if we're now inside it's shields.
+        if (!hasPassedShields && currentSpace == ship) {
             val rel = Point(position)
-            rel -= s.shieldOrigin
+            rel -= ship.shieldOrigin
 
-            val shieldSize = s.shieldHalfSize
+            val shieldSize = ship.shieldHalfSize
 
             if (rel.x.f.squared / shieldSize.x.f.squared + rel.y.f.squared / shieldSize.y.f.squared < 1) {
                 hasPassedShields = true
@@ -57,19 +87,73 @@ abstract class AbstractProjectile(val target: Room, val travelTime: Float) : IPr
             }
         }
 
-        if (distance <= 0 && !hasReachedTarget) {
-            hasReachedTarget = true
+        val hitRoom = updateMovement(dt)
+
+        if (hitRoom) {
             reachedTarget()
+        }
+
+        // Check if we're out-of-bounds. If so, either switch to the target
+        // ship (if we're a departing projectile), or destroy ourselves.
+        // See doc/projectiles
+        if (posX < -800 || posX > 800 || posY < -800 || posY > 800) {
+            currentSpace.projectiles.remove(this)
+
+            // Are we a departing projectile? If so, switch ourselves to
+            // the ship we're aimed at.
+            if (currentSpace != ship) {
+                switchToTarget()
+            }
         }
     }
 
+    override fun render(g: Graphics) {
+        g.pushTransform()
+        g.translate(position.x.f, position.y.f)
+        g.rotate(0f, 0f, Math.toDegrees(rotation.toDouble()).toFloat())
+
+        renderPreTranslated(g)
+
+        g.popTransform()
+    }
+
+    protected abstract fun renderPreTranslated(g: Graphics)
+
     /**
-     * Is this projectile 'dead' and can be safely removed?
+     * Update the position, and return true if we hit
+     * the target room (this isn't set if missed=true).
      */
-    override fun isDead(): Boolean {
-        // If we missed and ran off the screen, get removed
-        // TODO use the actual screen size for this - for now just assume that 10 000 px is when the user won't see them
-        if (distance < -5_000) return true
+    private fun updateMovement(dt: Float): Boolean {
+        val movementThisFrame = speed * dt
+
+        // Update our position. If we've missed, use the rotation to
+        // find the correct path. Otherwise use the difference in
+        // position to make sure we're always properly aligned.
+        if (hasReachedTarget) {
+            posX += cos(rotation) * movementThisFrame
+            posY += sin(rotation) * movementThisFrame
+            return false
+        }
+
+        val deltaX = targetPos.x - posX
+        val deltaY = targetPos.y - posY
+
+        val distance = sqrt(deltaX * deltaX + deltaY * deltaY)
+
+        // Would we overshoot the target position?
+        if (distance < movementThisFrame) {
+            posX = targetPos.x.f
+            posY = targetPos.y.f
+            hasReachedTarget = true
+            return true
+        }
+
+        // Find the unit-vector of the direction we have to travel in.
+        val unitX = deltaX / distance
+        val unitY = deltaY / distance
+
+        posX += unitX * movementThisFrame
+        posY += unitY * movementThisFrame
 
         return false
     }
@@ -86,16 +170,76 @@ abstract class AbstractProjectile(val target: Room, val travelTime: Float) : IPr
     protected open fun crossedShieldLine() {
     }
 
-    protected open fun calculatePositionFor(dist: Float, output: Point) {
-        val offX = cos(angle.toDouble()) * dist
-        val offY = sin(angle.toDouble()) * dist
-        output.x = offX.toInt() + target.offsetX + target.width * ROOM_SIZE / 2
-        output.y = offY.toInt() + target.offsetY + target.height * ROOM_SIZE / 2
+    /**
+     * Called when this projectile exits the space of one ship
+     * and enters that of its target.
+     */
+    protected open fun onSwitchedToTarget() {
+    }
+
+    /**
+     * Calculate the position on the enemy ship this projectile
+     * should fly towards.
+     *
+     * This is called after the projectile has swapped from
+     * the shooter's ship to the target's ship.
+     */
+    open fun calculateTargetPosition(): IPoint {
+        // Aim for the centre of the target room
+        return ConstPoint(
+            target.offsetX + target.width * ROOM_SIZE / 2,
+            target.offsetY + target.height * ROOM_SIZE / 2
+        )
+    }
+
+    private fun switchToTarget() {
+        ship.projectiles.add(this)
+
+        // Jump into the outside of the enemy ship space.
+        // See doc/projectiles for this logic.
+
+        val radius = (800 * 0.75).toInt()
+
+        posX = 200 + cos(entryAngle) * radius
+        posY = 200 + sin(entryAngle) * radius
+
+        targetPos = calculateTargetPosition()
+
+        setRotationFromTarget()
+
+        onSwitchedToTarget()
+    }
+
+    fun setInitialPath(initialPos: IPoint, targetPos: IPoint) {
+        posX = initialPos.x.f
+        posY = initialPos.y.f
+
+        this.targetPos = targetPos
+
+        setRotationFromTarget()
+    }
+
+    private fun setRotationFromTarget() {
+        rotation = atan2(targetPos.y - posY, targetPos.x - posX)
     }
 }
 
-abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, target: Room, travelTime: Float) :
-    AbstractProjectile(target, travelTime) {
+abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, target: Room) : AbstractProjectile(target) {
+
+    /**
+     * The default speed for this projectile, if it's not set in the blueprint.
+     *
+     * Note this speed is given in pixels-per-second, divided by 16.
+     * We have to multiply it by 16, since it's based on the SpeedFactor thing.
+     * See doc/reveng-general.md for notes on this.
+     */
+    abstract val defaultSpeed: Int
+
+    @Suppress("LeakingThis")
+    override val speed = (type.speed ?: defaultSpeed) * 16
+
+    // When we're leaving the ship that fired this weapon, draw underneath it.
+    override var drawUnderShip: Boolean = true
 
     private val defaultMissSound = target.ship.sys.sounds.getSample("miss")
 
@@ -109,7 +253,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, targe
 
         hitHull()
 
-        ship.inboundProjectiles.remove(this)
+        dead = true
     }
 
     override fun crossedShieldLine() {
@@ -129,7 +273,14 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, targe
 
         hitShields()
 
-        ship.inboundProjectiles.remove(this)
+        dead = true
+    }
+
+    override fun onSwitchedToTarget() {
+        super.onSwitchedToTarget()
+
+        // Now we're in the target ship's space, draw on top of the ship.
+        drawUnderShip = false
     }
 
     protected open fun hitShields() {

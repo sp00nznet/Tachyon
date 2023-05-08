@@ -1,0 +1,14 @@
+Projectiles live in either the player or enemy ship space.
+
+SpaceManager::OnLoop checks if a projectile is outside the [-800,800] bounds
+in either the x or y component.
+
+If so, and it's headed to another space, it calls Projectile::EnterDestinationSpace.
+(If it's not headed for another space, it missed and is destroyed.)
+
+This calculates an entry position for this projectile (this can be set ahead
+of time, for burst weapons to make them come in from the same angle).
+
+It takes a random angle, and uses it to find a point in a ring of
+radius 800*0.75 pixels around the point 200,200. This is the starting
+position of this projectile in the new space.

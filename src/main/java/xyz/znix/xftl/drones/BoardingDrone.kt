@@ -28,7 +28,24 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         val enemyShip = ownerShip.sys.getEnemyOf(ownerShip)!!
         val target = enemyShip.rooms.random()
         projectile = FlyingDrone(target)
-        enemyShip.inboundProjectiles += projectile!!
+
+        // Start in the centre of the shields, for lack of a better place.
+        val startingPoint = ownerShip.shieldOrigin
+
+        // The direction the drone flies in depends on whether this is
+        // a player ship or an enemy ship, as it's supposed to go
+        // forwards out of both of them.
+        val endPoint = startingPoint + if (ownerShip.isPlayerShip) {
+            // Fly right
+            ConstPoint(1000, 0)
+        } else {
+            // Fly upwards
+            ConstPoint(0, -1000)
+        }
+
+        projectile!!.setInitialPath(startingPoint, endPoint)
+
+        ownerShip.projectiles += projectile!!
     }
 
     override fun updatePawn(dt: Float) {
@@ -72,9 +89,16 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
             return
         }
 
-        if (!projectile.ship.inboundProjectiles.contains(projectile)) {
-            // The projectile has been removed from the ship's incoming
-            // projectiles list.
+        // Check if the enemy ship changed, for example if it was killed.
+        val enemyShip = ownerShip.sys.getEnemyOf(ownerShip)
+        if (enemyShip != projectile.ship) {
+            destroy()
+            return
+        }
+
+        if (!ownerShip.projectiles.contains(projectile) && !enemyShip.projectiles.contains(projectile)) {
+            // The projectile has vanished, for example if it was
+            // greeted by a defence drone.
             destroy()
         }
     }
@@ -101,51 +125,27 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         // TODO draw the green glow when turned on
     }
 
-    override fun drawBackground(g: Graphics) {
-        super.drawBackground(g)
-
-        // Draw the drone flying away towards the enemy ship
-        val proj = this.projectile ?: return
-
-        // Start in the centre of the shields, for lack of a better place.
-        val startingPoint = ownerShip.shieldOrigin
-        val dist = 1000f - proj.distance
-
-        var x = startingPoint.x.f
-        var y = startingPoint.y.f
-        var rotation = 0f
-
-        // The direction the drone flies in depends on whether this is
-        // a player ship or an enemy ship, as it's supposed to go
-        // forwards out of both of them.
-        if (ownerShip.isPlayerShip) {
-            // Fly right
-            x += dist
-        } else {
-            // Fly upwards
-            y -= dist
-            rotation = -90f
-        }
-
-        proj.render(g, x, y, rotation)
-    }
-
     override fun makePawn(room: Room): Pawn = BoardingPawn(room)
 
     /**
      * The projectile that represents the drone flying through space towards
      * the target ship.
      */
-    inner class FlyingDrone(target: Room) : AbstractProjectile(target, 4f) {
+    inner class FlyingDrone(target: Room) : AbstractProjectile(target) {
         // The portrait frame of the robot, which is shown on top
         // of the thruster sprite
         val portrait = ship.sys.animations["battle_portrait"].spriteAt(0)
 
         val thruster = ship.sys.getImg("img/ship/drones/boarder_engine.png")
 
-        override fun isDead(): Boolean {
-            return false
-        }
+        // Fished out with x32dbg as I couldn't be bothered to find
+        // it via static analysis, and it's not guaranteed to be correct
+        // if I got some addresses swapped.
+        // Note it has a 16x multiplier, to convert it from pixels per
+        // SpeedFactor to pixels per second. See doc/reveng-general.md.
+        override val speed: Int get() = 18 * 16
+
+        override var drawUnderShip: Boolean = true
 
         override fun reachedTarget() {
             // We've hit our target room.
@@ -164,11 +164,11 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         }
 
         fun destroyFlying() {
-            ship.inboundProjectiles.remove(this)
+            dead = true
             projectile = null
         }
 
-        override fun render(g: Graphics, x: Float, y: Float, rotation: Float) {
+        override fun renderPreTranslated(g: Graphics) {
             // Centre the drone on the supplied x,y coordinates.
             val size = portrait.imageSize
             val offset = ConstPoint(-size.x / 2, -size.y / 2)
@@ -176,14 +176,16 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
             // 'up' in the sprite is forwards, rotate it so that is the case.
             val angleOffset = 90 // In degrees because that's what Slick uses.
 
-            g.pushTransform()
-            g.translate(x, y)
-            g.rotate(0f, 0f, rotation + angleOffset)
+            g.rotate(0f, 0f, angleOffset.f)
 
             portrait.draw(offset)
             thruster.draw(offset)
+        }
 
-            g.popTransform()
+        override fun onSwitchedToTarget() {
+            super.onSwitchedToTarget()
+
+            drawUnderShip = false
         }
     }
 

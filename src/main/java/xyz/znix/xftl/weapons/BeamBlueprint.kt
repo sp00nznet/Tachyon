@@ -22,9 +22,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     val length: Int = xml.getChildTextTrim("length").toInt()
 
     // See the note on SPEED_MULTIPLIER.
-    val speed: Int = xml.getChildTextTrim("speed")?.toInt() ?: 5
-
-    val fireDuration: Float = 1f * length / (speed * SPEED_MULTIPLIER)
+    val fireDuration: Float = 1f * length / ((speed ?: 5) * SPEED_MULTIPLIER)
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return BeamInstance(ship)
@@ -135,7 +133,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // across in this frame. This is done to ensure
                 // the beam can't skip rooms when running with
                 // high delta-times.
-                val onePixelTime = fireDuration / length;
+                val onePixelTime = fireDuration / length
                 val newFiringTime = firingTime + dt
                 var t = firingTime
                 val tmp = Point(0, 0)
@@ -250,7 +248,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         dstA: FPos, dstB: FPos,
         colour: Color
     ) {
-        TextureImpl.bindNone();
+        TextureImpl.bindNone()
 
         // Find the middle points where the colour should be strongest
         val srcMidX = (srcA.x + srcB.x) / 2

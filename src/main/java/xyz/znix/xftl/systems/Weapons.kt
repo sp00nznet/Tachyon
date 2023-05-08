@@ -7,6 +7,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
@@ -44,8 +45,6 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         selectedTargets.update()
     }
 
-    private val departing: MutableList<DepartingShot> = ArrayList()
-
     override val powerSelected: Int
         get() {
             var power = 0
@@ -58,20 +57,6 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         }
 
     override fun drawBackground(g: Graphics) {
-        // Draw the departing projectiles
-        for (shot in departing) {
-            val dist = shot.initialDistance - shot.projectile.distance
-            g.pushTransform()
-            translateHardpoint(g, shot.hardpoint)
-            g.translate(shot.offset.x.f, shot.offset.y.f)
-            shot.projectile.render(g, 0f, -dist, -90f)
-            g.popTransform()
-        }
-
-        // Discard these once they hit or miss their target. We could certainly
-        // remove them sooner, but there is little reason to.
-        departing.removeIf { p -> !p.projectile.target.ship.inboundProjectiles.contains(p.projectile) }
-
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
 
@@ -124,8 +109,46 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         val weaponAnimations = ship.sys.animations.weaponAnimations
         val anim = hp.weapon!!.animation
 
-        departing += DepartingShot(hp, anim.firePoint - anim.mountPoint, projectile)
-        projectile.target.ship.inboundProjectiles += projectile
+        // Fly off-screen, so it jumps over to the target ship.
+
+        // Find the exact position to start at.
+        // Take the difference between the fire and mounting positions
+        // on the animation. The latter, when converted into ship-space,
+        // is equal to hp.position.
+        val startPos = Point(0, 0)
+        startPos += anim.firePoint
+        startPos -= anim.mountPoint
+
+        // Convert from hardpoint-space to ship-space.
+        // This does everything that translateHardpoint does, but backwards
+        // since matrix transforms (which the Slick operations in
+        // translateHardpoint are) apply the last operation first.
+        if (hp.mirror) {
+            startPos.x *= -1
+        }
+        if (hp.rotate) {
+            // To rotate counter-clockwise, set:
+            // Y to X (so a right-hand line points up)
+            // X to -Y (so an upwards line points left)
+            val tmp = startPos.x
+            startPos.x = -startPos.y
+            startPos.y = tmp
+        }
+        startPos += hp.position
+
+        // Depending on whether we're the player or enemy ship, we need
+        // to fly in different directions as they're angled differently.
+        val endPos = startPos + if (ship.isPlayerShip) {
+            // Fly right
+            ConstPoint(1000, 0)
+        } else {
+            // Fly upwards
+            ConstPoint(0, -1000)
+        }
+
+        projectile.setInitialPath(startPos, endPos)
+
+        ship.projectiles += projectile
     }
 
     private fun translateHardpoint(g: Graphics, hp: Ship.Hardpoint) {
@@ -184,10 +207,6 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             powerStateChanged()
             return
         }
-    }
-
-    class DepartingShot(val hardpoint: Ship.Hardpoint, val offset: ConstPoint, val projectile: AbstractProjectile) {
-        val initialDistance: Float = projectile.distance
     }
 
     inner class TargetList {
