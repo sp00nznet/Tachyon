@@ -589,7 +589,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
                 buttons += object : WeaponDroneButton(pos, i, ConstPoint(95, 39)) {
                     override val empty: Boolean get() = drone == null
-                    override val name: String get() = game.translator[drone!!.short!!]
+                    override val name: String get() = drone!!.translateShort(game)
                     override val requiredPower: Int get() = drone!!.power
                     override val chargeTime: Float get() = error("Can't get charge time for drone")
                     override val chargeProgress: Float get() = error("Can't get charge progress for drone")

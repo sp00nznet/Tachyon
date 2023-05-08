@@ -5,6 +5,7 @@ import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -41,10 +42,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             if (firingAnimation.frame >= animation.chargedFrame && !hasFired) {
                 val target = target ?: error("Ended teleport animation without target set - what happened?")
-                val animation = target.ship.sys.animations[projectile!!].start(2f, true)
-                animation.setLooping(false)
-                val fb = FiredBomb(this@BombBlueprint, target, animation)
-                target.ship.inboundBombs += fb
+                doBombFire(target)
 
                 hasFired = true
                 this.target = null
@@ -56,6 +54,13 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
         }
 
+        private fun doBombFire(target: Room) {
+            val animation = target.ship.sys.animations[projectile!!].start(2f, true)
+            animation.setLooping(false)
+            val fb = FiredBomb(this@BombBlueprint, target, animation)
+            target.ship.inboundBombs += fb
+        }
+
         override fun fire(weapons: Weapons, target: Room) {
             fire()
             this.target = target
@@ -64,6 +69,13 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             fa.setLooping(false)
 
             type.launchSounds?.get()?.play()
+        }
+
+        override fun fireFromDrone(drone: CombatDrone, target: Room) {
+            // Should we be subtracting a bomb when used on a drone?
+            fire()
+
+            doBombFire(target)
         }
     }
 

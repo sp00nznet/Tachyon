@@ -5,6 +5,7 @@ import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.BoardingDrone
+import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.drones.RepairDrone
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
@@ -15,8 +16,13 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     val tip: String? = xml.getChildTextTrim("tip") // Tooltip
     override val cost: Int? = xml.getChildTextTrim("cost")?.toInt()
     val power: Int = xml.getChildTextTrim("power").toInt()
+    val speed: Int? = xml.getChildTextTrim("speed")?.toInt()
     val droneImage: String? = xml.getChildTextTrim("droneImage")
     val iconImage: String? = xml.getChildTextTrim("iconImage")
+
+    val weaponBlueprintName: String? = xml.getChildTextTrim("weaponBlueprint")
+    var weaponBlueprint: AbstractWeaponBlueprint? = null
+        private set
 
     init {
         require(power > 0) { "Drone $name has non-positive power $power" }
@@ -74,7 +80,16 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         return when (type) {
             DroneType.REPAIR -> RepairDrone(this)
             DroneType.BOARDER -> BoardingDrone(this)
+            DroneType.COMBAT -> CombatDrone(this)
             else -> DummyDrone(this)
+        }
+    }
+
+    override fun finishSetup(game: SlickGame) {
+        super.finishSetup(game)
+
+        if (weaponBlueprintName != null) {
+            weaponBlueprint = game.blueprintManager[weaponBlueprintName] as AbstractWeaponBlueprint
         }
     }
 

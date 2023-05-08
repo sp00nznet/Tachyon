@@ -35,13 +35,28 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
      * for example a repair drone destroyed by boarders.
      */
     open fun destroy() {
+        removeInstance()
+
+        // TODO cooldown
+    }
+
+    /**
+     * Remove this instance of this drone.
+     *
+     * This does less than [destroy]: it doesn't set a cooldown or show
+     * an explosion animation or anything like that, it only removes
+     * the drone instance.
+     */
+    fun removeInstance() {
         // Drones that have been moved to cargo won't have an associated
         // info any more, so we have to use firstOrNull.
         val drones = ownerShip.drones!!
         val info = drones.drones.firstOrNull { it?.instance == this }
         info?.instance = null
 
-        // TODO cooldown
+        // If we're an orphaned drone (blueprint was swapped out), clear
+        // ourselves from that list too.
+        ownerShip.orphanedDrones.remove(this)
     }
 
     open fun update(dt: Float) {

@@ -36,6 +36,8 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     inner class FlakInstance(ship: Ship) : AbstractProjectileWeaponInstance(this, ship) {
         override fun buildProjectile(target: Room) = error("Building a single flak projectile isn't supported")
 
+        // TODO implement firing from drones, as some mods do this (notably IIRC Multiverse)
+
         override fun fireFrameHit() {
             // Make sure all the projectiles come in from the same angle
             val angle: Float = (Math.random() * Math.PI * 2).toFloat()

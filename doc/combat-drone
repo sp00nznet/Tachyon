@@ -1,0 +1,39 @@
+This is from the CombatDrone class.
+
+The important stuff for fire control is in CombatDrone::OnLoop.
+Once it gets to it's target position, it waits 0.5 seconds (stored
+in the 'pause' variable) and then fires, after which it immediately
+starts moving again.
+
+While in the pause, the speed is multiplied by the time remaining
+over 1.5 (thus it immediately slows down to 33% of it's original
+speed), and thus comes to a complete stop when it's time to fire.
+
+For beam drones, in SpaceDrone::GetNextProjectile, when the drone
+is set to fire it sets additionalPause to 0.5, delaying the movement
+of the drone until the beam has finished.
+
+While additionalPause is set, the speed is zeroed.
+
+The speed the drone moves at is passed into the GetNextPoint calls
+in OnLoop. They're called every frame, and so set the speed.
+
+The speed passed into GetNext point is set as the speed in the blueprint
+times the semi-major axis (longest distance from centre) of the shields,
+divided by 21.875. This gives the speed in pixels per second.
+
+
+CombatDrone::PickDestination
+
+This chooses a new position to fly to. Pick an angle from the ship, which
+must be at least 90° from the last angle. Pick the point on the ship's
+shields at this angle, and multiply it by 1.15 (where the origin is the
+centre of the shields) to make the drone stop just outside the shields.
+
+
+SpaceDrone::UpdatePoweredDown
+
+The drone's position is updated from it's current speed, which is then
+reduced by a factor of 0.1 * 16 * dt.
+
+If the speed falls below 16 pixels per second, it's speed is zeroed.

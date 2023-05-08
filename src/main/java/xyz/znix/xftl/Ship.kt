@@ -11,6 +11,7 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractDrone
+import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
@@ -93,6 +94,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val inboundBeams: MutableList<BeamBlueprint.BeamInstance> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
+
+    /**
+     * A list of all the drones (friendly or otherwise) that are deployed
+     * around this ship.
+     */
+    val externalDrones = ArrayList<AbstractExternalDrone>()
 
     // This really is a bit horrible - if this is the enemy ship, we store the beam the
     // player is currently aiming at us to highlight the affected rooms.
@@ -603,6 +610,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             beam.renderInbound()
         }
 
+        // Draw any drones flying around the ship
+        for (drone in externalDrones) {
+            drone.renderExternal(g)
+        }
+
         // Draw the floating animations (eg, from projectile explosions)
         for (a in animations)
             a.render()
@@ -841,6 +853,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         // Remove all incoming and outgoing projectiles
         projectiles.clear()
+
+        // Get rid of any drones orbiting us
+        externalDrones.clear()
 
         // Reset the weapon charge times
         for (hp in hardpoints) {

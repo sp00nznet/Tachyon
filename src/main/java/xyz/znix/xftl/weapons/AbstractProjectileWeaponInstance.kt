@@ -3,8 +3,11 @@ package xyz.znix.xftl.weapons
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.Weapons
+import kotlin.math.roundToInt
 
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
@@ -72,6 +75,30 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         anim.setLooping(false)
         firingAnimation = anim
         primeShot()
+    }
+
+    override fun fireFromDrone(drone: CombatDrone, target: Room) {
+        // If this is a multi-shot weapon, only fire a single shot.
+        // We don't have any way of doing more than that.
+
+        val projectile = buildProjectile(target)
+        target.ship.projectiles += projectile
+
+        // Draw the projectile on top of the ship. By default it's
+        // set to draw under the ship, as it expects to be launched
+        // from one ship area to another, at which point it switches this.
+        if (projectile is AbstractWeaponProjectile) {
+            projectile.drawUnderShip = false
+        }
+
+        val dronePos = ConstPoint(
+            drone.flightController.posX.roundToInt(),
+            drone.flightController.posY.roundToInt()
+        )
+
+        projectile.setInitialPath(dronePos, projectile.calculateTargetPosition())
+
+        type.launchSounds?.get()?.play()
     }
 
     private fun primeShot() {

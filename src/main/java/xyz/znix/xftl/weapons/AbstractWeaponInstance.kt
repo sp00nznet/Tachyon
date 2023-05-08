@@ -2,6 +2,7 @@ package xyz.znix.xftl.weapons
 
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.Weapons
 import kotlin.math.max
@@ -64,5 +65,8 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
  */
 interface IRoomTargetingWeapon {
     fun fire(weapons: Weapons, target: Room)
+
+    fun fireFromDrone(drone: CombatDrone, target: Room)
+
     fun asWeaponInstance(): AbstractWeaponInstance
 }

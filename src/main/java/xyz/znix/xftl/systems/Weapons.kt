@@ -106,7 +106,6 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     }
 
     fun launchProjectile(hp: Ship.Hardpoint, projectile: AbstractProjectile) {
-        val weaponAnimations = ship.sys.animations.weaponAnimations
         val anim = hp.weapon!!.animation
 
         // Fly off-screen, so it jumps over to the target ship.
