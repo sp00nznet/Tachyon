@@ -5,10 +5,13 @@ import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.systems.SelectedTarget
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
+import kotlin.math.PI
+import kotlin.random.Random
 
 class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
     override val flightController = CombatFlightController()
@@ -40,6 +43,19 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         pickNewTarget()
     }
 
+    override fun renderExternal(g: Graphics) {
+        // If we're a beam drone that's currently firing, draw
+        // the beam underneath us so you can't see the point it
+        // ends at.
+        // We have to do it here rather than in onRender, since
+        // that's called with transforms added so we draw
+        // stuff relative to the drone.
+        val beam = this.weapon as? BeamBlueprint.BeamInstance
+        beam?.drawDroneBeam(this)
+
+        super.renderExternal(g)
+    }
+
     override fun onRender(g: Graphics) {
         val image = when {
             !isPowered -> offImage
@@ -53,14 +69,41 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
     override fun update(dt: Float) {
         super.update(dt)
 
-        if (flightController.paused) {
-            fireTimer -= dt
-            if (fireTimer <= 0f) {
-                fireTimer = 0f
-                flightController.paused = false
+        // Make Kotlin smart-casts work with a mutable field
+        val weapon = this.weapon
 
-                fire()
-                pickNewTarget()
+        if (flightController.paused) {
+            if (fireTimer != 0f) {
+                fireTimer -= dt
+                if (fireTimer <= 0f) {
+                    fireTimer = 0f
+
+                    fire()
+                    pickNewTarget()
+                }
+            }
+
+            // Fire our beam, if it's still active.
+            var firingBeam = false
+            if (weapon is BeamBlueprint.BeamInstance) {
+                weapon.update(dt, true)
+                firingBeam = weapon.firing
+
+                // Match our rotation to that of the beam
+                if (firingBeam) {
+                    val currentPos = ConstPoint(
+                        flightController.posX.toInt(),
+                        flightController.posY.toInt()
+                    )
+                    val target = weapon.getCurrentTargetPoint()
+                    flightController.rotation = flightController.getAngleFrom(currentPos, target)
+                }
+            }
+
+            // Un-pause the drone once we've fired our weapon and (if we're
+            // a beam drone) we're done firing our beam.
+            if (fireTimer <= 0f && !firingBeam) {
+                flightController.paused = false
             }
         }
     }
@@ -79,7 +122,29 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
             is IRoomTargetingWeapon -> weapon.fireFromDrone(this, target)
 
             is BeamBlueprint.BeamInstance -> {
-                // TODO implement
+                // Find a random point within the room to start the beam from
+                val startPos = ConstPoint(
+                    target.offsetX + (0 until target.width * Constants.ROOM_SIZE).random(),
+                    target.offsetY + (0 until target.height * Constants.ROOM_SIZE).random()
+                )
+
+                // Build a beam aiming
+                val aim = SelectedTarget.BeamAim(
+                    weapon,
+                    -1, // Only used to pick the hardpoint for the regular firing rendering
+                    targetShip,
+                    ConstPoint.ZERO, // The start mouse pos, only used by the player targeting UI
+                    startPos
+                )
+
+                // Pick a random angle for the beam to move over, and use that
+                // to figure out which rooms it'll hit
+                aim.angle = Random.nextFloat() * PI.toFloat() * 2f
+
+                aim.updateHitRooms()
+
+                // Set the weapon to start firing
+                weapon.fireFromDrone(this, aim, BEAM_FIRE_TIME)
             }
 
             else -> error("Unsupported weapon type for drone: ${weapon.type}")
@@ -95,5 +160,10 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
             target.offsetX + target.width * Constants.ROOM_SIZE / 2,
             target.offsetY + target.height * Constants.ROOM_SIZE / 2
         )
+    }
+
+    companion object {
+        // All beams fire for 0.5 seconds.
+        private const val BEAM_FIRE_TIME = 0.5f
     }
 }

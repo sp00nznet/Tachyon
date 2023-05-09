@@ -12,7 +12,9 @@ import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
     override val sortingType: SortingType get() = SortingType.WEAPONS
@@ -271,5 +273,42 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
         var visible: Boolean = false
 
         val beamWeapon get() = weapon as BeamBlueprint.BeamInstance
+
+        /**
+         * Update the rooms the beam will hit, based on [angle].
+         */
+        fun updateHitRooms() {
+            visible = true
+
+            val length = (weapon.type as BeamBlueprint).length
+
+            // Loop over the pixels, marking whenever we cross one of the lines of the
+            // grid all the enemy rooms are placed on.
+            val lastPoint = Point(-100, -100)
+            var lastRoom: Room? = null
+            val tmpPoint = Point(ConstPoint.ZERO)
+            for (i in 0 until length) {
+                tmpPoint.x = startShipPoint.x + (i * cos(angle)).roundToInt()
+                tmpPoint.y = startShipPoint.y + (i * sin(angle)).roundToInt()
+
+                // This (among other things) divides the position by the size
+                // of a room, so whenever the result changes we might
+                // be in a new room.
+                targetShip.screenPosToShipPos(tmpPoint)
+
+                if (tmpPoint == lastPoint)
+                    continue
+                lastPoint.set(tmpPoint)
+
+                val roomPoint = targetShip.shipToRoomPos(tmpPoint) ?: continue
+
+                // We might still be inside the same room, however.
+                if (roomPoint.room == lastRoom)
+                    continue
+                lastRoom = roomPoint.room
+
+                hitRooms.add(roomPoint.room)
+            }
+        }
     }
 }

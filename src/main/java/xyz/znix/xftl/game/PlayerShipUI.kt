@@ -19,7 +19,10 @@ import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
-import kotlin.math.*
+import kotlin.math.atan2
+import kotlin.math.ceil
+import kotlin.math.pow
+import kotlin.math.round
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
     private val font = game.getFont("HL2", 2f)
@@ -340,38 +343,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
         beam.angle = atan2(delta.y.toDouble(), delta.x.toDouble()).toFloat()
 
-        // Move the start position into enemy-ship-space
-        point.minusAssign(game.enemyPosition)
-
-        val length = (beam.weapon.type as BeamBlueprint).length
-
-        // Loop over the pixels, marking whenever we cross one of the lines of the
-        // grid all the enemy rooms are placed on.
-        val lastPoint = Point(-100, -100)
-        var lastRoom: Room? = null
-        val tmpPoint = Point(point)
-        for (i in 0 until length) {
-            tmpPoint.x = point.x + (i * cos(beam.angle)).toInt()
-            tmpPoint.y = point.y + (i * sin(beam.angle)).toInt()
-
-            // This (among other things) divides the position by the size
-            // of a room, so whenever the result changes we might
-            // be in a new room.
-            game.enemy.screenPosToShipPos(tmpPoint)
-
-            if (tmpPoint == lastPoint)
-                continue
-            lastPoint.set(tmpPoint)
-
-            val roomPoint = game.enemy.shipToRoomPos(tmpPoint) ?: continue
-
-            // We might still be inside the same room, however.
-            if (roomPoint.room == lastRoom)
-                continue
-            lastRoom = roomPoint.room
-
-            beam.hitRooms.add(roomPoint.room)
-        }
+        beam.updateHitRooms()
     }
 
     private fun targetBeamWeapon() {
@@ -545,7 +517,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
 
             buttons += object : WeaponDroneButton(ConstPoint(wx, wy), i, ConstPoint(87, 39)) {
                 override val empty: Boolean get() = weapon == null
-                override val name: String get() = game.translator[weapon!!.type.short!!]
+                override val name: String get() = weapon!!.type.translateShort(game)
                 override val requiredPower: Int get() = weapon!!.type.power
                 override val chargeTime: Float get() = weapon!!.type.chargeTime
                 override val chargeProgress: Float get() = weapon!!.chargeProgress

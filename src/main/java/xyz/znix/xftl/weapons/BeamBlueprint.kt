@@ -8,6 +8,7 @@ import org.newdawn.slick.opengl.TextureImpl
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -22,20 +23,26 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     val length: Int = xml.getChildTextTrim("length").toInt()
 
     // See the note on SPEED_MULTIPLIER.
-    val fireDuration: Float = 1f * length / ((speed ?: 5) * SPEED_MULTIPLIER)
+    val speedPixelsPerSecond = (speed ?: DEFAULT_SPEED) * SPEED_MULTIPLIER
+
+    val fireDuration: Float = 1f * length / speedPixelsPerSecond
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return BeamInstance(ship)
     }
 
     inner class BeamInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
-        private var firing: Boolean = false
+        var firing: Boolean = false
+            private set
         private var firingTime: Float = 0f
         private var target: SelectedTarget.BeamAim? = null
         private val originPos = Point(0, 0)
         private var lastRoomPos: RoomPoint? = null
 
         private val contact: Animation
+
+        // Copy this in as a mutable variable so it can be changed for drones.
+        private var fireDuration: Float = this@BeamBlueprint.fireDuration
 
         init {
             // Turns out this is a one-frame animation, leave it looping in case
@@ -66,6 +73,32 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         fun renderInbound() {
+            renderInbound(originPos)
+        }
+
+        fun drawDroneBeam(drone: CombatDrone) {
+            if (!firing)
+                return
+
+            val fc = drone.flightController
+            val droneCentre = Point(
+                fc.posX.roundToInt(),
+                fc.posY.roundToInt()
+            )
+
+            // For some stupid reason, the beam doesn't come clean
+            // out of the centre of the drone - it has to be offset
+            // slightly.
+            // For example, the Beam 2 drone is shifted one pixel
+            // to the right, so we need to shift the beam origin
+            // by that amount too.
+            droneCentre.x += cos(fc.rotation).roundToInt()
+            droneCentre.y += sin(fc.rotation).roundToInt()
+
+            renderInbound(droneCentre)
+        }
+
+        private fun renderInbound(from: IPoint) {
             // Draw the beam on the enemy ship, including the little contact burning animation
 
             // This means we don't have to put !! on every usage of target
@@ -82,7 +115,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             val shieldSize = targetShip.shieldHalfSize
             val shieldOrigin = targetShip.shieldOrigin
 
-            val intersections = findIntersections(originPos, targetPos, shieldSize, shieldOrigin)
+            val intersections = findIntersections(from, targetPos, shieldSize, shieldOrigin)
 
             // If we only cross the shield layer once, pick the first solution.
             // Note it's valid to never cross the shield line, or cross it twice,
@@ -97,7 +130,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // and out the other.
                 // Check which is nearest, so the attenuation happens when
                 // the line first crosses the shield bubble.
-                iFirst.distToSq(originPos) < iSecond.distToSq(originPos) -> iFirst
+                iFirst.distToSq(from) < iSecond.distToSq(from) -> iFirst
                 else -> iSecond
             }
 
@@ -106,7 +139,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             // TODO make the transition around the shield line a bit cleaner - it's a clear
             //  square cutoff, and doesn't match the tangent line of the shields bubble.
-            drawBeam(damage, originPos, shieldPoint)
+            drawBeam(damage, from, shieldPoint)
 
             // Draw the inside-the-shield-bubble part
             if (piercing == 0)
@@ -208,6 +241,26 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             originPos += target.targetShip.shieldOrigin
         }
 
+        fun fireFromDrone(drone: CombatDrone, target: SelectedTarget.BeamAim, duration: Float) {
+            this.target = target
+            fireDuration = duration
+
+            firing = true
+            firingTime = 0f
+
+            // Without this, if the first room hit was the same room as the
+            // last one hit on the previous shot, no damage would be dealt.
+            lastRoomPos = null
+        }
+
+        // For use by drones, so they can angle themselves correctly.
+        fun getCurrentTargetPoint(): IPoint {
+            if (!firing)
+                return ConstPoint.ZERO
+
+            return pointAtTime(firingTime)
+        }
+
         private fun pointAtTime(time: Float): IPoint {
             val distanceAcross = (length * time / fireDuration).toInt()
 
@@ -303,12 +356,48 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         //   c = L^2/h^2 - 1
         //
         // This is now a quadratic equation, solve it using the quadratic formula.
-        // Obviously this doesn't work for vertical lines, but by always starting
-        // the beam to the side of the ship that'll never happen.
 
         // Find the line equation
         val deltaX = dst.x.f - src.x
         val deltaY = dst.y.f - src.y
+
+        // Handle the special-case for vertical lines, since we otherwise
+        // divide through by zero. This doesn't result in a crash, instead
+        // the beam appears to pass through the shields as everything becomes
+        // either NaN or infinity.
+        // This can occur with beam drones, and became very quickly obvious
+        // once they were first implemented, as it occurred surprisingly often!
+        if (abs(deltaX) < 0.001f) {
+            // Move the ellipse to the centre
+            val x = src.x - centre.x
+
+            // Outside the ellipse's area?
+            if (x !in -ellipse.x..ellipse.x)
+                return Pair(null, null)
+
+            // Find the y coordinate of the shield at the given x point.
+            // (there's another point on the shield line by negating this y)
+
+            val shieldY = (ellipse.y * sqrt(1 - x.f.pow(2) / ellipse.x.f.pow(2))).toInt()
+
+            fun yToPoint(y: Int): IPoint? {
+                // Check this point sits inside the line segment.
+                val minY = min(src.y, dst.y)
+                val maxY = max(src.y, dst.y)
+                if (y !in minY..maxY)
+                    return null
+
+                return ConstPoint(src.x, y)
+            }
+
+            val p1 = yToPoint(centre.y + shieldY)
+            val p2 = yToPoint(centre.y - shieldY)
+
+            if (p1 == null) {
+                return Pair(p2, null)
+            }
+            return Pair(p1, p2)
+        }
 
         val m = deltaY / deltaX // Rise over run
 
@@ -374,6 +463,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // disassembly or modifying the values in vanilla FTL) may be
         // warranted for high accuracy.
         private const val SPEED_MULTIPLIER = 16.5f
+
+        // The default speed, in the same units as the XML.
+        private const val DEFAULT_SPEED = 5
 
         // A bright red and not completely opaque beam? This is largely guessed.
         private val BEAM_COLOUR_TRANSPARENT = Color(255, 30, 30, 220)

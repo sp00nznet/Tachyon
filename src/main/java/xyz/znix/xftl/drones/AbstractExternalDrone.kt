@@ -87,7 +87,7 @@ abstract class AbstractExternalDrone(
      *
      * This is called by the ship this drone is flying around.
      */
-    fun renderExternal(g: Graphics) {
+    open fun renderExternal(g: Graphics) {
         g.pushTransform()
         g.translate(flightController.posX, flightController.posY)
         g.rotate(0f, 0f, flightController.rotation / TWO_PI * 360f)
@@ -335,7 +335,7 @@ class CombatFlightController : DroneFlightController() {
      * Get the angle the drone needs to face in to point at a given
      * location when it's floating at the set coordinates.
      */
-    private fun getAngleFrom(at: IPoint, to: IPoint): Float {
+    fun getAngleFrom(at: IPoint, to: IPoint): Float {
         val base = atan2(to.y.f - at.y.f, to.x.f - at.x.f)
 
         // With atan2 we get an angle where zero means 'to the right'.
