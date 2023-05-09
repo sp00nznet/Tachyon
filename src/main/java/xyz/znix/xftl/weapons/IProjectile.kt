@@ -20,6 +20,24 @@ interface IProjectile {
     val drawUnderShip: Boolean get() = false
 
     /**
+     * Does this projectile count as a missile to a defence drone?
+     */
+    val isMissileForDD: Boolean get() = false
+
+    /**
+     * Does this projectile count as a laser to a defence drone?
+     */
+    val isLaserForDD: Boolean get() = false
+
+    /**
+     * The radius of this projectile's circular hitbox.
+     *
+     * This is used for checking for collisions between projectiles
+     * and other projectiles or drones.
+     */
+    val hitboxRadius: Int get() = 6
+
+    /**
      * Called to update this projectile.
      *
      * [currentSpace] is the ship in whose space this projectile
@@ -28,4 +46,10 @@ interface IProjectile {
     fun update(dt: Float, currentSpace: Ship)
 
     fun render(g: Graphics)
+
+    /**
+     * Called when this projectile hit another projectile, immediately
+     * before it's destroyed.
+     */
+    fun hitOtherProjectile(currentSpace: Ship)
 }

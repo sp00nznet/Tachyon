@@ -81,10 +81,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 return
 
             val fc = drone.flightController
-            val droneCentre = Point(
-                fc.posX.roundToInt(),
-                fc.posY.roundToInt()
-            )
+            val droneCentre = Point(fc.position)
 
             // For some stupid reason, the beam doesn't come clean
             // out of the centre of the drone - it has to be offset

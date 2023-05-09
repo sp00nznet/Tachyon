@@ -1,13 +1,11 @@
 package xyz.znix.xftl.drones
 
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.draw
-import xyz.znix.xftl.f
-import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.DroneBlueprint
 
@@ -91,7 +89,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
         // Check if the enemy ship changed, for example if it was killed.
         val enemyShip = ownerShip.sys.getEnemyOf(ownerShip)
-        if (enemyShip != projectile.ship) {
+        if (enemyShip == null || enemyShip != projectile.targetShip) {
             destroy()
             return
         }
@@ -131,12 +129,14 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
      * The projectile that represents the drone flying through space towards
      * the target ship.
      */
-    inner class FlyingDrone(target: Room) : AbstractProjectile(target) {
+    inner class FlyingDrone(val target: Room) : AbstractProjectile(target.ship) {
         // The portrait frame of the robot, which is shown on top
         // of the thruster sprite
-        val portrait = ship.sys.animations["battle_portrait"].spriteAt(0)
+        val portrait = ownerShip.sys.animations["battle_portrait"].spriteAt(0)
 
-        val thruster = ship.sys.getImg("img/ship/drones/boarder_engine.png")
+        val thruster = ownerShip.sys.getImg("img/ship/drones/boarder_engine.png")
+
+        val shotDownAnimation = ownerShip.sys.animations["explosion_random"]
 
         // Fished out with x32dbg as I couldn't be bothered to find
         // it via static analysis, and it's not guaranteed to be correct
@@ -146,6 +146,8 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         override val speed: Int get() = 18 * 16
 
         override var drawUnderShip: Boolean = true
+
+        override val isMissileForDD: Boolean get() = true
 
         override fun reachedTarget() {
             // We've hit our target room.
@@ -186,6 +188,20 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
             super.onSwitchedToTarget()
 
             drawUnderShip = false
+        }
+
+        override fun calculateTargetPosition(): IPoint {
+            // Copied from AbstractWeaponProjectile.
+
+            // Aim for the centre of the target room.
+            return ConstPoint(
+                target.offsetX + target.width * Constants.ROOM_SIZE / 2,
+                target.offsetY + target.height * Constants.ROOM_SIZE / 2
+            )
+        }
+
+        override fun hitOtherProjectile(currentSpace: Ship) {
+            currentSpace.animations += Ship.FloatingAnimation.centered(shotDownAnimation.start(), position)
         }
     }
 

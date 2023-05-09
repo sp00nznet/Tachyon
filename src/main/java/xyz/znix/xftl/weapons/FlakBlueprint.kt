@@ -69,6 +69,8 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // so it probably copies its default speed.
         override val defaultSpeed: Int get() = 60
 
+        override val isMissileForDD: Boolean get() = true
+
         init {
             // Pick where in the circle this bit of flack will land
             // Put the random radius value in a square root so the

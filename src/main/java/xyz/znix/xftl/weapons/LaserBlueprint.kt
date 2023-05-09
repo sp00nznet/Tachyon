@@ -20,6 +20,8 @@ class LaserBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     inner class LaserProjectile(room: Room) : AbstractWeaponProjectile(this, room) {
         override val defaultSpeed: Int get() = 60
 
+        override val isLaserForDD: Boolean get() = true
+
         override fun renderPreTranslated(g: Graphics) {
             val img = target.ship.sys.animations[projectile!!]
             val spr = img.spriteAt(0)

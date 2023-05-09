@@ -1,6 +1,5 @@
 package xyz.znix.xftl.drones
 
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.weapons.DroneBlueprint
 

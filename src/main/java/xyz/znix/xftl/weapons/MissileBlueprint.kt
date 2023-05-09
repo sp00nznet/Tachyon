@@ -20,6 +20,8 @@ class MissileBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     inner class MissileProjectile(room: Room) : AbstractWeaponProjectile(this, room) {
         override val defaultSpeed: Int get() = 35
 
+        override val isMissileForDD: Boolean get() = true
+
         override fun renderPreTranslated(g: Graphics) {
             g.rotate(0f, 0f, 90f)
 

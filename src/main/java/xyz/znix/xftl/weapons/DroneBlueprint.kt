@@ -3,10 +3,7 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
-import xyz.znix.xftl.drones.AbstractDrone
-import xyz.znix.xftl.drones.BoardingDrone
-import xyz.znix.xftl.drones.CombatDrone
-import xyz.znix.xftl.drones.RepairDrone
+import xyz.znix.xftl.drones.*
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -19,6 +16,10 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     val speed: Int? = xml.getChildTextTrim("speed")?.toInt()
     val droneImage: String? = xml.getChildTextTrim("droneImage")
     val iconImage: String? = xml.getChildTextTrim("iconImage")
+
+    // For defence drones (which includes anti-drones)
+    val cooldown: Int? = xml.getChildTextTrim("cooldown")?.toInt() // In milliseconds
+    val defenceTarget: String? = xml.getChildTextTrim("target") // Either DRONES or LASERS
 
     val weaponBlueprintName: String? = xml.getChildTextTrim("weaponBlueprint")
     var weaponBlueprint: AbstractWeaponBlueprint? = null
@@ -34,7 +35,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     // disassembling the UI code to look for this seems a bit excessive.
     val iconSize: ConstPoint = when (type) {
         // TODO find some logic behind this - is it the laser arm
-        //  in defense drones that make them taller?
+        //  in defence drones that make them taller?
         // DEFENSE_1 drones use 46 pixels of Y in the event option UI, while COMBAT_1 uses 38.
         DroneType.DEFENSE -> ConstPoint(29, 37)
         DroneType.COMBAT -> ConstPoint(29, 29)
@@ -73,7 +74,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
 
         base.draw(pos.x - base.width / 2f, pos.y - base.height / 2f)
 
-        // TODO laser for defense drones
+        // TODO laser for defence drones
     }
 
     fun makeInstance(): AbstractDrone {
@@ -81,6 +82,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
             DroneType.REPAIR -> RepairDrone(this)
             DroneType.BOARDER -> BoardingDrone(this)
             DroneType.COMBAT -> CombatDrone(this)
+            DroneType.DEFENSE -> DefenceDrone(this)
             else -> DummyDrone(this)
         }
     }

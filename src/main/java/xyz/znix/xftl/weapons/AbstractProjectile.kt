@@ -13,7 +13,15 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-abstract class AbstractProjectile(val target: Room) : IProjectile {
+abstract class AbstractProjectile(
+    /**
+     * If non-null, the ship this projectile is aimed at.
+     *
+     * If this is set and the projectile leaves one ship's
+     * space, it jumps to this ship's space.
+     */
+    val targetShip: Ship?
+) : IProjectile {
 
     /**
      * The projectile's speed, in pixels per second.
@@ -24,8 +32,6 @@ abstract class AbstractProjectile(val target: Room) : IProjectile {
     // This is only used if and when we exit the space of the
     // ship that fired us, and enter the target's space.
     var entryAngle: Float = (Math.random() * Math.PI * 2).toFloat()
-
-    val ship: Ship get() = target.ship
 
     private var hasReachedTarget: Boolean = false
     private var hasPassedShields: Boolean = false
@@ -52,7 +58,7 @@ abstract class AbstractProjectile(val target: Room) : IProjectile {
         }
 
     // The position this projectile is flying towards.
-    private var targetPos: IPoint = ConstPoint.ZERO
+    var targetPos: IPoint = ConstPoint.ZERO
 
     // The rotation of this projectile.
     // In radians, where 0 is pointing right.
@@ -74,12 +80,14 @@ abstract class AbstractProjectile(val target: Room) : IProjectile {
             return
         }
 
-        // If we're in the target ship's space, check if we're now inside it's shields.
-        if (!hasPassedShields && currentSpace == ship) {
-            val rel = Point(position)
-            rel -= ship.shieldOrigin
+        val isDeparting = targetShip != null && targetShip != currentSpace
 
-            val shieldSize = ship.shieldHalfSize
+        // If we're in the target ship's space, check if we're now inside it's shields.
+        if (!hasPassedShields && !isDeparting) {
+            val rel = Point(position)
+            rel -= currentSpace.shieldOrigin
+
+            val shieldSize = currentSpace.shieldHalfSize
 
             if (rel.x.f.squared / shieldSize.x.f.squared + rel.y.f.squared / shieldSize.y.f.squared < 1) {
                 hasPassedShields = true
@@ -101,7 +109,7 @@ abstract class AbstractProjectile(val target: Room) : IProjectile {
 
             // Are we a departing projectile? If so, switch ourselves to
             // the ship we're aimed at.
-            if (currentSpace != ship) {
+            if (targetShip != null && currentSpace != targetShip) {
                 switchToTarget()
             }
         }
@@ -185,15 +193,11 @@ abstract class AbstractProjectile(val target: Room) : IProjectile {
      * the shooter's ship to the target's ship.
      */
     open fun calculateTargetPosition(): IPoint {
-        // Aim for the centre of the target room
-        return ConstPoint(
-            target.offsetX + target.width * ROOM_SIZE / 2,
-            target.offsetY + target.height * ROOM_SIZE / 2
-        )
+        error("Cannot cross ship spaces without implementing calculateTargetPosition")
     }
 
     private fun switchToTarget() {
-        ship.projectiles.add(this)
+        targetShip!!.projectiles.add(this)
 
         // Jump into the outside of the enemy ship space.
         // See doc/projectiles for this logic.
@@ -224,7 +228,8 @@ abstract class AbstractProjectile(val target: Room) : IProjectile {
     }
 }
 
-abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, target: Room) : AbstractProjectile(target) {
+abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val target: Room) :
+    AbstractProjectile(target.ship) {
 
     /**
      * The default speed for this projectile, if it's not set in the blueprint.
@@ -244,6 +249,11 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, targe
     private val defaultMissSound = target.ship.sys.sounds.getSample("miss")
 
     private var missed: Boolean? = null
+
+    // Used by defence drones.
+    var firedByDrone: Boolean = false
+
+    val ship: Ship get() = target.ship
 
     override fun reachedTarget() {
         resolveMissed()
@@ -283,6 +293,14 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, targe
         drawUnderShip = false
     }
 
+    override fun calculateTargetPosition(): IPoint {
+        // Aim for the centre of the target room.
+        return ConstPoint(
+            target.offsetX + target.width * ROOM_SIZE / 2,
+            target.offsetY + target.height * ROOM_SIZE / 2
+        )
+    }
+
     protected open fun hitShields() {
         if (type.ionDamage > 0) {
             ship.shields!!.dealDamage(0, type.ionDamage)
@@ -292,6 +310,10 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, targe
 
         ship.playDamageEffect(type, position)
         type.hitShieldSounds?.get()?.play()
+    }
+
+    override fun hitOtherProjectile(currentSpace: Ship) {
+        currentSpace.playDamageEffect(type, position)
     }
 
     protected open fun hitHull() {

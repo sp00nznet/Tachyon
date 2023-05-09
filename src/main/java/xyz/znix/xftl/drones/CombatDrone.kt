@@ -14,7 +14,7 @@ import kotlin.math.PI
 import kotlin.random.Random
 
 class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
-    override val flightController = CombatFlightController()
+    override val flightController = CombatFlightController(this)
 
     private lateinit var offImage: Image
     private lateinit var onImage: Image
@@ -91,12 +91,8 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
 
                 // Match our rotation to that of the beam
                 if (firingBeam) {
-                    val currentPos = ConstPoint(
-                        flightController.posX.toInt(),
-                        flightController.posY.toInt()
-                    )
                     val target = weapon.getCurrentTargetPoint()
-                    flightController.rotation = flightController.getAngleFrom(currentPos, target)
+                    flightController.rotation = DroneFlightController.getAngleFrom(flightController.position, target)
                 }
             }
 

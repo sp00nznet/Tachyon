@@ -12,6 +12,7 @@ import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
+import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Door
@@ -38,6 +39,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val imageName: String = shipNode.getAttributeValue("img")
 
     val isPlayerShip: Boolean = name.startsWith("PLAYER_SHIP_")
+
+    // Played when any two projectiles collide.
+    private val projectileCollisionSound: FTLSound = sys.sounds.getSample("hitHull1")
 
     val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
     val hullImage: Image = base.readImage("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
@@ -814,6 +818,44 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
         for (i in inboundBombs.size - 1 downTo 0) {
             inboundBombs[i].update(dt)
+        }
+
+        // Check for collisions between any two projectiles. To avoid
+        // checking a pair twice (but in a swapped order), only check
+        // a projectile against those that come after it in the list.
+        // By iterating down, we can again ignore the problem of changing
+        // indices when projectiles are removed.
+        for (lowerI in projectiles.size - 1 downTo 0) {
+            val first = projectiles[lowerI]
+            for (upperI in projectiles.size - 1 downTo lowerI + 1) {
+                val second = projectiles[upperI]
+
+                val distSq = first.position.distToSq(second.position)
+                val maxDistSq = first.hitboxRadius + second.hitboxRadius
+
+                // No overlap?
+                if (distSq > maxDistSq)
+                    continue
+
+                first.hitOtherProjectile(this)
+                second.hitOtherProjectile(this)
+
+                // Play a single hit sound. It seems that FTL doesn't
+                // play this missile explode sound when a drone shoots
+                // down a missile, so always using one is probably
+                // close to correct.
+                // It also means we don't play two sounds for the same
+                // thing, which would be the case if hitOtherProjectile
+                // played a sound effect.
+                projectileCollisionSound.play()
+
+                projectiles.removeAt(upperI)
+                projectiles.removeAt(lowerI)
+
+                // Don't process any more projectiles in relation to the
+                // one from the outer loop, as we removed it.
+                break
+            }
         }
 
         // Update the animations

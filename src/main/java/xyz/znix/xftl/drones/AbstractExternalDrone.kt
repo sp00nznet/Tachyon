@@ -6,6 +6,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.*
 import kotlin.random.Random
@@ -49,7 +50,7 @@ abstract class AbstractExternalDrone(
 
         targetShip.externalDrones.add(this)
 
-        flightController.init(this)
+        flightController.init()
 
         onInit()
     }
@@ -89,7 +90,16 @@ abstract class AbstractExternalDrone(
      */
     open fun renderExternal(g: Graphics) {
         g.pushTransform()
-        g.translate(flightController.posX, flightController.posY)
+
+        var x = flightController.posX
+        var y = flightController.posY
+
+        if (flightController.pixelAligned) {
+            x = x.roundToInt().f
+            y = y.roundToInt().f
+        }
+
+        g.translate(x, y)
         g.rotate(0f, 0f, flightController.rotation / TWO_PI * 360f)
 
         onRender(g)
@@ -100,29 +110,185 @@ abstract class AbstractExternalDrone(
     protected abstract fun onRender(g: Graphics)
 }
 
-abstract class DroneFlightController {
-    protected lateinit var drone: AbstractExternalDrone
-        private set
-
+abstract class DroneFlightController(val drone: AbstractExternalDrone) {
     protected val ship: Ship get() = drone.targetShip
 
+    /**
+     * If true, the drone is always snapped to a rounded position.
+     *
+     * This should be used when there's no rotation, as it makes
+     * the sprite sharper.
+     */
+    abstract val pixelAligned: Boolean
+
     var posX: Float = 0f
+        set(value) {
+            field = value
+            mutablePosition.x = value.roundToInt()
+        }
     var posY: Float = 0f
+        set(value) {
+            field = value
+            mutablePosition.y = value.roundToInt()
+        }
     var rotation: Float = 0f
 
-    fun init(drone: AbstractExternalDrone) {
-        if (this::drone.isInitialized) {
-            throw IllegalStateException("Cannot re-initialise drone flight controller!")
-        }
-
-        this.drone = drone
-
-        setup()
-    }
+    private val mutablePosition = Point(0, 0)
+    val position: IPoint get() = mutablePosition
 
     abstract fun update(dt: Float)
 
-    protected abstract fun setup()
+    /**
+     * Called when the owner drone has finished seting itself up.
+     */
+    open fun init() {
+    }
+
+    companion object {
+        /**
+         * Get the angle the drone needs to face in to point at a given
+         * location when it's floating at the set coordinates.
+         */
+        fun getAngleFrom(at: IPoint, to: IPoint): Float {
+            val base = atan2(to.y.f - at.y.f, to.x.f - at.x.f)
+
+            // With atan2 we get an angle where zero means 'to the right'.
+            // However our drones are facing up in the images, so we need
+            // to rotate 90° to correct for that.
+            var corrected = base + TWO_PI / 4
+
+            // Fix the value up to be in the 0..2pi range.
+            if (corrected < 0)
+                corrected += TWO_PI
+            if (corrected > TWO_PI)
+                corrected -= TWO_PI
+
+            return corrected
+        }
+    }
+}
+
+/**
+ * A flight controller that constantly flies around the ship's
+ * shields line. Used on defence and shield overcharger drones.
+ */
+class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightController(drone) {
+    override val pixelAligned: Boolean get() = true
+
+    private lateinit var shieldBounds: IPoint
+
+    private var typeSpeed: Float = 0f
+
+    // The angle about the origin we're so stubbonly using.
+    var theta = 0f
+
+    private val Float.sq get() = this * this
+
+    var speedX: Float = 0f
+    var speedY: Float = 0f
+
+    private var poweredLastFrame = false
+
+    override fun init() {
+        super.init()
+
+        shieldBounds = drone.targetShip.shieldHalfSize
+
+        val shieldSemiMajor = max(shieldBounds.x, shieldBounds.y)
+        typeSpeed = shieldSemiMajor * drone.type.speed!! / 21.875f
+
+        // Initialise our position
+        update(0f)
+    }
+
+    override fun update(dt: Float) {
+        val wasStartedUp = !poweredLastFrame && drone.isPowered
+        poweredLastFrame = drone.isPowered
+
+        if (!drone.isPowered) {
+            // Copied from CombatFlightController
+            posX += speedX * dt
+            posY += speedY * dt
+
+            val slowdownFactor = 0.1f * dt * 16
+            speedX *= 1 - slowdownFactor
+            speedY *= 1 - slowdownFactor
+
+            val totalSpeed = sqrt(speedX * speedX + speedY * speedY)
+            if (totalSpeed < 16) {
+                speedX = 0f
+                speedY = 0f
+            }
+            return
+        }
+
+        // When we're turned on, snap back to the closest point on the shields
+        if (wasStartedUp) {
+            val circleX = (posX - ship.shieldOrigin.x.f) / shieldBounds.x
+            val circleY = (posY - ship.shieldOrigin.y.f) / shieldBounds.y
+            theta = atan2(circleY, circleX)
+        }
+
+        updateMovement(dt)
+    }
+
+    @Suppress("LocalVariableName")
+    private fun updateMovement(dt: Float) {
+        // Consider the shields an ellipse where x^2/a^2 + y^2/b^2 = 1
+        val a = shieldBounds.x.f
+        val b = shieldBounds.y.f
+
+        // Find the direction we're moving in.
+        val tangentX = -a * sin(theta)
+        val tangentY = b * cos(theta)
+        val tangentLength = sqrt(tangentX.sq + tangentY.sq)
+
+        // These are effectively dx/dL or dy/dL, where L is the
+        // distance we move this step.
+        val unitX = tangentX / tangentLength
+        val unitY = tangentY / tangentLength
+
+        // Use this to set our speed, which is used for
+        // coasting when we're powered off.
+        speedX = unitX * typeSpeed
+        speedY = unitY * typeSpeed
+
+        // Calculate our position to stay locked to the ellipse
+        // while moving at a constant rate.
+        // For some reason I solved this analytically, so here's
+        // the equations. There's two of them, both of which
+        // give you the same answer but you'll run into precision
+        // errors at different points:
+        // dθ/dx = -1/(a*sqrt(1 - x^2/a^2))
+        // dθ/dy =  1/(b*sqrt(1 - y^2/b^2))
+        // These were taken by simply rearranging and deriving
+        // the circle point equations, x=a*cos(θ) and y=b*sin(θ).
+        // We actually take the absolute values of these, since
+        // we only want to move forwards and these assume the
+        // angle is in the top-right corner.
+
+        val x = shieldBounds.x * cos(theta)
+        val y = shieldBounds.y * sin(theta)
+
+        val dθdL: Float = if (abs(x) > abs(y)) {
+            val dθdy = 1 / (b * sqrt(1 - y.sq / b.sq))
+            abs(dθdy * unitY)
+        } else {
+            val dθdx = 1 / (a * sqrt(1 - x.sq / a.sq))
+            abs(dθdx * unitX)
+        }
+
+        // Now we can finally update our angle.
+        // For completeness, typeSpeed is effectively dL/dt, since
+        // it's the movement per unit time.
+        theta += dθdL * typeSpeed * dt
+
+        theta = theta.rem(TWO_PI)
+
+        rotation = 0f
+        posX = ship.shieldOrigin.x.f + (a * cos(theta))
+        posY = ship.shieldOrigin.y.f + (b * sin(theta))
+    }
 }
 
 /**
@@ -130,7 +296,9 @@ abstract class DroneFlightController {
  * of the enemy ship, and lines behind (but pointing towards)
  * the shield.
  */
-class CombatFlightController : DroneFlightController() {
+class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightController(drone) {
+    override val pixelAligned: Boolean get() = false
+
     private var nextDestination: IPoint = ConstPoint.ZERO
     private var currentDestAngle: Float = 0f // In radians
 
@@ -178,7 +346,7 @@ class CombatFlightController : DroneFlightController() {
      */
     var nextStopTarget: IPoint = ConstPoint.ZERO
 
-    override fun setup() {
+    override fun init() {
         shieldSize = ship.shieldHalfSize
 
         // See doc/combat-drone for the speed information.
@@ -323,33 +491,12 @@ class CombatFlightController : DroneFlightController() {
         // Calculate the distance between this point and the next one.
         // This is used to figure out how far along our flight we are,
         // to correctly set the rotation.
-        movementDistance = sqrt(nextDestination.distToSq(ConstPoint(posX.toInt(), posY.toInt())).f)
+        movementDistance = sqrt(nextDestination.distToSq(position).f)
 
         // Pick the new rotation, and save the old one so we can
         // interpolate between them.
         lastDestRotation = nextDestRotation
         nextDestRotation = getAngleFrom(nextDestination, nextStopTarget)
-    }
-
-    /**
-     * Get the angle the drone needs to face in to point at a given
-     * location when it's floating at the set coordinates.
-     */
-    fun getAngleFrom(at: IPoint, to: IPoint): Float {
-        val base = atan2(to.y.f - at.y.f, to.x.f - at.x.f)
-
-        // With atan2 we get an angle where zero means 'to the right'.
-        // However our drones are facing up in the images, so we need
-        // to rotate 90° to correct for that.
-        var corrected = base + TWO_PI / 4
-
-        // Fix the value up to be in the 0..2pi range.
-        if (corrected < 0)
-            corrected += TWO_PI
-        if (corrected > TWO_PI)
-            corrected -= TWO_PI
-
-        return corrected
     }
 }
 

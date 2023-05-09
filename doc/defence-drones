@@ -1,0 +1,13 @@
+(Note: I've tried to use the American spelling of 'defence' when
+ quoting class names from FTL for the sake of search-ability, but
+ you'd be well advised to try searching for both)
+
+Defence drone targeting is a big mess.
+
+The targetLocation field is set by DefenseDrone::SetWeaponTarget. This
+determines whether the drone has a valid target or not.
+
+In DefenseDrone::PickTarget, this is then immediately set back to the
+invalid values of 0x7ffffff for x and y unless the target location
+X and Y values are both in the range (-150, 450). This is what prevents
+defence drones from defending the front of your ship.
