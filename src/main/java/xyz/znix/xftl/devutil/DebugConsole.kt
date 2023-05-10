@@ -60,6 +60,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("upall", 0, this::cmdUpgradeAll, "UPgrade ALL systems on the player ship to the maximum level"),
         Cmd("downall", 0, this::cmdDowngradeAll, "Downgrade all systems on the player ship to their starting level"),
         Cmd("set", 1, this::cmdSet, "Turn on or off debug flags"),
+        Cmd("damage", 1, this::cmdDamage, "Apply a given amount of damage to the player ship (or negative to heal)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -534,6 +535,20 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
 
         lines.add("Unknown debug flag name '$name', see 'set help' for more information.")
+    }
+
+    private fun cmdDamage(args: List<String>) {
+        val amountStr = args[1]
+        val amount = amountStr.toIntOrNull()
+
+        if (amount == null) {
+            lines.add("Invalid amount of damage number '$amount'.")
+            return
+        }
+
+        ship.health -= amount
+
+        lines.add("Applied $amount points of damage to the player ship")
     }
 
     private fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {
