@@ -102,11 +102,6 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         g.popTransform()
     }
 
-    private fun drawCentred(image: Image, filter: Color = Color.white) {
-        // Try to keep everything as an integer to make the sprites sharper.
-        image.draw(-(image.width / 2).f, -(image.height / 2).f, filter)
-    }
-
     override fun update(dt: Float) {
         super.update(dt)
 

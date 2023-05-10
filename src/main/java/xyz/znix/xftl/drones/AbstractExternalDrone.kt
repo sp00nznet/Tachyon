@@ -1,6 +1,8 @@
 package xyz.znix.xftl.drones
 
+import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.Image
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.SlickGame
@@ -63,8 +65,8 @@ abstract class AbstractExternalDrone(
         flightController.update(dt)
     }
 
-    override fun destroy() {
-        super.destroy()
+    override fun removeInstance() {
+        super.removeInstance()
 
         targetShip.externalDrones.remove(this)
     }
@@ -108,6 +110,11 @@ abstract class AbstractExternalDrone(
     }
 
     protected abstract fun onRender(g: Graphics)
+
+    protected fun drawCentred(image: Image, filter: Color = Color.white) {
+        // Try to keep everything as an integer to make the sprites sharper.
+        image.draw(-(image.width / 2).f, -(image.height / 2).f, filter)
+    }
 }
 
 abstract class DroneFlightController(val drone: AbstractExternalDrone) {

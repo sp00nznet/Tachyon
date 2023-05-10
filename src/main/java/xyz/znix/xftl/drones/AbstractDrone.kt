@@ -46,7 +46,7 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
      * an explosion animation or anything like that, it only removes
      * the drone instance.
      */
-    fun removeInstance() {
+    open fun removeInstance() {
         // Drones that have been moved to cargo won't have an associated
         // info any more, so we have to use firstOrNull.
         val drones = ownerShip.drones!!

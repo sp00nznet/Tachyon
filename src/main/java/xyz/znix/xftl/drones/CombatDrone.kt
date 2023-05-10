@@ -63,7 +63,7 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
             else -> onImage
         }
 
-        image.draw(-image.width / 2f, -image.height / 2f)
+        drawCentred(image)
     }
 
     override fun update(dt: Float) {
