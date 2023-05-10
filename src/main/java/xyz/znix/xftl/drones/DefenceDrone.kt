@@ -117,7 +117,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         cooldown = max(0f, cooldown - dt)
 
-        val bestTarget: Pair<IPoint, AbstractProjectile>? = if (shootsAtDrones) {
+        val bestTarget: InterceptResult? = if (shootsAtDrones) {
             pickAndShootAtDrones()
         } else {
             pickBestProjectileTarget()
@@ -125,24 +125,23 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         // Can we shoot at something?
         if (cooldown == 0f && bestTarget != null) {
-            shootAt(bestTarget.second, bestTarget.first)
+            shootAt(bestTarget)
         }
 
         // Point the gun at whatever we're planning to shoot
         // when it gets in range (or have just shot at).
         if (bestTarget != null) {
-            aimAngle = DroneFlightController.getAngleFrom(flightController.position, bestTarget.first)
+            aimAngle = DroneFlightController.getAngleFrom(flightController.position, bestTarget.point)
         }
     }
 
-    private fun pickAndShootAtDrones(): Pair<IPoint, AbstractProjectile>? {
+    private fun pickAndShootAtDrones(): InterceptResult? {
         // TODO implement, this is for the anti-drone
         return null
     }
 
-    private fun pickBestProjectileTarget(): Pair<IPoint, AbstractProjectile>? {
-        var best: AbstractProjectile? = null
-        var interceptPoint: IPoint? = null
+    private fun pickBestProjectileTarget(): InterceptResult? {
+        var best: InterceptResult? = null
 
         projectileLoop@ for (projectile in ownerShip.projectiles) {
             if (projectile !is AbstractProjectile)
@@ -173,21 +172,24 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
             }
 
             // Check if we can intercept this target (IP=intercept point)
-            val projectileIP = calculateIntercept(projectile, weaponSpeed.f) ?: continue
+            val result = calculateIntercept(projectile, weaponSpeed.f) ?: continue
+
+            // Check if the projectile will reach the target prior to the interception
+            val distanceToTarget = projectile.targetPos.distToSq(projectile.position)
+            val timeToIntercept = sqrt(distanceToTarget.f) / projectile.speed
+
+            if (timeToIntercept < result.time)
+                continue
 
             // TODO prioritise targets
 
-            best = projectile
-            interceptPoint = projectileIP
+            best = result
         }
 
-        if (best == null)
-            return null
-
-        return Pair(interceptPoint!!, best)
+        return best
     }
 
-    private fun calculateIntercept(projectile: AbstractProjectile, ourSpeed: Float): IPoint? {
+    private fun calculateIntercept(projectile: AbstractProjectile, ourSpeed: Float): InterceptResult? {
         // Centre the projectile at the origin by translating the drone
 
         val dronePos = Point(flightController.position)
@@ -213,7 +215,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
             val interceptPos = Point(projectile.position)
             interceptPos.x += (projVelX * interceptTime).roundToInt()
             interceptPos.y += (projVelY * interceptTime).roundToInt()
-            return interceptPos
+            return InterceptResult(projectile, interceptPos, interceptTime)
         }
 
         val discriminant = b.pow(2) - 4 * a * c
@@ -243,10 +245,12 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         interceptPos.x += (projVelX * bestInterceptTime).roundToInt()
         interceptPos.y += (projVelY * bestInterceptTime).roundToInt()
 
-        return interceptPos
+        return InterceptResult(projectile, interceptPos, bestInterceptTime)
     }
 
-    private fun shootAt(target: AbstractProjectile, point: IPoint) {
+    private fun shootAt(interception: InterceptResult) {
+        val point = interception.point
+
         // Require that all projectiles are within -150 to 450
         // in both the X and Y coordinates. This is what prevents
         // the defence drone from defending the right-hand side
@@ -272,7 +276,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         weapon.launchSounds?.get()?.play()
 
         cooldown = typeCooldown
-        lastShotAtTarget = target
+        lastShotAtTarget = interception.target
     }
 
     private inner class InterceptorLaser : AbstractProjectile(null) {
@@ -299,6 +303,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
             currentSpace.animations += Ship.FloatingAnimation.centered(hitAnimation.start(), position)
         }
     }
+
+    private class InterceptResult(val target: AbstractProjectile, val point: IPoint, val time: Float)
 
     companion object {
         // The target type used by defence 2 drones, this also shoots
