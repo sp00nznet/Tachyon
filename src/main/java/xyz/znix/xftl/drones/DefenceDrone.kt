@@ -142,6 +142,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
     private fun pickBestProjectileTarget(): InterceptResult? {
         var best: InterceptResult? = null
+        var bestPriority: Int = -1
 
         projectileLoop@ for (projectile in ownerShip.projectiles) {
             if (projectile !is AbstractProjectile)
@@ -171,6 +172,20 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
                 else -> continue@projectileLoop
             }
 
+            // Prioritise targets based on their damage and whether they're
+            // a missile or not. This isn't properly copied from FTL, but
+            // should be about right.
+            val priority = when {
+                // This is non-weapon stuff, like drones or hacking.
+                projectile !is AbstractWeaponProjectile -> 5
+
+                projectile.type.shieldPiercing >= 4 -> 10 + projectile.type.damage
+                else -> projectile.type.damage
+            }
+
+            if (priority < bestPriority)
+                continue
+
             // Check if we can intercept this target (IP=intercept point)
             val result = calculateIntercept(projectile, weaponSpeed.f) ?: continue
 
@@ -181,9 +196,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
             if (timeToIntercept < result.time)
                 continue
 
-            // TODO prioritise targets
-
             best = result
+            bestPriority = priority
         }
 
         return best
