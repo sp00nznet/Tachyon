@@ -35,7 +35,7 @@ interface IProjectile {
      * This is used for checking for collisions between projectiles
      * and other projectiles or drones.
      */
-    val hitboxRadius: Int get() = 6
+    val hitboxRadius: Int get() = 3
 
     /**
      * Called to update this projectile.

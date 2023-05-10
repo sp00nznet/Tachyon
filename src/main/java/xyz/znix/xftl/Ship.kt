@@ -831,10 +831,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 val second = projectiles[upperI]
 
                 val distSq = first.position.distToSq(second.position)
-                val maxDistSq = first.hitboxRadius + second.hitboxRadius
+                val maxDist = first.hitboxRadius + second.hitboxRadius
 
                 // No overlap?
-                if (distSq > maxDistSq)
+                if (distSq > maxDist * maxDist)
                     continue
 
                 first.hitOtherProjectile(this)
