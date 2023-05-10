@@ -558,7 +558,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // Draw departing shots. We'll draw the rest of them later.
         for (proj in projectiles) {
             if (proj.drawUnderShip) {
-                proj.render(g)
+                proj.render(g, this)
             }
         }
 
@@ -602,7 +602,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // drew underneath the ship earlier.
         for (proj in projectiles) {
             if (!proj.drawUnderShip) {
-                proj.render(g)
+                proj.render(g, this)
             }
         }
 
@@ -882,6 +882,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
+        if (sys.debugFlags.noDmg.set)
+            return
+
         health -= damage
         target.system?.dealDamage(systemDamage, ionDamage)
     }

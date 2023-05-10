@@ -12,6 +12,7 @@ import xyz.znix.xftl.crew.AbstractCrew;
 import xyz.znix.xftl.crew.CrewNameManager;
 import xyz.znix.xftl.crew.LivingCrew;
 import xyz.znix.xftl.devutil.DebugConsole;
+import xyz.znix.xftl.devutil.DebugFlagManager;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
@@ -71,6 +72,8 @@ public class SlickGame extends BasicGame {
 
     private DebugConsole debugConsole;
     private boolean debugConsoleVisible;
+
+    private final DebugFlagManager debugFlags = new DebugFlagManager();
 
     private float asteroidAnimationTimer;
 
@@ -729,6 +732,10 @@ public class SlickGame extends BasicGame {
 
     public CrewNameManager getNameManager() {
         return nameManager;
+    }
+
+    public DebugFlagManager getDebugFlags() {
+        return debugFlags;
     }
 
     @NotNull

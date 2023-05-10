@@ -1,5 +1,6 @@
 package xyz.znix.xftl.weapons
 
+import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
@@ -115,12 +116,18 @@ abstract class AbstractProjectile(
         }
     }
 
-    override fun render(g: Graphics) {
+    override fun render(g: Graphics, currentSpace: Ship) {
         g.pushTransform()
         g.translate(position.x.f, position.y.f)
         g.rotate(0f, 0f, Math.toDegrees(rotation.toDouble()).toFloat())
 
         renderPreTranslated(g)
+
+        if (currentSpace.sys.debugFlags.showProjectileHitboxes.set) {
+            val r = hitboxRadius.f
+            g.color = Color.red
+            g.drawOval(-r, -r, r * 2, r * 2)
+        }
 
         g.popTransform()
     }

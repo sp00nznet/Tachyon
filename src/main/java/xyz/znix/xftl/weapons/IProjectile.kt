@@ -45,7 +45,7 @@ interface IProjectile {
      */
     fun update(dt: Float, currentSpace: Ship)
 
-    fun render(g: Graphics)
+    fun render(g: Graphics, currentSpace: Ship)
 
     /**
      * Called when this projectile hit another projectile, immediately

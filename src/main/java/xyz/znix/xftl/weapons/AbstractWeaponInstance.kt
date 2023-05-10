@@ -27,12 +27,17 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     val animation = type.getLauncher(ship.sys)
 
     open fun update(dt: Float, canCharge: Boolean) {
+        val chargeMult = when (ship.sys.debugFlags.fastWeaponCharge.set) {
+            true -> 10f
+            false -> 1f
+        }
+
         if (isPowered) {
             if (!hasEnoughMissiles)
                 isPowered = false
 
             if (canCharge)
-                timeCharged += dt
+                timeCharged += dt * chargeMult
         } else {
             timeCharged -= dt * 10
         }
@@ -49,7 +54,9 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         // Deduct a missile (or multiple), if this weapon uses them
         // This really shouldn't be going negative here, but guard
         // it just in case.
-        ship.missilesCount = max(0, ship.missilesCount - type.missilesUsed)
+        if (!ship.sys.debugFlags.infiniteMissiles.set) {
+            ship.missilesCount = max(0, ship.missilesCount - type.missilesUsed)
+        }
     }
 
     open fun render(g: Graphics) {

@@ -59,6 +59,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("spawn-ship", 2, this::cmdSpawnShip, "Spawn an enemy ship directly from a seed"),
         Cmd("upall", 0, this::cmdUpgradeAll, "UPgrade ALL systems on the player ship to the maximum level"),
         Cmd("downall", 0, this::cmdDowngradeAll, "Downgrade all systems on the player ship to their starting level"),
+        Cmd("set", 1, this::cmdSet, "Turn on or off debug flags"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -481,6 +482,58 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
         ship.purchasedReactorPower = 5
         lines.add("Downgraded all systems to their starting level")
+    }
+
+    private fun cmdSet(args: List<String>) {
+        var name = args[1]
+
+        val flagManager = game.debugFlags
+
+        if (name == "help") {
+            lines.add("Use 'set <name>' to enable a debug flag, or 'set !<name>' to disable it.")
+            lines.add("Or use 'set all' or 'set !all' to turn everything on or off.")
+            lines.add("Use 'set vis' or 'set !vis' to turn all debug visuals on or off.")
+            lines.add("Valid names:")
+            for (flag in flagManager.all) {
+                lines.add("  ${flag.shortName.padEnd(20)} ${flag.set}   ${flag.fullName} - ${flag.description}")
+            }
+            return
+        }
+
+        // If the name starts with '!', then it means to turn the effect off
+        val status = name.getOrNull(0) != '!'
+        name = name.trimStart('!')
+
+        when (name) {
+            "all" -> {
+                for (flag in flagManager.all) {
+                    flag.set = status
+                }
+                lines.add("Set all debug flags to $status")
+                return
+            }
+
+            "vis" -> {
+                for (flag in flagManager.all) {
+                    if (!flag.isVisual)
+                        continue
+                    flag.set = status
+                }
+                lines.add("Set all debug visuals to $status")
+                return
+            }
+        }
+
+        for (flag in flagManager.all) {
+            if (flag.shortName != name)
+                continue
+
+            flag.set = status
+            lines.add("Set debug flag '$name' (${flag.fullName}) to $status")
+            return
+        }
+
+        lines.add("Unknown debug flag name '$name', see 'set help' for more information.")
     }
 
     private fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {

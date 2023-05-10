@@ -136,9 +136,11 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
             // Create the drone instance if it's not already.
             if (info.instance == null) {
                 // Consume a drone part.
-                if (ship.dronesCount <= 0)
-                    return false
-                ship.dronesCount--
+                if (!ship.sys.debugFlags.infiniteDrones.set) {
+                    if (ship.dronesCount <= 0)
+                        return false
+                    ship.dronesCount--
+                }
 
                 info.instance = info.type.makeInstance()
                 info.instance!!.init(ship)
