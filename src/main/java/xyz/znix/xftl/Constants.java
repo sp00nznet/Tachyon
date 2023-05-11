@@ -13,8 +13,8 @@ public class Constants {
     public static final Color ROOM_BORDER_COLOUR_SELECTED = Color.yellow;
     public static final Color ROOM_BORDER_COLOUR_SELECTED_INNER = new Color(255, 188, 0);
 
-    public static final int ROOM_BORDER_SIZE = 2;
-    public static final Color DOOR_COLOUR_1 = new Color(255, 150, 48);
+    // An image tint applied to broken doors
+    public static final Color DOOR_BROKEN_FILTER = new Color(1f, 0.6f, 0.6f);
 
     public static final Color SYSTEM_NORMAL = new Color(125, 125, 125);
     public static final Color SYSTEM_IONISED = new Color(133, 231, 237);

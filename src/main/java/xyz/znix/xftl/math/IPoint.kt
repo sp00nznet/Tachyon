@@ -55,9 +55,19 @@ interface IPoint {
         return x == other.x && y == other.y
     }
 
+    fun posEq(otherX: Int, otherY: Int): Boolean {
+        return x == otherX && y == otherY
+    }
+
     fun distToSq(other: IPoint): Int {
         val dx = other.x - x
         val dy = other.y - y
+        return dx * dx + dy * dy
+    }
+
+    fun distToSq(otherX: Int, otherY: Int): Int {
+        val dx = otherX - x
+        val dy = otherY - y
         return dx * dx + dy * dy
     }
 

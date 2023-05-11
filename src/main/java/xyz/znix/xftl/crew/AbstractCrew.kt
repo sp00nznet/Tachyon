@@ -327,6 +327,25 @@ abstract class AbstractCrew(
                 positionChanged()
             }
 
+            // Check if a door needs to be held open for us.
+            for (door in room.doors) {
+                var centreX = door.offsetX
+                var centreY = door.offsetY
+
+                if (door.isVertical) {
+                    centreY += ROOM_SIZE / 2
+                } else {
+                    centreX += ROOM_SIZE / 2
+                }
+
+                val distSq = pixelPositionCentre.distToSq(centreX, centreY)
+
+                if (distSq < DOOR_OPEN_DISTANCE.pow(2)) {
+                    door.crewRequestOpen()
+                    break
+                }
+            }
+
             return
         }
 
@@ -876,5 +895,7 @@ abstract class AbstractCrew(
         // This is in pixels per second, taken from the fastest
         // speed, converted to pixels and rounded from 79.8 to 80.
         const val BASE_MOVEMENT_SPEED: Float = 80f
+
+        const val DOOR_OPEN_DISTANCE: Float = ROOM_SIZE / 2f - 2f
     }
 }

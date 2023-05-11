@@ -13,6 +13,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.systems.Oxygen
 import java.util.*
+import kotlin.math.max
 
 data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: Int, val height: Int) {
 
@@ -161,26 +162,101 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             ship.sys.getImg("img/people/green_destination.png").draw(point.x.f, point.y.f)
         }
 
-        // Draw two one-pixel lines around the room, as it's too much of a hassle to
-        // change the line width, as it seems to be rather implementation-specific
-        for (i in 0..5) {
-            if (i < 2)
-                g.color = ROOM_BORDER_COLOUR
-            else if (!selected)
-                continue
-            else if (i < 5)
-                g.color = ROOM_BORDER_COLOUR_SELECTED
-            else
-                g.color = ROOM_BORDER_COLOUR_SELECTED_INNER
-            g.drawRect(
-                (x + i).f, (y + i).f,
-                (w - 1 - i * 2).f,
-                (h - 1 - i * 2).f
-            )
+        // Draw the highlight on the room if it's being selected for weapon targeting.
+        if (selected) {
+            for (i in 2..5) {
+                g.color = when {
+                    i < 5 -> ROOM_BORDER_COLOUR_SELECTED
+                    else -> ROOM_BORDER_COLOUR_SELECTED_INNER
+                }
+
+                g.drawRect(
+                    (x + i).f, (y + i).f,
+                    (w - 1 - i * 2).f,
+                    (h - 1 - i * 2).f
+                )
+            }
         }
+
+        // Draw the walls, leaving gaps for the doors.
+        // Note that when drawing right-hand or bottom
+        // walls, we need to subtract two from the x/y
+        // in order to keep the lines internal to the room.
+        g.color = ROOM_BORDER_COLOUR
+        g.lineWidth = 2f
+        for (cellX in 0 until width) {
+            drawWall(g, x, y, cellX, 0, Direction.UP)
+            drawWall(g, x, y - 2, cellX, height - 1, Direction.DOWN)
+        }
+        for (cellY in 0 until height) {
+            drawWall(g, x, y, 0, cellY, Direction.LEFT)
+            drawWall(g, x - 2, y, width - 1, cellY, Direction.RIGHT)
+        }
+        g.lineWidth = 1f
 
         // Draw the system icon
         system?.drawRoom(g)
+    }
+
+    private fun drawWall(g: Graphics, baseX: Int, baseY: Int, x: Int, y: Int, side: Direction) {
+        // When we're drawing horizontal surfaces (the top and bottom
+        // of a room) we get a vertical (up/down respectively) direction.
+        // Thus we need to flip the isVertical flag.
+        val vertical = !side.isVertical
+
+        val hasDoor = doors.any {
+            if (it.dirFor(this) != side)
+                return@any false
+
+            if (it.left == this && it.leftPos!!.posEq(x, y))
+                return@any true
+
+            if (it.right == this && it.rightPos!!.posEq(x, y))
+                return@any true
+
+            return@any false
+        }
+
+        // The .5 offset is required since we're drawing a two-pixel-thick line
+        val inWorldX = baseX + (x + max(0, side.x)) * ROOM_SIZE + 0.5f
+        val inWorldY = baseY + (y + max(0, side.y)) * ROOM_SIZE + 0.5f
+
+        // The end position of the line, relative to the start
+        var lineX = 0f
+        var lineY = 0f
+
+        // Use -2 to avoid overshooting, given we already added
+        // a 0.5 offset.
+        if (vertical) {
+            lineY += ROOM_SIZE - 2
+        } else {
+            lineX += ROOM_SIZE - 2
+        }
+
+        if (hasDoor) {
+            val doorEndFraction = 0.2f
+
+            val doorStartX = inWorldX + lineX * doorEndFraction
+            val doorStartY = inWorldY + lineY * doorEndFraction
+
+            val doorEndX = inWorldX + lineX * (1 - doorEndFraction)
+            val doorEndY = inWorldY + lineY * (1 - doorEndFraction)
+
+            g.drawLine(
+                inWorldX, inWorldY,
+                doorStartX, doorStartY
+            )
+
+            g.drawLine(
+                doorEndX, doorEndY,
+                inWorldX + lineX, inWorldY + lineY
+            )
+        } else {
+            g.drawLine(
+                inWorldX, inWorldY,
+                inWorldX + lineX, inWorldY + lineY
+            )
+        }
     }
 
     fun setSystem(config: SystemInstallConfiguration) {

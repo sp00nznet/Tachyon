@@ -218,6 +218,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     var piloting: Piloting? = null
         private set
 
+    // Can't just call this 'doors' since that's the list of all
+    // the doors in the ship.
+    var doorsSystem: Doors? = null
+        private set
+
     var oxygen: Oxygen? = null
         private set
 
@@ -708,33 +713,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         // Draw the doors
         for (door in doors) {
-            g.color = Color.blue
-
-            if (door.isVertical) {
-                val x = door.offsetX - 3
-                val y = door.offsetY + 8
-
-                g.color = Color.black
-                g.fillRect(x.f, y.f, 6f, 21f)
-
-                g.color = DOOR_COLOUR_1
-                g.fillRect(x.f + 1, y.f + 1, 4f, 21f - 2f)
-
-                g.color = Color.black
-                g.drawLine(x.f + 1, y.f + 10, x.f + 5, y.f + 10)
-            } else {
-                val x = door.offsetX + 8
-                val y = door.offsetY - 3
-
-                g.color = Color.black
-                g.fillRect(x.f, y.f, 21f, 6f)
-
-                g.color = DOOR_COLOUR_1
-                g.fillRect(x.f + 1, y.f + 1, 21f - 2f, 4f)
-
-                g.color = Color.black
-                g.drawLine(x.f + 10, y.f + 1, x.f + 10, y.f + 5)
-            }
+            door.render(g)
         }
 
         // Draw the crew
@@ -784,6 +763,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         for (room in rooms)
             room.update(dt)
+
+        // Update the door open/close animations
+        for (door in doors) {
+            door.update(dt)
+        }
 
         averageOxygen = rooms.map { it.oxygen }.average().toFloat()
 
@@ -1040,6 +1024,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         hacking = systems.mapNotNull { it as? Hacking }.firstOrNull()
         mindControl = systems.mapNotNull { it as? MindControl }.firstOrNull()
         piloting = systems.mapNotNull { it as? Piloting }.firstOrNull()
+        doorsSystem = systems.mapNotNull { it as? Doors }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
 
         // The UI will need to change to reflect this
