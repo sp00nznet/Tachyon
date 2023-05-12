@@ -77,6 +77,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val refillRate = (ship.oxygen?.refillRate ?: 0f) - Oxygen.ROOM_DRAIN_RATE
         oxygen = (oxygen + refillRate * dt).coerceAtLeast(0f).coerceAtMost(1f)
 
+        // Note that transferring oxygen through open doors is handled
+        // in the Door update function.
+
         // Update the crew standing in this room
         _crew.clear()
         for (crew in ship.crew) {

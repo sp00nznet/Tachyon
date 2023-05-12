@@ -204,7 +204,7 @@ public class SlickGame extends BasicGame {
             mouseDownPrev[i] = now;
         }
 
-        shipUI.updateUI(in.getMouseX(), in.getMouseY());
+        shipUI.updateUI(in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
 
         // Figure out when the player right-clicks
         // an enemy room - this is used for controlling boarders.
@@ -279,6 +279,11 @@ public class SlickGame extends BasicGame {
             shipUI.systemPowerHotkeyPressed(Oxygen.class, powerUp);
         if (in.isKeyPressed(Input.KEY_D))
             shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
+
+        if (in.isKeyPressed(Input.KEY_Z))
+            shipUI.openAllDoors();
+        if (in.isKeyPressed(Input.KEY_X))
+            shipUI.closeAllDoors();
     }
 
     @Override

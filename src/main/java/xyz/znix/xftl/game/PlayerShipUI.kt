@@ -160,6 +160,15 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             if (hit) return
         }
 
+        // Check if we're clicking on a door
+        if (button == MOUSE_LEFT_BUTTON) {
+            for (door in ship.doors) {
+                val hit = door.click(x - playerShipPosition.x, y - playerShipPosition.y)
+                if (hit)
+                    return
+            }
+        }
+
         // Select players
         if (button == MOUSE_LEFT_BUTTON) {
             crewSelectionRectangle = Pair(ConstPoint(x, y), Point(x, y))
@@ -745,7 +754,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
     }
 
-    fun updateUI(x: Int, y: Int) {
+    fun updateUI(x: Int, y: Int, playerShipPosition: ConstPoint) {
         currentWindow?.let { win ->
             win.updateUI(x, y)
             return
@@ -760,6 +769,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
 
         crewSelectionRectangle?.second?.set(x, y)
+
+        // Update the door hover markers
+        for (door in ship.doors) {
+            door.updateMouseHover(x - playerShipPosition.x, y - playerShipPosition.y)
+        }
     }
 
     fun showEventDialogue(event: Event) {
@@ -854,6 +868,27 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             // In case we were at a store
             // TODO move this into an on-jump handler function
             updateButtons()
+        }
+    }
+
+    fun openAllDoors() {
+        val internalDoors = ship.doors.filter { !it.isAirlock }
+        val allInternalDoorsOpen = internalDoors.all { it.open }
+
+        // Pressing the open key with all the internal doors open
+        // opens all the airlocks, otherwise only the internal
+        // doors are opened.
+        for (door in ship.doors) {
+            if (!allInternalDoorsOpen && door.isAirlock)
+                continue
+
+            door.open = true
+        }
+    }
+
+    fun closeAllDoors() {
+        for (door in ship.doors) {
+            door.open = false
         }
     }
 

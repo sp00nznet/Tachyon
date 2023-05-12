@@ -43,6 +43,9 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
      */
     var visualOpen: Boolean = false
 
+    // True if the player is hovering over this door
+    private var hovered: Boolean = false
+
     // Set during the update cycle by crew walking through this door.
     // This is how we know if a door should appear to open for
     // a crewmember or not.
@@ -107,6 +110,8 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     }
 
     fun update(dt: Float) {
+        // TODO update the door when the game is paused, so it animates open when clicked.
+
         // If a crewmember is walking through this door, they'll
         // set crewOpenDemand every update.
         visualOpen = open || crewOpenDemand
@@ -117,10 +122,73 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         } else {
             stateAnimation = (stateAnimation - dt / ANIMATION_TIME).coerceAtLeast(0f)
         }
+
+        // If the door is actually open, transfer air between the two rooms
+        if (open) {
+            updateOxygen(dt)
+        }
+    }
+
+    private fun updateOxygen(dt: Float) {
+        // If this is an airlock, instantly drain the air from this room.
+        if (left == null || right == null) {
+            left?.oxygen = 0f
+            right?.oxygen = 0f
+            return
+        }
+
+        // Otherwise transfer air between the adjacent rooms.
+        // There's 8% per second mentioned in the code, but that's part
+        // of a fairly complicated-looking transfer thing and seems
+        // way too slow here.
+        // It seems to take about 6.5 seconds for a room adjacent to
+        // an airlock to drain of oxygen, so we need to match that.
+        // TODO make this properly match how FTL works.
+        val transferRate = 0.45f
+        val delta = left.oxygen - right.oxygen
+        left.oxygen -= delta * dt * transferRate
+        right.oxygen += delta * dt * transferRate
+    }
+
+    fun updateMouseHover(x: Int, y: Int) {
+        var centreX = offsetX
+        var centreY = offsetY
+
+        if (isVertical) {
+            centreY += ROOM_SIZE / 2
+        } else {
+            centreX += ROOM_SIZE / 2
+        }
+
+        hovered = false
+
+        val hoverRange = 10
+
+        if (x !in centreX - hoverRange..centreX + hoverRange)
+            return
+        if (y !in centreY - hoverRange..centreY + hoverRange)
+            return
+
+        hovered = true
+    }
+
+    fun click(x: Int, y: Int): Boolean {
+        // Update our hovered status, since we use that
+        // to determine if we're being clicked.
+        updateMouseHover(x, y)
+
+        if (!hovered) {
+            return false
+        }
+
+        open = !open
+
+        return true
     }
 
     fun render(g: Graphics) {
         val doorSheet = ship.sys.getImg("img/effects/door_sheet.png")
+        val highlight = ship.sys.getImg("img/effects/door_highlight.png")
 
         val level = ship.doorsSystem?.undamagedEnergy ?: 0
 
@@ -143,6 +211,12 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         } else {
             g.translate(offsetX.f + ROOM_SIZE, offsetY.f - ROOM_SIZE / 2)
             g.rotate(0f, 0f, 90f)
+        }
+
+        // Draw the mouse hover highlight
+        if (hovered) {
+            val highlightFilter = Color(1f, 1f, 1f, 0.75f)
+            highlight.draw(0f, 0f, highlightFilter)
         }
 
         doorSheet.draw(
