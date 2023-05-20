@@ -134,7 +134,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
 
     private fun drawUpgrades(g: Graphics) {
         // Draw the ship name
-        val name = "The Kestrel" // TODO
+        val name = game.translator[ship.shipTitleKey!!]
 
         val nameWidth = shipNameFont.getWidth(name)
 

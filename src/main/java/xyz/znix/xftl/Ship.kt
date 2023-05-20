@@ -31,6 +31,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val rooms: List<Room>
     val doors: MutableList<Door> = ArrayList()
 
+    /**
+     * The localisation key of the ship, defining the in-hangar title
+     * for player ships (eg 'The Kestrel').
+     */
+    val shipTitleKey: String? = shipNode.getChild("name")?.getAttributeValue("id")
+
     val offset: ConstPoint
     val floorOffset: ConstPoint
     val cloakOffset: ConstPoint
