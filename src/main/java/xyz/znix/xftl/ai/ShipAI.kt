@@ -238,7 +238,13 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 return true
             }
 
-            // TODO airlock doors
+            // Whether this is required is a bit dubious, as with the exception of
+            // boarding onto a player ship with an airlock in a system, this won't
+            // change anything - and even then, this behaviour is a bit odd.
+            if (room.doors.any { it.open && it.isAirlock }) {
+                return true
+            }
+
             // TODO fire
             // TODO medbay hacking
 
