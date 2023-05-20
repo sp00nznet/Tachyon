@@ -110,7 +110,6 @@ class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (
 
         if (hovered != null && hovered != game.currentBeacon) {
             // Draw the lines between the hovered beacon and it's neighbours
-            // TODO set colour
             drawBeaconLinesTo(hovered, Color.yellow) { it != game.currentBeacon }
         }
 

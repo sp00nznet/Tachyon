@@ -113,7 +113,6 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         // Required for Kotlin smart-casting since 'weapon' is mutable
         val weapon = weapon
 
-        // TODO fire the weapon
         when (weapon) {
             is IRoomTargetingWeapon -> weapon.fireFromDrone(this, target)
 

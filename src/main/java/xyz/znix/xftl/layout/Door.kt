@@ -196,7 +196,8 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         // have a colour filter applied to them.
         val sheetY = ROOM_SIZE * (level - 1).coerceAtLeast(0)
 
-        // TODO animations
+        // This is used to animate the door opening and closing, selecting the
+        // correct frame for its motion.
         val sheetX = ROOM_SIZE * (stateAnimation * 4).toInt()
 
         val filter = if (level == 0) Constants.DOOR_BROKEN_FILTER else Color.white
