@@ -234,6 +234,15 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
             buttons += object : Button(game, ConstPoint(298, 327), reactorImg.imageSize) {
                 override val disabled: Boolean get() = ship.purchasedReactorPower >= ship.maxReactorPower
 
+                val currentPrice: Int
+                    get() {
+                        // Expensive first power on the Cernkov
+                        if (ship.purchasedReactorPower < 5)
+                            return 30
+
+                        return (ship.purchasedReactorPower / 5) * 5 + 15
+                    }
+
                 override fun draw(g: Graphics) {
                     if (hovered) {
                         reactorHighlight.draw(pos)
@@ -261,11 +270,10 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                         )
                     }
 
-                    // Draw the current price
-                    val price = 20
+                    // Draw the current price. TODO show it as maxed when the reactor power is full.
                     numberFont.drawString(
                         pos.x + 235f, pos.y + 105f,
-                        price.toString(), Constants.SECTOR_CUTOUT_TEXT
+                        currentPrice.toString(), Constants.SECTOR_CUTOUT_TEXT
                     )
 
                     // Draw the 'n power bars' text - this is annoyingly mixed between two fonts
@@ -296,8 +304,8 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
                     if (disabled)
                         return
 
-                    // TODO calculate the price
-                    val price = 20
+                    // Store the price so undos work properly.
+                    val price = currentPrice
 
                     if (ship.scrap < price) {
                         game.shipUI.playInsufficientScrapAnimation()
