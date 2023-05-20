@@ -136,8 +136,6 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
         val thruster = ownerShip.sys.getImg("img/ship/drones/boarder_engine.png")
 
-        val shotDownAnimation = ownerShip.sys.animations["explosion_random"]
-
         // Fished out with x32dbg as I couldn't be bothered to find
         // it via static analysis, and it's not guaranteed to be correct
         // if I got some addresses swapped.
@@ -201,7 +199,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) {
-            currentSpace.animations += Ship.FloatingAnimation.centered(shotDownAnimation.start(), position)
+            currentSpace.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), position)
         }
     }
 

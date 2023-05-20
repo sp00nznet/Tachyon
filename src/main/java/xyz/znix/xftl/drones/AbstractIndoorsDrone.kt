@@ -2,6 +2,7 @@ package xyz.znix.xftl.drones
 
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
+import xyz.znix.xftl.AnimationSpec
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
@@ -38,6 +39,13 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     var pawn: Pawn? = null
         private set
 
+    protected lateinit var explodeAnimation: AnimationSpec
+
+    override fun init(ownerShip: Ship) {
+        super.init(ownerShip)
+        explodeAnimation = ownerShip.sys.animations["explosion_random"]
+    }
+
     /**
      * Spawn in [targetRoom], or one of the nearby rooms if that's full.
      */
@@ -57,8 +65,8 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         return Pawn(room)
     }
 
-    override fun destroy() {
-        super.destroy()
+    override fun removeInstance() {
+        super.removeInstance()
 
         // If the pawn was never spawned, there's nothing to clean up.
         val pawn = this.pawn ?: return
@@ -66,8 +74,6 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
         // Destroy the pawn
         pawn.removeFromShip()
-
-        // TODO play the explosion animation
     }
 
     override fun update(dt: Float) {
@@ -187,6 +193,9 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             // Cleanly kill the drone
             this@AbstractIndoorsDrone.pawn = null
             destroy()
+
+            // Play the explosion animation whenever a drone is killed.
+            ship.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), getPixelPositionCentre())
         }
     }
 }

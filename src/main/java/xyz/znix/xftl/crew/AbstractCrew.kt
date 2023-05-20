@@ -45,6 +45,8 @@ abstract class AbstractCrew(
     private val pixelPosition = Point(0, 0)
     private val pixelPositionCentre = Point(0, 0)
 
+    fun getPixelPositionCentre(): IPoint = pixelPositionCentre
+
     /**
      * If this crewmember is exactly aligned with a cell, this is non-null.
      *
