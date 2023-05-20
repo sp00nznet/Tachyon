@@ -580,12 +580,6 @@ abstract class AbstractCrew(
             return
         }
 
-        // If we're being told to walk somewhere within this room, go straight there.
-        if (currentTarget.room == room) {
-            nextTargetPos = ConstPoint(currentTarget.offsetX, currentTarget.offsetY)
-            return
-        }
-
         // Rather than using roomPosition, recalculate it here from our centre.
         // This is because we might have our movement changed when we're already moving.
         val roomPos = findNearestRoomPos()
@@ -595,13 +589,21 @@ abstract class AbstractCrew(
         val current = pf.nodes.getValue(roomPos)
         val next = current.next!!.pos
 
-        // TODO handle the case where we start walking through a door, and
-        //  our target then changes.
+        // Figure out if we're in a doorway. We'll use this to prevent
+        // ourselves from visually walking through a wall if we were
+        // in the process of walking through a door (but our centre
+        // point hasn't crossed yet) and our target is then changed.
+        // If we didn't use this, we'd walk directly to our target
+        // even if that meant sliding through a wall.
+        // TODO make this more accurate when we figure out how close
+        //  a crewmember can get to a locked door.
+        val isInDoorway = pixelPosition.x - room.offsetX !in 0..(room.width - 1) * ROOM_SIZE ||
+                pixelPosition.y - room.offsetY !in 0..(room.height - 1) * ROOM_SIZE
 
         // If we're being told to walk to another position in the same room,
-        // we can always do that regardless of if we're grid-aligned or not. But
+        // we can usually do that regardless of if we're grid-aligned or not. But
         // if we're walking through a door, we have to get lined up first.
-        if (next.room == room || roomPosition != null) {
+        if ((next.room == room || roomPosition != null) && !isInDoorway) {
             nextTargetPos = ConstPoint(next.offsetX, next.offsetY)
         } else {
             nextTargetPos = ConstPoint(roomPos.offsetX, roomPos.offsetY)
