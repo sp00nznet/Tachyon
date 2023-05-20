@@ -494,7 +494,13 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
 
         override val disabled: Boolean get() = numAvailable == 0
 
-        val price: Int get() = 5 // TODO implement the price
+        val price: Int
+            get() = when (resource) {
+                Resource.FUEL -> 3
+                Resource.MISSILES -> 6
+                Resource.DRONES -> 8
+                Resource.SCRAP -> error("Can't sell scrap in a store!")
+            }
 
         override fun draw(g: Graphics) {
             val image = when {
