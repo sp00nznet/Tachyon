@@ -421,25 +421,29 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     }
 
     private fun drawCrew(g: Graphics) {
+        // Find all the crew that belong to us - this way we exclude mind-control.
+        // TODO show crew that have teleported to the enemy ship.
+
+        val crew = ship.crew.mapNotNull { it as? LivingCrew }.filter { it.ownerShip == ship }
+
         // First row
-        drawCrewBox(g, ConstPoint(68 + 170 * 0, 88 + 133 * 0), 0)
-        drawCrewBox(g, ConstPoint(68 + 170 * 1, 88 + 133 * 0), 1)
-        drawCrewBox(g, ConstPoint(68 + 170 * 2, 88 + 133 * 0), 2)
+        drawCrewBox(g, crew, ConstPoint(68 + 170 * 0, 88 + 133 * 0), 0)
+        drawCrewBox(g, crew, ConstPoint(68 + 170 * 1, 88 + 133 * 0), 1)
+        drawCrewBox(g, crew, ConstPoint(68 + 170 * 2, 88 + 133 * 0), 2)
 
         // Second row
-        drawCrewBox(g, ConstPoint(68 + 170 * 0, 88 + 133 * 1), 3)
-        drawCrewBox(g, ConstPoint(68 + 170 * 1, 88 + 133 * 1), 4)
-        drawCrewBox(g, ConstPoint(68 + 170 * 2, 88 + 133 * 1), 5)
+        drawCrewBox(g, crew, ConstPoint(68 + 170 * 0, 88 + 133 * 1), 3)
+        drawCrewBox(g, crew, ConstPoint(68 + 170 * 1, 88 + 133 * 1), 4)
+        drawCrewBox(g, crew, ConstPoint(68 + 170 * 2, 88 + 133 * 1), 5)
 
         // Third row
         // TODO use the same pattern as before for the too-many-crewmembers screen
-        drawCrewBox(g, ConstPoint(154, 88 + 133 * 2), 6)
-        drawCrewBox(g, ConstPoint(324, 88 + 133 * 2), 7)
+        drawCrewBox(g, crew, ConstPoint(154, 88 + 133 * 2), 6)
+        drawCrewBox(g, crew, ConstPoint(324, 88 + 133 * 2), 7)
     }
 
-    private fun drawCrewBox(g: Graphics, boxPos: ConstPoint, id: Int) {
-        // TODO block mind-controlled crew members, once that's implemented
-        val crew = ship.friendlyCrew.getOrNull(id) as? LivingCrew
+    private fun drawCrewBox(g: Graphics, crewList: List<LivingCrew>, boxPos: ConstPoint, id: Int) {
+        val crew = crewList.getOrNull(id)
 
         if (crew == null) {
             val boxEmpty = game.getImg("img/upgradeUI/Equipment/box_crew_off.png")
