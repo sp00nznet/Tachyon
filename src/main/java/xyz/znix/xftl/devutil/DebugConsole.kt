@@ -63,6 +63,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("damage", 1, this::cmdDamage, "Apply a given amount of damage to the player ship (or negative to heal)"),
         Cmd("force-hack", 1, this::cmdForceHack, "Forces the enemy to hack a given player system"),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
+        Cmd("reload-flags", 0, this::cmdReloadFlags, "Reload the debug flags (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -625,6 +626,12 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         game.reloadDebugConsole();
 
         // Don't bother adding a line, it'll immediately be lost.
+    }
+
+    private fun cmdReloadFlags(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        // Same idea and notes as the reload-console command. Read its comment.
+        game.reloadDebugFlags();
+        lines.add("Reloaded debug flags");
     }
 
     private fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {

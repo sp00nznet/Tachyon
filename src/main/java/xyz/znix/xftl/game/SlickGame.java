@@ -73,7 +73,7 @@ public class SlickGame extends BasicGame {
     private DebugConsole debugConsole;
     private boolean debugConsoleVisible;
 
-    private final DebugFlagManager debugFlags = new DebugFlagManager();
+    private DebugFlagManager debugFlags = new DebugFlagManager();
 
     private float asteroidAnimationTimer;
 
@@ -565,6 +565,10 @@ public class SlickGame extends BasicGame {
     public void reloadDebugConsole() {
         debugConsole = null;
         debugConsoleVisible = false;
+    }
+
+    public void reloadDebugFlags() {
+        debugFlags = new DebugFlagManager();
     }
 
     public boolean isInDanger() {
