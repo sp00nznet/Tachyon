@@ -98,7 +98,7 @@ public class SlickGame extends BasicGame {
         translator = new Translator(df, "en");
         eventManager = new EventManager(df, translator, blueprintManager);
         nameManager = new CrewNameManager(df);
-        gameMap = new GameMap(df, eventManager);
+        gameMap = new GameMap(df, eventManager, true);
 
         blueprintManager.initialiseGame(this);
 

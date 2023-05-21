@@ -11,7 +11,7 @@ import kotlin.random.Random
  * Represents the overall map of the game. This loads and parses the sector data (which defines all the
  * different types of sectors) and generates a random set of them to be used in the sector map.
  */
-class GameMap(df: Datafile, private val eventManager: EventManager) {
+class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Boolean) {
     private val sectorClasses = HashMap<SectorClass, List<SectorType>>()
     private val sectorTypes = HashMap<String, SectorType>()
 
@@ -37,8 +37,9 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
             }
         }
 
+        val sectorClassesAE = HashMap<SectorClass, List<SectorType>>()
         outer@ for ((name, sectors) in namedSectorTypes) {
-            val sectorClass = when (name) {
+            val sectorClass = when (name.removePrefix(AE_PREFIX)) {
                 "CIVILIAN" -> SectorClass.CIVILIAN
                 "HOSTILE" -> SectorClass.HOSTILE
                 "NEBULA" -> SectorClass.NEBULA
@@ -49,9 +50,18 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
                 else -> continue@outer
             }
 
-            sectorClasses[sectorClass] = sectors.map {
+            // Keep the AE stuff separate, so we can override
+            // the non-AE versions later.
+            val classes = if (name.startsWith(AE_PREFIX)) sectorClassesAE else sectorClasses
+
+            classes[sectorClass] = sectors.map {
                 sectorTypes[it] ?: error("Missing sector $it specificed in category $name")
             }
+        }
+
+        // Apply the AE overrides
+        if (enableAE) {
+            sectorClasses.putAll(sectorClassesAE)
         }
 
         // Initialise here so we can add stuff to it in this constructor
@@ -291,5 +301,9 @@ class GameMap(df: Datafile, private val eventManager: EventManager) {
                 return if (rand.nextInt(10) < 4) HOSTILE else CIVILIAN
             }
         }
+    }
+
+    companion object {
+        const val AE_PREFIX = "OVERRIDE_"
     }
 }
