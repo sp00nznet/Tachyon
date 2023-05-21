@@ -675,20 +675,41 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         ship.shields?.let { shields ->
             // Draw the shields indicator
             game.getImg("img/statusUI/top_shields4_on.png").draw(0, shieldY)
+            val hacked = shields.isHackActive
+            if (hacked) {
+                game.getImg("img/statusUI/top_shields4_purple.png").draw(31 - 8, shieldY)
+            }
 
             // Draw the recharge bar
             if (shields.rechargeTimer != 0f) {
                 val progress = (shields.rechargeTimer / shields.rechargeDelay).coerceIn(0f..1f)
-                g.color = SHIELD_BAR_NORMAL
+                g.color = when (hacked) {
+                    true -> SHIELD_BAR_HACKED
+                    false -> SHIELD_BAR_NORMAL
+                }
                 g.fillRect(
                     33f, shieldY + 34f + 2f,
                     92f * progress, 6f
                 )
             }
 
-            val shieldImg = game.getImg("img/statusUI/top_shieldsquare1_on.png")
-            for (i in 0 until shields.activeShields) {
-                shieldImg.draw(30 + 23 * i, shieldY + 4)
+            // Draw the shield bubble indicators
+            val shieldOnImg = game.getImg("img/statusUI/top_shieldsquare1_on.png")
+            val shieldOffImg = game.getImg("img/statusUI/top_shieldsquare1_off.png")
+            val shieldHackedOnImg = game.getImg("img/statusUI/top_shieldsquare1_hacked_charged.png")
+            val shieldHackedOffImg = game.getImg("img/statusUI/top_shieldsquare1_hacked.png")
+
+            for (i in 0 until shields.selectedShieldBars) {
+                val charged = shields.activeShields > i
+
+                val img = when {
+                    hacked && charged -> shieldHackedOnImg
+                    hacked -> shieldHackedOffImg
+
+                    charged -> shieldOnImg
+                    else -> shieldOffImg
+                }
+                img.draw(30 + 23 * i, shieldY + 4)
             }
         }
 

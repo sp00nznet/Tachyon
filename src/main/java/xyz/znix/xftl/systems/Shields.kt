@@ -24,7 +24,14 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     var rechargeTimer: Float = 0f
         private set
 
+    // Used for hacking - the charge bar runs backwards
+    // and then drops a shield level when it hits zero.
+    var discharging: Boolean = false
+        private set
+
     val rechargeDelay: Float get() = 2f
+
+    val hackDrainTime: Float get() = 2f
 
     private val shieldsUpSound by onInit { it.sounds.getSample("shieldsUp") }
     private val shieldsDownSound by onInit { it.sounds.getSample("shieldsDown") }
@@ -32,8 +39,30 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     override fun update(dt: Float) {
         super.update(dt)
 
-        if (activeShields == selectedShieldBars)
+        if (isHackActive) {
+            updateHacked(dt)
             return
+        }
+
+        if (activeShields == selectedShieldBars) {
+            rechargeTimer = 0f
+            return
+        }
+
+        // Leave discharge mode immediately without
+        // resetting the progress or anything like that.
+        if (discharging) {
+            discharging = false
+
+            // If we were very, very close to discharging
+            // this shield, assume it was an off-by-one-frame
+            // error. Without this, a level-1 hack can't
+            // take down two shields.
+            if (rechargeTimer < dt * 2 + 0.02) {
+                rechargeTimer = 0f
+                activeShields--
+            }
+        }
 
         rechargeTimer += dt
         if (rechargeTimer < rechargeDelay)
@@ -45,6 +74,35 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
         rechargeTimer = 0f
         activeShields++
+    }
+
+    private fun updateHacked(dt: Float) {
+        // Note that if we were recharging a shield layer,
+        // then we have to undo that progress before we can
+        // get started on the first bubble.
+        // This happens (which is intended) because rechargeTimer
+        // starts at a non-zero value in that case, and we have
+        // to drain it before we switch to discharge mode.
+
+        if (activeShields == 0) {
+            rechargeTimer = 0f
+            return
+        }
+
+        rechargeTimer -= dt
+        if (rechargeTimer <= 0f && activeShields > 0) {
+            rechargeTimer = hackDrainTime
+
+            // This implements the above-mentioned system,
+            // and is what sets rechargeTimer when we're
+            // hacking fully-charged shields.
+            if (!discharging) {
+                discharging = true
+                return
+            }
+
+            activeShields--
+        }
     }
 
     fun popShieldLayer() {
