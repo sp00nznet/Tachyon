@@ -90,7 +90,9 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void init(GameContainer container) throws SlickException {
-        blueprintManager = new BlueprintManager(df);
+        boolean enableAdvancedEdition = true;
+
+        blueprintManager = new BlueprintManager(df, enableAdvancedEdition);
         animations = new Animations(df);
         sounds = new SoundManager(df);
         generator = new ShipGenerator(df, blueprintManager);
@@ -98,7 +100,7 @@ public class SlickGame extends BasicGame {
         translator = new Translator(df, "en");
         eventManager = new EventManager(df, translator, blueprintManager);
         nameManager = new CrewNameManager(df);
-        gameMap = new GameMap(df, eventManager, true);
+        gameMap = new GameMap(df, eventManager, enableAdvancedEdition);
 
         blueprintManager.initialiseGame(this);
 

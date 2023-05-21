@@ -10,7 +10,7 @@ import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
 import kotlin.random.Random
 
-class BlueprintManager(df: Datafile) {
+class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
     val blueprints: Map<String, IBlueprint>
 
     init {
@@ -18,9 +18,32 @@ class BlueprintManager(df: Datafile) {
 
         loadFile(df, "blueprints.xml")
         loadFile(df, "autoBlueprints.xml")
-        loadFile(df, "dlcBlueprints.xml")
-        // loadFile(df, "dlcBlueprintsOverride.xml") // AE stuff, TODO figure this out later
-        loadFile(df, "dlcPirateBlueprints.xml")
+        if (enableAE) {
+            loadFile(df, "dlcBlueprints.xml")
+            loadFile(df, "dlcBlueprintsOverwrite.xml")
+            loadFile(df, "dlcPirateBlueprints.xml")
+        }
+
+        // If AE is enabled, rename all the OVERRIDE blueprints to
+        // remove that prefix - thus they'll be used instead of the
+        // original ones.
+        if (enableAE) {
+            // Use toList to duplicate the entries list, since we'll
+            // be mutating the main blueprints map.
+            for ((name, bp) in blueprints.entries.toList()) {
+                if (!name.startsWith(AE_PREFIX))
+                    continue
+                blueprints[name.removePrefix(AE_PREFIX)] = bp
+            }
+        }
+
+        // Remove the now-redundant override entries - this is probably
+        // unnecessary, but it'll ensure we don't end up accidentally
+        // using something from AE in non-AE mode.
+        val toRemove = blueprints.keys.filter { it.startsWith(AE_PREFIX) }
+        for (name in toRemove) {
+            blueprints.remove(name)
+        }
 
         // Remove any blueprints from lists that don't actually exist
         for (bp in blueprints.values) {
@@ -86,7 +109,7 @@ class BlueprintManager(df: Datafile) {
         return MiscBlueprint(elem, file)
     }
 
-    private fun buildWeaponBlueprint(elem: Element): IBlueprint? {
+    private fun buildWeaponBlueprint(elem: Element): IBlueprint {
         val type = elem.getChildTextTrim("type")
 
         return when (type) {
@@ -127,6 +150,10 @@ class BlueprintManager(df: Datafile) {
 
     private fun buildCrewBlueprint(elem: Element): IBlueprint {
         return CrewBlueprint(elem)
+    }
+
+    companion object {
+        const val AE_PREFIX = "OVERRIDE_"
     }
 }
 

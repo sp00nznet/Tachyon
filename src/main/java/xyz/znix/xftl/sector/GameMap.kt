@@ -1,6 +1,7 @@
 package xyz.znix.xftl.sector
 
 import org.jdom2.Element
+import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.mapChildrenText
 import xyz.znix.xftl.requireAttributeValue
@@ -39,7 +40,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
 
         val sectorClassesAE = HashMap<SectorClass, List<SectorType>>()
         outer@ for ((name, sectors) in namedSectorTypes) {
-            val sectorClass = when (name.removePrefix(AE_PREFIX)) {
+            val sectorClass = when (name.removePrefix(BlueprintManager.AE_PREFIX)) {
                 "CIVILIAN" -> SectorClass.CIVILIAN
                 "HOSTILE" -> SectorClass.HOSTILE
                 "NEBULA" -> SectorClass.NEBULA
@@ -52,7 +53,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
 
             // Keep the AE stuff separate, so we can override
             // the non-AE versions later.
-            val classes = if (name.startsWith(AE_PREFIX)) sectorClassesAE else sectorClasses
+            val classes = if (name.startsWith(BlueprintManager.AE_PREFIX)) sectorClassesAE else sectorClasses
 
             classes[sectorClass] = sectors.map {
                 sectorTypes[it] ?: error("Missing sector $it specificed in category $name")
@@ -301,9 +302,5 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
                 return if (rand.nextInt(10) < 4) HOSTILE else CIVILIAN
             }
         }
-    }
-
-    companion object {
-        const val AE_PREFIX = "OVERRIDE_"
     }
 }
