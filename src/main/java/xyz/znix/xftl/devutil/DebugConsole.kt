@@ -61,6 +61,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("downall", 0, this::cmdDowngradeAll, "Downgrade all systems on the player ship to their starting level"),
         Cmd("set", 1, this::cmdSet, "Turn on or off debug flags"),
         Cmd("damage", 1, this::cmdDamage, "Apply a given amount of damage to the player ship (or negative to heal)"),
+        Cmd("force-hack", 1, this::cmdForceHack, "Forces the enemy to hack a given player system"),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
@@ -567,6 +568,39 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         ship.health -= amount
 
         lines.add("Applied $amount points of damage to the player ship")
+    }
+
+    private fun cmdForceHack(args: List<String>) {
+        val enemy = game.enemy
+        if (enemy == null) {
+            lines.add("No enemy ship.")
+            return
+        }
+
+        val hacking = enemy.hacking
+        if (hacking == null) {
+            lines.add("The enemy ship doesn't have a hacking system.")
+            return
+        }
+
+        val sysName = args[1]
+        val system = ship.systems.firstOrNull { it.codename == sysName }
+        if (system == null) {
+            lines.add("No player system '$sysName'.")
+            return
+        }
+
+        // Clear the current hacking probe, if it's already been fired.
+        hacking.removeProbe()
+
+        hacking.selectTarget(system.room!!)
+
+        // Force the drone to launch, so the AI doesn't get a chance
+        // to change the target, in case it updates before
+        // the hacking system does.
+        hacking.update(0f)
+
+        lines.add("Launched hacking probe at player system $sysName")
     }
 
     private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {
