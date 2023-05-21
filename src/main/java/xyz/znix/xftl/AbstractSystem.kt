@@ -52,9 +52,12 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         }
 
     /**
-     * The ion damage taken. Note this can be greater than the system power!
+     * If non-null, this is the ion-induced limit for how much
+     * power this system can use.
+     *
+     * This is based on the power selected when the ion first hit.
      */
-    var ionDamage: Int = 0
+    var ionPowerLimit: Int? = null
 
     // Note that system cooldowns set the ion timer without adding
     // any ion damage, to lock in the power. Hence we need to check
@@ -92,10 +95,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
                 available = min(limit, available)
             }
 
-            // Ion damage doesn't work similarly to normal damage,
-            // and any ion damage will immediately reduce the power even if
-            // there is a scripted limit.
-            available -= ionDamage
+            // If ion damage is applied, we can't increase the amount
+            // of power beyond the limit it set.
+            ionPowerLimit?.let { available = min(available, it) }
 
             return max(available, 0)
         }
@@ -119,10 +121,10 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
 
         // Check both the damage and timer to avoid somehow getting stuck where
         // one of them is zero and the other isn't.
-        if (ionDamage > 0 || ionTimer > 0f) {
+        if (ionPowerLimit != null || ionTimer > 0f) {
             ionTimer -= dt
             if (ionTimer <= 0) {
-                ionDamage = 0
+                ionPowerLimit = null
                 ionTimer = 0f
             }
         }
@@ -173,8 +175,18 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
         // would come to a negative amount of available power)
         damagedEnergyLevels = (damagedEnergyLevels + damage).coerceAtMost(energyLevels)
 
-        // Apply ion damage
-        this.ionDamage += ionDamage
+        // Apply ion damage. If we're not already ion-locked, use
+        // the current power (don't mind the ugly hack to get it).
+        // Otherwise, reduce relative to the current ion limit which
+        // is included in undamagedEnergy.
+        // The reason we don't always use powerSelected is because
+        // of things like weapons and shields, where ions would otherwise
+        // always take down multiple power worth of stuff.
+        var basePower = undamagedEnergy
+        if (ionPowerLimit == null && this is MainSystem) {
+            basePower = min(basePower, this.powerSelected)
+        }
+        ionPowerLimit = basePower - ionDamage
         ionTimer += 5f * ionDamage
 
         powerStateChanged()

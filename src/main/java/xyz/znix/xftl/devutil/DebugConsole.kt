@@ -300,7 +300,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         for (system in targetShip.systems) {
             system.damagedEnergyLevels = 0
             system.ionTimer = 0f
-            system.ionDamage = 0
+            system.ionPowerLimit = null
         }
 
         targetShip.health = targetShip.maxHealth
