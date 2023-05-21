@@ -50,7 +50,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("aug", 0, this::cmdAugment, "Select an augment, and add it to the ship's cargo area"),
         Cmd("store", 0, this::cmdStore, "Create a store at this beacon"),
         Cmd("event", 0, this::cmdEvent, "Load an event at this beacon"),
-        Cmd("fix", 0, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
+        Cmd("fix", null, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
         Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
         Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
         Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
@@ -282,14 +282,28 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
     }
 
-    private fun cmdFix(@Suppress("UNUSED_PARAMETER") args: List<String>) {
-        for (system in ship.systems) {
+    private fun cmdFix(args: List<String>) {
+        val targetShip: Ship
+
+        if (args.size == 1) {
+            targetShip = ship
+        } else if (args.size == 2 && args[1].toLowerCase(Locale.UK) == "enemy") {
+            targetShip = game.enemy ?: run {
+                lines.add("No enemy ship present.")
+                return
+            }
+        } else {
+            lines.add("Invalid arguments for 'fix' - takes either one argument 'enemy' or no arguments (for the player)")
+            return
+        }
+
+        for (system in targetShip.systems) {
             system.damagedEnergyLevels = 0
             system.ionTimer = 0f
             system.ionDamage = 0
         }
 
-        ship.health = ship.maxHealth
+        targetShip.health = targetShip.maxHealth
 
         lines.add("The ship has been repaired, all regular and ion damage was removed.")
     }
