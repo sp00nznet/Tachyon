@@ -287,19 +287,11 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         val weapon = ship.hardpoints[id].weapon ?: return
 
         if (!weapon.isPowered) {
-            val weapons = ship.weapons!!
-            if (weapon.type.power > weapons.powerUnused) {
-                // TODO warn the player there is not enough energy
+            if (ship.weapons!!.setWeaponPower(weapon, true)) {
+                powerUpSound.play()
+            } else {
                 powerUpFailSound.play()
-                return
             }
-            if (!weapon.hasEnoughMissiles) {
-                // TODO warn the player there isn't enough missiles.
-                powerUpFailSound.play()
-                return
-            }
-            powerUpSound.play()
-            weapon.isPowered = true
             return
         }
 
@@ -552,8 +544,9 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                         weaponHotkeyPressed(i)
                     }
                     if (weapon != null && weapon.isPowered && button == MOUSE_RIGHT_BUTTON) {
-                        weapon.isPowered = false
-                        powerDownSound.play()
+                        if (ship.weapons!!.setWeaponPower(weapon, false)) {
+                            powerDownSound.play()
+                        }
                     }
                 }
             }

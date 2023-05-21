@@ -12,7 +12,9 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     var timeCharged: Float = 0f
 
     // Is this weapon selected as powered
+    // To set this, use forceSetPowered and read it's JavaDoc.
     var isPowered: Boolean = false
+        private set
 
     // Turn missile weapons off once their ship runs out of missiles
     val hasEnoughMissiles: Boolean get() = ship.missilesCount >= type.missilesUsed
@@ -71,6 +73,17 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     }
 
     fun asWeaponInstance(): AbstractWeaponInstance = this
+
+    /**
+     * Power this weapon on or off.
+     *
+     * This should rarely be used - you should have a very
+     * good reason not to use [Weapons.setWeaponPower], since
+     * this doesn't check if the weapons system is ion-locked.
+     */
+    fun forceSetPowered(newPowerState: Boolean) {
+        isPowered = newPowerState
+    }
 }
 
 /**

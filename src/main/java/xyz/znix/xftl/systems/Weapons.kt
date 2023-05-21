@@ -174,7 +174,11 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             if (powerAvailable >= powerSelected)
                 break
 
-            hp.weapon?.isPowered = false
+            // Force-turn-off the weapon, even if we have ion damage.
+            // This is required since otherwise we could end up powering
+            // more weapons than we're allowed to, for example if
+            // we took damage while ion-locked.
+            hp.weapon?.forceSetPowered(false)
         }
     }
 
@@ -191,8 +195,7 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             if (!weapon.hasEnoughMissiles)
                 continue
 
-            weapon.isPowered = true
-            powerStateChanged()
+            hp.weapon?.let { setWeaponPower(it, true) }
             return
         }
     }
@@ -204,10 +207,35 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             if (!weapon.isPowered)
                 continue
 
-            weapon.isPowered = false
-            powerStateChanged()
+            setWeaponPower(weapon, false)
             return
         }
+    }
+
+    /**
+     * Turns a weapon on or off.
+     *
+     * Returns true if successful.
+     */
+    fun setWeaponPower(weapon: AbstractWeaponInstance, newPower: Boolean): Boolean {
+        if (weapon.isPowered == newPower)
+            return true
+
+        // Can't power weapons on or off with ion damage.
+        if (isPowerLocked)
+            return false
+
+        if (newPower) {
+            if (weapon.type.power > powerUnused)
+                return false
+
+            if (!weapon.hasEnoughMissiles)
+                return false
+        }
+
+        weapon.forceSetPowered(newPower)
+        powerStateChanged()
+        return true
     }
 
     inner class TargetList {
