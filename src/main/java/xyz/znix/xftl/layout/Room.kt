@@ -59,6 +59,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
     val position = ConstPoint(x, y)
 
+    val pixelWidth = width * ROOM_SIZE
+    val pixelHeight = height * ROOM_SIZE
+
     private val reservedPlayerSlots: Array<AbstractCrew?> = Array(width * height) { null }
     private val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
 
@@ -92,15 +95,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val x = offsetX
         val y = offsetY
 
-        val w = width * ROOM_SIZE
-        val h = height * ROOM_SIZE
-
         g.color = FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)
         g.fillRect(
             x.f,
             y.f,
-            w.f,
-            h.f
+            pixelWidth.f,
+            pixelHeight.f
         )
 
         if (isOxygenCritical) {
@@ -115,7 +115,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
                 (x + i * ROOM_SIZE - 1).f,
                 y.f,
                 (x + i * ROOM_SIZE - 1).f,
-                (y + h - 1).f
+                (y + pixelHeight - 1).f
             )
         }
 
@@ -123,7 +123,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             g.drawLine(
                 x.f,
                 (y + ROOM_SIZE * i - 1).f,
-                (x + w - 1).f,
+                (x + pixelWidth - 1).f,
                 (y + ROOM_SIZE * i - 1).f
             )
         }
@@ -175,8 +175,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
                 g.drawRect(
                     (x + i).f, (y + i).f,
-                    (w - 1 - i * 2).f,
-                    (h - 1 - i * 2).f
+                    (pixelWidth - 1 - i * 2).f,
+                    (pixelHeight - 1 - i * 2).f
                 )
             }
         }
@@ -307,10 +307,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
      * Unlike [containsAbsolute], this works in pixels rather than cells.
      */
     fun containsShipSpace(target: IPoint): Boolean {
-        if (target.x !in offsetX until offsetX + width * ROOM_SIZE)
+        if (target.x !in offsetX until offsetX + pixelWidth)
             return false
 
-        return target.y in offsetY until offsetY + height * ROOM_SIZE
+        return target.y in offsetY until offsetY + pixelHeight
     }
 
 

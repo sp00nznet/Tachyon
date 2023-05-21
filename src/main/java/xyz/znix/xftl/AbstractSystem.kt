@@ -5,7 +5,6 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
-import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SlickGame
@@ -142,8 +141,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
 
         g.drawImage(
             img,
-            (room.offsetX + (room.width * ROOM_SIZE / 2f - img.width / 2f).toInt()).f,
-            (room.offsetY + (room.height * ROOM_SIZE / 2f - img.height / 2f).toInt()).f,
+            (room.offsetX + (room.pixelWidth / 2f - img.width / 2f).toInt()).f,
+            (room.offsetY + (room.pixelHeight / 2f - img.height / 2f).toInt()).f,
             colour
         )
     }

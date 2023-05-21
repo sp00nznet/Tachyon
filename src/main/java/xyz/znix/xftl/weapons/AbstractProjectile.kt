@@ -2,7 +2,6 @@ package xyz.znix.xftl.weapons
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
@@ -303,8 +302,8 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     override fun calculateTargetPosition(): IPoint {
         // Aim for the centre of the target room.
         return ConstPoint(
-            target.offsetX + target.width * ROOM_SIZE / 2,
-            target.offsetY + target.height * ROOM_SIZE / 2
+            target.offsetX + target.pixelWidth / 2,
+            target.offsetY + target.pixelHeight / 2
         )
     }
 
