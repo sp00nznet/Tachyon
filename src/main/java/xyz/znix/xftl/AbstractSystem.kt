@@ -72,6 +72,12 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     var hackedBy: Hacking? = null
 
     /**
+     * True if this system is being hacked by a hacking system currently
+     * running its hacking pulse.
+     */
+    val isHackActive: Boolean get() = hackedBy?.active == true
+
+    /**
      * The number of intact energy bars in the system. Ion damage is subtracted from this.
      */
     open val undamagedEnergy: Int
@@ -227,6 +233,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
 
     open fun drawIconAndPower(game: SlickGame, g: Graphics, x: Int, baseY: Int) {
         if (!isIonised) {
+            // TODO flash blue when hacking/mind control/cloaking/backup battery is active
             game.getImg("img/icons/s_${codename}_${iconColourName}1.png").draw(x.f, baseY.f)
         } else {
             // Levels are rounded up, so <5s shows 1, <10s shows 2, etc.

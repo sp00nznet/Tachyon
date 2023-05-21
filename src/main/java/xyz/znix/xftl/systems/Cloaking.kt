@@ -75,6 +75,10 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
         if (active)
             return
 
+        // Hacking blocks the cloak
+        if (isHackActive)
+            return
+
         this@Cloaking.timeRemaining = duration
         animationTimer = FADE_TIMER
 
@@ -94,6 +98,10 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
 
         if (timeRemaining != null) {
             timeRemaining = timeRemaining!! - dt
+
+            // Hacking ends a cloak immediately
+            if (isHackActive)
+                timeRemaining = 0f
 
             // If the system is damaged, that caps the amount of remaining cloak time
             // Note that this means some damage won't have an effect - if
@@ -123,7 +131,7 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
 
         override val timeRemaining: Float? get() = this@Cloaking.timeRemaining
         override val duration: Float get() = this@Cloaking.duration
-        override val isOff: Boolean get() = powerSelected == 0 || isPowerLocked
+        override val isOff: Boolean get() = powerSelected == 0 || isPowerLocked || isHackActive
 
         override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON)
