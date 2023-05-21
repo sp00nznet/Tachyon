@@ -51,7 +51,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
     val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
     val hullImage: Image = base.readImage("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
-    val cloakImage: Image? = base.getOrNull("img/ship/${imageName}_cloak.png")?.let { i -> base.readImage(i) }
+    val cloakImage: Image?
     val gibs: List<ShipGib>
 
     val shieldImage: Image = base.readImage(
@@ -251,6 +251,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         private set
 
     init {
+        // Load the cloak image - if one is set by name use that, otherwise
+        // guess based on the ship name (this is required on the Kestrel, for example).
+        val customCloakName = shipNode.getChildTextTrim("cloakImage")
+        val customCloakImage = customCloakName?.let { sys.getImg("img/ship/${it}_cloak.png") }
+        val autoCloakImage = base.getOrNull("img/ship/${imageName}_cloak.png")?.let { base.readImage(it) }
+        cloakImage = customCloakImage ?: autoCloakImage
+
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
 
         val l = layout.replace("\r\n", "\n").split('\n')
