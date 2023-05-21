@@ -61,6 +61,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("downall", 0, this::cmdDowngradeAll, "Downgrade all systems on the player ship to their starting level"),
         Cmd("set", 1, this::cmdSet, "Turn on or off debug flags"),
         Cmd("damage", 1, this::cmdDamage, "Apply a given amount of damage to the player ship (or negative to heal)"),
+        Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
     )
 
@@ -552,6 +553,26 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         ship.health -= amount
 
         lines.add("Applied $amount points of damage to the player ship")
+    }
+
+    private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        // This is useful for development if you add a new console command
+        // and don't want to restart the game - you can use HotSwap to add
+        // your changes, but the command map is only created when the debug
+        // console is first opened so new commands won't show up.
+        //
+        // Note the new instance is not created until you re-open the console,
+        // so you can use it if that's in some way useful.
+        //
+        // I would recommend using DCEVM, which is a set of patches to OpenJDK
+        // that greatly enhances what you can hot-reload (in particular, you
+        // can add, modify and remove fields). The easiest way to use it
+        // is to download the JetBrans Runtime (JBR) build of OpenJDK, and
+        // use it with the '-XX:+AllowEnhancedClassRedefinition' VM flag.
+
+        game.reloadDebugConsole();
+
+        // Don't bother adding a line, it'll immediately be lost.
     }
 
     private fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {

@@ -561,6 +561,12 @@ public class SlickGame extends BasicGame {
         }
     }
 
+    // This is, somewhat ironically, only used by the debug console itself.
+    public void reloadDebugConsole() {
+        debugConsole = null;
+        debugConsoleVisible = false;
+    }
+
     public boolean isInDanger() {
         if (enemy != null && enemyIsHostile)
             return true;
