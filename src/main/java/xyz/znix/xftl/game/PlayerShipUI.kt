@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game
 
+import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
@@ -23,6 +24,7 @@ import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.pow
 import kotlin.math.round
+import kotlin.random.Random
 
 class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
     private val font = game.getFont("HL2", 2f)
@@ -274,6 +276,10 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         }
 
         if (currentWindow != null) return
+
+        // Block interactions with hacked weapons
+        if (ship.weapons!!.isHackActive)
+            return
 
         // If the user was previously targeting a beam, cancel that.
         beamTargeting = null
@@ -538,6 +544,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 override val isTargeted: Boolean get() = ship.weapons!!.selectedTargets.getTarget(i) != null
                 override val isSelectingTarget: Boolean get() = targetingSelectedWeapon == i
                 override val hasChargeBar: Boolean get() = true
+                override val isBeingHacked: Boolean get() = ship.weapons!!.isHackActive
 
                 override fun click(button: Int) {
                     val weapon = ship.hardpoints[i].weapon
@@ -582,6 +589,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     override val isTargeted: Boolean get() = false
                     override val isSelectingTarget: Boolean get() = false
                     override val hasChargeBar: Boolean get() = false
+                    override val isBeingHacked: Boolean get() = drones.isHackActive
 
                     override fun click(button: Int) {
                         val wasPowered = info?.instance?.isPowered ?: false
@@ -915,12 +923,20 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         abstract val isTargeted: Boolean
         abstract val isSelectingTarget: Boolean
         abstract val hasChargeBar: Boolean
+        abstract val isBeingHacked: Boolean
 
         override val disabled: Boolean get() = empty
+
+        private var hackingSparks: Animation? = null
+        private var hackingOffsetX: Int = 0
+        private var hackingMaskY: Int = 0
+        private var hackingMirror: Boolean = false
+        private var hackingLastMS: Long = 0
 
         override fun draw(g: Graphics) {
             val mainColour = when {
                 empty -> WEAPONS_ITEM_DESELECTED
+                isBeingHacked -> SYSTEM_HACKED
                 !isPowered -> WEAPONS_ITEM_DESELECTED
                 isSelectingTarget -> WEAPONS_ITEM_TARGETING
                 isCharged -> WEAPONS_ITEM_CHARGED
@@ -997,6 +1013,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     g.color = WEAPONS_ITEM_ENERGY_UNPOWERED
                     g.drawRect((pos.x + 4).f, y.f, (16 - 1).f, (7 - 1).f)
                     continue
+                } else if (isBeingHacked) {
+                    g.color = SYSTEM_HACKED
                 } else if (isSelectingTarget) {
                     g.color = WEAPONS_ITEM_TARGETING
                 } else if (isCharged) {
@@ -1006,6 +1024,47 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 }
                 g.fillRect((pos.x + 4).f, y.f, 16f, 7f)
             }
+
+            drawHackingSparks(g)
+        }
+
+        private fun drawHackingSparks(g: Graphics) {
+            if (!isBeingHacked) {
+                hackingSparks = null
+                return
+            }
+
+            val currentMS = System.nanoTime() / 1_000_000L
+
+            if (hackingSparks == null || hackingSparks?.isStopped == true) {
+                hackingSparks = ship.sys.animations["stun_spark_big"].start().also {
+                    it.setLooping(false)
+                }
+
+                hackingOffsetX = Random.nextInt(25)
+                hackingMaskY = Random.nextInt(31)
+                hackingMirror = Random.nextBoolean()
+                hackingLastMS = currentMS
+            }
+
+            // Update the animation regardless of whether we're paused.
+            // We can't use auto-update since we need to mask part of
+            // the image, which we need to do via the underlying frame image.
+            hackingSparks!!.update(currentMS - hackingLastMS)
+            hackingLastMS = currentMS
+
+            val frame = hackingSparks!!.currentFrame
+            val cutoutWidth = 69
+            val cutoutHeight = 39
+            frame.draw(
+                // Screen points
+                pos.x.f + hackingOffsetX, pos.y.f,
+                pos.x.f + hackingOffsetX + cutoutWidth, pos.y.f + cutoutHeight,
+
+                // Image points
+                if (hackingMirror) cutoutWidth.f else 0f, hackingMaskY.f,
+                if (hackingMirror) 0f else cutoutWidth.f, hackingMaskY.f + cutoutHeight
+            )
         }
     }
 

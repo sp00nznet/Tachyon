@@ -20,8 +20,8 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     protected var shotsFired: Int = 0
     protected var lastProjectile: AbstractProjectile? = null
 
-    override fun update(dt: Float, canCharge: Boolean) {
-        super.update(dt, canCharge)
+    override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
+        super.update(dt, canCharge, isHacked)
 
         val fa = firingAnimation ?: return
 

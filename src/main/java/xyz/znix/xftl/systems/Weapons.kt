@@ -33,7 +33,7 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
-            weapon.update(dt, !opponentCloakActive)
+            weapon.update(dt, !opponentCloakActive, isHackActive)
 
             // Update the weapon slide
             val slideSpeed = dt * 2
