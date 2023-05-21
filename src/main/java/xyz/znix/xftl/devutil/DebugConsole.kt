@@ -370,6 +370,10 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         }
 
         enemy.damage(enemy.rooms.random(), 100, 0, 0)
+
+        // In case nodmg is set, manually set the health to zero.
+        enemy.health = 0
+
         lines.add("Added 100 points of damage to the enemy ship")
     }
 
