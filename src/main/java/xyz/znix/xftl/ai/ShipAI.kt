@@ -21,6 +21,10 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         updateWeapons()
 
+        // Constantly try to trigger cloaking, it'll be ignored
+        // whenever it's unavailable.
+        ship.cloaking?.activateCloak()
+
         // TODO only run when something significant happens
         updateTasks()
 

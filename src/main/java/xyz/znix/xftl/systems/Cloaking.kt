@@ -63,6 +63,25 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
         }
     }
 
+    fun activateCloak() {
+        // Stop the clock from being activated when it's on cooldown
+        if (isPowerLocked)
+            return
+
+        if (powerSelected == 0)
+            return
+
+        // Block cloaking while we're already cloaked
+        if (active)
+            return
+
+        this@Cloaking.timeRemaining = duration
+        animationTimer = FADE_TIMER
+
+        // The cloak sound only plays when the user unpauses
+        shouldPlayCloakSound = true
+    }
+
     override fun update(dt: Float) {
         super.update(dt)
 
@@ -110,18 +129,7 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
-            // Stop the clock from being activated when it's on cooldown
-            if (isPowerLocked)
-                return
-
-            if (powerSelected == 0)
-                return
-
-            this@Cloaking.timeRemaining = duration
-            animationTimer = FADE_TIMER
-
-            // The cloak sound only plays when the user unpauses
-            shouldPlayCloakSound = true
+            activateCloak()
         }
     }
 
