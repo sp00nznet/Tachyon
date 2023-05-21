@@ -187,7 +187,14 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     }
 
     fun repair(progress: Float) {
-        repairProgress += progress
+        var modifiedProgress = progress
+
+        // If a system is hacked, repairs run at half-speed
+        if (hackedBy?.isPoweredUp == true) {
+            modifiedProgress /= 2f
+        }
+
+        repairProgress += modifiedProgress
 
         if (repairProgress < 1f)
             return
