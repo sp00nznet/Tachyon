@@ -187,6 +187,11 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         if (!projectile.hasLanded)
             return false
 
+        // Check this ship hasn't been destroyed
+        if (!ship.sys.isShipPresent(ship)) {
+            return false
+        }
+
         // This would normally be caught by update, but check it here
         // in case we're on a ship that has jumped away.
         if (!projectile.target.ship.projectiles.contains(projectile)) {
@@ -345,8 +350,9 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
                 dead = true
             }
 
-            // Go away if the target is dying (TODO or playing the jump animation)
-            if (target.ship.isDead) {
+            // Go away if the target is dying or the sender is dead.
+            // TODO or if the target is playing the jump animation
+            if (target.ship.isDead || !target.ship.sys.isShipPresent(this@Hacking.ship)) {
                 dead = true
             }
 
