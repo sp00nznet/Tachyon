@@ -11,6 +11,11 @@ class DebugFlagManager {
         "Weapons charge at ten times their normal speed"
     )
 
+    val noEnemyFire = DebugFlag(
+        "noef", "No Enemy weapon Firing", false,
+        "The enemy ship can't fire their weapons"
+    )
+
     val noDmg = DebugFlag(
         "nodmg", "No Damage", false,
         "Ships don't take damage"
@@ -29,6 +34,7 @@ class DebugFlagManager {
     val all = listOf(
         showProjectileHitboxes,
         fastWeaponCharge,
+        noEnemyFire,
         noDmg,
         infiniteMissiles,
         infiniteDrones

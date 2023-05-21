@@ -77,6 +77,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
             if (!weapon.isCharged)
                 continue
 
+            if (ship.sys.debugFlags.noEnemyFire.set)
+                continue
+
             when (weapon) {
                 is IRoomTargetingWeapon -> {
                     weapon.fire(weapons, pickTarget())
