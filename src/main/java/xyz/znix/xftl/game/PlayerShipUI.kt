@@ -675,7 +675,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         ship.shields?.let { shields ->
             // Draw the shields indicator
             game.getImg("img/statusUI/top_shields4_on.png").draw(0, shieldY)
-            // TODO shield bubble indicators
+
+            // Draw the recharge bar
+            if (shields.rechargeTimer != 0f) {
+                val progress = (shields.rechargeTimer / shields.rechargeDelay).coerceIn(0f..1f)
+                g.color = SHIELD_BAR_NORMAL
+                g.fillRect(
+                    33f, shieldY + 34f + 2f,
+                    92f * progress, 6f
+                )
+            }
 
             val shieldImg = game.getImg("img/statusUI/top_shieldsquare1_on.png")
             for (i in 0 until shields.activeShields) {

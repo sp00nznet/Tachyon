@@ -102,6 +102,9 @@ public class Constants {
     public static final Color AUGMENT_EMPTY_OUTLINE = JUMP_DISABLED;
     public static final Color AUGMENT_EMPTY_INSIDE = new Color(34, 27, 26);
 
+    public static final Color SHIELD_BAR_NORMAL = new Color(27, 132, 255);
+    public static final Color SHIELD_BAR_HACKED = SYSTEM_HACKED;
+
     // These numbers took quite some work to obtain
     // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
     // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level
