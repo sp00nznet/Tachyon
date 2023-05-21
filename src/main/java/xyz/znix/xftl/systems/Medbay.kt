@@ -11,11 +11,16 @@ class Medbay(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, 
     override fun update(dt: Float) {
         super.update(dt)
 
-        val healthPerSec = when (powerSelected) {
+        var healthPerSec = when (powerSelected) {
             1 -> 6.4f
             2 -> 9.6f
             3 -> 19.2f
             else -> 0f
+        }
+
+        // Hacking hurts the friendly crew, and rather quickly.
+        if (isHackActive) {
+            healthPerSec = -13f
         }
 
         val healing = healthPerSec * dt
