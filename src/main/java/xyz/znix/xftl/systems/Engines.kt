@@ -12,6 +12,17 @@ class Engines(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     val evasion: Int get() = evasions[powerSelected]
     val chargeRate: Float get() = chargeRates[powerSelected]
 
+    val evasionMultiplier: Float
+        get() {
+            // If engines is off or hacked, you get no evasion
+            if (powerSelected == 0 || isHackActive)
+                return 0f
+
+            // TODO skills
+
+            return 1f
+        }
+
     private var lastEnginesOn = false
 
     override fun powerStateChanged() {

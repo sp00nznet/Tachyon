@@ -14,8 +14,9 @@ class Piloting(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint,
 
     val evasionMultiplier: Float
         get() {
-            // If piloting is broken, you get no evasion
-            if (undamagedEnergy == 0) return 0f
+            // If piloting is broken or hacked, you get no evasion
+            if (undamagedEnergy == 0 || isHackActive)
+                return 0f
 
             // It seems there's a fake crewmember in every room?
             // https://www.reddit.com/r/ftlgame/comments/2e30zc/question_re_autoscouts/

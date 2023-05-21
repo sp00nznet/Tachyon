@@ -237,6 +237,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         get() {
             var evasion: Float = piloting!!.evasion + engines!!.evasion.f
             evasion *= piloting!!.evasionMultiplier
+            evasion *= engines!!.evasionMultiplier
 
             if (isCloakActive)
                 evasion += 60
