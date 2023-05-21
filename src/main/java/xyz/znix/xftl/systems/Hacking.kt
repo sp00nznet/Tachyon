@@ -36,6 +36,10 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
      */
     val active: Boolean get() = timeRemaining != null
 
+    val droneLaunched: Boolean get() = projectile != null
+    val droneLanded: Boolean get() = projectile?.hasLanded == true
+    val droneInFlight: Boolean get() = projectile?.hasLanded == false
+
     private var buttonHeight: Int = 1
 
     private var timeRemaining: Float? = null
@@ -194,12 +198,26 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         projectile = null
     }
 
+    fun startHackingPulse() {
+        if (isPowerLocked || powerSelected == 0)
+            return
+
+        if (!droneLanded)
+            return
+
+        if (active)
+            return
+
+        // Start the hacking pulse
+        this@Hacking.timeRemaining = duration
+    }
+
     // Copied from Cloaking.CloakButton
     private inner class HackButton(power: Int, powerPos: IPoint) : SystemPowerButton(ship.sys, power, powerPos) {
 
         override val timeRemaining: Float? get() = this@Hacking.timeRemaining
         override val duration: Float get() = this@Hacking.duration
-        override val isOff: Boolean get() = powerSelected == 0 || isPowerLocked
+        override val isOff: Boolean get() = powerSelected == 0 || isPowerLocked || droneInFlight
 
         override val forceHighlight: Boolean
             get() {
@@ -213,7 +231,7 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
-            // Stop the clock from being activated when it's on cooldown
+            // Stop hacking from being activated when it's on cooldown
             if (isPowerLocked)
                 return
 
@@ -229,8 +247,7 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
                 return
             }
 
-            // Start the hacking pulse
-            this@Hacking.timeRemaining = duration
+            startHackingPulse()
         }
     }
 

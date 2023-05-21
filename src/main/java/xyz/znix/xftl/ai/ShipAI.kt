@@ -25,6 +25,8 @@ class ShipAI(val ship: Ship, val player: Ship) {
         // whenever it's unavailable.
         ship.cloaking?.activateCloak()
 
+        updateHacking()
+
         // TODO only run when something significant happens
         updateTasks()
 
@@ -85,6 +87,21 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
     private fun pickTarget(): Room {
         return player.rooms[(Math.random() * player.rooms.size).toInt()]
+    }
+
+    private fun updateHacking() {
+        val hacking = ship.hacking ?: return
+
+        // Fire the probe at a random system, if
+        // it's not already launched.
+        if (!hacking.droneLaunched) {
+            hacking.selectTarget(player.systems.random().room!!)
+            return
+        }
+
+        // Run this all the time and it'll only start one
+        // when it's ready.
+        hacking.startHackingPulse()
     }
 
     private val assignments = HashMap<AbstractCrew, AITask?>()
