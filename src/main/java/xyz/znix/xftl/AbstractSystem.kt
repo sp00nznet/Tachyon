@@ -358,6 +358,13 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
                     g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
                 }
 
+                isHackActive -> {
+                    // The power bars go purple when hacked, taking
+                    // priority over ion damage.
+                    g.color = Constants.SYSTEM_HACKED
+                    g.fillRect(barX, y.f, 16f, 6f)
+                }
+
                 isIonised -> {
                     // The system is powered at this level (or it's
                     // a subsystem), but ion damage is applied.
@@ -388,18 +395,44 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
             }
         }
 
-        // If the system is ionised, draw the 'locked' bar around it
-        if (isIonised) {
+        // If a status icon (ion or hacking) is drawn, this is the Y of it's base.
+        var statusIconY = topBarY - 3
+
+        fun drawIonOrHackBar() {
             val barsHeight = energyLevels * 8 - 2
 
             // Two-pixel-wide rectangle around the energy bars
-            g.color = Constants.SYSTEM_IONISED
             g.drawRect(barX - 3f, topBarY - 3f, 3f + 16f + 2f, 3f + barsHeight + 2f)
             g.drawRect(barX - 2f, topBarY - 2f, 2f + 16f + 1f, 2f + barsHeight + 1f)
 
+            statusIconY -= 3
+        }
+
+        if (isHackActive) {
+            // When this system is actively being hacked, draw a purple
+            // outline around it.
+            g.color = Constants.SYSTEM_HACKED
+            drawIonOrHackBar()
+        } else if (isIonised) {
+            // If the system is ionised, draw the 'locked' bar around it
+            g.color = Constants.SYSTEM_IONISED
+            drawIonOrHackBar()
+
             // Draw the padlock icon at the top
             val lockImg = game.getImg("img/icons/locking/s_lock.png")
-            lockImg.draw(barX + 2f - 6f, topBarY - 21f - 6f)
+            lockImg.draw(barX + 2f - 6f, statusIconY - 21f)
+
+            // If we've got ion damage and a hacking probe connected,
+            // the latter is shifted upwards.
+            statusIconY -= 21
+        }
+
+        // If this room has a hacking probe attached and turned on - whether
+        // or not it's in a hacking pulse - then draw the hacking laptop icon.
+        if (hackedBy?.isPoweredUp == true) {
+            // Draw the hacking icon at the top
+            val lockImg = game.getImg("img/icons/s_hacked.png")
+            lockImg.draw(barX + 1f - 9f, statusIconY - 24f)
         }
 
         // If the system is being sabotaged, draw the fist above it

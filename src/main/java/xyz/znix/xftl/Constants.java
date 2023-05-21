@@ -18,6 +18,7 @@ public class Constants {
 
     public static final Color SYSTEM_NORMAL = new Color(125, 125, 125);
     public static final Color SYSTEM_IONISED = new Color(133, 231, 237);
+    public static final Color SYSTEM_HACKED = new Color(207, 70, 253);
     public static final Color SYSTEM_DAMAGED = new Color(255, 153, 76);
     public static final Color SYSTEM_BROKEN = new Color(255, 0, 0);
 
