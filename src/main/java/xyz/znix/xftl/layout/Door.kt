@@ -54,6 +54,8 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     // How open this door is. This is updated to produce the animation.
     private var stateAnimation: Float = 0f
 
+    private var isHacked = false
+
     /**
      * The other room this door connects to
      */
@@ -127,6 +129,8 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         if (open) {
             updateOxygen(dt)
         }
+
+        isHacked = left?.system?.hackedBy?.isPoweredUp == true || right?.system?.hackedBy?.isPoweredUp == true
     }
 
     private fun updateOxygen(dt: Float) {
@@ -194,13 +198,17 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
 
         // Broken and level 1 doors use the same sprite, but broken doors
         // have a colour filter applied to them.
-        val sheetY = ROOM_SIZE * (level - 1).coerceAtLeast(0)
+        val sheetY = ROOM_SIZE * when {
+            isHacked -> 4
+            level == 0 -> 0
+            else -> level - 1
+        }
 
         // This is used to animate the door opening and closing, selecting the
         // correct frame for its motion.
         val sheetX = ROOM_SIZE * (stateAnimation * 4).toInt()
 
-        val filter = if (level == 0) Constants.DOOR_BROKEN_FILTER else Color.white
+        val filter = if (level == 0 && !isHacked) Constants.DOOR_BROKEN_FILTER else Color.white
 
         g.pushTransform()
 

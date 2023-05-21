@@ -90,6 +90,8 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
      */
     val teleportMode: Boolean? get() = (game.clickEvent as? TeleportRoomListener)?.send
 
+    val isSelectingHackingTarget: Boolean get() = game.clickEvent is HackingRoomListener
+
     init {
         updateButtons()
     }
@@ -460,7 +462,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             powerX += when (system) {
                 is Weapons -> 48 + ship.weaponSlots!! * 97
                 is Drones -> 48 + ship.droneSlots!! * 97
-                is Cloaking, is Teleporter -> 54
+                is Cloaking, is Teleporter, is Hacking -> 54
                 else -> 36
             }
 
@@ -482,7 +484,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     }
                 }
 
-                is Cloaking, is Teleporter -> "54"
+                is Cloaking, is Teleporter, is Hacking -> "54"
                 else -> "36"
             }
             val image = when (lastSystem) {
@@ -854,6 +856,13 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         game.clickEvent = TeleportRoomListener(send)
     }
 
+    /**
+     * Called by [Hacking] when we're supposed to select the room to hack.
+     */
+    fun hackSelected() {
+        game.clickEvent = HackingRoomListener()
+    }
+
     fun openSectorMap() {
         currentWindow = SectorMapWindow(game) { sectorInfo ->
             currentWindow = null
@@ -1030,6 +1039,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 return
 
             ship.teleporter!!.selectTeleportAction(send, room)
+        }
+    }
+
+    private inner class HackingRoomListener : RoomClickListener {
+        override fun roomClicked(room: Room, gc: GameContainer) {
+            // Can't hack our own ship
+            if (room.ship == ship)
+                return
+
+            ship.hacking!!.selectTarget(room)
         }
     }
 

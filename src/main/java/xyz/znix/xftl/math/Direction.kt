@@ -14,7 +14,22 @@ enum class Direction(override val x: Int, override val y: Int, val angle: Int) :
     LEFT(-1, 0, 270),
     LEFT_UP(-1, -1, 315);
 
+    val opposite: Direction
+        get() = when (this) {
+            UP -> DOWN
+            UP_RIGHT -> DOWN_LEFT
+            RIGHT -> LEFT
+            RIGHT_DOWN -> LEFT_UP
+            DOWN -> UP
+            DOWN_LEFT -> UP_RIGHT
+            LEFT -> RIGHT
+            LEFT_UP -> RIGHT_DOWN
+        }
+
     companion object {
+        val CARDINALS = listOf(UP, DOWN, LEFT, RIGHT)
+        val DIAGONALS = listOf(UP_RIGHT, DOWN_LEFT, RIGHT_DOWN, LEFT_UP)
+
         fun fromPoint(point: IPoint): Direction? {
             if (point is Direction)
                 return point

@@ -30,6 +30,11 @@ interface IProjectile {
     val isLaserForDD: Boolean get() = false
 
     /**
+     * If true, collisions are enabled for this projectile.
+     */
+    val collisionsEnabled: Boolean get() = true
+
+    /**
      * The radius of this projectile's circular hitbox.
      *
      * This is used for checking for collisions between projectiles

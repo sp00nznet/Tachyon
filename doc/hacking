@@ -1,0 +1,36 @@
+HackingDrone::CheckAxis
+
+This steps from one point to another, looking for the point at which we intersect any room.
+
+This is used by PickDestination to find where we should land.
+
+
+HackingDrone::Destination
+
+This picks the path the drone takes to attack a given room, notably including
+the location the drone will land at.
+
+This is done as follows:
+
+* Pick a side (left/right/top/bottom) to attack from.
+* Go through each room x/y (depending on side) coordinate, finding the position
+  the drone would land if it flew to that room.
+* If this position would hit the room directly, stop the loop here and select it.
+* Measure the distance between the landing position and the centre of the target room.
+* Pick the closest destination, or the first one if there's a tie.
+
+The start position will be -400 or 800 in one of the x or y axes (the one that
+isn't used to varied to select the landing direction).
+
+
+-- Room spark rendering
+
+When a system is hacked, the stun_spark_big animation is played on it's floor.
+
+If a room is one cell wide or high, a 35-pixel window in the sparks image is randomly
+selected and this is played back (rotated 90° if needed).
+
+Otherwise, the full animation is played with no masking, and a random
+multiple-of-90-deg rotation.
+
+These random values are re-picked each time the animation loops.

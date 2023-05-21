@@ -426,7 +426,7 @@ abstract class AbstractCrew(
         }
 
         val computerPoint = room.computerPoint
-        if (computerPoint != null && canManSystem && mode == SlotType.CREW) {
+        if (computerPoint != null && canManSystem && mode == SlotType.CREW && system?.hackedBy?.isPoweredUp != true) {
             if (room.computerPoint == roomPosition) {
                 currentAction = Action.MANNING
                 return

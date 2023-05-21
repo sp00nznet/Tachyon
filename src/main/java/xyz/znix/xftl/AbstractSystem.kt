@@ -10,6 +10,7 @@ import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.systems.Hacking
 import xyz.znix.xftl.systems.MainSystem
 import xyz.znix.xftl.systems.SystemBlueprint
 import kotlin.math.*
@@ -66,6 +67,11 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     val aiMaxPower: Int = elem.getAttributeValue("max")?.toInt() ?: blueprint.maxPower
 
     /**
+     * If non-null, this is the hacking system that's attacking this system.
+     */
+    var hackedBy: Hacking? = null
+
+    /**
      * The number of intact energy bars in the system. Ion damage is subtracted from this.
      */
     open val undamagedEnergy: Int
@@ -113,6 +119,15 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
                 ionDamage = 0
                 ionTimer = 0f
             }
+        }
+
+        // Check if the hacking probe is still in place.
+        // This is checked here rather than the hacking system
+        // un-setting hackedBy to make the game more robust
+        // if one of the ships jumps away or something similar.
+        hackedBy?.let {
+            if (!it.checkStillAttacking(this))
+                hackedBy = null
         }
     }
 

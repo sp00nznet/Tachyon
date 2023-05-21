@@ -312,6 +312,9 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
                 crew.removeFromShip()
             }
+
+            // Kill the hacking drone, since it's not technically a drone here
+            target.hacking?.removeProbe()
         }
 
         clearFor(ship)

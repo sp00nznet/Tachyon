@@ -820,6 +820,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             for (upperI in projectiles.size - 1 downTo lowerI + 1) {
                 val second = projectiles[upperI]
 
+                if (!first.collisionsEnabled || !second.collisionsEnabled)
+                    continue
+
                 val distSq = first.position.distToSq(second.position)
                 val maxDist = first.hitboxRadius + second.hitboxRadius
 

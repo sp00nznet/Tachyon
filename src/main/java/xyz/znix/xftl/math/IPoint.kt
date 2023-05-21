@@ -10,7 +10,7 @@ interface IPoint {
     val isHorizontal: Boolean get() = x != 0 && y == 0
     val isZero: Boolean get() = x == 0 && y == 0
     val isDiagonal: Boolean get() = x != 0 && y != 0
-    val isOrthogonal: Boolean get() = !isZero && (x == 0 || y == 0)
+    val isCardinal: Boolean get() = !isZero && (x == 0 || y == 0)
 
     val const: ConstPoint get() = ConstPoint(this)
 
