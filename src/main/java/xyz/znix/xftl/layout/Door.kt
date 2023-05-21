@@ -130,7 +130,12 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
             updateOxygen(dt)
         }
 
-        isHacked = left?.system?.hackedBy?.isPoweredUp == true || right?.system?.hackedBy?.isPoweredUp == true
+        // The door counts as hacked if the system on either side of it is hacked
+        // and the hacking system is at least powered on, or (for any door) if
+        // the doors system is hacked with a hacking pulse.
+        isHacked = ship.doorsSystem?.isHackActive == true ||
+                left?.system?.hackedBy?.isPoweredUp == true ||
+                right?.system?.hackedBy?.isPoweredUp == true
     }
 
     private fun updateOxygen(dt: Float) {
