@@ -161,12 +161,15 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         // The direction the probe flies in depends on whether this is
         // a player ship or an enemy ship, as it's supposed to go
         // forwards out of both of them.
+        // Note we need to use a very large value, so it's always
+        // outside of the -800 to 800 bounds - otherwise it'll think
+        // it reached the enemy ship.
         val endPoint = roomCentre + if (ship.isPlayerShip) {
             // Fly right
-            ConstPoint(1000, 0)
+            ConstPoint(5000, 0)
         } else {
             // Fly upwards
-            ConstPoint(0, -1000)
+            ConstPoint(0, -5000)
         }
 
         projectile = HackingDroneProjectile(target).also {
