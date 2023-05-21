@@ -7,6 +7,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
+import kotlin.math.ceil
 
 abstract class Button(protected val game: SlickGame, pos: IPoint, size: IPoint) {
     val basePos = pos.const
@@ -469,6 +470,115 @@ object Buttons {
                 return
 
             callback()
+        }
+    }
+}
+
+/**
+ * The click-to-activate timer-based button used for cloaking, hacking and mind control.
+ */
+abstract class SystemPowerButton(
+    game: SlickGame,
+    val powerHeight: Int,
+    val powerPos: IPoint
+) :
+    Button(game, powerPos + calculatePosOffset(powerHeight), calculateSize(powerHeight)) {
+
+    val base = game.getImg("img/systemUI/button_cloaking${powerHeight}_base.png")
+    val buttonImage = ButtonImageSet.select2(game, "img/systemUI/button_cloaking${powerHeight}")
+    val timerIcon = game.getImg("img/systemUI/button_cloaking${powerHeight}_charging_on.png")
+
+    /**
+     * The time remaining on this activation, until the system goes into cooldown.
+     *
+     * Null if the system is not active.
+     */
+    abstract val timeRemaining: Float?
+
+    /**
+     * If this system was activated now, how long it would run for.
+     *
+     * If the system is active, this is the original value of [timeRemaining].
+     */
+    abstract val duration: Float
+
+    /**
+     * Use something like powerSelected==0 || isPowerLocked
+     */
+    abstract val isOff: Boolean
+
+    /**
+     * True if the button should show its highlight image
+     * even if it's not hovered, for example while aiming
+     * a hacking drone.
+     */
+    open val forceHighlight: Boolean get() = false
+
+    override val disabled: Boolean get() = timeRemaining != null || isOff
+
+    val active: Boolean get() = timeRemaining != null
+
+    override fun draw(g: Graphics) {
+        // Note all the images are the same size
+
+        // 23px between the left-hand side (LHS) of the power button and the LHS of the cloak button background
+        //  6px of padding inside the power button background image
+        val imageX = powerPos.x + 23f - 6f
+
+        // 17px between the top of the power icon and the bottom of the button background
+        // 79px between the bottom of the button background and it's top
+        //  7px of padding between the top of the background and the top of it's image
+        val imageY = powerPos.y + 17f - 79f - 7f
+
+        // Draw the outline image
+        base.draw(imageX, imageY)
+
+        // Draw the button itself
+        val image = when {
+            active -> timerIcon
+            isOff -> buttonImage.off
+            hovered || forceHighlight -> buttonImage.hover
+            else -> buttonImage.normal
+        }
+
+        val time = timeRemaining
+        val height = if (time != null) {
+            // If we're cloaked, figure out how much of the image we should show.
+            // The level 1,2,3,4 (there's four levels in the images) have 5,8,11,14 bars
+            // The bars each represent a different amount of time, so combined
+            // they represent the full cloak duration.
+            val totalBars = 2 + powerHeight * 3
+            val timePerBar = duration / totalBars
+
+            // Round up, so at least one bar is always visible.
+            val visibleBars = ceil(time / timePerBar).toInt()
+            26 + visibleBars * 4
+        } else {
+            image.height
+        }
+
+        // Draw the bottom {height} pixels of the image
+        val topY = image.height - height
+        image.draw(
+            imageX, imageY + topY, imageX + image.width, imageY + image.height,
+            0f, topY.f, image.width.f, image.height.f
+        )
+
+        // Debugging aid:
+        // g.color = Color.red
+        // g.drawRect(imageX, imageY + topY, 5f, height.f)
+    }
+
+    companion object {
+        private fun calculatePosOffset(power: Int): IPoint {
+            // Find the position of the button relative to the system power icon
+            val height = 11 + power * 12
+            return ConstPoint(27, -3 - height)
+        }
+
+        private fun calculateSize(power: Int): IPoint {
+            val height = 11 + power * 12
+            return ConstPoint(24, height)
         }
     }
 }

@@ -1,14 +1,10 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.ButtonImageSet
-import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.math.IPoint
-import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
@@ -50,12 +46,10 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
         }
 
     override fun makeExtraButtons(powerPos: IPoint): List<Button> {
-        // The height represents how long the cloak runs for
-        val height = 11 + powerSelected * 12
+        // If the system is unpowered, it shows the disabled level-1 image
+        val power = max(powerSelected, 1)
 
-        val buttonPos = powerPos + ConstPoint(27, -3 - height)
-
-        return listOf(CloakButton(powerPos, buttonPos, ConstPoint(24, height)))
+        return listOf(CloakButton(power, powerPos))
     }
 
     override fun powerStateChanged() {
@@ -106,67 +100,11 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
         }
     }
 
-    private inner class CloakButton(val powerPos: IPoint, pos: IPoint, size: IPoint) : Button(ship.sys, pos, size) {
-        // If the system is unpowered, it shows the disabled level-1 image
-        val pwr = max(powerSelected, 1)
+    private inner class CloakButton(power: Int, powerPos: IPoint) : SystemPowerButton(ship.sys, power, powerPos) {
 
-        val base = ship.sys.getImg("img/systemUI/button_cloaking${pwr}_base.png")
-        val buttonImage = ButtonImageSet.select2(ship.sys, "img/systemUI/button_cloaking${pwr}")
-        val timerIcon = ship.sys.getImg("img/systemUI/button_cloaking${pwr}_charging_on.png")
-
-        override val disabled: Boolean get() = timeRemaining != null || powerSelected == 0 || isPowerLocked
-
-        override fun draw(g: Graphics) {
-            // Note all the images are the same size
-
-            // 23px between the left-hand side (LHS) of the power button and the LHS of the cloak button background
-            //  6px of padding inside the power button background image
-            val imageX = powerPos.x + 23f - 6f
-
-            // 17px between the top of the power icon and the bottom of the button background
-            // 79px between the bottom of the button background and it's top
-            //  7px of padding between the top of the background and the top of it's image
-            val imageY = powerPos.y + 17f - 79f - 7f
-
-            // Draw the outline image
-            base.draw(imageX, imageY)
-
-            // Draw the button itself
-            val image = when {
-                active -> timerIcon
-                powerSelected == 0 || isPowerLocked -> buttonImage.off
-                hovered -> buttonImage.hover
-                else -> buttonImage.normal
-            }
-
-            val time = timeRemaining
-            val height = if (time != null) {
-                // If we're cloaked, figure out how much of the image we should show.
-                // The level 1,2,3,4 (there's four levels in the images) have 5,8,11,14 bars
-                // The bars each represent a different amount of time, so combined
-                // they represent the full cloak duration.
-                // TODO what happens if the cloaking system is damaged while active?
-                val totalBars = 2 + powerSelected * 3
-                val timePerBar = duration / totalBars
-
-                // Round up, so at least one bar is always visible.
-                val visibleBars = ceil(time / timePerBar).toInt()
-                26 + visibleBars * 4
-            } else {
-                image.height
-            }
-
-            // Draw the bottom {height} pixels of the image
-            val topY = image.height - height
-            image.draw(
-                imageX, imageY + topY, imageX + image.width, imageY + image.height,
-                0f, topY.f, image.width.f, image.height.f
-            )
-
-            // Debugging aid:
-            // g.color = Color.red
-            // g.drawRect(imageX, imageY + topY, 5f, height.f)
-        }
+        override val timeRemaining: Float? get() = this@Cloaking.timeRemaining
+        override val duration: Float get() = this@Cloaking.duration
+        override val isOff: Boolean get() = powerSelected == 0 || isPowerLocked
 
         override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON)
@@ -179,7 +117,7 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
             if (powerSelected == 0)
                 return
 
-            timeRemaining = duration
+            this@Cloaking.timeRemaining = duration
             animationTimer = FADE_TIMER
 
             // The cloak sound only plays when the user unpauses
