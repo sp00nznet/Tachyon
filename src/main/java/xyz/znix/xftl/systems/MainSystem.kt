@@ -14,7 +14,7 @@ abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractS
 
     val powerUnused: Int get() = min(undamagedEnergy - powerSelected, ship.powerAvailable)
 
-    open val isPowerLocked: Boolean get() = isIonised
+    open val isPowerLocked: Boolean get() = isIonised || isHackActive
 
     abstract val sortingType: SortingType
 
