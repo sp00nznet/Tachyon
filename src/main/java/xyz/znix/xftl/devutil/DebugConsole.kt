@@ -321,6 +321,11 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
             target.orphanedDrones.clear()
 
+            // Remove the visuals for drones that somehow got stuck.
+            // This can happen if you spawn a new ship at the same
+            // beacon while the old one had some drones deployed.
+            target.externalDrones.clear()
+
             // Clone the crew list, since we'll be modifying it if
             // we find any drones.
             for (crew in ArrayList(target.crew)) {

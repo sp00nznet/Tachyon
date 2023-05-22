@@ -43,6 +43,24 @@ interface IProjectile {
     val hitboxRadius: Int get() = 3
 
     /**
+     * If this projectile can collide with drones, this is the blueprint
+     * representing the weapon it applies the effect of.
+     *
+     * Null means it can't collide with drones.
+     */
+    val antiDroneBP: AbstractWeaponBlueprint?
+
+    /**
+     * If this projectile can collide with drones, this is the ship
+     * whose drones are exempt from collisions.
+     *
+     * This is used to avoid ships shooting down their own drones.
+     *
+     * Null means it will collide with all drones.
+     */
+    val antiDroneExemption: Ship?
+
+    /**
      * Called to update this projectile.
      *
      * [currentSpace] is the ship in whose space this projectile

@@ -15,6 +15,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.weapons.AbstractProjectile
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.max
 import kotlin.math.min
@@ -286,6 +287,10 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         // Set until we switch spaces
         override var drawUnderShip: Boolean = true
         override val collisionsEnabled: Boolean get() = !hasLanded
+
+        // We can never collide with drones, as we're pretending to be one.
+        override val antiDroneBP: AbstractWeaponBlueprint? get() = null
+        override val antiDroneExemption: Ship? get() = null
 
         override val isMissileForDD: Boolean get() = !hasLanded
 

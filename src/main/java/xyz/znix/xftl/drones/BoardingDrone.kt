@@ -7,6 +7,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.weapons.AbstractProjectile
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 
 class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
@@ -146,6 +147,10 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         override var drawUnderShip: Boolean = true
 
         override val isMissileForDD: Boolean get() = true
+
+        // Can't collide with drones
+        override val antiDroneBP: AbstractWeaponBlueprint? get() = null
+        override val antiDroneExemption: Ship? get() = null
 
         override fun reachedTarget() {
             // We've hit our target room.

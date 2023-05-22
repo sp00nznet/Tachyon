@@ -252,6 +252,9 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     // When we're leaving the ship that fired this weapon, draw underneath it.
     override var drawUnderShip: Boolean = true
 
+    override val antiDroneBP: AbstractWeaponBlueprint get() = type
+    override val antiDroneExemption: Ship? get() = ship.sys.getEnemyOf(ship)
+
     private val defaultMissSound = target.ship.sys.sounds.getSample("miss")
 
     private var missed: Boolean? = null

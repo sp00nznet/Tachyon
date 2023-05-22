@@ -825,10 +825,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         // indices when projectiles are removed.
         for (lowerI in projectiles.size - 1 downTo 0) {
             val first = projectiles[lowerI]
+            if (!first.collisionsEnabled)
+                continue
+
             for (upperI in projectiles.size - 1 downTo lowerI + 1) {
                 val second = projectiles[upperI]
 
-                if (!first.collisionsEnabled || !second.collisionsEnabled)
+                if (!second.collisionsEnabled)
                     continue
 
                 val distSq = first.position.distToSq(second.position)
@@ -858,6 +861,37 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
                 break
             }
         }
+
+        // Check for collisions between projectiles and drones
+        for (droneI in externalDrones.size - 1 downTo 0) {
+            val drone = externalDrones[droneI]
+
+            for (projectileI in projectiles.size - 1 downTo 0) {
+                val proj = projectiles[projectileI]
+
+                if (!proj.collisionsEnabled)
+                    continue
+
+                val distSq = drone.flightController.position.distToSq(proj.position)
+                val maxDist = drone.hitboxRadius + proj.hitboxRadius
+
+                // No overlap?
+                if (distSq > maxDist * maxDist)
+                    continue
+
+                if (!drone.canCollideWith(proj))
+                    continue
+
+                proj.hitOtherProjectile(this)
+                projectiles.removeAt(projectileI)
+
+                // The drone is expected to play a sound.
+                drone.hitProjectile(proj)
+
+                break
+            }
+        }
+
 
         // Update the animations
         for (a in animations) {

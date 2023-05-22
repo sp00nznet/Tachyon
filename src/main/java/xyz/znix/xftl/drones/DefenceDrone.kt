@@ -8,10 +8,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.weapons.AbstractProjectile
-import xyz.znix.xftl.weapons.AbstractWeaponProjectile
-import xyz.znix.xftl.weapons.DroneBlueprint
-import xyz.znix.xftl.weapons.LaserBlueprint
+import xyz.znix.xftl.weapons.*
 import kotlin.math.*
 
 class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
@@ -43,6 +40,10 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
     // Remember the last projectile we shot at, to avoid shooting
     // at the same one twice.
     private var lastShotAtTarget: AbstractProjectile? = null
+
+    // This stores the drone we're currently pointing at, and
+    // we'll only randomly select another one after we shoot.
+    private var currentDroneTarget: AbstractExternalDrone? = null
 
     override fun onInit() {
         offImage = game.getImg("img/ship/drones/${type.droneImage}_base.png")
@@ -115,7 +116,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         cooldown = max(0f, cooldown - dt)
 
         val bestTarget: InterceptResult? = if (shootsAtDrones) {
-            pickAndShootAtDrones()
+            pickBestDroneTarget()
         } else {
             pickBestProjectileTarget()
         }
@@ -132,9 +133,45 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         }
     }
 
-    private fun pickAndShootAtDrones(): InterceptResult? {
-        // TODO implement, this is for the anti-drone
-        return null
+    private fun pickBestDroneTarget(): InterceptResult? {
+        // Switch drones if the one we were pointing at is gone
+        // or has powered off.
+        if (currentDroneTarget != null) {
+            val current = currentDroneTarget!!
+            if (!ownerShip.externalDrones.contains(current))
+                currentDroneTarget = null
+            if (!isDroneSuitableTarget(current))
+                currentDroneTarget = null
+        }
+
+        if (currentDroneTarget == null) {
+            // TODO priorities
+            val candidates = ownerShip.externalDrones.filter(this::isDroneSuitableTarget)
+            if (candidates.isEmpty())
+                return null
+            currentDroneTarget = candidates.random()
+        }
+
+        val fc = currentDroneTarget!!.flightController
+
+        // Don't shoot at combat drones while they're pausing, since
+        // they don't have nice linear movement.
+        if (fc is CombatFlightController && fc.paused)
+            return null
+
+        // Don't shoot at combat drones while they're pausing,
+
+        return calculateIntercept(
+            null, fc.position,
+            fc.speedX, fc.speedY,
+            weaponSpeed.f
+        )
+    }
+
+    private fun isDroneSuitableTarget(drone: AbstractExternalDrone): Boolean {
+        // Drones must have been on for a short period, to avoid shooting
+        // at drones the frame they spawn and thus using bad speed values.
+        return drone.onEnemy && drone.timeActive > 0.1f
     }
 
     private fun pickBestProjectileTarget(): InterceptResult? {
@@ -201,20 +238,35 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
     }
 
     private fun calculateIntercept(projectile: AbstractProjectile, ourSpeed: Float): InterceptResult? {
+        val projVelX = cos(projectile.rotation) * projectile.speed.f
+        val projVelY = sin(projectile.rotation) * projectile.speed.f
+
+        return calculateIntercept(
+            projectile, projectile.position,
+            projVelX, projVelY,
+            ourSpeed
+        )
+    }
+
+    private fun calculateIntercept(
+        projectile: AbstractProjectile?,
+        targetPos: IPoint,
+        projVelX: Float, projVelY: Float, // The projectile velocity
+        ourSpeed: Float
+    ): InterceptResult? {
         // Centre the projectile at the origin by translating the drone
 
         val dronePos = Point(flightController.position)
-        dronePos -= projectile.position
+        dronePos -= targetPos
 
         val distanceToDrone = dronePos.distToSq(ConstPoint.ZERO).f
 
-        val projVelX = cos(projectile.rotation) * projectile.speed.f
-        val projVelY = sin(projectile.rotation) * projectile.speed.f
+        val projectileSpeedSq = projVelX.pow(2) + projVelY.pow(2)
 
         // This is largely based on the following article. Paste it's equations into Lyx to read them.
         // https://www.codeproject.com/Articles/990452/Interception-of-Two-Moving-Objects-in-D-Space
 
-        val a = ourSpeed.pow(2) - projectile.speed.f.pow(2)
+        val a = ourSpeed.pow(2) - projectileSpeedSq
         val b = 2 * (dronePos.x * projVelX + dronePos.y * projVelY)
         val c = -distanceToDrone
 
@@ -223,7 +275,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         if (a < 0.001f) {
             val interceptTime = distanceToDrone / b
 
-            val interceptPos = Point(projectile.position)
+            val interceptPos = Point(targetPos)
             interceptPos.x += (projVelX * interceptTime).roundToInt()
             interceptPos.y += (projVelY * interceptTime).roundToInt()
             return InterceptResult(projectile, interceptPos, interceptTime)
@@ -252,7 +304,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         }
 
         // From the intercept time, we can trivially solve the intercept point.
-        val interceptPos = Point(projectile.position)
+        val interceptPos = Point(targetPos)
         interceptPos.x += (projVelX * bestInterceptTime).roundToInt()
         interceptPos.y += (projVelY * bestInterceptTime).roundToInt()
 
@@ -279,6 +331,9 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         if (point.y !in -150..450)
             return
 
+        // If we were previously targeting a drone, pick another one.
+        currentDroneTarget = null
+
         val shot = InterceptorLaser()
         targetShip.projectiles += shot
 
@@ -298,6 +353,9 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         override val speed: Int get() = weaponSpeed
 
+        override val antiDroneBP: AbstractWeaponBlueprint get() = weapon
+        override val antiDroneExemption: Ship get() = ownerShip
+
         override fun renderPreTranslated(g: Graphics) {
             val spr = animation.spriteAt(0)
 
@@ -315,7 +373,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         }
     }
 
-    private class InterceptResult(val target: AbstractProjectile, val point: IPoint, val time: Float)
+    private class InterceptResult(val target: AbstractProjectile?, val point: IPoint, val time: Float)
 
     companion object {
         // The target type used by defence 2 drones, this also shoots

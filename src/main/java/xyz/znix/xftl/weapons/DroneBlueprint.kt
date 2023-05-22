@@ -21,6 +21,10 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     val cooldown: Int? = xml.getChildTextTrim("cooldown")?.toInt() // In milliseconds
     val defenceTarget: String? = xml.getChildTextTrim("target") // Either DRONES or LASERS
 
+    // For external drones, a 0-10 chance that this drone will dodge projectiles that hit it.
+    // Nothing in vanilla uses it, but it's easy to implement.
+    val dodge: Int? = xml.getChildTextTrim("dodge")?.toInt()
+
     val weaponBlueprintName: String? = xml.getChildTextTrim("weaponBlueprint")
     var weaponBlueprint: AbstractWeaponBlueprint? = null
         private set

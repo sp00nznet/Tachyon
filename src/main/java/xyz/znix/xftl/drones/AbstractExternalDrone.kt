@@ -11,6 +11,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.weapons.DroneBlueprint
+import xyz.znix.xftl.weapons.IProjectile
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -46,6 +47,27 @@ abstract class AbstractExternalDrone(
     lateinit var targetShip: Ship
         private set
 
+    /**
+     * The amount of time this drone has been active (powered on and
+     * not stunned) for.
+     *
+     * This is used by the anti-drone to avoid shooting at drones
+     * that have been turned on very shortly prior and will likely
+     * change direction.
+     */
+    var timeActive: Float = 0f
+        private set
+
+    /**
+     * The radius in pixels of the circular 'hitbox' around this drone.
+     *
+     * This is used for drone/projectile collisions.
+     */
+    open val hitboxRadius: Int get() = 8
+
+    override val isStunned: Boolean get() = super.isStunned || ionStunTimer > 0f
+    private var ionStunTimer: Float = 0f
+
     protected var stunRotationAnimation: Float = 0f
     private var stunSparksAnimation: Animation? = null
     private var stunSparksMirror: Boolean = false
@@ -73,6 +95,14 @@ abstract class AbstractExternalDrone(
 
     override fun update(dt: Float) {
         super.update(dt)
+
+        if (isRunning) {
+            timeActive += dt
+        } else {
+            timeActive = 0f
+        }
+
+        ionStunTimer = max(0f, ionStunTimer - dt)
 
         if (isStunned) {
             stunRotationAnimation += Math.toRadians(480.0).toFloat() * dt
@@ -182,6 +212,47 @@ abstract class AbstractExternalDrone(
         // Try to keep everything as an integer to make the sprites sharper.
         image.draw(-(image.width / 2).f, -(image.height / 2).f, filter)
     }
+
+    open fun canCollideWith(proj: IProjectile): Boolean {
+        // This probably isn't the nicest place to put it, but check
+        // if we miss this projectile by chance.
+        if (isPowered && Random.nextInt(10) < (type.dodge ?: 0))
+            return false
+
+        // Check if we're exempt from this projectile due to being
+        // owned by the same ship.
+        if (proj.antiDroneExemption == ownerShip)
+            return false
+
+        // The projectile must have a weapon blueprint to represent
+        // the damage it can do to us.
+        return proj.antiDroneBP != null
+    }
+
+    open fun hitProjectile(other: IProjectile) {
+        // We checked this is non-null in canCollideWith.
+        val type = other.antiDroneBP
+        requireNotNull(type) { "Can't hit projectile without an anti-drone blueprint!" }
+
+        // To match vanilla, check for ion damage first.
+        // This means a modded weapon (there aren't any in vanilla)
+        // that does both ion and hull damage will only stun
+        // a drone, rather than kill it.
+        // Note that ion damage doesn't affect unpowered drones
+        // for whatever reason, leading to an exploit to defeat
+        // enemy anti-drones (turn it off just afterr they shoot).
+        if (type.ionDamage > 0 || isPowered) {
+            // Five seconds per level of ion damage, same as systems.
+            ionStunTimer = 5f * type.ionDamage
+            return
+        }
+
+        // It looks like FTL ignores system-damage-only projectiles.
+        if (type.damage > 0) {
+            destroy()
+            return
+        }
+    }
 }
 
 abstract class DroneFlightController(val drone: AbstractExternalDrone) {
@@ -206,6 +277,10 @@ abstract class DroneFlightController(val drone: AbstractExternalDrone) {
             mutablePosition.y = value.roundToInt()
         }
     var rotation: Float = 0f
+
+    // Speeds in pixels per second are used by the anti-drone
+    abstract val speedX: Float
+    abstract val speedY: Float
 
     private val mutablePosition = Point(0, 0)
     val position: IPoint get() = mutablePosition
@@ -258,8 +333,10 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
 
     private val Float.sq get() = this * this
 
-    var speedX: Float = 0f
-    var speedY: Float = 0f
+    override var speedX: Float = 0f
+        private set
+    override var speedY: Float = 0f
+        private set
 
     private var poweredLastFrame = false
 
@@ -383,8 +460,10 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
     private var typeSpeed: Float = 0f
 
     // The drone's current speed
-    private var speedX: Float = 0f
-    private var speedY: Float = 0f
+    override var speedX: Float = 0f
+        private set
+    override var speedY: Float = 0f
+        private set
 
     // Times how long it's been since we started slowing down to fire
     private var pauseTimer: Float = 0f
