@@ -18,6 +18,7 @@ import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
+import xyz.znix.xftl.rendering.ShaderProgramme;
 import xyz.znix.xftl.sector.*;
 import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
@@ -290,6 +291,10 @@ public class SlickGame extends BasicGame {
 
     @Override
     public void render(GameContainer container, Graphics g) throws SlickException {
+        // When we use shaders, we have to transform from pixels to NDC
+        // If this is set wrong, all the text etc will be transformed wrong.
+        ShaderProgramme.getSHADER_SCREEN_SIZE().set(container.getWidth(), container.getHeight());
+
         renderBackground(container, g);
 
         // Get the player's ship away from the top UI

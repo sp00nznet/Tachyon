@@ -4,6 +4,7 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Font
 import org.newdawn.slick.Image
 import org.newdawn.slick.opengl.ImageData
+import xyz.znix.xftl.rendering.BulkImageRenderer
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer
@@ -14,6 +15,7 @@ import kotlin.math.roundToInt
 class SILFontLoader : Font {
     private val chars: Map<Char, Charinfo>
     private val picture: Image
+    private val renderer: BulkImageRenderer
 
     private val height: Int
     private val baseline: Int
@@ -107,6 +109,7 @@ class SILFontLoader : Font {
         val img = MonochromeImage(texWidth, texHeight, data)
 
         picture = Image(img, Image.FILTER_NEAREST)
+        renderer = BulkImageRenderer(picture)
     }
 
     /**
@@ -119,6 +122,7 @@ class SILFontLoader : Font {
         picture = other.picture
         height = other.height
         baseline = other.baseline
+        renderer = other.renderer
     }
 
     override fun getHeight(str: String?): Int {
@@ -171,7 +175,7 @@ class SILFontLoader : Font {
             // Check if this character is going to overflow the allowed area
             val charWidth = min((width + x - cx) / scale, info.w.f)
 
-            picture.draw(
+            renderer.pushImage(
                 cx.f, cy,
                 cx.f + charWidth * scale, cy + info.h * scale,
                 info.x.f, info.y.f,
@@ -182,6 +186,8 @@ class SILFontLoader : Font {
             if (next - x > width)
                 return
         }
+
+        renderer.flush()
     }
 
     fun drawStringCentred(x: Float, y: Float, width: Float, text: String, col: Color) {
