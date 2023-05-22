@@ -7,6 +7,7 @@ import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 /**
  * Represents an in-game sector. Handles the placement of the beacons within it.
@@ -69,7 +70,7 @@ class Sector(
     init {
         val eventPool = ArrayDeque(events.shuffled())
 
-        val rand = Random()
+        val rand = Random.Default
 
         // Generate a random 6x6 grid. Each beacon to be placed will be offset from one position on the grid.
         val grid = ArrayList<IPoint>()

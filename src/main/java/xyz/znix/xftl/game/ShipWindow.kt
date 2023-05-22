@@ -37,7 +37,7 @@ class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> U
     // These store functions that each undo the last
     // upgrade of a system or the reactor.
     private val systemUpgradeUndos = HashMap<AbstractSystem, ArrayList<UndoFn>>()
-    private var reactorUpgradeUndo = ArrayList<UndoFn>()
+    private val reactorUpgradeUndo = ArrayList<UndoFn>()
 
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
