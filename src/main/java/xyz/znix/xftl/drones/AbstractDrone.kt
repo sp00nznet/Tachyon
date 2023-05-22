@@ -82,12 +82,12 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
         if (isStunned) {
             stunTotalTimer += dt
 
-            // After two seconds, there's a 15% chance to destroy
+            // After one second, there's a 15% chance to destroy
             // the drone once per second.
             // It appears this is how both hacking and the anti-drone
             // can destroy drones.
-            if (stunTotalTimer >= 2f) {
-                // Add a small margin so level 1 hacking can get two
+            if (stunTotalTimer >= 1f) {
+                // Add a small margin so level 1 hacking can get three
                 // attempts at it.
                 val waitPeriod = 0.99f
                 stunDestroyTimer += dt
