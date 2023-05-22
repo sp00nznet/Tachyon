@@ -778,15 +778,6 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         font.drawString(textX + 1f, textY + 15f, name, UI_TEXT_COLOUR_1)
     }
 
-    private fun drawWeaponString(g: Graphics, str: String, x: Int, y: Int) {
-        var y = y
-        for (line in str.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-            val font = g.font as SILFontLoader
-            font.drawStringLegacy(x.f, y.f, line, g.color)
-            y += 15
-        }
-    }
-
     fun updateUI(x: Int, y: Int, playerShipPosition: ConstPoint) {
         currentWindow?.let { win ->
             win.updateUI(x, y)
@@ -956,6 +947,16 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
         private var hackingMirror: Boolean = false
         private var hackingLastMS: Long = 0
 
+        // Move these out to save a few allocations
+        // (it's probably well into paranoid territory, but why not)
+        private val nameLines by lazy {
+            name
+                .replaceFirst(" ".toRegex(), "\n")
+                .split("\n".toRegex())
+                .dropLastWhile { it.isEmpty() }
+        }
+        private val weaponNumberString = (slotNumber + 1).toString()
+
         override fun draw(g: Graphics) {
             val mainColour = when {
                 empty -> WEAPONS_ITEM_DESELECTED
@@ -1015,17 +1016,22 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
             g.lineWidth = 1f
 
             // Draw the weapon/drone number itself
-            val weaponNumber = (slotNumber + 1).toString()
-            val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumber)
+            val weaponNumberWidth = weaponNumberFont.getWidth(weaponNumberString)
             weaponNumberFont.drawString(
                 (numBoxX + 2 + 1 + (8 - weaponNumberWidth) / 2).f,
                 pos.y + size.y - 4f,
-                weaponNumber,
-                g.color
+                weaponNumberString,
+                mainColour
             )
 
-            val shortName = name.replaceFirst(" ".toRegex(), "\n")
-            drawWeaponString(g, shortName, pos.x + 26, pos.y + 8)
+            // Draw the item name, which is split across
+            // multiple lines to fit in the box.
+            var lineY = pos.y + 8
+            for (line in nameLines) {
+                val font = g.font as SILFontLoader
+                font.drawStringLegacy(pos.x + 26f, lineY.f, line, mainColour)
+                lineY += 15
+            }
 
             for (bar in 0 until requiredPower) {
                 val y = pos.y + size.y - 11 - bar * 8

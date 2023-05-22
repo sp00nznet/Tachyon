@@ -9,13 +9,15 @@ class Oxygen(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, 
     // Note we also add the drain rate to counter that out, since that was included in the test
     // Maybe this is done wrong and the room drain is only applied with oxygen off, but it's not going
     // to have much of an effect since it only applies to level 2/3 oxygen.
-    val refillRate: Float get() {
-        // From the wiki, drains about 6% per second.
-        if (isHackActive)
-            return -0.06f
+    private val refillRates = listOf(0f, 1f, 3f, 6f)
+    val refillRate: Float
+        get() {
+            // From the wiki, drains about 6% per second.
+            if (isHackActive)
+                return -0.06f
 
-        return listOf(0f, 1f, 3f, 6f)[powerSelected] * (1f / 85f + ROOM_DRAIN_RATE)
-    }
+            return refillRates[powerSelected] * (1f / 85f + ROOM_DRAIN_RATE)
+        }
 
     companion object {
         // ~1% per second according to the FTL wiki
