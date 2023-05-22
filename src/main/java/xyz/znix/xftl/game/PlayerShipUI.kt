@@ -582,7 +582,7 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                     override val isTargeted: Boolean get() = false
                     override val isSelectingTarget: Boolean get() = false
                     override val hasChargeBar: Boolean get() = false
-                    override val isBeingHacked: Boolean get() = drones.isHackActive
+                    override val isBeingHacked: Boolean get() = drones.isHackActive && info?.instance != null
 
                     override fun click(button: Int) {
                         val wasPowered = info?.instance?.isPowered ?: false

@@ -17,6 +17,8 @@ import kotlin.math.*
 class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
     override val flightController = OrbitFlightController(this)
 
+    override val useCustomStunRotation: Boolean get() = true
+
     private lateinit var offImage: Image
     private lateinit var onImage: Image
     private lateinit var engine: Image
@@ -61,7 +63,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
     override fun onRender(g: Graphics) {
         val baseImage = when {
-            isPowered -> onImage
+            isRunning -> onImage
             else -> offImage
         }
 
@@ -69,7 +71,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         drawCentred(baseImage)
 
         // Draw the little thruster flame.
-        if (isPowered) {
+        if (isRunning) {
             val movementAngle = atan2(flightController.speedY, flightController.speedX)
             g.pushTransform()
             g.rotate(0f, 0f, Math.toDegrees(movementAngle.toDouble()).toFloat() + 90)
@@ -81,18 +83,18 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         // It points up with no rotation, so we need to rotate it clockwise
         // to make 0 match up with sin/cos space.
         val gunImage = when {
-            !isPowered -> gunOffImage
+            !isRunning -> gunOffImage
             else -> gunOnImage
         }
 
         g.pushTransform()
-        g.rotate(0f, 0f, Math.toDegrees(aimAngle.toDouble()).toFloat())
+        g.rotate(0f, 0f, Math.toDegrees((aimAngle + stunRotationAnimation).toDouble()).toFloat())
 
         // Draw the base image
         drawCentred(gunImage)
 
         // And draw the charged image with an increasing opacity as we charge up
-        if (isPowered) {
+        if (isRunning) {
             val timeCharging = typeCooldown - cooldown
             val chargeProgress = max(0f, timeCharging / typeCooldown)
             val colour = Color(1f, 1f, 1f, chargeProgress)
@@ -105,7 +107,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
     override fun update(dt: Float) {
         super.update(dt)
 
-        if (!isPowered) {
+        if (!isRunning) {
             cooldown = typeCooldown
             return
         }

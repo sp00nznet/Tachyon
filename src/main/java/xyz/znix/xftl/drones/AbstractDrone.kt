@@ -1,7 +1,11 @@
 package xyz.znix.xftl.drones
 
+import xyz.znix.xftl.AnimationSpec
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.game.FTLSound
+import xyz.znix.xftl.rollChance
 import xyz.znix.xftl.weapons.DroneBlueprint
+import kotlin.random.Random
 
 abstract class AbstractDrone(val type: DroneBlueprint) {
     var isPowered: Boolean = false
@@ -12,15 +16,31 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
                 onPowerChanged()
         }
 
+    /**
+     * Like [isPowered], but also false if the drone is stunned.
+     */
+    val isRunning: Boolean get() = isPowered && !isStunned
+
     lateinit var ownerShip: Ship
         private set
 
     protected var initialised: Boolean = false
         private set
 
+    protected lateinit var explodeAnimation: AnimationSpec
+    protected lateinit var explodeSound: FTLSound
+
+    open val isStunned: Boolean get() = ownerShip.drones!!.isHackActive
+
+    private var stunTotalTimer: Float = 0f
+    private var stunDestroyTimer: Float = 0f
+
     open fun init(ownerShip: Ship) {
         if (initialised)
             error("Cannot re-initialise drone ${type.name}")
+
+        explodeAnimation = ownerShip.sys.animations["explosion_random"]
+        explodeSound = ownerShip.sys.sounds.getSample("smallExplosion")
 
         this.ownerShip = ownerShip
         initialised = true
@@ -59,6 +79,31 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
     }
 
     open fun update(dt: Float) {
+        if (isStunned) {
+            stunTotalTimer += dt
+
+            // After two seconds, there's a 15% chance to destroy
+            // the drone once per second.
+            // It appears this is how both hacking and the anti-drone
+            // can destroy drones.
+            if (stunTotalTimer >= 2f) {
+                // Add a small margin so level 1 hacking can get two
+                // attempts at it.
+                val waitPeriod = 0.99f
+                stunDestroyTimer += dt
+                if (stunDestroyTimer >= waitPeriod) {
+                    stunDestroyTimer -= waitPeriod
+
+                    if (Random.rollChance(15)) {
+                        destroy()
+                    }
+                }
+            }
+
+            return
+        }
+        stunTotalTimer = 0f
+        stunDestroyTimer = 0f
     }
 
     protected open fun onPowerChanged() {

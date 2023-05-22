@@ -34,7 +34,7 @@ class HullRepairDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false)
     }
 
     override fun onRender(g: Graphics) {
-        if (isPowered && flightController.paused) {
+        if (isRunning && flightController.paused) {
             val colour = Color(Color.white)
 
             // This animation is guessed and measured from FTL, it's
@@ -58,14 +58,14 @@ class HullRepairDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false)
             }
         }
 
-        val image = if (isPowered) onImage else offImage
+        val image = if (isRunning) onImage else offImage
         drawCentred(image)
     }
 
     override fun update(dt: Float) {
         super.update(dt)
 
-        if (!isPowered)
+        if (!isRunning)
             return
 
         if (!flightController.paused) {

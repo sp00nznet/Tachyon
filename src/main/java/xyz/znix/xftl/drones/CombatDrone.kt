@@ -58,7 +58,7 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
 
     override fun onRender(g: Graphics) {
         val image = when {
-            !isPowered -> offImage
+            !isRunning -> offImage
             flightController.paused -> chargedImage
             else -> onImage
         }
@@ -72,35 +72,36 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         // Make Kotlin smart-casts work with a mutable field
         val weapon = this.weapon
 
-        if (flightController.paused) {
-            if (fireTimer != 0f) {
-                fireTimer -= dt
-                if (fireTimer <= 0f) {
-                    fireTimer = 0f
+        if (!flightController.paused || !isRunning)
+            return
 
-                    fire()
-                    pickNewTarget()
-                }
+        if (fireTimer != 0f) {
+            fireTimer -= dt
+            if (fireTimer <= 0f) {
+                fireTimer = 0f
+
+                fire()
+                pickNewTarget()
             }
+        }
 
-            // Fire our beam, if it's still active.
-            var firingBeam = false
-            if (weapon is BeamBlueprint.BeamInstance) {
-                weapon.update(dt, true, false)
-                firingBeam = weapon.firing
+        // Fire our beam, if it's still active.
+        var firingBeam = false
+        if (weapon is BeamBlueprint.BeamInstance) {
+            weapon.update(dt, true, false)
+            firingBeam = weapon.firing
 
-                // Match our rotation to that of the beam
-                if (firingBeam) {
-                    val target = weapon.getCurrentTargetPoint()
-                    flightController.rotation = DroneFlightController.getAngleFrom(flightController.position, target)
-                }
+            // Match our rotation to that of the beam
+            if (firingBeam) {
+                val target = weapon.getCurrentTargetPoint()
+                flightController.rotation = DroneFlightController.getAngleFrom(flightController.position, target)
             }
+        }
 
-            // Un-pause the drone once we've fired our weapon and (if we're
-            // a beam drone) we're done firing our beam.
-            if (fireTimer <= 0f && !firingBeam) {
-                flightController.paused = false
-            }
+        // Un-pause the drone once we've fired our weapon and (if we're
+        // a beam drone) we're done firing our beam.
+        if (fireTimer <= 0f && !firingBeam) {
+            flightController.paused = false
         }
     }
 

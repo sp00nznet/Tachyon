@@ -118,6 +118,10 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
         if (info.instance?.isPowered == power || (info.instance == null && !power))
             return true
 
+        // Can't change the drone power if we're ion-locked or hacked.
+        if (isPowerLocked)
+            return false
+
         // If we're turning the drone on, check there's enough power for it.
         if (power) {
             val consumedPower = powerSelected + info.type.power

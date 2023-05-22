@@ -1,5 +1,6 @@
 package xyz.znix.xftl.drones
 
+import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
@@ -33,10 +34,21 @@ abstract class AbstractExternalDrone(
     abstract val flightController: DroneFlightController
 
     /**
+     * If true, the drone isn't automatically rotated by hacking.
+     *
+     * The drone must then apply [stunRotationAnimation] itself.
+     */
+    protected open val useCustomStunRotation: Boolean get() = false
+
+    /**
      * The ship this drone is flying around.
      */
     lateinit var targetShip: Ship
         private set
+
+    protected var stunRotationAnimation: Float = 0f
+    private var stunSparksAnimation: Animation? = null
+    private var stunSparksMirror: Boolean = false
 
     protected val game: SlickGame get() = ownerShip.sys
 
@@ -62,7 +74,21 @@ abstract class AbstractExternalDrone(
     override fun update(dt: Float) {
         super.update(dt)
 
+        if (isStunned) {
+            stunRotationAnimation += Math.toRadians(480.0).toFloat() * dt
+            stunSparksAnimation?.update((dt * 1000).toLong())
+            return
+        }
+        stunRotationAnimation = 0f
+
         flightController.update(dt)
+    }
+
+    override fun destroy() {
+        super.destroy()
+
+        targetShip.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), flightController.position)
+        explodeSound.play()
     }
 
     override fun removeInstance() {
@@ -101,12 +127,53 @@ abstract class AbstractExternalDrone(
             y = y.roundToInt().f
         }
 
+        var rotation = flightController.rotation
+        if (!useCustomStunRotation)
+            rotation += stunRotationAnimation
         g.translate(x, y)
-        g.rotate(0f, 0f, flightController.rotation / TWO_PI * 360f)
+        g.rotate(0f, 0f, rotation / TWO_PI * 360f)
 
         onRender(g)
 
         g.popTransform()
+
+        // If we're ion-stunned or being hacked, draw sparks on top
+        renderStunSparks(g)
+    }
+
+    private fun renderStunSparks(g: Graphics) {
+        if (!isStunned) {
+            stunSparksAnimation = null
+            return
+        }
+
+        if (stunSparksAnimation == null || stunSparksAnimation?.isStopped == true) {
+            stunSparksAnimation = game.animations["stun_spark_big"].start().also {
+                it.setLooping(false)
+            }
+
+            // See doc/hacking for details about this
+            stunSparksMirror = Random.nextBoolean()
+        }
+
+        val sparks = stunSparksAnimation!!.currentFrame
+        val pos = flightController.position
+
+        // Use the top-right corner rather than the top-left
+        // as FTL appears to, since this looks much better.
+        var x1 = sparks.width - 32
+        var x2 = sparks.width - 0
+
+        if (stunSparksMirror) {
+            val tmp = x1
+            x1 = x2
+            x2 = tmp
+        }
+
+        sparks.draw(
+            pos.x - 16f, pos.y - 16f, pos.x + 16f, pos.y + 16f,
+            x1.f, 0f, x2.f, 32f
+        )
     }
 
     protected abstract fun onRender(g: Graphics)

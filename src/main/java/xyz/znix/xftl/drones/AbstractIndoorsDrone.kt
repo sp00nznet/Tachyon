@@ -2,7 +2,6 @@ package xyz.znix.xftl.drones
 
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.AnimationSpec
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
@@ -39,12 +38,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     var pawn: Pawn? = null
         private set
 
-    protected lateinit var explodeAnimation: AnimationSpec
-
-    override fun init(ownerShip: Ship) {
-        super.init(ownerShip)
-        explodeAnimation = ownerShip.sys.animations["explosion_random"]
-    }
+    private var lastStunned: Boolean = false
 
     /**
      * Spawn in [targetRoom], or one of the nearby rooms if that's full.
@@ -78,6 +72,13 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
     override fun update(dt: Float) {
         super.update(dt)
+
+        // If we start or stop being stunned, that effectively
+        // turns the pawn on or off.
+        if (lastStunned != isStunned) {
+            lastStunned = isStunned
+            pawn?.onPowerChanged()
+        }
 
         // If something weird happens and our pawn disappears
         // from the enemy ship, assume it was destroyed.
@@ -139,7 +140,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
             // Only progress on movement, fighting, repairs, etc if we're powered,
             // and the power-up/power-down animation isn't playing.
-            val on = isPowered && powerUpDuration == 0f
+            val on = isRunning && powerUpDuration == 0f
             if (on) {
                 super.update(dt)
 
@@ -150,7 +151,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             } else {
                 icon.update((dt * 1000).toLong())
 
-                if (powerUpDuration != 0f && isPowered) {
+                if (powerUpDuration != 0f && isRunning) {
                     powerUpDuration -= dt
                     if (powerUpDuration < 0f) {
                         powerUpDuration = 0f
@@ -170,7 +171,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         }
 
         fun onPowerChanged() {
-            val powerDir = when (isPowered) {
+            val powerDir = when (isRunning) {
                 true -> "power_up"
                 false -> "power_down"
             }
@@ -180,7 +181,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
                 setLooping(false)
             }
 
-            if (!isPowered) {
+            if (!isRunning) {
                 powerUpDuration = animation.totalTime
             } else if (onLastUpdate) {
                 powerUpDuration = 0f
@@ -196,6 +197,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
             // Play the explosion animation whenever a drone is killed.
             ship.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), getPixelPositionCentre())
+            explodeSound.play()
         }
     }
 }
