@@ -131,12 +131,16 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 else -> iSecond
             }
 
+            // Beams that do no damage (eg the fire beam) still have a line
+            // drawn, which is the same as a one-power beam.
+            val visualPower = max(1, damage)
+
             val shieldLayers = targetShip.shields?.activeShields ?: 0
-            val piercing = max(0, damage - shieldLayers)
+            val piercing = max(0, visualPower - shieldLayers)
 
             // TODO make the transition around the shield line a bit cleaner - it's a clear
             //  square cutoff, and doesn't match the tangent line of the shields bubble.
-            drawBeam(damage, from, shieldPoint)
+            drawBeam(visualPower, from, shieldPoint)
 
             // Draw the inside-the-shield-bubble part
             if (piercing == 0)
