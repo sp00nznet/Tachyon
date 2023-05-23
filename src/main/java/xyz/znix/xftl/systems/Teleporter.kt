@@ -47,6 +47,8 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
 
     private var commandedTeleport: TeleportAction? = null
 
+    // TODO block teleporting when a super-shield is up
+
     override fun update(dt: Float) {
         super.update(dt)
 

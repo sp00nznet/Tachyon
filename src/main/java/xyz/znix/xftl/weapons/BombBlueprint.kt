@@ -10,6 +10,11 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.Weapons
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.random.Random
 
 class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_random"
@@ -81,21 +86,37 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
     class FiredBomb(val type: BombBlueprint, val target: Room, val animation: Animation) {
         val missed = Math.random() * 100 < target.ship.evasion
+        val hitSuperShield = target.ship.superShield > 0 && !missed
         val position: ConstPoint
 
         init {
-            position = if (missed) {
-                // Currently just pick anywhere in a rectangle around their shield
-                // TODO implement this in some better way, and find out how FTL does it
-                val halfSize = target.ship.shieldHalfSize
-                val size = halfSize * 2
-                val rand = ConstPoint((Math.random() * size.x).toInt(), (Math.random() * size.y).toInt())
-                val shipCentre = target.ship.hullImage.let { ConstPoint(it.width / 2, it.height / 2) }
-                shipCentre + rand - halfSize
-            } else {
-                val centreX = target.offsetX + target.width * Constants.ROOM_SIZE / 2
-                val centreY = target.offsetY + target.height * Constants.ROOM_SIZE / 2
-                ConstPoint(centreX, centreY)
+            val ship = target.ship
+            position = when {
+                missed -> {
+                    // Currently just pick anywhere in a rectangle around their shield
+                    // TODO implement this in some better way, and find out how FTL does it
+                    val halfSize = ship.shieldHalfSize
+                    val size = halfSize * 2
+                    val rand = ConstPoint((Math.random() * size.x).toInt(), (Math.random() * size.y).toInt())
+                    val shipCentre = ship.hullImage.let { ConstPoint(it.width / 2, it.height / 2) }
+                    shipCentre + rand - halfSize
+                }
+
+                hitSuperShield -> {
+                    // Pick a random point on the ship's shield line
+                    val halfSize = ship.shieldHalfSize
+                    val angle = Random.nextFloat() * PI.toFloat() * 2
+                    ship.shieldOrigin + ConstPoint(
+                        (halfSize.x * cos(angle)).roundToInt(),
+                        (halfSize.y * sin(angle)).roundToInt()
+                    )
+                }
+
+                else -> {
+                    val centreX = target.offsetX + target.width * Constants.ROOM_SIZE / 2
+                    val centreY = target.offsetY + target.height * Constants.ROOM_SIZE / 2
+                    ConstPoint(centreX, centreY)
+                }
             }
         }
 
@@ -110,6 +131,10 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 target.ship.inboundBombs.remove(this)
 
                 if (missed) {
+                    target.ship.playDamageEffect(type, position)
+                } else if (hitSuperShield) {
+                    // TODO support ships without a shields system
+                    target.ship.shields?.popShieldLayer(type)
                     target.ship.playDamageEffect(type, position)
                 } else {
                     target.ship.damage(target, type)

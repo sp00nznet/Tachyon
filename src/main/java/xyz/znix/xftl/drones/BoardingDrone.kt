@@ -206,6 +206,16 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         override fun hitOtherProjectile(currentSpace: Ship) {
             currentSpace.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), position)
         }
+
+        override fun crossedShieldLine() {
+            super.crossedShieldLine()
+
+            // Hitting a super shield doesn't damage it, but does destroy the drone.
+            if (target.ship.superShield > 0) {
+                destroy()
+                target.ship.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), position)
+            }
+        }
     }
 
     private inner class BoardingPawn(room: Room) : AbstractIndoorsDrone.Pawn(room) {

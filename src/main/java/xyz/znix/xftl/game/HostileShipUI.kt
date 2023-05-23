@@ -20,6 +20,7 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
     private val shieldIconStandardHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked_charged.png")
     private val shieldIconBrokenHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked.png")
 
+    private val superShieldBar = game.getImg("img/combatUI/box_hostiles_shield_super5.png") // TODO flagship
     private val shieldChargeBar = game.getImg("img/combatUI/box_hostiles_shield_charge.png")
 
     fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, isHostile: Boolean) {
@@ -67,6 +68,8 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
             val shieldsY = hullY + 27
             renderSmallbar(textX, shieldsY, "SHIELDS")
 
+            var bubbleX = textX + 7
+
             for (i in 0 until shields.selectedShieldBars) {
                 val intact = i < shields.activeShields
                 val hacked = shields.isHackActive
@@ -76,11 +79,22 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
                     intact -> shieldIconStandard
                     else -> shieldIconBroken
                 }
-                img.draw(textX + 7 + i * 23, shieldsY + 15)
+                img.draw(bubbleX, shieldsY + 15)
+                bubbleX += 23
             }
 
-            // Draw the charge bar
-            if (shields.rechargeTimer != 0f) {
+            if (enemy.superShield != 0) {
+                // TODO support ships with a super-shield but no shields system
+                bubbleX += 10
+                val superShieldY = shieldsY + 15 + 5
+
+                superShieldBar.draw(bubbleX, superShieldY)
+
+                val width = 50f * enemy.superShield / enemy.maxSuperShield
+                g.color = Constants.SYS_ENERGY_ACTIVE
+                g.fillRect(bubbleX + 3f, superShieldY + 3f, width, 7f)
+            } else if (shields.rechargeTimer != 0f) {
+                // Draw the charge bar
                 shieldChargeBar.draw(textX + 5, shieldsY + 39)
 
                 val progress = shields.rechargeTimer / shields.rechargeDelay

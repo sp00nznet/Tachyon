@@ -105,13 +105,12 @@ public class Constants {
     public static final Color SHIELD_BAR_NORMAL = new Color(27, 132, 255);
     public static final Color SHIELD_BAR_HACKED = SYSTEM_HACKED;
 
-    // These numbers took quite some work to obtain
-    // They're specifically from the Kestral's shields, but I assume/hope they're the same for everything
-    // The actual numbers was 0.571429 for level one shields, 0.742857 for level two and 0.914286 for level
-    // three (I didn't have the patience to get Level 4 shields, or to install a savefile editor)
-    // These ones are close enough and add up
+    // SHIELD_OPACITY_BASE is the base amount of opacity drawn on level-0 shields
+    // (if they were to be drawn at all, which they won't), with SHIELD_OPACITY_SCALING
+    // then multiplied by the current shield power divided by the maximum number
+    // of shield layers (which is 4 for enemy ships and 3.5 for the player for some reason?).
     public static final float SHIELD_OPACITY_BASE = 0.4f;
-    public static final float SHIELD_OPACITY_LEVEL = (1 - SHIELD_OPACITY_BASE) / 4;
+    public static final float SHIELD_OPACITY_SCALING = (1 - SHIELD_OPACITY_BASE);
 
     // Time in seconds it takes a single human to repair one bar of a system
     // TODO measure more accurately

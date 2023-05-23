@@ -63,6 +63,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("set", 1, this::cmdSet, "Turn on or off debug flags"),
         Cmd("damage", 1, this::cmdDamage, "Apply a given amount of damage to the player ship (or negative to heal)"),
         Cmd("force-hack", 1, this::cmdForceHack, "Forces the enemy to hack a given player system"),
+        Cmd("super-shield", null, this::cmdSuperShield, "Give the player (or enemy) a super-shield (see help sub-cmd)"),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("reload-flags", 0, this::cmdReloadFlags, "Reload the debug flags (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
@@ -675,6 +676,68 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         hacking.update(0f)
 
         lines.add("Launched hacking probe at player system $sysName")
+    }
+
+    private fun cmdSuperShield(args: List<String>) {
+        var amount: Int = 5
+        var max: Int = 5
+
+        var target: Ship = ship
+
+        // With no arguments, give the player a normal super-shield
+
+        if (args.getOrNull(1) == "help") {
+            lines.add("Usage: ${args[0]} [amount[/max]] [player|enemy]")
+            lines.add("The amount should be either a single number (the shield strength), or")
+            lines.add("two numbers in the form amount/max to set the max super-shield level.")
+            lines.add("The target ship can be optionally specified, but defaults to the player ship.")
+            lines.add("When run without arguments, it gives the player a regular (level-5) super-shield.")
+            return
+        }
+
+        if (args.size >= 2) {
+            val parts = args[1].split("/")
+
+            if (parts.size > 2) {
+                lines.add("Invalid super-shield amount '${args[1]}' - 'see ${args[0]} help'.")
+                return
+            }
+
+            amount = parts[0].toIntOrNull() ?: run {
+                lines.add("Invalid super-shield amount '${args[1]}' - see '${args[0]} help'")
+                return
+            }
+
+            if (parts.size == 2) {
+                max = parts[1].toIntOrNull() ?: run {
+                    lines.add("Invalid super-shield max amount '${args[1]}' - see '${args[0]} help'")
+                    return
+                }
+            }
+        }
+
+        if (args.size >= 3) {
+            target = when (args[2]) {
+                "player" -> ship
+
+                "enemy" -> game.enemy ?: run {
+                    lines.add("No enemy ship present.")
+                    return
+                }
+
+                else -> {
+                    lines.add("Invalid target ship '${args[1]}' (should be 'player' or 'enemy') - see '${args[0]} help'")
+                    return
+                }
+            }
+        }
+
+        // Set the max super-shield first, since the
+        // normal value is clamped to it.
+        target.maxSuperShield = max
+        target.superShield = amount
+
+        lines.add("Added $amount/$max super-shield to ship ${target.name}.")
     }
 
     private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {

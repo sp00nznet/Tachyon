@@ -67,6 +67,8 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
     private var loopSoundInstance: SoundInstance? = null
 
+    // TODO block drone launches when a super-shield is up
+
     override fun powerStateChanged() {
         super.powerStateChanged()
         updateButton()

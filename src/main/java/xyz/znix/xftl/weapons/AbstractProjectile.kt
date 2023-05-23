@@ -287,7 +287,9 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         // Check for shield piercing, which seems to work the same
         // way across all weapons. Missiles for example just have
         // a very high shieldPiercing of 5.
-        if (type.shieldPiercing >= activeShields)
+        // This doesn't apply when the player has a super-shield
+        // active, which blocks everything.
+        if (type.shieldPiercing >= activeShields && ship.superShield == 0)
             return
 
         hitShields()
@@ -311,10 +313,10 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     }
 
     protected open fun hitShields() {
-        if (type.ionDamage > 0) {
+        if (type.ionDamage > 0 && ship.superShield == 0) {
             ship.shields!!.dealDamage(0, type.ionDamage)
         } else {
-            ship.shields!!.popShieldLayer()
+            ship.shields!!.popShieldLayer(type)
         }
 
         ship.playDamageEffect(type, position)

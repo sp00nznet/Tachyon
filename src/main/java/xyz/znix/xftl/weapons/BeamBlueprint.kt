@@ -27,6 +27,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
     val fireDuration: Float = 1f * length / speedPixelsPerSecond
 
+    // TODO implement super-shield (Zoltan shield) support
+
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return BeamInstance(ship)
     }

@@ -22,6 +22,11 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
 
     open fun onJump(ship: Ship) {}
 
+    /**
+     * Called when a ship which comes with this augment is created.
+     */
+    open fun onShipSpawn(ship: Ship) {}
+
     companion object {
         const val LONG_RANGE_SCANNERS: String = "ADV_SCANNERS"
         const val RECONSTRUCTIVE_TELEPORT: String = "TELEPORT_HEAL"
@@ -73,5 +78,22 @@ class AugPreigniter(elem: Element) : AugmentBlueprint(elem) {
 
     companion object {
         const val NAME: String = "WEAPON_PREIGNITE"
+    }
+}
+
+class AugZoltanShield(elem: Element) : AugmentBlueprint(elem) {
+    override fun onJump(ship: Ship) {
+        super.onJump(ship)
+        ship.superShield = 5
+    }
+
+    // This is required so that enemy ships start with a super shield.
+    override fun onShipSpawn(ship: Ship) {
+        super.onShipSpawn(ship)
+        ship.superShield = 5
+    }
+
+    companion object {
+        const val NAME: String = "ENERGY_SHIELD"
     }
 }

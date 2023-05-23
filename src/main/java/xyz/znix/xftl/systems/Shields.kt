@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.max
 
 class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
@@ -111,7 +112,13 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         }
     }
 
-    fun popShieldLayer() {
+    fun popShieldLayer(type: AbstractWeaponBlueprint) {
+        // Break super shields first
+        if (ship.superShield > 0) {
+            ship.superShield -= type.damage + type.ionDamage * 2
+            return
+        }
+
         if (activeShields == 0)
             return
 

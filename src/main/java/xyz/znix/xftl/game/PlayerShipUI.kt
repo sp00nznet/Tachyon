@@ -680,8 +680,21 @@ class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, pri
                 game.getImg("img/statusUI/top_shields4_purple.png").draw(31 - 8, shieldY)
             }
 
-            // Draw the recharge bar
-            if (shields.rechargeTimer != 0f) {
+            if (ship.superShield != 0) {
+                // Draw the super-shield bar where the recharge
+                // bar would normally go.
+                g.color = SYS_ENERGY_ACTIVE
+                var x = 33
+                for (i in 0 until ship.superShield) {
+                    // The middle bar is one pixel shorter to make everything
+                    // else line up properly.
+                    val width = if (i == 2) 16 else 17
+
+                    g.fillRect(x.f, shieldY + 34f + 2f, width.f, 6f)
+                    x += width + 2
+                }
+            } else if (shields.rechargeTimer != 0f) {
+                // Draw the recharge bar
                 val progress = (shields.rechargeTimer / shields.rechargeDelay).coerceIn(0f..1f)
                 g.color = when (hacked) {
                     true -> SHIELD_BAR_HACKED

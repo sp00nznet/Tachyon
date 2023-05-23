@@ -64,12 +64,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val shieldOffset: ConstPoint
 
     val selectedShieldHalfSize: ConstPoint
-
     val shieldHalfSize: ConstPoint
-        get() = if (isPlayerShip)
-            ConstPoint(shieldImage.width / 2, shieldImage.height / 2)
-        else
-            selectedShieldHalfSize
 
     val shieldOrigin: ConstPoint
 
@@ -154,6 +149,21 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
      * If this ship is attempting to escape, this is the time remaining until it jumps.
      */
     var escapeTimer: Float? = null
+
+    /**
+     * The maximum number of super-shield levels this ship can have.
+     *
+     * This is always 5, except for the flagship since it has a super-super-shield.
+     */
+    var maxSuperShield: Int = 5
+
+    /**
+     * The number of points of super-shield this ship currently has.
+     */
+    var superShield: Int = 0
+        set(value) {
+            field = value.coerceIn(0..maxSuperShield)
+        }
 
     /**
      * Returns true if this ship has ran out of health
@@ -324,6 +334,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         shieldOffset = ConstPoint(found_ellipse.x, found_ellipse.y)
         selectedShieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
+
+        // The player ship uses the exact size of the shield image,
+        // while enemies scale it to fit a custom size.
+        shieldHalfSize = when {
+            isPlayerShip -> ConstPoint(shieldImage.width / 2, shieldImage.height / 2)
+            else -> selectedShieldHalfSize
+        }
 
         for (node in shipNode.getChild("systemList").children) {
             if (node.name == "clonebay") {
@@ -546,6 +563,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         for (augNode in shipNode.getChildren("aug")) {
             val name = augNode.getAttributeValue("name")
             val augment = sys.blueprintManager[name] as AugmentBlueprint
+            augment.onShipSpawn(this)
             augments.add(augment)
         }
         require(augments.size <= MAX_AUGMENTS) { "Ship $name has too many augments - ${augments.size}!" }
@@ -555,24 +573,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     }
 
     fun render(g: Graphics, interiorVisible: Boolean, selected: Room?) {
-        val level = shields?.activeShields ?: 0
-        shieldImage.alpha = SHIELD_OPACITY_BASE + SHIELD_OPACITY_LEVEL * level
-
         // Draw the shield
-        if (level == 0) {
-            // Do nothing, shields disabled
-        } else {
-            val basePosX = shieldOrigin.x - shieldHalfSize.x
-            val basePosY = shieldOrigin.y - shieldHalfSize.y
-
-            g.drawImage(
-                shieldImage,
-                basePosX.f, basePosY.f,
-                basePosX.f + shieldHalfSize.x * 2, basePosY.f + shieldHalfSize.y * 2,
-                0f, 0f,
-                shieldImage.width.f, shieldImage.height.f
-            )
-        }
+        renderShields()
 
         // Draw departing shots. We'll draw the rest of them later.
         for (proj in projectiles) {
@@ -643,6 +645,54 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             a.render()
 
         animations.removeIf { a -> a.isFinished }
+    }
+
+    private fun renderShields() {
+        val level = shields?.activeShields ?: 0
+
+        // Draw the standard (non-Zoltan) shield
+        val shieldMax = if (isPlayerShip) 3.5f else 4f // This is odd, but correct
+        val levelFraction = level / shieldMax
+        val alpha = SHIELD_OPACITY_BASE + SHIELD_OPACITY_SCALING * levelFraction
+
+        if (level == 0) {
+            // Do nothing, shields disabled
+        } else {
+            renderSingleShield(alpha, Color.white)
+        }
+
+        // Draw the super shields
+        if (superShield != 0) {
+            var superShieldAlpha = superShield.f / maxSuperShield
+
+            if (level == 0) {
+                superShieldAlpha = SHIELD_OPACITY_BASE + SHIELD_OPACITY_SCALING * superShieldAlpha
+            }
+
+            renderSingleShield(superShieldAlpha, SYS_ENERGY_ACTIVE)
+
+            // TODO fix the ugly darkened line around the edge of enemy super-shields
+            // I suspect this is caused by the scaling - Slick has had problems
+            // rendering drones while rotating with white aliasing artefacts
+            // along their edges, so maybe it's the same thing?
+            // Or it could possible be some kind of SRGB-related issue.
+        }
+    }
+
+    private fun renderSingleShield(alpha: Float, filter: Color) {
+        val basePosX = shieldOrigin.x - shieldHalfSize.x
+        val basePosY = shieldOrigin.y - shieldHalfSize.y
+
+        shieldImage.alpha = alpha
+
+        // Draw the image scaled to fit the
+        shieldImage.draw(
+            basePosX.f, basePosY.f,
+            basePosX.f + shieldHalfSize.x * 2, basePosY.f + shieldHalfSize.y * 2,
+            0f, 0f,
+            shieldImage.width.f, shieldImage.height.f,
+            filter
+        )
     }
 
     /**
@@ -930,6 +980,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
         // And reset the FTL drive
         ftlChargeProgress = 0f
+
+        // Jumping clears the super shield (if the augment is
+        // present, it'll add it back in afterwards).
+        superShield = 0
 
         // Remove all incoming and outgoing projectiles
         projectiles.clear()

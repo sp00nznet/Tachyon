@@ -3,6 +3,7 @@ package xyz.znix.xftl
 import org.jdom2.Element
 import xyz.znix.xftl.augments.AugEngiMedbots
 import xyz.znix.xftl.augments.AugPreigniter
+import xyz.znix.xftl.augments.AugZoltanShield
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.game.SlickGame
@@ -130,6 +131,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
         return when (val name = elem.getAttributeValue("name")) {
             AugEngiMedbots.NAME -> AugEngiMedbots(elem)
             AugPreigniter.NAME -> AugPreigniter(elem)
+            AugZoltanShield.NAME -> AugZoltanShield(elem)
 
             // Augments that use the default AugmentBlueprint and are implemented
             // as part of another system should be explicitly handled here.
