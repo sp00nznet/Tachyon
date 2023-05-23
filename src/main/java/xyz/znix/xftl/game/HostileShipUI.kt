@@ -20,6 +20,8 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
     private val shieldIconStandardHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked_charged.png")
     private val shieldIconBrokenHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked.png")
 
+    private val shieldChargeBar = game.getImg("img/combatUI/box_hostiles_shield_charge.png")
+
     fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, isHostile: Boolean) {
         val box = game.getImg("img/combatUI/box_hostiles2.png")
 
@@ -67,7 +69,7 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
 
             for (i in 0 until shields.selectedShieldBars) {
                 val intact = i < shields.activeShields
-                val hacked = false
+                val hacked = shields.isHackActive
                 val img = when {
                     hacked && intact -> shieldIconStandardHacked
                     hacked && !intact -> shieldIconBrokenHacked
@@ -75,6 +77,21 @@ class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy
                     else -> shieldIconBroken
                 }
                 img.draw(textX + 7 + i * 23, shieldsY + 15)
+            }
+
+            // Draw the charge bar
+            if (shields.rechargeTimer != 0f) {
+                shieldChargeBar.draw(textX + 5, shieldsY + 39)
+
+                val progress = shields.rechargeTimer / shields.rechargeDelay
+                val colour = when {
+                    shields.isHackActive -> Constants.SHIELD_BAR_HACKED
+                    else -> Constants.SHIELD_BAR_NORMAL
+                }
+
+                val width = (56 * progress)
+                g.color = colour
+                g.fillRect(textX.f + 5 + 3, shieldsY.f + 39 + 3, width, 6f)
             }
         }
 
