@@ -1,7 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import kotlin.math.min
+import kotlin.math.max
 
 class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
     override val sortingType: SortingType get() = SortingType.SHIELD
@@ -12,7 +12,7 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
     var activeShields: Int = 0
         set(value) {
             val old = field
-            field = min(selectedShieldBars, value)
+            field = value.coerceIn(0..selectedShieldBars)
 
             if (value < old) {
                 shieldsDownSound.play()
@@ -89,7 +89,7 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             return
         }
 
-        rechargeTimer -= dt
+        rechargeTimer = max(rechargeTimer - dt, 0f)
         if (rechargeTimer <= 0f && activeShields > 0) {
             rechargeTimer = hackDrainTime
 
@@ -102,6 +102,12 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             }
 
             activeShields--
+
+            // Without this, rechargeTimer would jump back to 2s for
+            // one frame, which is very visible on the shield charge bar.
+            if (activeShields == 0) {
+                rechargeTimer = 0f
+            }
         }
     }
 
