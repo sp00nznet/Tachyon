@@ -8,6 +8,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.SoundInstance
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -59,6 +60,13 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             updateButton()
         }
 
+    private val launchSound by onInit { it.sounds.getSample("droneLaunch") }
+    private val landSound by onInit { it.sounds.getSample("hackLand") }
+    private val startSound by onInit { it.sounds.getSample("hackStart") }
+    private val loopSound by onInit { it.sounds.getLoop("hackLoop") }
+
+    private var loopSoundInstance: SoundInstance? = null
+
     override fun powerStateChanged() {
         super.powerStateChanged()
         updateButton()
@@ -88,6 +96,8 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         super.update(dt)
 
         if (timeRemaining != null) {
+            loopSoundInstance?.continueLoop()
+
             // If the drone was destroyed, immediately go into cooldown.
             // This generally shouldn't happen as the drone shouldn't
             // be killable after it lands, but do it just in case.
@@ -105,6 +115,7 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             // never limited to zero.
             if (timeRemaining!! <= 0 || powerSelected == 0) {
                 timeRemaining = null
+                loopSoundInstance = null
 
                 // Don't apply ion damage - this means we hold onto
                 // the power until the cooldown is finished (or
@@ -177,6 +188,8 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             it.setInitialPath(roomCentre, endPoint)
             ship.projectiles += it
         }
+
+        launchSound.play()
     }
 
     // Called by AbstractSystem to check if we're still attacking a given room.
@@ -219,6 +232,9 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
         // Start the hacking pulse
         this@Hacking.timeRemaining = duration
+
+        startSound.play()
+        loopSoundInstance = loopSound.play()
     }
 
     // Copied from Cloaking.CloakButton
@@ -388,6 +404,9 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
             // Update the start button size
             updateButton()
+
+            // Play the landing sound
+            landSound.play()
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) {

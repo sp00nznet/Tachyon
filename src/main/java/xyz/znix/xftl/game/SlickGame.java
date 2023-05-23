@@ -166,6 +166,8 @@ public class SlickGame extends BasicGame {
 
         hoveredRoom = null;
 
+        sounds.updateLoopedSounds(isPaused());
+
         Input in = container.getInput();
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
