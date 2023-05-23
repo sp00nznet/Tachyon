@@ -144,6 +144,7 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
 
         // Clear out the buffer for subsequent renders
         data.clear()
+        numVerts = 0
 
         return
     }
