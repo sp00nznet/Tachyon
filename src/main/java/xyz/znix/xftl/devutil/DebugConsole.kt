@@ -57,6 +57,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
         Cmd("sectors", 0, this::cmdSectors, "Open the sector map, regardless of the current beacon"),
         Cmd("system", 1, this::cmdSystem, "Unlock a system on the current ship, or 'list' or 'all'"),
         Cmd("spawn-ship", 2, this::cmdSpawnShip, "Spawn an enemy ship directly from a seed"),
+        Cmd("enemy-weapon", null, this::cmdEnemyWeapon, "Add or remove (the the remove argument) an enemy weapon"),
         Cmd("upall", 0, this::cmdUpgradeAll, "UPgrade ALL systems on the player ship to the maximum level"),
         Cmd("downall", 0, this::cmdDowngradeAll, "Downgrade all systems on the player ship to their starting level"),
         Cmd("set", 1, this::cmdSet, "Turn on or off debug flags"),
@@ -496,6 +497,69 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
 
         lines.add("Spawning ship, and setting it as hostile.")
         game.debugSpawnShip(spec, difficulty, sector, seed)
+    }
+
+    private fun cmdEnemyWeapon(args: List<String>) {
+        if (args.size > 2) {
+            lines.add("Too many arguments - see the 'help' subcommand.")
+            return
+        }
+
+        val enemy = game.enemy
+        if (enemy == null) {
+            lines.add("No enemy ship present.")
+            return
+        }
+
+        if (args.size == 1 || args[1] == "add") {
+            // Pick a weapon and add it to the enemy cargo
+            getWeapon { weapon ->
+                for (i in 0 until (enemy.weaponSlots ?: enemy.hardpoints.size)) {
+                    val hp = enemy.hardpoints[i]
+
+                    if (hp.weapon != null)
+                        continue
+
+                    hp.weapon = weapon.buildInstance(enemy)
+                    enemy.cargoUpdated()
+                    lines.add("Added weapon ${weapon.name} to enemy hardpoint $i.")
+                    return@getWeapon
+                }
+
+                lines.add("No free hardpoints on the enemy ship")
+            }
+        } else if (args[1] == "remove") {
+            val weapons = enemy.hardpoints.mapNotNull { it.weapon }
+            val namedWeapons = weapons.map { Pair(it.type.name, it) }
+            pickFromList("TO REMOVE", namedWeapons) { toRemove ->
+                for (hp in enemy.hardpoints) {
+                    if (hp.weapon != toRemove)
+                        continue
+
+                    hp.weapon = null
+                    enemy.cargoUpdated()
+                    lines.add("Removed weapon ${toRemove.type.name} from the enemy ship.")
+                    return@pickFromList
+                }
+
+                lines.add("The weapon has already disappeared!?")
+            }
+        } else if (args[1] == "clear") {
+            // Remove all the enemy weapons
+            for (hp in enemy.hardpoints) {
+                hp.weapon = null
+            }
+            enemy.cargoUpdated()
+            lines.add("Removed all enemy weapons")
+            return
+        } else {
+            lines.add("Usage: ${args[0]} [add|clear]")
+            lines.add("The add mode (default if no arguments are set) lets you select a weapon")
+            lines.add("to give the enemy ship.")
+            lines.add("The remove mode lets you remove enemy weapons via a list.")
+            lines.add("The clear mode removes all the enemy weapons.")
+            return
+        }
     }
 
     private fun cmdUpgradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -1145,6 +1209,83 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                     getTextBody(item)?.let { return it }
                 }
                 return null
+            }
+        }
+    }
+
+    private fun <T> pickFromList(prompt: String, items: List<Pair<String, T>>, callback: (T) -> Unit) {
+        continued = object : ContinuedCommand() {
+            // A little caching for the search
+            var lastInput: String? = null
+            val sortedEntries = ArrayList<Pair<String, T>>()
+
+            override val prompt: String = "$prompt> "
+
+            var lastLeftClick = false
+
+            override fun run(line: String) {
+                val item = items.firstOrNull { it.first == line }
+                if (item == null) {
+                    lines.add("No such option '$line'")
+                    return
+                }
+                callback(item.second)
+            }
+
+            override fun render(gc: GameContainer, g: Graphics, height: Float) {
+                updateSearch()
+
+                val mouseX = gc.input.mouseX
+                val mouseY = gc.input.mouseY
+
+                val leftDown = gc.input.isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)
+                val clicking = leftDown && !lastLeftClick
+                lastLeftClick = leftDown
+
+                val x = 30
+                val blockHeight = 15
+                val width = gc.width - x - 40
+
+                for ((i, item) in sortedEntries.withIndex()) {
+                    val y = height.toInt() + 10 + i * blockHeight
+
+                    if (y > gc.height)
+                        break
+
+                    val hovering = mouseX in x until x + width && mouseY in y until y + blockHeight
+
+                    val shade = if (hovering) 140 else 100
+                    g.color = Color(shade, shade, shade, 180)
+                    g.fillRect(x.f, y.f, width.f, blockHeight.f)
+
+                    font.drawString(x + 5f, y + 10f, item.first, Color.white)
+
+                    if (clicking && hovering) {
+                        historyCursor = -1
+                        input = item.first
+                        runCommand()
+                    }
+                }
+            }
+
+            private fun updateSearch() {
+                val line = currentLine
+
+                if (lastInput == line)
+                    return
+                lastInput = line
+
+                sortedEntries.clear()
+                sortedEntries.addAll(items)
+
+                if (line.isBlank()) {
+                    // If there's no search term, leave the items in their original order.
+                    return
+                }
+
+                // Display all the entries - sorting only orders them
+                val searcher = FuzzySearcher(line)
+                sortedEntries.sortByDescending { searcher.rank(it.first) }
             }
         }
     }
