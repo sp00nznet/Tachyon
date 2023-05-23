@@ -141,6 +141,9 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
 
                 // Set the weapon to start firing
                 weapon.fireFromDrone(this, aim, BEAM_FIRE_TIME)
+
+                // Play the beam sound effect
+                weapon.type.launchSounds?.get()?.play()
             }
 
             else -> error("Unsupported weapon type for drone: ${weapon.type}")

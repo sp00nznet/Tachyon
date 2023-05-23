@@ -212,6 +212,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             this.target = target
             target.targetShip.inboundBeams.add(this)
 
+            type.launchSounds?.get()?.play()
+
             timeCharged = 0f
 
             firing = true
