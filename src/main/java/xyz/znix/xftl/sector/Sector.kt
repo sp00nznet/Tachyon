@@ -1,8 +1,13 @@
 package xyz.znix.xftl.sector
 
+import org.jdom2.Element
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
@@ -12,23 +17,9 @@ import kotlin.random.Random
 /**
  * Represents an in-game sector. Handles the placement of the beacons within it.
  */
-class Sector(
-    val info: GameMap.SectorInfo,
+class Sector {
+    val info: GameMap.SectorInfo
 
-    /**
-     * The list of events that should be used in this sector. Each beacon will be assigned an event from
-     * this list, but no two beacons will share an event (unless that event appears twice in the list).
-     *
-     * This assignment is random, and the order of the items in the list does not matter. If there are
-     * more events in the list than beacons in the sector, a random set of the events will go unused.
-     *
-     * If the list of events is shorter than the number of beacons we generate, those beacons will all
-     * have the filler event.
-     */
-    events: List<Event>,
-
-    specialEvents: GameMap.SpecialEvents
-) {
     /**
      * The zero-indexed position of this sector in the sector map. Zero is the starting
      * sector, 7 is the last stand.
@@ -67,7 +58,31 @@ class Sector(
      */
     var mapRevealed: Boolean = false
 
-    init {
+    // Note there's another constructor for deserialising a sector
+    // from XML down at the bottom of the class.
+
+    /**
+     * Randomly generate a new sector.
+     */
+    constructor(
+        info: GameMap.SectorInfo,
+
+        /**
+         * The list of events that should be used in this sector. Each beacon will be assigned an event from
+         * this list, but no two beacons will share an event (unless that event appears twice in the list).
+         *
+         * This assignment is random, and the order of the items in the list does not matter. If there are
+         * more events in the list than beacons in the sector, a random set of the events will go unused.
+         *
+         * If the list of events is shorter than the number of beacons we generate, those beacons will all
+         * have the filler event.
+         */
+        events: List<Event>,
+
+        specialEvents: GameMap.SpecialEvents
+    ) {
+        this.info = info
+
         val eventPool = ArrayDeque(events.shuffled())
 
         val rand = Random.Default
@@ -311,6 +326,60 @@ class Sector(
         }
 
         return path
+    }
+
+    fun saveToXML(elem: Element, globalRefs: ObjectRefs): ObjectRefs {
+        // External stuff shouldn't be able to reference beacons
+        val refs = ObjectRefs(globalRefs)
+
+        // Register all the beacons, as they reference each other
+        for (beacon in beacons) {
+            refs.register(beacon, "beacon")
+        }
+
+        SaveUtil.addRef(elem, "sectorInfo", refs, info)
+
+        SaveUtil.addTagInt(elem, "fleetAdvanceModifier", fleetAdvanceModifier)
+        SaveUtil.addTagBool(elem, "mapRevealed", mapRevealed)
+        SaveUtil.addPoint(elem, "dangerZoneCentre", dangerZoneCentre)
+
+        SaveUtil.addRef(elem, "startBeacon", refs, startBeacon)
+        SaveUtil.addRef(elem, "finishBeacon", refs, finishBeacon)
+
+        // Serialise all the beacons
+        for (beacon in beacons) {
+            val beaconElem = Element("beacon")
+            beacon.saveToXML(beaconElem, refs)
+            elem.addContent(beaconElem)
+        }
+
+        // The game needs to make a reference to the player's current beacon.
+        return refs
+    }
+
+    /**
+     * Deserialise this sector from XML.
+     */
+    constructor(elem: Element, refs: RefLoader, game: InGameState, mapRefs: RefLoader) {
+        info = SaveUtil.getRefImmediate(elem, "sectorInfo", mapRefs, GameMap.SectorInfo::class.java)!!
+
+        fleetAdvanceModifier = SaveUtil.getTagInt(elem, "fleetAdvanceModifier")
+        mapRevealed = SaveUtil.getTagBool(elem, "mapRevealed")
+        dangerZoneCentre = Point(SaveUtil.getPoint(elem, "dangerZoneCentre"))
+
+        // Use a separate RefLoader to find the start and finish beacons
+        val beaconRefs = RefLoader()
+
+        // Load all the beacons
+        for (beaconElem in elem.getChildren("beacon")) {
+            val beacon = Beacon.loadFromXML(beaconElem, refs, this, game)
+            SaveUtil.registerObjectId(beaconElem, beaconRefs, beacon)
+            beacons += beacon
+        }
+
+        beaconRefs.switchToResolveMode()
+        startBeacon = SaveUtil.getRefImmediate(elem, "startBeacon", beaconRefs, Beacon::class.java)!!
+        finishBeacon = SaveUtil.getRefImmediate(elem, "finishBeacon", beaconRefs, Beacon::class.java)
     }
 
     companion object {

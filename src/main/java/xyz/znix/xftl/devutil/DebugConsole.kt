@@ -1,5 +1,7 @@
 package xyz.znix.xftl.devutil
 
+import org.jdom2.output.Format
+import org.jdom2.output.XMLOutputter
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
@@ -64,6 +66,8 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
         Cmd("damage", 1, this::cmdDamage, "Apply a given amount of damage to the player ship (or negative to heal)"),
         Cmd("force-hack", 1, this::cmdForceHack, "Forces the enemy to hack a given player system"),
         Cmd("super-shield", null, this::cmdSuperShield, "Give the player (or enemy) a super-shield (see help sub-cmd)"),
+        Cmd("dump-save", null, this::cmdDumpSave, "Save the game to XML, and print it to standard output"),
+        Cmd("save-load", null, this::cmdSaveLoad, "Save the game to XML, and load it back in."),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("reload-flags", 0, this::cmdReloadFlags, "Reload the debug flags (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
@@ -738,6 +742,48 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
         target.superShield = amount
 
         lines.add("Added $amount/$max super-shield to ship ${target.name}.")
+    }
+
+    private fun cmdDumpSave(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        val doc = try {
+            game.saveGameState()
+        } catch (ex: Exception) {
+            lines.add("Exception saving game (more in stdout): $ex")
+            ex.printStackTrace()
+            return
+        }
+
+        val xmlOutput = XMLOutputter(Format.getPrettyFormat())
+        val xmlString = xmlOutput.outputString(doc)
+
+        println("Savegame dump:")
+        println(xmlString.trim())
+
+        lines.add("Savegame dumped to standard output.")
+    }
+
+    private fun cmdSaveLoad(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        val doc = try {
+            game.saveGameState()
+        } catch (ex: Exception) {
+            lines.add("Exception saving game (more in stdout): $ex")
+            ex.printStackTrace()
+            return
+        }
+
+        game.mainGame.loadSavedGame(doc)
+
+        // Copy over the debug console history and debug flags.
+        // It'd be annoying to lose those, since they're not supposed
+        // to be saved.
+        val newGame = game.mainGame.currentState as InGameState
+
+        val newDebug = newGame.debugConsole
+        newDebug.history.addAll(history)
+
+        for ((i, flag) in game.debugFlags.all.withIndex()) {
+            newGame.debugFlags.all[i].set = flag.set
+        }
     }
 
     private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {

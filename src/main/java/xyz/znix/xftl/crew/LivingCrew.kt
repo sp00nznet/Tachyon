@@ -1,9 +1,12 @@
 package xyz.znix.xftl.crew
 
+import org.jdom2.Element
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.random.Random
 
 /**
@@ -51,5 +54,12 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
     protected fun hasAugment(name: String): Boolean {
         return ownerShip?.hasAugment(name) == true
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addTag(elem, "selectedName", selectedName)
+        SaveUtil.addRef(elem, "ownerShip", refs, ownerShip)
     }
 }

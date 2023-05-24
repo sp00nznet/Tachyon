@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game;
 
+import org.jdom2.Document;
 import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.Game;
 import org.newdawn.slick.GameContainer;
@@ -42,6 +43,11 @@ public class MainGame implements Game {
 
     public void startNewGame(@NotNull String shipName) {
         InGameState inGameState = new InGameState(this, content, gameContainer, shipName);
+        setCurrentState(inGameState);
+    }
+
+    public void loadSavedGame(Document savedGame) {
+        InGameState inGameState = new InGameState(this, content, gameContainer, savedGame);
         setCurrentState(inGameState);
     }
 

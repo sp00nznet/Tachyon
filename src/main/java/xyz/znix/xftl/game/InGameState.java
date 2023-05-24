@@ -1,6 +1,7 @@
 package xyz.znix.xftl.game;
 
 import kotlin.random.Random;
+import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +19,9 @@ import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
+import xyz.znix.xftl.savegame.ObjectRefs;
+import xyz.znix.xftl.savegame.RefLoader;
+import xyz.znix.xftl.savegame.SaveUtil;
 import xyz.znix.xftl.sector.*;
 import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
@@ -86,7 +90,7 @@ public class InGameState extends MainGame.GameState {
     public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName) {
         this(mainGame, content, container);
 
-        gameMap = new GameMap(df, eventManager, enableAdvancedEdition);
+        gameMap = new GameMap(df, eventManager, enableAdvancedEdition, Random.Default);
 
         createNewPlayerShip(playerShipName);
         shipUI = new PlayerShipUI(df, player, this);
@@ -97,6 +101,32 @@ public class InGameState extends MainGame.GameState {
         // the current beacon.
         Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0));
         setCurrentBeacon(firstSector.getStartBeacon());
+    }
+
+    /**
+     * Load a previously-saved game.
+     */
+    public InGameState(MainGame mainGame, GameContent content, GameContainer container, Document saveGame) {
+        this(mainGame, content, container);
+
+        Element root = saveGame.getRootElement();
+        if (!root.getName().equals("xftlSaveGame")) {
+            throw new IllegalArgumentException("Bad save-game root element name: " + root.getName());
+        }
+
+        // If AE was enabled on the save, make sure our content also has it.
+        boolean saveEnabledAE = Boolean.parseBoolean(saveGame.getRootElement().getAttributeValue("enableAE"));
+        if (saveEnabledAE != content.enableAdvancedEdition) {
+            throw new IllegalArgumentException("Cannot load a game with content that doesn't match it's AE state!");
+        }
+
+        Beacon beacon = loadGameState(root);
+        shipUI = new PlayerShipUI(df, player, this);
+
+        // This uses shipUI, so it has to come after it.
+        setCurrentBeacon(beacon);
+
+        // FIXME keep crew-killed enemy ships around, currently they disappear
     }
 
     private InGameState(MainGame mainGame, GameContent content, GameContainer container) {
@@ -167,9 +197,9 @@ public class InGameState extends MainGame.GameState {
         Input in = container.getInput();
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
-            if (debugConsole == null) {
-                debugConsole = new DebugConsole(this, player);
-            }
+            // Create the debug console if that's not already happened.
+            getDebugConsole();
+
             debugConsoleVisible = !debugConsoleVisible;
         }
 
@@ -598,6 +628,98 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
+    /**
+     * Save the entire game state to a new XML document.
+     * <p>
+     * This can then be trivially serialised, and loaded back into
+     * a new {@link InGameState} instance.
+     */
+    public Document saveGameState() {
+        Element root = new Element("xftlSaveGame");
+        root.setAttribute("enableAE", Boolean.toString(enableAdvancedEdition));
+
+        ObjectRefs refs = new ObjectRefs();
+        Sector sector = currentBeacon.getSector();
+
+        // Generate IDs for all known ships
+        refs.register(player, "player");
+        for (Beacon beacon : sector.getBeacons()) {
+            refs.register(beacon.getShip(), "ship");
+        }
+
+        // Serialise the player ship
+        Element playerShip = new Element("playerShip");
+        player.saveToXML(playerShip, refs);
+        root.addContent(playerShip);
+
+        // Serialise the sector map (the one you access via exit beacons)
+        Element mapXML = new Element("gameMap");
+        gameMap.saveToXML(mapXML, refs);
+        root.addContent(mapXML);
+
+        // Serialise the sector
+        Element sectorXML = new Element("currentSector");
+        ObjectRefs sectorRefs = sector.saveToXML(sectorXML, refs);
+        root.addContent(sectorXML);
+
+        // Save the beacon the player is currently at - this is how
+        // we'll know what enemy ship to load, we'll just use whatever
+        // is at the same beacon.
+        SaveUtil.INSTANCE.addRef(root, "currentBeacon", sectorRefs, currentBeacon);
+
+        return new Document(root);
+    }
+
+    private Beacon loadGameState(Element root) {
+        RefLoader refs = new RefLoader();
+
+        // Load the player ship
+        Element playerShip = root.getChild("playerShip");
+        player = deserialiseSingleShip(playerShip, refs);
+
+        // Load the game map. The sector needs to reference it's SectorInfo
+        // objects, so we need a separate reference loader we can switch
+        // to resolve mode before loading the sector.
+        RefLoader mapRefLoader = new RefLoader();
+        Element mapXML = root.getChild("gameMap");
+        gameMap = new GameMap(content, mapXML, mapRefLoader);
+        mapRefLoader.switchToResolveMode();
+
+        // Load the current sector - it looks odd to have a floating constructor,
+        // but we only need it to create the current beacon and register it with
+        // the reference loader. We then use our normal trick of only referring
+        // to the current beacon, and letting that imply the current sector.
+        Element sectorXML = root.getChild("currentSector");
+        new Sector(sectorXML, refs, this, mapRefLoader);
+
+        // This resolves any async-resolved object references.
+        refs.switchToResolveMode();
+
+        // We can finally load out our current beacon.
+        // We can't actually switch to it - the ship UI has to be opened
+        // first - but our caller will do that.
+        return SaveUtil.INSTANCE.getRefImmediate(root, "currentBeacon", refs, Beacon.class);
+    }
+
+    /**
+     * Deserialise a player or enemy ship.
+     * <p>
+     * This should only be used by deserialisation code, specifically
+     * the player ship deserialisation in this class and the enemy ship
+     * deserialisation in beacons.
+     */
+    public Ship deserialiseSingleShip(Element shipElement, RefLoader refs) {
+        // Load the appropriate ship definition XML element from the blueprints
+        String shipId = shipElement.getAttributeValue("shipId");
+        Element playerXml = ((ShipBlueprint) blueprintManager.get(shipId)).loadElem(df);
+
+        // And use that to build and deserialise the ship
+        Ship ship = new Ship(df, playerXml, this, null);
+        ship.loadFromXml(shipElement, refs);
+
+        return ship;
+    }
+
     @NotNull
     public Image getImg(String name) {
         Image img = content.images.get(name);
@@ -752,6 +874,23 @@ public class InGameState extends MainGame.GameState {
 
     public DebugFlagManager getDebugFlags() {
         return debugFlags;
+    }
+
+    public DebugConsole getDebugConsole() {
+        // Create the debug console if it doesn't already exist
+        if (debugConsole == null) {
+            debugConsole = new DebugConsole(this, player);
+        }
+
+        return debugConsole;
+    }
+
+    /**
+     * Stuff that happens in-game should be isolated to this specific game.
+     * Think carefully about why you need to use this!
+     */
+    public MainGame getMainGame() {
+        return mainGame;
     }
 
     @NotNull

@@ -1,7 +1,10 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.weapons.DroneBlueprint
 
 class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
@@ -164,6 +167,10 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             drone?.instance?.onEnemyShipUpdated()
         }
     }
+
+    // The drones are all serialised by the ship separately.
+    override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
+    override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     class DroneInfo(val type: DroneBlueprint, var instance: AbstractDrone? = null)
 

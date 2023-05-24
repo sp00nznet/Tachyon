@@ -1,7 +1,10 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 
 class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     // TODO add crew evasion
@@ -44,6 +47,10 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
                 else -> error("Unsupported power level for piloting: $undamagedEnergy")
             }
         }
+
+    // Nothing to serialise
+    override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
+    override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
         const val NAME = "pilot"

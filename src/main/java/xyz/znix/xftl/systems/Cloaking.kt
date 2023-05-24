@@ -1,9 +1,13 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import org.newdawn.slick.Input
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.max
 import kotlin.math.min
 
@@ -124,6 +128,16 @@ class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 unCloakSound.play()
             }
         }
+    }
+
+    override fun saveSystem(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addTagFloat(elem, "timeRemaining", timeRemaining)
+        SaveUtil.addTagFloat(elem, "animationTimer", animationTimer)
+    }
+
+    override fun loadSystem(elem: Element, refs: RefLoader) {
+        timeRemaining = SaveUtil.getTagFloatOrNull(elem, "timeRemaining")
+        animationTimer = SaveUtil.getTagFloat(elem, "animationTimer")
     }
 
     private inner class CloakButton(power: Int, powerPos: IPoint) : SystemPowerButton(ship.sys, power, powerPos) {

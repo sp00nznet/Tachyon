@@ -1,9 +1,13 @@
 package xyz.znix.xftl.sector
 
+import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.random.Random
 
 /**
@@ -139,6 +143,88 @@ class Beacon(
             check(!this::sector.isInitialized) { "Sector already set!" }
             this.sector = sector
             this.neighbours = neighbours
+        }
+    }
+
+    fun saveToXML(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addObjectId(elem, refs, this)
+
+        SaveUtil.addPoint(elem, "pos", pos)
+        SaveUtil.addTagBool(elem, "isExit", isExit)
+        SaveUtil.addTagBool(elem, "visited", visited)
+        SaveUtil.addTagBool(elem, "hasStore", hasStore)
+        SaveUtil.addTagBool(elem, "hasQuest", hasQuest)
+
+        // Save the event by name - events are immutable and are
+        // loaded from the game's XML, so we only need to uniquely
+        // identify them, not store all their data.
+        SaveUtil.addTag(elem, "eventId", event.deserialisationId)
+
+        // TODO save the store data
+
+        // Save references to the neighbour beacons, so we can link
+        // those back up afterwards.
+        for (neighbour in neighbours) {
+            val neighbourElem = Element("neighbour")
+            neighbourElem.setAttribute("idr", refs[neighbour])
+            elem.addContent(neighbourElem)
+        }
+
+        // Save the power limits
+        for ((system, limit) in powerLimitEffects) {
+            val powerLimit = Element("powerLimit")
+            powerLimit.setAttribute("system", system)
+            powerLimit.setAttribute("limit", limit.toString())
+            elem.addContent(powerLimit)
+        }
+
+        // If there's a ship at this beacon, save it.
+        // This is how the ship the player is fighting is loaded.
+        if (ship != null) {
+            val shipElem = Element("enemyShip")
+            ship!!.saveToXML(shipElem, refs)
+            elem.addContent(shipElem)
+        }
+    }
+
+    companion object Deserialiser {
+        fun loadFromXML(elem: Element, refs: RefLoader, sector: Sector, game: InGameState): Beacon {
+            // To create our beacon, we need to load a few things first.
+            // Everything else goes in mutable variables, so we can set them later.
+            val eventId = SaveUtil.getTag(elem, "eventId")
+            val event = game.eventManager.getByDeserialisationId(eventId)
+            val pos = SaveUtil.getPoint(elem, "pos")
+            val isExit = SaveUtil.getTagBool(elem, "isExit")
+
+            // This gets us all the information we need to create and start
+            // populating our beacon.
+            val beacon = Beacon(pos, event, isExit)
+            SaveUtil.registerObjectId(elem, refs, beacon)
+
+            beacon.visited = SaveUtil.getTagBool(elem, "visited")
+            beacon.hasStore = SaveUtil.getTagBool(elem, "hasStore")
+            beacon.hasQuest = SaveUtil.getTagBool(elem, "hasQuest")
+
+            // Deserialise the enemy ship, if present
+            val shipElem = elem.getChild("enemyShip")
+            beacon.ship = shipElem?.let { game.deserialiseSingleShip(it, refs) }
+
+            val neighbours = ArrayList<Beacon>()
+            for (neighbourElem in elem.getChildren("neighbour")) {
+                val objectId = neighbourElem.getAttributeValue("idr")
+                refs.asyncResolve(Beacon::class.java, objectId) { neighbours += it!! }
+            }
+
+            beacon.sector = sector
+            beacon.neighbours = neighbours
+
+            for (powerLimit in elem.getChildren("powerLimit")) {
+                val system = powerLimit.getAttributeValue("system")
+                val limit = powerLimit.getAttributeValue("limit").toInt()
+                beacon.powerLimitEffects[system] = limit
+            }
+
+            return beacon
         }
     }
 

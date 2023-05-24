@@ -1,6 +1,10 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.max
 import kotlin.math.min
 
@@ -36,6 +40,18 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
         simpleSelectedEnergyLevel = max(0, simpleSelectedEnergyLevel - 1)
         powerStateChanged()
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addTagInt(elem, "simpleSelectedEnergyLevel", simpleSelectedEnergyLevel)
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        simpleSelectedEnergyLevel = SaveUtil.getTagInt(elem, "simpleSelectedEnergyLevel")
     }
 
     // List of the default systems, for sorting purposes

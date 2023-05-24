@@ -26,6 +26,17 @@ interface IEvent {
 
 class Event(
     val text: IEventText?, val choices: List<Choice>, elem: Element, override val debugId: String,
+
+    /**
+     * A unique ID that can be used to index all the game's events,
+     * and load this exact event.
+     *
+     * This has to handle any event, even unnamed ones that can
+     * only be accessed via choices, as it's how the game remembers
+     * what event the player had open when they closed the game.
+     */
+    val deserialisationId: String,
+
     imageFinder: (String) -> ImageList, loadText: (Element) -> IEventText
 ) : IEvent {
     val isDistressBeacon: Boolean = elem.getChild("distressBeacon") != null

@@ -12,6 +12,9 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.*
 import kotlin.math.*
 import kotlin.reflect.KProperty
@@ -149,7 +152,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     fun drawRoom(g: Graphics) {
         // Draw the system icon
         val room = room!!
-        val img = room.ship.sys.getImg(icon)
+        val img = room.ship.sys.getImg(blueprint.roomIconPath)
 
         val colour = when {
             damagedEnergyLevels == energyLevels -> Constants.SYSTEM_BROKEN
@@ -232,8 +235,6 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
         // TODO explosion animation
     }
-
-    open val icon: String = "img/icons/s_${codename}_overlay.png"
 
     open val iconColourName: String
         get() = when {
@@ -475,6 +476,51 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         onInitValues += wrapper
         return wrapper
     }
+
+    open fun saveToXML(elem: Element, refs: ObjectRefs) {
+        elem.setAttribute("name", blueprint.name)
+        SaveUtil.addObjectId(elem, refs, this)
+
+        SaveUtil.addTagInt(elem, "level", energyLevels)
+        SaveUtil.addTagInt(elem, "damage", damagedEnergyLevels)
+        SaveUtil.addTagInt(elem, "scriptedLimit", scriptedPowerLimit)
+        SaveUtil.addTagFloat(elem, "ionTimer", ionTimer)
+        SaveUtil.addTagInt(elem, "ionPowerLimit", ionPowerLimit)
+        SaveUtil.addRef(elem, "hackedBy", refs, hackedBy)
+        SaveUtil.addTagFloat(elem, "repairProgress", repairProgress)
+        SaveUtil.addTagFloat(elem, "sabotageProgress", sabotageProgress)
+
+        saveSystem(elem, refs)
+    }
+
+    open fun loadFromXML(elem: Element, refs: RefLoader) {
+        require(elem.getAttributeValue("name") == blueprint.name)
+        SaveUtil.registerObjectId(elem, refs, this)
+
+        energyLevels = SaveUtil.getTagInt(elem, "level")
+        damagedEnergyLevels = SaveUtil.getTagInt(elem, "damage")
+        scriptedPowerLimit = SaveUtil.getTagIntOrNull(elem, "scriptedLimit")
+        ionTimer = SaveUtil.getTagFloat(elem, "ionTimer")
+        ionPowerLimit = SaveUtil.getTagIntOrNull(elem, "ionPowerLimit")
+        SaveUtil.getRef(elem, "hackedBy", refs, Hacking::class.java) { hackedBy = it }
+        repairProgress = SaveUtil.getTagFloat(elem, "repairProgress")
+        sabotageProgress = SaveUtil.getTagFloat(elem, "sabotageProgress")
+
+        loadSystem(elem, refs)
+
+        powerStateChanged()
+    }
+
+    /**
+     * This is a version of [saveToXML] that saves the system-unique data.
+     *
+     * This is kept separate from [saveToXML] so it can be marked abstract
+     * to force systems to implement it.
+     */
+    protected abstract fun saveSystem(elem: Element, refs: ObjectRefs)
+
+    // Same thing as saveSystem
+    protected abstract fun loadSystem(elem: Element, refs: RefLoader)
 
     protected class OnInitWrapper<T>(private val fn: (InGameState) -> T) {
         private var storedValue: T? = null

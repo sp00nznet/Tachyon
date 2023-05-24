@@ -19,6 +19,9 @@ import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.*
@@ -728,6 +731,18 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         averageOxygen = rooms.map { it.oxygen }.average().toFloat()
 
+        updateCrew(dt)
+
+        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
+        if (ftlChargeProgress > 1f)
+            ftlChargeProgress = 1f
+
+        for (augment in augments) {
+            augment.update(this, dt)
+        }
+    }
+
+    private fun updateCrew(dt: Float) {
         // Duplicate the crew and drone lists, in case some are removed
         // by dying or (in the case of drones) the enemy ship blowing up.
         for (crew in crew.toTypedArray())
@@ -743,12 +758,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
                 AbstractCrew.SlotType.CREW -> friendlyCrew.add(crew)
                 AbstractCrew.SlotType.INTRUDER -> intruders.add(crew)
             }
-        }
-
-        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
-
-        for (augment in augments) {
-            augment.update(this, dt)
         }
     }
 
@@ -1130,6 +1139,113 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             val freeSpot = findSpaceForCrew(conflict.room, conflict.mode)
             require(conflict.setTargetRoom(freeSpot.room)) { "Failed to set target of empty room!" }
         }
+    }
+
+    /**
+     * Serialise this ship and everything related to it (projectiles,
+     * crew, etc) into an XML element.
+     */
+    fun saveToXML(elem: Element, globalRefs: ObjectRefs) {
+        // Create IDs for all the objects that might reference each other
+        val refs = ObjectRefs(globalRefs)
+        for (crew in this.crew) {
+            refs.register(crew, crew.codename)
+        }
+        for (system in systems) {
+            refs.register(system, system.codename)
+        }
+
+        // Build the XML
+        SaveUtil.addObjectId(elem, refs, this)
+        elem.setAttribute("shipId", name)
+
+        SaveUtil.addTagInt(elem, "fuelCount", fuelCount)
+        SaveUtil.addTagInt(elem, "missileCount", missilesCount)
+        SaveUtil.addTagInt(elem, "dronesCount", dronesCount)
+        SaveUtil.addTagInt(elem, "scrap", scrap)
+        SaveUtil.addTagFloat(elem, "ftlChargeProgress", ftlChargeProgress)
+        SaveUtil.addTagInt(elem, "purchasedReactorPower", purchasedReactorPower)
+        SaveUtil.addTagInt(elem, "health", health)
+        SaveUtil.addTagInt(elem, "escapeHealth", escapeHealth)
+        SaveUtil.addTagInt(elem, "surrenderHealth", surrenderHealth)
+        SaveUtil.addTagFloat(elem, "escapeTimer", escapeTimer)
+        SaveUtil.addTagInt(elem, "maxSuperShield", maxSuperShield)
+        SaveUtil.addTagInt(elem, "superShield", superShield)
+
+        val crewListElem = Element("crew")
+        for (crew in this.crew) {
+            val crewElem = Element("crewMember")
+            crew.saveToXML(crewElem, refs)
+            crewListElem.addContent(crewElem)
+        }
+        elem.addContent(crewListElem)
+
+        val systemListElem = Element("systems")
+        for (system in systems) {
+            val systemElem = Element("system")
+            system.saveToXML(systemElem, refs)
+            systemListElem.addContent(systemElem)
+        }
+        elem.addContent(systemListElem)
+
+        // TODO serialise weapons and drones
+
+        // TODO serialise doors
+
+        // TODO serialise room oxygen levels
+    }
+
+    fun loadFromXml(rootElem: Element, refs: RefLoader) {
+        SaveUtil.registerObjectId(rootElem, refs, this)
+
+        fuelCount = SaveUtil.getTagInt(rootElem, "fuelCount")
+        missilesCount = SaveUtil.getTagInt(rootElem, "missileCount")
+        dronesCount = SaveUtil.getTagInt(rootElem, "dronesCount")
+        scrap = SaveUtil.getTagInt(rootElem, "scrap")
+        ftlChargeProgress = SaveUtil.getTagFloat(rootElem, "ftlChargeProgress")
+        purchasedReactorPower = SaveUtil.getTagInt(rootElem, "purchasedReactorPower")
+        health = SaveUtil.getTagInt(rootElem, "health")
+        escapeHealth = SaveUtil.getTagInt(rootElem, "escapeHealth")
+        surrenderHealth = SaveUtil.getTagInt(rootElem, "surrenderHealth")
+        escapeTimer = SaveUtil.getTagFloatOrNull(rootElem, "escapeTimer")
+        maxSuperShield = SaveUtil.getTagInt(rootElem, "maxSuperShield")
+
+        // This must be set after maxSuperShield to avoid it being wrongly clamped
+        superShield = SaveUtil.getTagInt(rootElem, "superShield")
+
+        // Load the systems
+        for (elem in rootElem.getChild("systems").getChildren("system")) {
+            // Spawn in the system
+            val name: String = elem.getAttributeValue("name")
+            val blueprint = sys.blueprintManager[name] as SystemBlueprint
+            val room = rooms.first { it.systemSlot?.system == blueprint }
+            room.setSystem(room.systemSlot!!)
+
+            // Re-load the system's properties
+            room.system!!.loadFromXML(elem, refs)
+        }
+
+        // Load the crew
+        for (crewElem in rootElem.getChild("crew").getChildren("crewMember")) {
+            // TODO support drone pawns
+            val crewMember = addCrewMember(crewElem.getAttributeValue("type"), false)
+            crewMember.loadFromXML(crewElem, refs)
+        }
+
+        // Give the crew a couple of zero-time updates, to let them
+        // update stuff like their icons.
+        // Note in particular that if there's a queued teleport action,
+        // the crew have to realise they're standing in a cell otherwise
+        // it'll think there's no-one available to teleport.
+        for (i in 0 until 3) {
+            updateCrew(0f)
+        }
+        for (room in rooms) {
+            room.updateCrewInRoom()
+        }
+
+        updateCrewReservedSlots()
+        updateAvailableSystems()
     }
 
     companion object {

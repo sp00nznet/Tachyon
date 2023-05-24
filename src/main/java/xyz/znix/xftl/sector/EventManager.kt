@@ -14,6 +14,8 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     private val imageLists = HashMap<String, ImageList>()
     private val ships = HashMap<String, EnemyShipSpec>()
 
+    private val byDeserialisationId = HashMap<String, Event>()
+
     // For the debug console
     val eventNames: Collection<String> = events.keys
 
@@ -41,6 +43,10 @@ class EventManager(val df: Datafile, private val translator: Translator, private
 
     operator fun get(name: String): IEvent = events[name] ?: error("Missing event $name")
 
+    fun getByDeserialisationId(id: String): Event {
+        return byDeserialisationId[id] ?: error("Missing event with deserialisation ID '$id'")
+    }
+
     fun getShip(name: String): EnemyShipSpec = ships[name] ?: error("Missing enemy ship spec '$name'")
     fun getImageList(name: String): ImageList = imageLists[name] ?: error("Missing image list '$name'")
 
@@ -66,8 +72,9 @@ class EventManager(val df: Datafile, private val translator: Translator, private
                     "eventCounts" -> loadEventCounts(elem)
                     "event" -> {
                         val name = elem.requireAttributeValue("name")
+                        val serialId = "rootEvent::$name"
                         if (eventCheck(name, false))
-                            events[name] = loadEvent(elem, name).value
+                            events[name] = loadEvent(elem, name, serialId).value
                     }
 
                     else -> error("Unknown eventfile item ${elem.name}")
@@ -79,8 +86,12 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     private fun loadEventList(elem: Element) {
         check(elem.name == "eventList")
         val name = elem.requireAttributeValue("name")
-        val events = elem.children.withIndex().map { loadEvent(it.value, "$name.${it.index}") }
         if (!eventCheck(name, true)) return
+
+        val events = elem.children.withIndex().map {
+            val serialId = "$name::eventList${it.index}"
+            loadEvent(it.value, "$name.${it.index}", serialId)
+        }
         this.events[name] = EventList(name, events)
     }
 
@@ -123,11 +134,12 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         ships[ship.name] = ship
     }
 
-    fun loadEmbeddedEvent(elem: Element, debugId: String): Lazy<IEvent> {
-        return loadEvent(elem, "$debugId.${elem.name}", true)
+    fun loadEmbeddedEvent(elem: Element, uniqueId: String): Lazy<IEvent> {
+        val deserialisationId = "embeddedEvent::$uniqueId::${elem.name}"
+        return loadEvent(elem, "$uniqueId.${elem.name}", deserialisationId, true)
     }
 
-    private fun loadEvent(elem: Element, debugId: String, embed: Boolean = false): Lazy<IEvent> {
+    private fun loadEvent(elem: Element, debugId: String, serialId: String, embed: Boolean = false): Lazy<IEvent> {
         if (!embed)
             check(elem.name == "event")
 
@@ -136,14 +148,24 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         }
 
         val text = elem.getChild("text")?.let(::loadText)
-        val choices = elem.getChildren("choice").map(::loadChoice)
-        return lazyOf(Event(text, choices, elem, debugId, ::getImageList, ::loadText))
+        val choices = elem.getChildren("choice").withIndex().map { loadChoice(it.value, it.index, serialId) }
+        val event = Event(text, choices, elem, debugId, serialId, ::getImageList, ::loadText)
+
+        // Build a mapping of the events by their deserialisation ID, which
+        // we'll use to pick out events when the game is being loaded.
+        if (byDeserialisationId.containsKey(serialId)) {
+            error("Event deserialisation ID '$serialId' is not unique!")
+        }
+        byDeserialisationId[serialId] = event
+
+        return lazyOf(event)
     }
 
-    private fun loadChoice(elem: Element): Choice {
+    private fun loadChoice(elem: Element, choiceIndex: Int, parentDeserialisationId: String): Choice {
         check(elem.name == "choice")
         val text = elem.getChild("text").let(::loadText)
-        val event = loadEvent(elem.getChild("event"), "choice.ukn")
+        val deserialisationId = "$parentDeserialisationId::choice$choiceIndex"
+        val event = loadEvent(elem.getChild("event"), "choice.ukn", deserialisationId)
         return Choice(text, event, elem)
     }
 

@@ -3,8 +3,12 @@ package xyz.znix.xftl.sector
 import org.jdom2.Element
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
+import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.mapChildrenText
 import xyz.znix.xftl.requireAttributeValue
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -12,7 +16,7 @@ import kotlin.random.Random
  * Represents the overall map of the game. This loads and parses the sector data (which defines all the
  * different types of sectors) and generates a random set of them to be used in the sector map.
  */
-class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Boolean) {
+class GameMap private constructor(df: Datafile, private val eventManager: EventManager, enableAE: Boolean) {
     private val sectorClasses = HashMap<SectorClass, List<SectorType>>()
     private val sectorTypes = HashMap<String, SectorType>()
 
@@ -23,7 +27,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
         eventManager["FINISH_BEACON_NEBULA"]
     )
 
-    val sectors: List<List<SectorInfo>>
+    val sectors: List<List<SectorInfo>> = ArrayList()
 
     init {
         val xml = df.parseXML(df["data/sector_data.xml"])
@@ -64,9 +68,16 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
         if (enableAE) {
             sectorClasses.putAll(sectorClassesAE)
         }
+    }
 
-        // Initialise here so we can add stuff to it in this constructor
-        sectors = ArrayList()
+    /**
+     * Create a new, random game map.
+     */
+    constructor(df: Datafile, eventManager: EventManager, enableAE: Boolean, random: Random)
+            : this(df, eventManager, enableAE) {
+
+        // This assertion lets us modify the sectors array in the constructor
+        require(sectors is ArrayList)
 
         // Add the starting sector
         val startingType = sectorTypes["CIVILIAN_SECTOR"] ?: error("Cannot find CIVILIAN_SECTOR for first sector")
@@ -85,7 +96,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
             // a number different to the previous one.
             var numInColumn: Int
             do {
-                numInColumn = (2..4).random()
+                numInColumn = (2..4).random(random)
             } while (numInColumn == lastColumn.size)
 
             // Except the 2nd column is special, as it joins the starting
@@ -98,7 +109,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
             // Build all the sectors in this column
             val column = ArrayList<SectorInfo>()
             for (i in 0 until numInColumn) {
-                val sectorClass = SectorClass.random(Random.Default)
+                val sectorClass = SectorClass.random(random)
 
                 val allTypes = sectorClasses[sectorClass] ?: error("No sectors for sector class $sectorClass")
 
@@ -117,7 +128,7 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
                     return@filter true
                 }
 
-                val type = availableTypes.random()
+                val type = availableTypes.random(random)
                 usedSectorTypes.add(type)
 
                 column.add(SectorInfo(columnNum, i, type, sectorClass))
@@ -215,6 +226,38 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
         return Sector(sectorInfo, eventPool, specialEvents)
     }
 
+    fun saveToXML(elem: Element, refs: ObjectRefs) {
+        for (column in sectors) {
+            val columnElem = Element("column")
+            for (sector in column) {
+                refs.register(sector, "sectorInfo")
+                val sectorElem = Element("sectorInfo")
+                sector.saveToXML(sectorElem, refs)
+                columnElem.addContent(sectorElem)
+            }
+            elem.addContent(columnElem)
+        }
+    }
+
+    /**
+     * Deserialise a game map from XML.
+     */
+    constructor(content: GameContent, elem: Element, refs: RefLoader)
+            : this(content.datafile, content.eventManager, content.enableAdvancedEdition) {
+
+        // This assertion lets us modify the sectors array in the constructor
+        require(sectors is ArrayList)
+
+        for (columnElem in elem.getChildren("column")) {
+            val column = ArrayList<SectorInfo>()
+            for (sectorElem in columnElem.getChildren("sectorInfo")) {
+                val sector = deserialiseSectorInfo(sectorElem, refs)
+                column += sector
+            }
+            sectors += column
+        }
+    }
+
     class SpecialEvents(
         /**
          * The very first event that appears in the first beacon of the game.
@@ -281,6 +324,29 @@ class GameMap(df: Datafile, private val eventManager: EventManager, enableAE: Bo
         // Note we don't store the actual Sector object here - that's
         // only needed when the player is inside it, so it can be stored
         // separately and discarded when not in use to save memory.
+
+        fun saveToXML(elem: Element, refs: ObjectRefs) {
+            SaveUtil.addObjectId(elem, refs, this)
+            elem.setAttribute("columnNumber", columnNumber.toString())
+            elem.setAttribute("columnIndex", columnIndex.toString())
+            elem.setAttribute("type", type.name)
+            elem.setAttribute("class", sectorClass.name)
+        }
+    }
+
+    // Since the sector map relies on the identity of SectorInfo objects,
+    // other classes shouldn't be deserialising their own copies.
+    private fun deserialiseSectorInfo(elem: Element, refs: RefLoader): SectorInfo {
+        val columnNumber = elem.getAttributeValue("columnNumber").toInt()
+        val columnIndex = elem.getAttributeValue("columnIndex").toInt()
+        val typeName = elem.getAttributeValue("type")
+        val sectorClass = SectorClass.valueOf(elem.getAttributeValue("class"))
+
+        val type = sectorTypes[typeName] ?: error("Missing sector type '$typeName'")
+        val sector = SectorInfo(columnNumber, columnIndex, type, sectorClass)
+
+        SaveUtil.registerObjectId(elem, refs, sector)
+        return sector
     }
 
     /**

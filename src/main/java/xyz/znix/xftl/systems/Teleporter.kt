@@ -1,7 +1,9 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
@@ -10,6 +12,8 @@ import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 
 class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.TELEPORTER
@@ -110,6 +114,34 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     fun selectTeleportAction(send: Boolean, room: Room) {
         commandedTeleport = TeleportAction(room, send)
+    }
+
+    // Surprisingly, we have very little to serialise - the crew
+    // handle their teleportation state themselves, and our cooldown
+    // is handled via ion damage.
+    override fun saveSystem(elem: Element, refs: ObjectRefs) {
+        // If the player has selected a destination to teleport their
+        // crew to, remember that across saves.
+        val command = commandedTeleport ?: return
+
+        val commandElem = Element("teleportCommand")
+        commandElem.setAttribute("roomId", command.room.id.toString())
+        commandElem.setAttribute("roomShip", refs[command.room.ship])
+        commandElem.setAttribute("isSending", command.send.toString())
+        elem.addContent(commandElem)
+    }
+
+    override fun loadSystem(elem: Element, refs: RefLoader) {
+        val commandElem = elem.getChild("teleportCommand") ?: return
+
+        val roomId = commandElem.getAttributeValue("roomId")!!.toInt()
+        val shipRef = commandElem.getAttributeValue("roomShip")!!
+        val send = commandElem.getAttributeValue("isSending")!!.toBoolean()
+
+        refs.asyncResolve(Ship::class.java, shipRef) {
+            val room = it!!.rooms[roomId]
+            commandedTeleport = TeleportAction(room, send)
+        }
     }
 
     private inner class TeleporterButton(

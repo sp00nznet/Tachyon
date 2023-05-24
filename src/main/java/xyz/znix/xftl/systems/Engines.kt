@@ -1,5 +1,9 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+
 class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.ENGINES
 
@@ -36,6 +40,10 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         lastEnginesOn = enginesOn
     }
+
+    // Nothing to serialise
+    override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
+    override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
         // https://ftl.fandom.com/wiki/Engines

@@ -1,7 +1,10 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 import kotlin.math.min
 
 class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
@@ -40,6 +43,10 @@ class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             crew.health = min(crew.health + healing, crew.maxHealth)
         }
     }
+
+    // Nothing to serialise
+    override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
+    override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
         const val NAME = "medbay"

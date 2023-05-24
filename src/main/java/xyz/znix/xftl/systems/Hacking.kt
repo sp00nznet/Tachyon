@@ -1,5 +1,6 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import org.newdawn.slick.*
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants.ROOM_SIZE
@@ -14,6 +15,8 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
@@ -236,6 +239,14 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         startSound.play()
         loopSoundInstance = loopSound.play()
+    }
+
+    override fun saveSystem(elem: Element, refs: ObjectRefs) {
+        TODO("Not yet implemented")
+    }
+
+    override fun loadSystem(elem: Element, refs: RefLoader) {
+        TODO("Not yet implemented")
     }
 
     // Copied from Cloaking.CloakButton

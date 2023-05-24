@@ -1,5 +1,9 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.max
 
@@ -148,6 +152,20 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             selectedShieldBars--
 
         powerStateChanged()
+    }
+
+    override fun saveSystem(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addTagInt(elem, "selectedShields", selectedShieldBars)
+        SaveUtil.addTagInt(elem, "activeShields", activeShields)
+        SaveUtil.addTagFloat(elem, "rechargeTimer", rechargeTimer)
+        SaveUtil.addTagBool(elem, "discharging", discharging)
+    }
+
+    override fun loadSystem(elem: Element, refs: RefLoader) {
+        selectedShieldBars = SaveUtil.getTagInt(elem, "selectedShields")
+        activeShields = SaveUtil.getTagInt(elem, "activeShields")
+        rechargeTimer = SaveUtil.getTagFloat(elem, "rechargeTimer")
+        discharging = SaveUtil.getTagBool(elem, "discharging")
     }
 
     companion object {

@@ -1,16 +1,22 @@
 package xyz.znix.xftl.crew
 
+import org.jdom2.Element
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.random
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.Oxygen
+import java.util.*
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -586,6 +592,14 @@ abstract class AbstractCrew(
         // This is because we might have our movement changed when we're already moving.
         val roomPos = findNearestRoomPos()
 
+        // If we're already in the same cell as our target, we can safely walk there.
+        // Using the pathfinder wouldn't do anything useful - indeed, we'd get
+        // a null pointer exception since [next] would be null.
+        if (roomPos == currentTarget) {
+            nextTargetPos = ConstPoint(roomPos.offsetX, roomPos.offsetY)
+            return
+        }
+
         val pf = room.ship.pathFinder
         pf.path(currentTarget)
         val current = pf.nodes.getValue(roomPos)
@@ -867,6 +881,95 @@ abstract class AbstractCrew(
             if (currentPos == null || currentPos.x != cellX || currentPos.y != cellY || currentPos.room != room) {
                 roomPosition = RoomPoint(room, cellX, cellY)
             }
+        }
+    }
+
+    open fun saveToXML(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addObjectId(elem, refs, this)
+        elem.setAttribute("type", codename)
+
+        // We can't use the normal point serialisation since
+        // it doesn't support floating-point values.
+        elem.addContent(Element("pos").also {
+            it.setAttribute("x", pixelSpaceX.toString())
+            it.setAttribute("y", pixelSpaceY.toString())
+        })
+
+        SaveUtil.addTagFloat(elem, "health", health)
+        SaveUtil.addTag(elem, "mode", mode.name)
+
+        if (pathingTarget != null) {
+            SaveUtil.addRoomPoint(elem, "pathingTarget", pathingTarget!!)
+        }
+
+        if (nextTargetPos != null) {
+            SaveUtil.addPoint(elem, "nextTargetPos", nextTargetPos!!)
+        }
+
+        // Combat stuff
+        if (currentAction == Action.FIGHTING || currentAction == Action.SABOTAGE) {
+            val combat = Element("combat")
+            combat.setAttribute("attackTimer", Objects.toString(attackTimer))
+            combat.setAttribute("damageTimer", damageTime.toString())
+            combat.setAttribute("enemy", refs[enemyToAttack])
+            // isPunching and sharesHostileCell are only used for animations
+            elem.addContent(combat)
+        }
+
+        if (teleportingTo != null) {
+            val teleport = Element("teleporting")
+            teleport.setAttribute("destRoom", teleportingTo!!.id.toString())
+            teleport.setAttribute("destShip", refs[teleportingTo!!.ship])
+            teleport.setAttribute("timer", teleportTimer.toString())
+            elem.addContent(teleport)
+        }
+    }
+
+    fun loadFromXML(elem: Element, refs: RefLoader) {
+        SaveUtil.registerObjectId(elem, refs, this)
+
+        // The 'type' property is already read by the class that spawns us,
+        // we just need to check it.
+        require(codename == elem.getAttributeValue("type")) { "Wrong crewmember type was spawned!" }
+
+        val posElem = elem.getChild("pos")
+        pixelSpaceX = posElem.getAttributeValue("x").toFloat()
+        pixelSpaceY = posElem.getAttributeValue("y").toFloat()
+
+        // Correctly set what room we're in - as soon as we start setting
+        // target positions and stuff like that, we'll be updating the
+        // occupied cells which needs to know what room we're in.
+        room = room.ship.rooms.first { it.containsShipSpace(pixelPositionCentre) }
+        positionChanged()
+
+        health = SaveUtil.getTagFloat(elem, "health")
+        mode = SlotType.valueOf(SaveUtil.getTag(elem, "mode"))
+
+        if (elem.getChild("pathingTarget") != null) {
+            pathingTarget = SaveUtil.getRoomPoint(elem, "pathingTarget", room.ship)
+        }
+
+        // Have to deserialise this after pathingTarget, since setting
+        // that overwrites it.
+        if (elem.getChild("nextTargetPos") != null) {
+            nextTargetPos = SaveUtil.getPoint(elem, "nextTargetPos")
+        }
+
+        // Combat stuff
+        val combat = elem.getChild("combat")
+        if (currentAction == Action.FIGHTING || currentAction == Action.SABOTAGE) {
+            attackTimer = combat.getAttributeValue("attackTimer")?.toFloatOrNull()
+            damageTime = combat.getAttributeValue("damageTimer").toFloat()
+            val enemyId = combat.getAttributeValue("enemy")
+            refs.asyncResolve(AbstractCrew::class.java, enemyId) { enemyToAttack = it }
+        }
+
+        val teleport = elem.getChild("teleporting")
+        if (teleport != null) {
+            val roomId = teleport.getAttributeValue("destRoom").toInt()
+            val shipRef = teleport.getAttributeValue("destShip")
+            refs.asyncResolve(Ship::class.java, shipRef) { teleportingTo = it!!.rooms[roomId] }
+            teleportTimer = teleport.getAttributeValue("timer").toFloat()
         }
     }
 

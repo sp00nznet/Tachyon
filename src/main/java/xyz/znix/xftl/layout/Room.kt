@@ -91,15 +91,19 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         // Note that transferring oxygen through open doors is handled
         // in the Door update function.
 
+        updateCrewInRoom()
+
+        computerHackAnimation?.update((dt * 1000).toLong())
+        bigSparksHackAnimation?.update((dt * 1000).toLong())
+    }
+
+    fun updateCrewInRoom() {
         // Update the crew standing in this room
         _crew.clear()
         for (crew in ship.crew) {
             if (crew.room == this)
                 _crew.add(crew)
         }
-
-        computerHackAnimation?.update((dt * 1000).toLong())
-        bigSparksHackAnimation?.update((dt * 1000).toLong())
     }
 
     fun render(g: Graphics, selected: Boolean) {

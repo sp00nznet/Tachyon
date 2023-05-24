@@ -1,5 +1,6 @@
 package xyz.znix.xftl.systems
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
@@ -7,6 +8,8 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
@@ -236,6 +239,10 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         powerStateChanged()
         return true
     }
+
+    // The weapons are all serialised individually by the ship
+    override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
+    override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     inner class TargetList {
         /**
