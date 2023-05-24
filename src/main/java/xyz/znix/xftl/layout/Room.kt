@@ -144,87 +144,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             )
         }
 
-        val system = system
-        if (system?.img != null) {
-            // Render the interior decals
-            val bg = ship.sys.getImg(system.img)
-            g.drawImage(bg, x.f, y.f)
-        } else if (system != null && computerPoint != null) {
-            // AI ships rarely (never?) use proper room textures. For systems like
-            // engines and piloting that can be manned, draw a standard computer image
-            // on instead.
-            val comp = ship.sys.getImg("img/ship/interior/computer1.png")
-            val imgX = x.f + computerPoint!!.x * ROOM_SIZE
-            val imgY = y.f + computerPoint!!.y * ROOM_SIZE
-            g.pushTransform()
-            g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, computerDirection!!.angle.f)
-            g.drawImage(comp, imgX, imgY)
-            g.popTransform()
-        }
-
-        // Draw the system icon
-        system?.drawRoom(g)
-
-        // Render the hacking sparks - both those on the console (if one is present),
-        // and the big ones on the floor while the hacking is active.
-        if (computerPoint != null && system != null) {
-            // If we have a not-disabled hacking system, show the
-            // hacking effect on the computer. This runs constantly,
-            // unless the hacking system is powered down.
-            if (system.hackedBy?.isPoweredUp == true) {
-                if (computerHackAnimation == null)
-                    computerHackAnimation = ship.sys.animations["hacked_console"].start()
-
-                // This can't be merged with drawing the computer above, as
-                // some decals have computers drawn into them.
-                val imgX = x.f + computerPoint!!.x * ROOM_SIZE
-                val imgY = y.f + computerPoint!!.y * ROOM_SIZE
-                g.pushTransform()
-                g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, computerDirection!!.angle.f)
-                computerHackAnimation!!.draw(imgX, imgY)
-                g.popTransform()
-            } else {
-                computerHackAnimation = null
-            }
-        }
-        if (system?.hackedBy?.active == true) {
-            if (bigSparksHackAnimation == null || bigSparksHackAnimation?.isStopped == true) {
-                bigSparksHackAnimation = ship.sys.animations["stun_spark_big"].start().also {
-                    it.setLooping(false)
-                }
-
-                // See doc/hacking for details about this
-                if (width == 1 || height == 1) {
-                    bigSparksMaskX = Random.nextInt(ROOM_SIZE)
-                    bigSparksRotation = 0f
-                } else {
-                    bigSparksMaskX = -1
-                    bigSparksRotation = PI.toFloat() / 2f * Random.nextInt(4)
-                }
-            }
-
-            g.pushTransform()
-            g.translate(x.f, y.f)
-            if (height == 1) {
-                // Horizontal room, thus we need to rotate the vertical slicee
-                // of the image into place.
-                g.rotate(ROOM_SIZE / 2f, ROOM_SIZE / 2f, -90f)
-            }
-            g.rotate(pixelWidth / 2f, pixelHeight / 2f, Math.toDegrees(bigSparksRotation.toDouble()).toFloat())
-
-            if (bigSparksMaskX == -1) {
-                bigSparksHackAnimation!!.draw(0f, 0f)
-            } else {
-                bigSparksHackAnimation!!.currentFrame.draw(
-                    0f, 0f, 35f, 70f,
-                    bigSparksMaskX.f, 0f, bigSparksMaskX + 35f, 70f
-                )
-            }
-
-            g.popTransform()
-        } else {
-            bigSparksHackAnimation = null
-        }
+        renderSystemStuff(g)
 
         // Draw the pathing-to boxes, if required
         reservedPlayerSlots.forEachIndexed draw@{ i, crew ->
@@ -276,6 +196,95 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             drawWall(g, x - 2, y, width - 1, cellY, Direction.RIGHT)
         }
         g.lineWidth = 1f
+    }
+
+    private fun renderSystemStuff(g: Graphics) {
+        val system = system ?: return
+
+        val x = offsetX
+        val y = offsetY
+
+        if (system.img != null) {
+            // Render the interior decals
+            val bg = ship.sys.getImg(system.img)
+            g.drawImage(bg, x.f, y.f)
+        } else if (computerPoint != null) {
+            // AI ships rarely (never?) use proper room textures. For systems like
+            // engines and piloting that can be manned, draw a standard computer image
+            // on instead.
+            val comp = ship.sys.getImg("img/ship/interior/computer1.png")
+            val imgX = x.f + computerPoint!!.x * ROOM_SIZE
+            val imgY = y.f + computerPoint!!.y * ROOM_SIZE
+            g.pushTransform()
+            g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, computerDirection!!.angle.f)
+            g.drawImage(comp, imgX, imgY)
+            g.popTransform()
+        }
+
+        // Draw the system icon
+        system.drawRoom(g)
+
+        // Render the hacking sparks - both those on the console (if one is present),
+        // and the big ones on the floor while the hacking is active.
+        if (computerPoint != null) {
+            // If we have a not-disabled hacking system, show the
+            // hacking effect on the computer. This runs constantly,
+            // unless the hacking system is powered down.
+            if (system.hackedBy?.isPoweredUp == true) {
+                if (computerHackAnimation == null)
+                    computerHackAnimation = ship.sys.animations["hacked_console"].start()
+
+                // This can't be merged with drawing the computer above, as
+                // some decals have computers drawn into them.
+                val imgX = x.f + computerPoint!!.x * ROOM_SIZE
+                val imgY = y.f + computerPoint!!.y * ROOM_SIZE
+                g.pushTransform()
+                g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, computerDirection!!.angle.f)
+                computerHackAnimation!!.draw(imgX, imgY)
+                g.popTransform()
+            } else {
+                computerHackAnimation = null
+            }
+        }
+
+        if (system.isHackActive) {
+            if (bigSparksHackAnimation == null || bigSparksHackAnimation?.isStopped == true) {
+                bigSparksHackAnimation = ship.sys.animations["stun_spark_big"].start().also {
+                    it.setLooping(false)
+                }
+
+                // See doc/hacking for details about this
+                if (width == 1 || height == 1) {
+                    bigSparksMaskX = Random.nextInt(ROOM_SIZE)
+                    bigSparksRotation = 0f
+                } else {
+                    bigSparksMaskX = -1
+                    bigSparksRotation = PI.toFloat() / 2f * Random.nextInt(4)
+                }
+            }
+
+            g.pushTransform()
+            g.translate(x.f, y.f)
+            if (height == 1) {
+                // Horizontal room, thus we need to rotate the vertical slicee
+                // of the image into place.
+                g.rotate(ROOM_SIZE / 2f, ROOM_SIZE / 2f, -90f)
+            }
+            g.rotate(pixelWidth / 2f, pixelHeight / 2f, Math.toDegrees(bigSparksRotation.toDouble()).toFloat())
+
+            if (bigSparksMaskX == -1) {
+                bigSparksHackAnimation!!.draw(0f, 0f)
+            } else {
+                bigSparksHackAnimation!!.currentFrame.draw(
+                    0f, 0f, 35f, 70f,
+                    bigSparksMaskX.f, 0f, bigSparksMaskX + 35f, 70f
+                )
+            }
+
+            g.popTransform()
+        } else {
+            bigSparksHackAnimation = null
+        }
     }
 
     private fun drawWall(g: Graphics, baseX: Int, baseY: Int, x: Int, y: Int, side: Direction) {
