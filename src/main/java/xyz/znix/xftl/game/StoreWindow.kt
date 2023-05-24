@@ -274,7 +274,7 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                             return true
 
                         // Stop the user from buying a system their ship doesn't support
-                        return ship.rooms.none { it.purchasableSystem?.system?.blueprint == system }
+                        return ship.rooms.none { it.systemSlot?.system == system }
                     }
 
                 override fun buy() {
@@ -282,8 +282,8 @@ class StoreWindow(val game: SlickGame, val ship: Ship, val store: StoreData, pri
                     updateButtons() // Make this button show as sold out
 
                     for (room in ship.rooms) {
-                        val config = room.purchasableSystem ?: continue
-                        if (config.system.blueprint != system)
+                        val config = room.systemSlot ?: continue
+                        if (config.system != system)
                             continue
 
                         room.setSystem(config)

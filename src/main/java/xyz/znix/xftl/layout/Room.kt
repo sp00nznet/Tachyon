@@ -2,12 +2,9 @@ package xyz.znix.xftl.layout
 
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
-import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.f
-import xyz.znix.xftl.lerp
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -27,16 +24,14 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
     var system: AbstractSystem? = null
         private set
-    var computerDirection: Direction? = null
-        private set
-    var computerPoint: IPoint? = null
-        private set
 
     /**
-     * The system that can be bought and installed into this room, but
-     * hasn't been yet.
+     * This specifies what system can be installed into this room,
+     * and how it's computer should be placed.
+     *
+     * This is set in the ship layout.
      */
-    var purchasableSystem: SystemInstallConfiguration? = null
+    var systemSlot: SystemInstallConfiguration? = null
 
     private var _doors: List<Door>? = null
     val doors: List<Door>
@@ -200,23 +195,24 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
     private fun renderSystemStuff(g: Graphics) {
         val system = system ?: return
+        val config = system.configuration
 
         val x = offsetX
         val y = offsetY
 
-        if (system.img != null) {
+        if (config.interiorImage != null) {
             // Render the interior decals
-            val bg = ship.sys.getImg(system.img)
+            val bg = ship.sys.getImg(config.interiorImage)
             g.drawImage(bg, x.f, y.f)
-        } else if (computerPoint != null) {
+        } else if (config.computerPoint != null) {
             // AI ships rarely (never?) use proper room textures. For systems like
             // engines and piloting that can be manned, draw a standard computer image
             // on instead.
             val comp = ship.sys.getImg("img/ship/interior/computer1.png")
-            val imgX = x.f + computerPoint!!.x * ROOM_SIZE
-            val imgY = y.f + computerPoint!!.y * ROOM_SIZE
+            val imgX = x.f + config.computerPoint.x * ROOM_SIZE
+            val imgY = y.f + config.computerPoint.y * ROOM_SIZE
             g.pushTransform()
-            g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, computerDirection!!.angle.f)
+            g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, config.computerDirection!!.angle.f)
             g.drawImage(comp, imgX, imgY)
             g.popTransform()
         }
@@ -226,7 +222,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         // Render the hacking sparks - both those on the console (if one is present),
         // and the big ones on the floor while the hacking is active.
-        if (computerPoint != null) {
+        if (config.computerPoint != null) {
             // If we have a not-disabled hacking system, show the
             // hacking effect on the computer. This runs constantly,
             // unless the hacking system is powered down.
@@ -236,10 +232,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
                 // This can't be merged with drawing the computer above, as
                 // some decals have computers drawn into them.
-                val imgX = x.f + computerPoint!!.x * ROOM_SIZE
-                val imgY = y.f + computerPoint!!.y * ROOM_SIZE
+                val imgX = x.f + config.computerPoint.x * ROOM_SIZE
+                val imgY = y.f + config.computerPoint.y * ROOM_SIZE
                 g.pushTransform()
-                g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, computerDirection!!.angle.f)
+                g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, config.computerDirection!!.angle.f)
                 computerHackAnimation!!.draw(imgX, imgY)
                 g.popTransform()
             } else {
@@ -349,18 +345,17 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     }
 
     fun setSystem(config: SystemInstallConfiguration) {
-        system = config.system
-        computerDirection = config.computerDirection
-        computerPoint = config.computerPoint
+        system = config.system.createInstance()
 
+        system?.configuration = config
+        system?.energyLevels = config.startingPower
         system?.room = this
         system?.initialise(ship)
 
-        if (system == null)
-            check(computerPoint == null)
-
-        if (computerPoint == null)
-            check(computerDirection == null)
+        obstructions.clear()
+        if (config.obstructionPoint != null) {
+            obstructions.add(config.obstructionPoint)
+        }
 
         ship.updateAvailableSystems()
     }
@@ -490,7 +485,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
      * position first.
      */
     fun firstFreeSlot(type: AbstractCrew.SlotType): IPoint? {
-        computerPoint?.let { computer ->
+        system?.configuration?.computerPoint?.let { computer ->
             if (isSlotFree(computer, type) && type == AbstractCrew.SlotType.CREW) {
                 return computer
             }
@@ -511,14 +506,4 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         AbstractCrew.SlotType.CREW -> reservedPlayerSlots
         AbstractCrew.SlotType.INTRUDER -> reservedEnemySlots
     }
-
-    /**
-     * Information about how a system is installed into this room - this is both
-     * the system and the location of its computer.
-     */
-    data class SystemInstallConfiguration(
-        val system: AbstractSystem,
-        val computerPoint: IPoint?,
-        val computerDirection: Direction?
-    )
 }

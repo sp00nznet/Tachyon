@@ -1,8 +1,6 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
-
-class BackupBattery(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint, elem) {
+class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.BATTERY
 
     // TODO implement

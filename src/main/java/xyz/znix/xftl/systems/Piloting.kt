@@ -1,14 +1,13 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.math.ConstPoint
 
-class Piloting(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint, elem) {
+class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     // TODO add crew evasion
     val evasion: Int get() = 0
 
-    private val computerPoint by lazy { room?.computerPoint ?: ConstPoint.ZERO }
+    private val computerPoint by lazy { configuration.computerPoint ?: ConstPoint.ZERO }
 
     override val sortingType = SortingType.PILOTING
 

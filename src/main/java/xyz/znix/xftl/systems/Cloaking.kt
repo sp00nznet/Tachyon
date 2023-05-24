@@ -1,6 +1,5 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import org.newdawn.slick.Input
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SystemPowerButton
@@ -8,7 +7,7 @@ import xyz.znix.xftl.math.IPoint
 import kotlin.math.max
 import kotlin.math.min
 
-class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
+class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.CLOAKING
 
     /**

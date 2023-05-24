@@ -1,11 +1,10 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import kotlin.math.min
 
-class Medbay(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
+class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.MEDBAY
 
     override fun update(dt: Float) {

@@ -1,8 +1,6 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
-
-class Doors(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint, elem) {
+class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override val sortingType = SortingType.DOORS
 
     companion object {

@@ -115,10 +115,11 @@ public class SlickGame extends BasicGame {
         Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0));
         setCurrentBeacon(firstSector.getStartBeacon());
 
+        // Load a bunch of images that we'll need, to make them available for later.
         for (AbstractSystem system : player.getSystems()) {
             getImg(system.getIcon());
 
-            String img = system.getImg();
+            String img = system.configuration.getInteriorImage();
             if (img != null)
                 getImg(img);
         }
@@ -406,6 +407,7 @@ public class SlickGame extends BasicGame {
                 // TODO play the jumping away animation
                 setEnemy(null);
                 currentBeacon.setShip(null);
+                // TODO show the gotaway event
                 return;
             }
 

@@ -1,6 +1,5 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import org.newdawn.slick.*
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants.ROOM_SIZE
@@ -21,7 +20,7 @@ import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.max
 import kotlin.math.min
 
-class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
+class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.HACKING
 
     /**

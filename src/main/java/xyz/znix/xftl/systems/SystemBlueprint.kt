@@ -17,24 +17,24 @@ class SystemBlueprint(xml: Element) : Blueprint(xml) {
 
     // No idea what the 'locked' flag does.
 
-    fun createInstance(node: Element): AbstractSystem? {
+    fun createInstance(): AbstractSystem? {
         return when (type) {
-            Doors.NAME -> Doors(this, node)
-            Engines.NAME -> Engines(this, node)
-            Medbay.NAME -> Medbay(this, node)
-            Oxygen.NAME -> Oxygen(this, node)
-            Piloting.NAME -> Piloting(this, node)
-            Sensors.NAME -> Sensors(this, node)
-            Shields.NAME -> Shields(this, node)
-            Cloaking.NAME -> Cloaking(this, node)
-            Weapons.NAME -> Weapons(this, node)
-            Drones.NAME -> Drones(this, node)
-            Teleporter.NAME -> Teleporter(this, node)
+            Doors.NAME -> Doors(this)
+            Engines.NAME -> Engines(this)
+            Medbay.NAME -> Medbay(this)
+            Oxygen.NAME -> Oxygen(this)
+            Piloting.NAME -> Piloting(this)
+            Sensors.NAME -> Sensors(this)
+            Shields.NAME -> Shields(this)
+            Cloaking.NAME -> Cloaking(this)
+            Weapons.NAME -> Weapons(this)
+            Drones.NAME -> Drones(this)
+            Teleporter.NAME -> Teleporter(this)
 
             // AE-only
-            MindControl.NAME -> MindControl(this, node)
-            Hacking.NAME -> Hacking(this, node)
-            BackupBattery.NAME -> BackupBattery(this, node)
+            MindControl.NAME -> MindControl(this)
+            Hacking.NAME -> Hacking(this)
+            BackupBattery.NAME -> BackupBattery(this)
 
             else -> {
                 // TODO throw exception when all systems are implemented

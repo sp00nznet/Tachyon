@@ -1,8 +1,6 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
-
-class Oxygen(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
+class Oxygen(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.OXYGEN
 
     // Note: it takes ~85 seconds for the ship to refill with oxygen from 0%

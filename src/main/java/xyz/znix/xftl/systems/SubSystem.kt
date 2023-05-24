@@ -1,9 +1,8 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 
-abstract class SubSystem(blueprint: SystemBlueprint, elem: Element) : AbstractSystem(blueprint, elem) {
+abstract class SubSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint) {
     abstract val sortingType: SortingType
 
     // List of the default systems, for sorting purposes

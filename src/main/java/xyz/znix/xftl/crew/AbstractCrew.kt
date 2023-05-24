@@ -425,9 +425,9 @@ abstract class AbstractCrew(
             }
         }
 
-        val computerPoint = room.computerPoint
-        if (computerPoint != null && canManSystem && mode == SlotType.CREW && system?.hackedBy?.isPoweredUp != true) {
-            if (room.computerPoint == roomPosition) {
+        val computerPoint = system?.configuration?.computerPoint
+        if (computerPoint != null && canManSystem && mode == SlotType.CREW && system.hackedBy?.isPoweredUp != true) {
+            if (computerPoint posEq roomPosition) {
                 currentAction = Action.MANNING
                 return
             }
@@ -648,7 +648,7 @@ abstract class AbstractCrew(
                 anims["${codename}_walk_${dirAsString(Direction.bestFit(deltaX, deltaY))}"].start()
             }
 
-            Action.MANNING -> anims["${codename}_type_${dirAsString(room.computerDirection!!)}"].start()
+            Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"].start()
             Action.REPAIRING -> anims["${codename}_repair"].start()
             Action.FIGHTING, Action.SABOTAGE -> {
                 // Figure out the direction.
@@ -726,8 +726,9 @@ abstract class AbstractCrew(
     }
 
     fun setTargetRoom(value: Room): Boolean {
-        if (value.computerPoint != null)
-            if (setTargetRoom(value, value.computerPoint!!))
+        val computerPoint = value.system?.configuration?.computerPoint
+        if (computerPoint != null)
+            if (setTargetRoom(value, computerPoint))
                 return true
 
         // If we're being told to go to our current room, see if our

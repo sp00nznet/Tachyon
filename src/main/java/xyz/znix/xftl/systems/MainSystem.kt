@@ -1,11 +1,10 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 import kotlin.math.max
 import kotlin.math.min
 
-abstract class MainSystem(blueprint: SystemBlueprint, elem: Element) : AbstractSystem(blueprint, elem) {
+abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint) {
     private var simpleSelectedEnergyLevel: Int = 1
 
     open val powerSelected: Int get() = simpleSelectedEnergyLevel

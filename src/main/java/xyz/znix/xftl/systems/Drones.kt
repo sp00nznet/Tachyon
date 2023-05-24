@@ -1,11 +1,10 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.weapons.DroneBlueprint
 
-class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, xml) {
+class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.DRONES
 
     val drones = ArrayList<DroneInfo?>()

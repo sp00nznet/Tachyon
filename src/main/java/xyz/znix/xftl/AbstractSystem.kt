@@ -9,17 +9,17 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SlickGame
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.systems.Hacking
-import xyz.znix.xftl.systems.MainSystem
-import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.systems.*
 import kotlin.math.*
 import kotlin.reflect.KProperty
 
-abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
-    val codename: String get() = blueprint.name
+abstract class AbstractSystem(val blueprint: SystemBlueprint) {
+    val codename: String get() = blueprint.type
 
-    // TODO handle this properly
+    lateinit var configuration: SystemInstallConfiguration
     var room: Room? = null
 
     protected val ship: Ship get() = room!!.ship
@@ -63,11 +63,6 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     // any ion damage, to lock in the power. Hence we need to check
     // the timer instead of the damage.
     val isIonised: Boolean get() = ionTimer > 0
-
-    // Used for calculations by the ship generator.
-    // The flagship notably doesn't have it's maximum power set, so
-    // use the maximum specified in the system blueprint in that case.
-    val aiMaxPower: Int = elem.getAttributeValue("max")?.toInt() ?: blueprint.maxPower
 
     /**
      * If non-null, this is the hacking system that's attacking this system.
@@ -239,8 +234,6 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
     }
 
     open val icon: String = "img/icons/s_${codename}_overlay.png"
-
-    val img: String? = elem.getAttributeValue("img")?.let { i -> "img/ship/interior/$i.png" }
 
     open val iconColourName: String
         get() = when {
@@ -500,5 +493,142 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint, elem: Element) {
          * The time in seconds a system is locked per ion damage.
          */
         const val TIME_PER_ION = 5f
+    }
+}
+
+/**
+ * Information about how a system is installed into a room - this is both
+ * the system and the location of its computer, along with any XML data
+ * that's specified in the ship blueprint.
+ */
+class SystemInstallConfiguration(systemNode: Element, game: SlickGame, room: Room) {
+    val system: SystemBlueprint = game.blueprintManager[systemNode.name] as SystemBlueprint
+
+    val startingPower = systemNode.getAttributeValue("power").toInt()
+
+    // Note that if not specified, the system is included by default. This
+    // is commonly found with enemy ships.
+    val availableByDefault = systemNode.getAttributeValue("start")?.toBoolean() != false
+
+    // Used for calculations by the ship generator.
+    // The flagship notably doesn't have it's maximum power set, so
+    // use the maximum specified in the system blueprint in that case.
+    val aiMaxPower: Int = systemNode.getAttributeValue("max")?.toInt() ?: system.maxPower
+
+    // The room interior image
+    val interiorImage: String? = systemNode.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
+
+    val computerPoint: ConstPoint?
+    val computerDirection: Direction?
+    val obstructionPoint: ConstPoint?
+
+    // Parse out the computer point and direction
+    init {
+        val slotElems = systemNode.getChildren("slot")
+        check(slotElems.size < 2)
+
+        var compDir: Direction? = null
+        var compPoint: ConstPoint? = null
+
+        // Load defaults
+        // TODO what is this for? Kestrel seems to work fine, and I wrote this ages ago and forgot
+        when (system.name) {
+            Weapons.NAME -> {
+                compPoint = ConstPoint(1, 0)
+                compDir = Direction.UP
+            }
+
+            Engines.NAME -> {
+                compPoint = ConstPoint(0, 1)
+                compDir = Direction.DOWN
+            }
+
+            Shields.NAME -> {
+                compPoint = ConstPoint(0, 0)
+                compDir = Direction.LEFT
+            }
+        }
+
+        if (slotElems.size == 1) {
+            val elem: Element = slotElems[0]
+
+            val dir = elem.getChildren("direction")
+            if (dir.size == 1)
+                compDir = Direction.valueOf(dir[0].textTrim.toUpperCase())
+
+            val idx = elem.getChildren("number")
+
+            if (idx.size == 1)
+                compPoint = when (idx[0].textTrim) {
+                    "0" -> ConstPoint(0, 0)
+                    "1" -> ConstPoint(1, 0)
+                    "2" -> ConstPoint(0, 1)
+                    "3" -> ConstPoint(1, 1)
+                    else -> error("Invalid point value '${idx[0].textTrim}'")
+                }
+
+            check(dir.size <= 1)
+            check(idx.size <= 1)
+        }
+
+        // Pick a room with the invalid computer position if it's a mannable system
+        // and the computer is not set.
+        compPoint = compPoint ?: when (system.type) {
+            Piloting.NAME, Engines.NAME, Shields.NAME, Weapons.NAME, Doors.NAME, Sensors.NAME -> ConstPoint(999, 999)
+            else -> null
+        }
+
+        // If the computer position is invalid (outside the room), just find a point
+        // that makes sense (doesn't overlap a door).
+        if (compPoint != null && !room.containsRelative(compPoint)) {
+            // Take a range of the valid X values
+            val validPlaces = (0 until room.width).asSequence().flatMap { x ->
+                // Flatmap each of them to the valid positions in that column
+                (0 until room.height).asSequence().map { y -> ConstPoint(x, y) }
+            }.flatMap {
+                // Expand each position into two valid edges
+                // Note that in a 1x2/2x1 room this doesn't cover all edges - close enough though
+                val horizontal = if (it.x == 0) Direction.LEFT else Direction.RIGHT
+                val vertical = if (it.y == 0) Direction.UP else Direction.DOWN
+                sequenceOf(Pair(it, horizontal), Pair(it, vertical))
+            }.filter { pos ->
+                // Filter out anything that intersects with a door
+                room.doors.none { it.roomPos(room) posEq pos.first && it.dirFor(room) == pos.second }
+            }.sortedBy { pos ->
+                // Prefer things that aren't on the same tile as a door
+                if (room.doors.none { it.roomPos(room) posEq pos.first }) 0 else 1
+            }
+
+            val place = validPlaces.first()
+            compPoint = place.first
+            compDir = place.second
+        }
+
+        // The medbay at least (and maybe other systems, TODO check) use the
+        // computer to represent a cell that is obstructed.
+        val computerIsObstruction = when (system.type) {
+            Medbay.NAME -> true // TODO and clonebay
+            else -> false
+        }
+        if (computerIsObstruction && compPoint != null) {
+            obstructionPoint = compPoint
+            compPoint = null
+        } else {
+            obstructionPoint = null
+        }
+
+        // Except for the medbay and clonebay - which are handled above - all systems
+        // that specify a computer point must also specify a direction.
+        if (compPoint != null) {
+            requireNotNull(compDir) { "Cannot set computer point but not computer direction for system ${system.type}" }
+        }
+
+        // If the computer point isn't set, it doesn't make sense for the direction to be.
+        if (compPoint == null && compDir != null) {
+            error("Cannot set the computer direction but not point for system ${system.type}")
+        }
+
+        computerPoint = compPoint
+        computerDirection = compDir
     }
 }

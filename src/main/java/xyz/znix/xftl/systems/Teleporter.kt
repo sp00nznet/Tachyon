@@ -1,6 +1,5 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.crew.AbstractCrew
@@ -12,7 +11,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
-class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
+class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.TELEPORTER
 
     private val teleportSound by onInit { it.sounds.getSample("teleport") }

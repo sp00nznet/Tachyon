@@ -397,11 +397,11 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
             lines.add("Systems on the player ship:")
             for (room in ship.rooms) {
                 val system = room.system
-                val purchasable = room.purchasableSystem
+                val systemSlot = room.systemSlot
                 if (system != null) {
                     lines.add("  ${system.codename} (purchased)")
-                } else if (purchasable != null) {
-                    lines.add("  ${purchasable.system.codename}")
+                } else if (systemSlot != null) {
+                    lines.add("  ${systemSlot.system.type}")
                 }
             }
             return
@@ -412,7 +412,7 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
             for (room in ship.rooms) {
                 if (room.system != null)
                     continue
-                val system = room.purchasableSystem ?: continue
+                val system = room.systemSlot ?: continue
                 room.setSystem(system)
             }
             lines.add("Unlocked all systems on the player ship.")
@@ -429,8 +429,8 @@ class DebugConsole(val game: SlickGame, val ship: Ship) {
                 continue
             }
 
-            val purchasable = room.purchasableSystem ?: continue
-            if (purchasable.system.codename != systemName)
+            val purchasable = room.systemSlot ?: continue
+            if (purchasable.system.type != systemName)
                 continue
 
             room.setSystem(purchasable)

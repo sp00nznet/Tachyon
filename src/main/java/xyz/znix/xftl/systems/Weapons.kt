@@ -1,6 +1,5 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
@@ -16,7 +15,7 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, elem) {
+class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.WEAPONS
 
     val selectedTargets = TargetList()

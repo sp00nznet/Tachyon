@@ -115,7 +115,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         for (room in ship.rooms) {
             if (room.system != null)
                 continue
-            val system = room.purchasableSystem ?: continue
+            val system = room.systemSlot ?: continue
 
             if (!rand.rollChance(optionalSystemChance))
                 continue
@@ -125,7 +125,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
             // Add a power cost for adding this system.
             // Don't check the current power here, it's allowed to go negative.
-            val category = getSystemCategory(system.system)
+            val category = getSystemCategory(room.system!!)
             val basePowerUse = when {
                 category == SystemCategory.OFFENSIVE /* TODO and not artillery */ -> 1
                 difficulty == Difficulty.HARD -> 1
@@ -205,7 +205,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             // Check if we need to upgrade the weapon power to fit
             // the scripted weapons.
             val weapons = ship.weapons!!
-            val scriptedWeaponPower = weaponOverrides.sumBy { it.power }.coerceAtMost(weapons.aiMaxPower)
+            val scriptedWeaponPower = weaponOverrides.sumBy { it.power }.coerceAtMost(weapons.configuration.aiMaxPower)
             val missingPower = scriptedWeaponPower - weapons.energyLevels
             if (missingPower > 0) {
                 weapons.energyLevels += missingPower
@@ -220,7 +220,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         if (droneOverrides != null) {
             // Same goes for drones.
             val drones = ship.drones!!
-            val scriptedDronePower = droneOverrides.sumBy { it.power }.coerceAtMost(drones.aiMaxPower)
+            val scriptedDronePower = droneOverrides.sumBy { it.power }.coerceAtMost(drones.configuration.aiMaxPower)
             val missingPower = scriptedDronePower - drones.energyLevels
             if (missingPower > 0) {
                 drones.energyLevels += missingPower
@@ -413,7 +413,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         // It may help to define a type putting that after _Rb_tree_node_base.
 
         val startPower = system.energyLevels
-        val maxPower = system.aiMaxPower
+        val maxPower = system.configuration.aiMaxPower
 
         // Lerp between the min and max power
         val numSectors = 8

@@ -1,8 +1,6 @@
 package xyz.znix.xftl.systems
 
-import org.jdom2.Element
-
-class Sensors(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint, elem) {
+class Sensors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override val sortingType = SortingType.SENSORS
 
     companion object {
