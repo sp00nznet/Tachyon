@@ -8,7 +8,7 @@ import java.util.*
 /**
  * Carries persistent information about a store, like its available items and prices.
  */
-class StoreData(game: SlickGame) {
+class StoreData(game: InGameState) {
     val availableResources = ResourceSet()
 
     val sections: List<Section>

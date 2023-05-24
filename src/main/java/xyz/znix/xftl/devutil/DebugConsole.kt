@@ -24,7 +24,7 @@ import kotlin.random.Random
 /**
  * A development console, to quickly do stuff like load events or get scrap.
  */
-class DebugConsole(val game: SlickGame, val ship: Ship) {
+class DebugConsole(val game: InGameState, val ship: Ship) {
     private val history = ArrayList<String>()
     private var historyCursor: Int = -1
 

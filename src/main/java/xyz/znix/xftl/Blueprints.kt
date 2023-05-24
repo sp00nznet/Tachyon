@@ -6,7 +6,7 @@ import xyz.znix.xftl.augments.AugPreigniter
 import xyz.znix.xftl.augments.AugZoltanShield
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
 import kotlin.random.Random
@@ -54,7 +54,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
     }
 
     // Required to bind sounds to the weapons
-    fun initialiseGame(game: SlickGame) {
+    fun initialiseGame(game: InGameState) {
         for (bp in blueprints.values) {
             if (bp !is Blueprint)
                 continue
@@ -193,8 +193,8 @@ open class Blueprint(elem: Element) : IBlueprint {
      */
     open val cost: Int? = null
 
-    fun translateTitle(game: SlickGame): String = title?.let { game.translator[it] } ?: "MISSING TITLE: $name"
-    fun translateShort(game: SlickGame): String = short?.let { game.translator[it] } ?: "MISSING SHORT: $name"
+    fun translateTitle(game: InGameState): String = title?.let { game.translator[it] } ?: "MISSING TITLE: $name"
+    fun translateShort(game: InGameState): String = short?.let { game.translator[it] } ?: "MISSING SHORT: $name"
 
     override fun resolve(random: Random): Blueprint = this
     override fun list(): List<Blueprint> = listOf(this)
@@ -203,7 +203,7 @@ open class Blueprint(elem: Element) : IBlueprint {
      * Finish setting up this blueprint, loading any other
      * required resources (eg, sounds).
      */
-    open fun finishSetup(game: SlickGame) {
+    open fun finishSetup(game: InGameState) {
     }
 }
 

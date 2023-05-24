@@ -3,10 +3,10 @@
  */
 package xyz.znix.xftl;
 
-import xyz.znix.xftl.game.SlickGame;
+import xyz.znix.xftl.game.InGameState;
 
 public class App {
     public static void main(String[] args) {
-        Utils.INSTANCE.startSlick(SlickGame::new);
+        Utils.INSTANCE.startSlick(InGameState::new);
     }
 }

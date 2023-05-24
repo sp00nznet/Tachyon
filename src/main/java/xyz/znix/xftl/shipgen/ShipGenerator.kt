@@ -3,7 +3,7 @@ package xyz.znix.xftl.shipgen
 import org.jdom2.Element
 import xyz.znix.xftl.*
 import xyz.znix.xftl.game.Difficulty
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.sector.EventManager
 import xyz.znix.xftl.sector.IEvent
 import xyz.znix.xftl.systems.*
@@ -17,7 +17,7 @@ import kotlin.math.min
 import kotlin.random.Random
 
 class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
-    fun buildShip(sys: SlickGame, spec: EnemyShipSpec, sector: Int, difficulty: Difficulty, seed: Int? = null): Ship {
+    fun buildShip(sys: InGameState, spec: EnemyShipSpec, sector: Int, difficulty: Difficulty, seed: Int? = null): Ship {
         // Shift everything back a sector on easy.
         // This is thus -1 for the first sector on easy.
         val effectiveSector = sector + difficulty.sectorOffset

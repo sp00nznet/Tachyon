@@ -12,7 +12,7 @@ import xyz.znix.xftl.systems.SystemBlueprint
 
 private typealias UndoFn = () -> Unit
 
-class ShipWindow(val game: SlickGame, val ship: Ship, private val close: () -> Unit) :
+class ShipWindow(val game: InGameState, val ship: Ship, private val close: () -> Unit) :
     Window() {
     override val size = ConstPoint(587, 464)
 

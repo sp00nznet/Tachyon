@@ -13,7 +13,7 @@ import java.awt.Rectangle
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class SectorMapWindow(private val game: SlickGame, private val selectedCallback: (GameMap.SectorInfo?) -> Unit) :
+class SectorMapWindow(private val game: InGameState, private val selectedCallback: (GameMap.SectorInfo?) -> Unit) :
     Window() {
 
     override val size = ConstPoint(567, 327)

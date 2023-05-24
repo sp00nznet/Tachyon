@@ -17,7 +17,7 @@ import kotlin.math.min
  * This contains the drag-and-drop equipment UI used in the equipment tab
  * of the player ship UI, and in the sell tab of the store.
  */
-class ShipEquipmentPanel(private val game: SlickGame, val ship: Ship) {
+class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
     var position: IPoint = ConstPoint.ZERO
         set(value) {
             if (field == value)

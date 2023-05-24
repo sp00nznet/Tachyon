@@ -26,7 +26,7 @@ import xyz.znix.xftl.systems.*;
 
 import java.util.*;
 
-public class SlickGame extends BasicGame {
+public class InGameState extends BasicGame {
     private static final ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(100, 150);
 
     private BlueprintManager blueprintManager;
@@ -84,7 +84,7 @@ public class SlickGame extends BasicGame {
      */
     private final ArrayList<Event> delayedQuests = new ArrayList<>();
 
-    public SlickGame(Datafile df) {
+    public InGameState(Datafile df) {
         super("Subluminal");
         this.df = df;
     }

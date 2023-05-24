@@ -1,7 +1,7 @@
 package xyz.znix.xftl.sector
 
 import xyz.znix.xftl.Ship
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
 import kotlin.random.Random
@@ -124,7 +124,7 @@ class Beacon(
             }
         }
 
-    fun getStore(game: SlickGame): StoreData? {
+    fun getStore(game: InGameState): StoreData? {
         if (!hasStore)
             return null
         if (internalStore != null)

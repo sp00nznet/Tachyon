@@ -6,7 +6,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
@@ -72,7 +72,7 @@ abstract class AbstractExternalDrone(
     private var stunSparksAnimation: Animation? = null
     private var stunSparksMirror: Boolean = false
 
-    protected val game: SlickGame get() = ownerShip.sys
+    protected val game: InGameState get() = ownerShip.sys
 
     override fun init(ownerShip: Ship) {
         super.init(ownerShip)

@@ -14,7 +14,7 @@ import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.ShipGib
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
@@ -26,7 +26,7 @@ import java.awt.Rectangle
 import java.util.stream.Collectors
 import kotlin.math.min
 
-class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: EnemyShipSpec?) {
+class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: EnemyShipSpec?) {
     val name: String = shipNode.getAttributeValue("name")
     val rooms: List<Room>
     val doors: MutableList<Door> = ArrayList()

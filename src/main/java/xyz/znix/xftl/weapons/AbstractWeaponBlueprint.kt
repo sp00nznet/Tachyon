@@ -6,7 +6,7 @@ import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.FTLSound
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 
 abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
@@ -32,7 +32,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val hitShieldSounds = xml.getChild("hitShieldSounds")?.let { SoundList(it) }
     val missSounds = xml.getChild("missSounds")?.let { SoundList(it) }
 
-    fun getLauncher(game: SlickGame): Animations.WeaponAnimationSpec {
+    fun getLauncher(game: InGameState): Animations.WeaponAnimationSpec {
         game.animations.weaponAnimations[launcher]?.let { return it }
 
         // Missing animation?
@@ -48,7 +48,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
      * Draw the weapon's launcher image as it should be shown in UIs, for example
      * quest rewards or in a store.
      */
-    fun drawLauncherUI(game: SlickGame, x: Float, y: Float) {
+    fun drawLauncherUI(game: InGameState, x: Float, y: Float) {
         val anim = getLauncher(game)
 
         // Flip and rotate the sprite appropriately to make it loop like it's mounted above
@@ -62,7 +62,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
         spr.draw(x + spr.height, y)
     }
 
-    override fun finishSetup(game: SlickGame) {
+    override fun finishSetup(game: InGameState) {
         super.finishSetup(game)
 
         // Load all the sounds
@@ -80,7 +80,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
 
         val sounds: List<FTLSound> get() = soundsInternal ?: error("SoundList not yet loaded!")
 
-        fun load(game: SlickGame) {
+        fun load(game: InGameState) {
             if (soundsInternal != null) {
                 error("Cannot re-initialise sound list!")
             }

@@ -11,7 +11,7 @@ import xyz.znix.xftl.math.Point
 import kotlin.math.cos
 import kotlin.math.sin
 
-class ShipGib(game: SlickGame, ship: Ship, node: Element) {
+class ShipGib(game: InGameState, ship: Ship, node: Element) {
     val img: Image
 
     val velocity = pickRange(node.getChild("velocity"))

@@ -17,7 +17,7 @@ enum class Resource {
 
     private var image: Image? = null
 
-    fun getIcon(game: SlickGame): Image {
+    fun getIcon(game: InGameState): Image {
         image?.let { return it }
 
         val img = game.getImg("img/ui_icons/icon_${name.toLowerCase()}.png")

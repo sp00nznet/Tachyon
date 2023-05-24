@@ -9,7 +9,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 
-class HostileShipUI(private val game: SlickGame, df: Datafile, private val enemy: Ship) {
+class HostileShipUI(private val game: InGameState, df: Datafile, private val enemy: Ship) {
     private val mutableShipPos = Point(0, 0)
     val shipPos: IPoint get() = mutableShipPos
 

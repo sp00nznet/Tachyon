@@ -10,7 +10,7 @@ import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.game.SlickGame.RoomClickListener
+import xyz.znix.xftl.game.InGameState.RoomClickListener
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -26,7 +26,7 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.random.Random
 
-class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: SlickGame) {
+class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: InGameState) {
     private val font = game.getFont("HL2", 2f)
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])

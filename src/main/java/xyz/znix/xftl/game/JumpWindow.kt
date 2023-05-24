@@ -20,7 +20,7 @@ import kotlin.math.sqrt
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
 // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
 // for us atm.
-class JumpWindow(val game: SlickGame, val showSectorMap: () -> Unit, val jump: (Beacon?) -> Unit) : Window() {
+class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump: (Beacon?) -> Unit) : Window() {
     override val size = ConstPoint(766, 548)
     override val outlineImage = game.getImg("img/window_outline.png")
 

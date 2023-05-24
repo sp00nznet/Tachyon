@@ -9,7 +9,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.ceil
 
-abstract class Button(protected val game: SlickGame, pos: IPoint, size: IPoint) {
+abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint) {
     val basePos = pos.const
     var windowOffset: IPoint = ConstPoint.ZERO
         set(value) {
@@ -77,7 +77,7 @@ abstract class Button(protected val game: SlickGame, pos: IPoint, size: IPoint) 
 }
 
 class SimpleButton(
-    game: SlickGame, pos: IPoint, size: IPoint, imgOffset: IPoint,
+    game: InGameState, pos: IPoint, size: IPoint, imgOffset: IPoint,
     val normal: Image, val hover: Image?,
     private val callback: (Int) -> Unit
 ) : Button(game, pos, size) {
@@ -102,7 +102,7 @@ class SimpleButton(
         // Create a new button by specifying the clickable region within it,
         // rather than using pos and imgOffset to achive it.
         fun byRegion(
-            game: SlickGame, pos: IPoint, buttonOffset: IPoint, buttonSize: IPoint,
+            game: InGameState, pos: IPoint, buttonOffset: IPoint, buttonSize: IPoint,
             normal: Image, hover: Image?,
             callback: (Int) -> Unit
         ): SimpleButton {
@@ -113,14 +113,14 @@ class SimpleButton(
 
 data class ButtonImageSet(val normal: Image, val off: Image, val hover: Image, val offHover: Image? = null) {
     companion object {
-        fun select2(game: SlickGame, prefix: String): ButtonImageSet {
+        fun select2(game: InGameState, prefix: String): ButtonImageSet {
             val normal = game.getImg("${prefix}_on.png")
             val off = game.getImg("${prefix}_off.png")
             val hover = game.getImg("${prefix}_select2.png")
             return ButtonImageSet(normal, off, hover)
         }
 
-        fun selected(game: SlickGame, prefix: String, withOffHover: Boolean = false): ButtonImageSet {
+        fun selected(game: InGameState, prefix: String, withOffHover: Boolean = false): ButtonImageSet {
             val normal = game.getImg("${prefix}_on.png")
             val off = game.getImg("${prefix}_off.png")
             val hover = game.getImg("${prefix}_selected.png")
@@ -141,7 +141,7 @@ object Buttons {
         }
     }
 
-    class JumpButton(pos: IPoint, val ship: Ship, game: SlickGame, private val callback: () -> Unit) :
+    class JumpButton(pos: IPoint, val ship: Ship, game: InGameState, private val callback: () -> Unit) :
         Button(game, pos, ConstPoint(74, 29)) {
 
         private val font = game.getFont("HL2", 2f)
@@ -186,7 +186,7 @@ object Buttons {
     }
 
     open class BasicButton(
-        game: SlickGame, pos: IPoint, size: IPoint, val label: String,
+        game: InGameState, pos: IPoint, size: IPoint, val label: String,
         private val radius: Int, private val font: Font, private val yOffset: Int,
         private val cb: () -> Unit
     ) : Button(game, pos, size) {
@@ -209,7 +209,7 @@ object Buttons {
         }
     }
 
-    class ShipButton(pos: IPoint, game: SlickGame, private val cb: () -> Unit) : Button(game, pos, ConstPoint(60, 41)) {
+    class ShipButton(pos: IPoint, game: InGameState, private val cb: () -> Unit) : Button(game, pos, ConstPoint(60, 41)) {
         private val imgPos = pos - ConstPoint(7, 7)
 
         private val imgOff = game.getImg("img/statusUI/top_ship_off.png")
@@ -234,7 +234,7 @@ object Buttons {
         }
     }
 
-    class StoreButton(pos: IPoint, game: SlickGame, private val callback: () -> Unit) :
+    class StoreButton(pos: IPoint, game: InGameState, private val callback: () -> Unit) :
         Button(game, pos, ConstPoint(88, 41)) {
 
         private val imgPos = pos - ConstPoint(7, 7)
@@ -264,12 +264,12 @@ object Buttons {
     }
 
     abstract class BlueprintButton(
-        pos: IPoint, size: IPoint, game: SlickGame,
+        pos: IPoint, size: IPoint, game: InGameState,
         private val defaultImage: ButtonImageSet?
     ) :
         Button(game, pos, size) {
 
-        constructor(pos: IPoint, game: SlickGame, image: ButtonImageSet) :
+        constructor(pos: IPoint, game: InGameState, image: ButtonImageSet) :
                 this(pos, image.normal.imageSize, game, image)
 
         open val image: ButtonImageSet
@@ -376,14 +376,14 @@ object Buttons {
     }
 
     open class DragDropBlueprintButton(
-        homePos: IPoint, game: SlickGame,
+        homePos: IPoint, game: InGameState,
         image: ButtonImageSet?, size: IPoint,
         val compatible: (Blueprint) -> Boolean,
         override val blueprint: Blueprint?, val callback: () -> Unit
     ) : BlueprintButton(homePos, size, game, image) {
 
         constructor(
-            homePos: IPoint, game: SlickGame, image: ButtonImageSet,
+            homePos: IPoint, game: InGameState, image: ButtonImageSet,
             compatible: (Blueprint) -> Boolean,
             blueprint: Blueprint?, callback: () -> Unit
         ) : this(homePos, game, image, image.normal.imageSize, compatible, blueprint, callback)
@@ -478,7 +478,7 @@ object Buttons {
  * The click-to-activate timer-based button used for cloaking, hacking and mind control.
  */
 abstract class SystemPowerButton(
-    game: SlickGame,
+    game: InGameState,
     val powerHeight: Int,
     val powerPos: IPoint
 ) :

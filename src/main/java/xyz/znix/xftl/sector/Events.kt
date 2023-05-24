@@ -230,7 +230,7 @@ class Event(
     /**
      * Evaluate all the random values in this event's rewards, and pack them into a ResourceSet
      */
-    fun resolveResources(game: SlickGame): ResourceSet {
+    fun resolveResources(game: InGameState): ResourceSet {
         // The plain resources (fuel, missiles, etc)
         val resourcesGained = ResourceSet(itemsModify.mapValues { it.value.random() })
 
@@ -517,7 +517,7 @@ class EventText(val localised: String) : IEventText {
 }
 
 class ImageList(val name: String, val images: List<String>) {
-    fun get(game: SlickGame): Image? {
+    fun get(game: InGameState): Image? {
         if (this == NONE) return null
         return game.getImg(images.random())
     }

@@ -19,7 +19,7 @@ import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.max
 import kotlin.math.min
 
-class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: Event, val close: () -> Unit) :
+class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent: Event, val close: () -> Unit) :
     Window() {
 
     // We have to include the margin from the glow
@@ -65,9 +65,9 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
         if (questName != null) {
             val quest = game.eventManager[questName].resolve()
             val messageId = when (game.addQuest(quest)) {
-                SlickGame.QuestAddResult.CURRENT_SECTOR -> "added_quest"
-                SlickGame.QuestAddResult.NEXT_SECTOR -> "added_quest_sector"
-                SlickGame.QuestAddResult.TOO_LATE -> "no_time"
+                InGameState.QuestAddResult.CURRENT_SECTOR -> "added_quest"
+                InGameState.QuestAddResult.NEXT_SECTOR -> "added_quest_sector"
+                InGameState.QuestAddResult.TOO_LATE -> "no_time"
             }
             extraText += "\n\n" + game.translator[messageId]
         }
@@ -814,7 +814,7 @@ class DialogueWindow(val game: SlickGame, val playerShip: Ship, startingEvent: E
      */
     private class EvaluatedEvent(
         private val eventInt: Event?,
-        game: SlickGame,
+        game: InGameState,
         val choiceText: String?,
         val choice: Choice? = null
     ) {

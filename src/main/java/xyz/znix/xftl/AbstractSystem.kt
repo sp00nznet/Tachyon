@@ -7,7 +7,7 @@ import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
@@ -243,7 +243,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             else -> "green"
         }
 
-    open fun drawIconAndPower(game: SlickGame, g: Graphics, x: Int, baseY: Int) {
+    open fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, baseY: Int) {
         if (!isIonised) {
             // TODO flash blue when hacking/mind control/cloaking/backup battery is active
             game.getImg("img/icons/s_${codename}_${iconColourName}1.png").draw(x.f, baseY.f)
@@ -470,20 +470,20 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      * the ship is loaded rather than when the system is used.
      * Obviously this makes finding these issues a lot quicker.
      */
-    protected fun <T> onInit(initializer: (SlickGame) -> T): OnInitWrapper<T> {
+    protected fun <T> onInit(initializer: (InGameState) -> T): OnInitWrapper<T> {
         val wrapper = OnInitWrapper(initializer)
         onInitValues += wrapper
         return wrapper
     }
 
-    protected class OnInitWrapper<T>(private val fn: (SlickGame) -> T) {
+    protected class OnInitWrapper<T>(private val fn: (InGameState) -> T) {
         private var storedValue: T? = null
 
         operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
             return storedValue ?: error("On-init property used before initialisation!")
         }
 
-        fun doInit(game: SlickGame) {
+        fun doInit(game: InGameState) {
             storedValue = fn(game)
         }
     }
@@ -501,7 +501,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
  * the system and the location of its computer, along with any XML data
  * that's specified in the ship blueprint.
  */
-class SystemInstallConfiguration(systemNode: Element, game: SlickGame, room: Room) {
+class SystemInstallConfiguration(systemNode: Element, game: InGameState, room: Room) {
     val system: SystemBlueprint = game.blueprintManager[systemNode.name] as SystemBlueprint
 
     val startingPower = systemNode.getAttributeValue("power").toInt()

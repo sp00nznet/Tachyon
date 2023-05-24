@@ -27,7 +27,7 @@ object LootDropGenerator {
         return (base * rand).toInt()
     }
 
-    fun generateRewards(game: SlickGame, tier: RewardTier, type: RewardType, sector: Int): ResourceSet {
+    fun generateRewards(game: InGameState, tier: RewardTier, type: RewardType, sector: Int): ResourceSet {
         val resources = ResourceSet()
         var remainingType = type
 

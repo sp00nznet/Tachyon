@@ -6,7 +6,7 @@ import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.SoundInstance
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.layout.Room
@@ -278,7 +278,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     private inner class HackingDroneProjectile(val target: Room) : AbstractProjectile(target.ship) {
-        val game: SlickGame = target.ship.sys
+        val game: InGameState = target.ship.sys
 
         val blueprint = game.blueprintManager["DRONE_HACKING"] as DroneBlueprint
 

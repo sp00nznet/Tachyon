@@ -4,7 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.drones.*
-import xyz.znix.xftl.game.SlickGame
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
@@ -48,7 +48,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         else -> ConstPoint(25, 25)
     }
 
-    fun drawIconUI(game: SlickGame, pos: IPoint) {
+    fun drawIconUI(game: InGameState, pos: IPoint) {
         var base: Image? = null
 
         // For indoor drones, use their portrait.
@@ -92,7 +92,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         }
     }
 
-    override fun finishSetup(game: SlickGame) {
+    override fun finishSetup(game: InGameState) {
         super.finishSetup(game)
 
         if (weaponBlueprintName != null) {
