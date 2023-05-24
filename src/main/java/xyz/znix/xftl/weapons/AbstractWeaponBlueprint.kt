@@ -7,6 +7,7 @@ import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.math.ConstPoint
 
 abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
@@ -62,14 +63,14 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
         spr.draw(x + spr.height, y)
     }
 
-    override fun finishSetup(game: InGameState) {
-        super.finishSetup(game)
+    override fun finishSetup(content: GameContent) {
+        super.finishSetup(content)
 
         // Load all the sounds
-        launchSounds?.load(game)
-        hitShipSounds?.load(game)
-        hitShieldSounds?.load(game)
-        missSounds?.load(game)
+        launchSounds?.load(content)
+        hitShipSounds?.load(content)
+        hitShieldSounds?.load(content)
+        missSounds?.load(content)
     }
 
     abstract fun buildInstance(ship: Ship): AbstractWeaponInstance
@@ -80,12 +81,12 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
 
         val sounds: List<FTLSound> get() = soundsInternal ?: error("SoundList not yet loaded!")
 
-        fun load(game: InGameState) {
+        fun load(content: GameContent) {
             if (soundsInternal != null) {
                 error("Cannot re-initialise sound list!")
             }
 
-            soundsInternal = names.map { game.sounds.getSample(it) }
+            soundsInternal = names.map { content.sounds.getSample(it) }
         }
 
         fun get(): FTLSound? {

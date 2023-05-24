@@ -13,7 +13,8 @@ class SystemBlueprint(xml: Element) : Blueprint(xml) {
 
     val upgradeCost: List<Int> = xml.getChild("upgradeCost").getChildren("level").map { it.text.toInt() }
 
-    val onIconPath = "img/icons/s_${name}_green1.png"
+    val onIconPath = "img/icons/s_${type}_green1.png"
+    val roomIconPath: String = "img/icons/s_${type}_overlay.png"
 
     // No idea what the 'locked' flag does.
 

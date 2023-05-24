@@ -92,11 +92,11 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         }
     }
 
-    override fun finishSetup(game: InGameState) {
-        super.finishSetup(game)
+    override fun finishSetup(content: InGameState.GameContent) {
+        super.finishSetup(content)
 
         if (weaponBlueprintName != null) {
-            weaponBlueprint = game.blueprintManager[weaponBlueprintName] as AbstractWeaponBlueprint
+            weaponBlueprint = content.blueprintManager[weaponBlueprintName] as AbstractWeaponBlueprint
         }
     }
 

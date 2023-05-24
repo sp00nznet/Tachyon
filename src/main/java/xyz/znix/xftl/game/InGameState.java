@@ -24,37 +24,35 @@ import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class InGameState extends MainGame.GameState {
     private static final ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(100, 150);
 
-    private final String playerShipName;
+    private final MainGame mainGame;
 
-    private BlueprintManager blueprintManager;
-    private EventManager eventManager;
-    private CrewNameManager nameManager;
+    private final GameContent content;
+
+    // These are copied from the GameContent object for convenience
+    private final Datafile df;
+    private final boolean enableAdvancedEdition;
+    private final BlueprintManager blueprintManager;
+    private final EventManager eventManager;
+
     private GameMap gameMap;
     private Ship player;
     private Ship enemy;
     private ShipAI enemyAI;
-    private final Datafile df;
 
-    private final Map<String, Image> images = new HashMap<>();
-    private final Map<String, SILFontLoader> fonts = new HashMap<>();
-    private Animations animations;
-    private SoundManager sounds;
-    private ShipGenerator generator;
     private LootPool lootPool;
-
-    private Translator translator;
 
     private Image missingImage;
 
-    private Point tempPoint = new Point(0, 0);
+    private final Point tempPoint = new Point(0, 0);
 
     private Room hoveredRoom;
     private RoomClickListener clickEvent;
-    private boolean mouseDownPrev[] = new boolean[3];
+    private final boolean[] mouseDownPrev = new boolean[3];
 
     private PlayerShipUI shipUI;
     private HostileShipUI hostileShipUI;
@@ -85,29 +83,13 @@ public class InGameState extends MainGame.GameState {
      */
     private final ArrayList<Event> delayedQuests = new ArrayList<>();
 
-    public InGameState(Datafile df, String playerShipName) {
-        this.df = df;
-        this.playerShipName = playerShipName;
-    }
+    public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName) {
+        this(mainGame, content, container);
 
-    @Override
-    public void init(@NotNull GameContainer container) throws SlickException {
-        boolean enableAdvancedEdition = true;
-
-        blueprintManager = new BlueprintManager(df, enableAdvancedEdition);
-        animations = new Animations(df);
-        sounds = new SoundManager(df);
-        generator = new ShipGenerator(df, blueprintManager);
-
-        translator = new Translator(df, "en");
-        eventManager = new EventManager(df, translator, blueprintManager);
-        nameManager = new CrewNameManager(df);
         gameMap = new GameMap(df, eventManager, enableAdvancedEdition);
 
-        blueprintManager.initialiseGame(this);
-
-        loadPlayerShip();
-        shipUI = new PlayerShipUI(df, translator, player, this);
+        createNewPlayerShip(playerShipName);
+        shipUI = new PlayerShipUI(df, player, this);
 
         // Start at the first beacon of the first sector
         // Be sure we do this after creating the player ship, it's used by the enemy AI
@@ -115,21 +97,32 @@ public class InGameState extends MainGame.GameState {
         // the current beacon.
         Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0));
         setCurrentBeacon(firstSector.getStartBeacon());
+    }
+
+    private InGameState(MainGame mainGame, GameContent content, GameContainer container) {
+        this.mainGame = mainGame;
+        this.content = content;
+
+        // Load up the convenience variables
+        df = content.datafile;
+        enableAdvancedEdition = content.enableAdvancedEdition;
+        blueprintManager = content.blueprintManager;
+        eventManager = content.eventManager;
 
         // Load a bunch of images that we'll need, to make them available for later.
-        for (AbstractSystem system : player.getSystems()) {
-            getImg(system.getIcon());
-
-            String img = system.configuration.getInteriorImage();
-            if (img != null)
-                getImg(img);
+        List<SystemBlueprint> systems = blueprintManager.getBlueprints().values().stream()
+                .filter(bp -> bp instanceof SystemBlueprint)
+                .map(bp -> (SystemBlueprint) bp)
+                .collect(Collectors.toList());
+        for (SystemBlueprint system : systems) {
+            getImg(system.getRoomIconPath());
         }
 
-        for (MainSystem system : player.getMainSystems()) {
-            getImg("img/icons/s_" + system.getCodename() + "_red1.png");
-            getImg("img/icons/s_" + system.getCodename() + "_orange1.png");
-            getImg("img/icons/s_" + system.getCodename() + "_grey1.png");
-            getImg("img/icons/s_" + system.getCodename() + "_green1.png");
+        for (SystemBlueprint system : systems) {
+            getImg("img/icons/s_" + system.getType() + "_red1.png");
+            getImg("img/icons/s_" + system.getType() + "_orange1.png");
+            getImg("img/icons/s_" + system.getType() + "_grey1.png");
+            getImg("img/icons/s_" + system.getType() + "_green1.png");
         }
 
         // Feed inputs to the debug console.
@@ -144,9 +137,9 @@ public class InGameState extends MainGame.GameState {
         });
     }
 
-    private void loadPlayerShip() {
-        Element playerXml = ((ShipBlueprint) blueprintManager.get(playerShipName)).loadElem(df);
-        player = new Ship(df, playerXml, this, null); // Kestral
+    private void createNewPlayerShip(String shipName) {
+        Element playerXml = ((ShipBlueprint) blueprintManager.get(shipName)).loadElem(df);
+        player = new Ship(df, playerXml, this, null);
         player.loadDefaultContents(playerXml);
 
         for (Element elem : playerXml.getChildren("crewCount")) {
@@ -169,7 +162,7 @@ public class InGameState extends MainGame.GameState {
 
         hoveredRoom = null;
 
-        sounds.updateLoopedSounds(isPaused());
+        content.sounds.updateLoopedSounds(isPaused());
 
         Input in = container.getInput();
 
@@ -474,7 +467,6 @@ public class InGameState extends MainGame.GameState {
             // See doc/sector-map for information on these events
 
             Difficulty difficulty = Difficulty.NORMAL; // TODO set this properly
-            boolean isAE = true; // TODO set this properly
 
             String eventName;
 
@@ -489,7 +481,7 @@ public class InGameState extends MainGame.GameState {
 
                 if (currentBeacon.getEnvironmentType() == Beacon.EnvironmentType.NEBULA) {
                     eventName += "_NEBULA";
-                } else if (isAE) {
+                } else if (enableAdvancedEdition) {
                     eventName += "_DLC";
                 }
             }
@@ -530,7 +522,7 @@ public class InGameState extends MainGame.GameState {
             EnemyShipSpec spec = eventManager.getShip(event.getLoadShipName());
             // TODO use the proper difficulty
             int sector = currentBeacon.getSector().getSectorNumber();
-            setEnemy(generator.buildShip(this, spec, sector, Difficulty.NORMAL, null));
+            setEnemy(content.generator.buildShip(this, spec, sector, Difficulty.NORMAL, null));
 
             // Ships aren't hostile by default
             this.enemyIsHostile = false;
@@ -544,7 +536,7 @@ public class InGameState extends MainGame.GameState {
 
     // For use by the debug console
     public void debugSpawnShip(EnemyShipSpec spec, Difficulty difficulty, int sector, int seed) {
-        setEnemy(generator.buildShip(this, spec, sector, difficulty, seed));
+        setEnemy(content.generator.buildShip(this, spec, sector, difficulty, seed));
         currentBeacon.setShip(enemy);
         enemyIsHostile = true;
     }
@@ -608,12 +600,12 @@ public class InGameState extends MainGame.GameState {
 
     @NotNull
     public Image getImg(String name) {
-        Image img = images.get(name);
+        Image img = content.images.get(name);
         if (img != null)
             return img;
 
         img = df.readImage(name);
-        images.put(name, img);
+        content.images.put(name, img);
         return img;
     }
 
@@ -626,14 +618,14 @@ public class InGameState extends MainGame.GameState {
      */
     @NotNull
     public SILFontLoader getFont(String name) {
-        SILFontLoader font = fonts.get(name);
+        SILFontLoader font = content.fonts.get(name);
         if (font != null) {
             // Make a new instance sharing the font data
             return new SILFontLoader(font);
         }
 
         font = new SILFontLoader(df, df.get("fonts/" + name + ".font"));
-        fonts.put(name, font);
+        content.fonts.put(name, font);
         return font;
     }
 
@@ -648,11 +640,11 @@ public class InGameState extends MainGame.GameState {
     }
 
     public Animations getAnimations() {
-        return animations;
+        return content.animations;
     }
 
     public SoundManager getSounds() {
-        return sounds;
+        return content.sounds;
     }
 
     public RoomClickListener getClickEvent() {
@@ -664,7 +656,7 @@ public class InGameState extends MainGame.GameState {
     }
 
     public Translator getTranslator() {
-        return translator;
+        return content.translator;
     }
 
     public GameMap getGameMap() {
@@ -755,7 +747,7 @@ public class InGameState extends MainGame.GameState {
     }
 
     public CrewNameManager getNameManager() {
-        return nameManager;
+        return content.nameManager;
     }
 
     public DebugFlagManager getDebugFlags() {
@@ -920,5 +912,43 @@ public class InGameState extends MainGame.GameState {
         CURRENT_SECTOR,
         NEXT_SECTOR,
         TOO_LATE,
+    }
+
+    /**
+     * This represents all the parsed resources that can be pulled from a {@link Datafile}.
+     * <p>
+     * It's kept separate so that stuff like restarting the game (or starting a new game
+     * where the mods and Advanced Edition mode are the same) is fast.
+     */
+    public static class GameContent {
+        public final Datafile datafile;
+        public final boolean enableAdvancedEdition;
+
+        public final BlueprintManager blueprintManager;
+        public final EventManager eventManager;
+        public final CrewNameManager nameManager;
+        public final Animations animations;
+        public final SoundManager sounds;
+        public final Translator translator;
+        public final ShipGenerator generator;
+
+        // These are loaded on-demand
+        private final Map<String, Image> images = new HashMap<>();
+        private final Map<String, SILFontLoader> fonts = new HashMap<>();
+
+        public GameContent(Datafile datafile, boolean enableAdvancedEdition) {
+            this.datafile = datafile;
+            this.enableAdvancedEdition = enableAdvancedEdition;
+
+            blueprintManager = new BlueprintManager(datafile, enableAdvancedEdition);
+            animations = new Animations(datafile);
+            sounds = new SoundManager(datafile);
+            generator = new ShipGenerator(datafile, blueprintManager);
+            translator = new Translator(datafile, "en");
+            eventManager = new EventManager(datafile, translator, blueprintManager);
+            nameManager = new CrewNameManager(datafile);
+
+            blueprintManager.finishLoading(this);
+        }
     }
 }

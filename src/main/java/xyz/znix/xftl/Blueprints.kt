@@ -54,12 +54,12 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
     }
 
     // Required to bind sounds to the weapons
-    fun initialiseGame(game: InGameState) {
+    fun finishLoading(content: InGameState.GameContent) {
         for (bp in blueprints.values) {
             if (bp !is Blueprint)
                 continue
 
-            bp.finishSetup(game)
+            bp.finishSetup(content)
         }
     }
 
@@ -201,7 +201,7 @@ open class Blueprint(elem: Element) : IBlueprint {
      * Finish setting up this blueprint, loading any other
      * required resources (eg, sounds).
      */
-    open fun finishSetup(game: InGameState) {
+    open fun finishSetup(content: InGameState.GameContent) {
     }
 }
 

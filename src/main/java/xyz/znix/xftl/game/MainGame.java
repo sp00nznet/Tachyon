@@ -16,6 +16,8 @@ public class MainGame implements Game {
 
     private GameState currentState;
 
+    private InGameState.GameContent content;
+
     public MainGame(Datafile datafile, CommandLineArgs args) {
         this.vanillaDatafile = datafile;
         this.commandLineArgs = args;
@@ -25,19 +27,21 @@ public class MainGame implements Game {
     public void init(GameContainer gc) throws SlickException {
         this.gameContainer = gc;
 
+        // Load the game content immediately - this will work until
+        // we support mods or turning Advanced Edition on or off.
+        content = new InGameState.GameContent(vanillaDatafile, true);
+
         if (commandLineArgs.newGameShip != null) {
             // Switch right into a new game
             startNewGame(commandLineArgs.newGameShip);
         } else {
             SelectShipState state = new SelectShipState(vanillaDatafile, this);
-            state.init(gc);
             setCurrentState(state);
         }
     }
 
-    public void startNewGame(@NotNull String shipName) throws SlickException {
-        InGameState inGameState = new InGameState(vanillaDatafile, shipName);
-        inGameState.init(gameContainer);
+    public void startNewGame(@NotNull String shipName) {
+        InGameState inGameState = new InGameState(this, content, gameContainer, shipName);
         setCurrentState(inGameState);
     }
 
@@ -82,8 +86,6 @@ public class MainGame implements Game {
     }
 
     public static abstract class GameState extends InputAdapter {
-        public abstract void init(@NotNull GameContainer container) throws SlickException;
-
         public abstract void update(@NotNull GameContainer container, float delta) throws SlickException;
 
         public abstract void render(@NotNull GameContainer container, @NotNull Graphics g) throws SlickException;

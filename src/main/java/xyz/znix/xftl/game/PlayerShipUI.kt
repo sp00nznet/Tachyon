@@ -26,7 +26,7 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.random.Random
 
-class PlayerShipUI(df: Datafile, val translator: Translator, val ship: Ship, private val game: InGameState) {
+class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) {
     private val font = game.getFont("HL2", 2f)
     private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
     private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])

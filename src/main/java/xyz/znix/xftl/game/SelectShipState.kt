@@ -10,7 +10,8 @@ import xyz.znix.xftl.game.MainGame.GameState
 import xyz.znix.xftl.math.Point
 
 class SelectShipState(private val vanillaDF: Datafile, private val main: MainGame) : GameState() {
-    private lateinit var font: SILFontLoader
+
+    private val font = SILFontLoader(vanillaDF, vanillaDF["fonts/c&c.font"])
 
     private val baseShipNames = listOf(
         "PLAYER_SHIP_HARD",
@@ -34,10 +35,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     private val mousePos = Point(0, 0)
 
-    override fun init(container: GameContainer) {
-        font = SILFontLoader(vanillaDF, vanillaDF["fonts/c&c.font"])
-        font.scale = 1f
-
+    init {
         // TODO do this properly
         scanForShips(vanillaDF["data/blueprints.xml"])
         scanForShips(vanillaDF["data/dlcBlueprintsOverwrite.xml"])
