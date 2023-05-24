@@ -36,6 +36,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         val elem = spec.autoBlueprint.resolve(rand).let { it as MiscBlueprint }.loadElem(df)
 
         val ship = Ship(df, elem, sys, spec)
+        ship.loadDefaultContents(elem)
 
         ship.escapeHealth = spec.escapeHealth?.pick(rand) ?: 0
         ship.surrenderHealth = spec.surrenderHealth?.pick(rand) ?: 0

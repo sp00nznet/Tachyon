@@ -127,7 +127,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
     val maxReactorPower: Int get() = 25
 
     // The raw amount of reactor power purchased by the player
-    var purchasedReactorPower: Int = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()
+    var purchasedReactorPower: Int = 5
 
     // The amount of reactor power available for use by the player, taking ion storms, events and so on into account
     val reactorPower: Int get() = purchasedReactorPower
@@ -351,19 +351,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
 
             val room = rooms[node.getAttributeValue("room").toInt()]
 
-            val config = SystemInstallConfiguration(node, sys, room)
-            room.systemSlot = config
-
-            if (config.availableByDefault) {
-                room.setSystem(config)
-            }
-        }
-
-        // If we don't have an oxygen system, the rooms start with no oxygen by default
-        if (oxygen == null) {
-            for (room in rooms) {
-                room.oxygen = 0f
-            }
+            // Load the information about the available system into the room.
+            // This will be used when loading the system from a save, spawning
+            // a new ship, or buying a system at a store.
+            room.systemSlot = SystemInstallConfiguration(node, sys, room)
         }
 
         val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"]).rootElement
@@ -408,15 +399,41 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
             gibs += ShipGib(sys, this, node)
         }
 
-        for ((nextHardpoint, node) in shipNode.getChild("weaponList").children.withIndex()) {
-            val name = node.getAttributeValue("name")
-            val weapon = sys.blueprintManager[name] as AbstractWeaponBlueprint
+        // Set up the pathfinder after the layout is loaded
+        pathFinder = PathFinder(this)
+    }
 
-            hardpoints[nextHardpoint].weapon = weapon.buildInstance(this)
+    /**
+     * Loads the default version of the ship's stuff (system, blueprints, etc) - this
+     * is all stuff that the player can upgrade and needs to be saved.
+     */
+    fun loadDefaultContents(shipNode: Element) {
+        // Load the starting reactor power
+        purchasedReactorPower = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()
+
+        // Load the starting systems
+        for (room in rooms) {
+            val config = room.systemSlot ?: continue
+
+            if (!config.availableByDefault)
+                continue
+
+            room.setSystem(config)
         }
 
-        // Load the starting number of missiles
-        missilesCount = shipNode.getChild("weaponList")?.getAttributeValue("missiles")?.toInt() ?: 0
+        // Load all the weapon blueprints
+        val weaponsList = shipNode.getChild("weaponList")
+        if (weaponsList != null) {
+            for ((nextHardpoint, node) in weaponsList.children.withIndex()) {
+                val name = node.getAttributeValue("name")
+                val weapon = sys.blueprintManager[name] as AbstractWeaponBlueprint
+
+                hardpoints[nextHardpoint].weapon = weapon.buildInstance(this)
+            }
+
+            // Load the starting number of missiles
+            missilesCount = weaponsList.getAttributeValue("missiles")?.toInt() ?: 0
+        }
 
         // Load all the drone blueprints
         shipNode.getChild("droneList")?.let { droneList ->
@@ -440,8 +457,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: SlickGame, val spec: Enem
         }
         require(augments.size <= MAX_AUGMENTS) { "Ship $name has too many augments - ${augments.size}!" }
 
-        // Set up the pathfinder after the layout is loaded
-        pathFinder = PathFinder(this)
+        // If we don't have an oxygen system, the rooms start with no oxygen by default
+        if (oxygen == null) {
+            for (room in rooms) {
+                room.oxygen = 0f
+            }
+        }
     }
 
     fun render(g: Graphics, interiorVisible: Boolean, selected: Room?) {
