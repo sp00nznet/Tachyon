@@ -6,4 +6,8 @@ class BackupBattery(blueprint: SystemBlueprint, elem: Element) : SubSystem(bluep
     override val sortingType: SortingType get() = SortingType.BATTERY
 
     // TODO implement
+
+    companion object {
+        const val NAME = "battery"
+    }
 }

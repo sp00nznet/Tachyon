@@ -27,5 +27,7 @@ class Oxygen(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, 
          * The amount of oxygen below which crew take damage and the warning stripes appear.
          */
         const val OXYGEN_CRITICAL_LEVEL = 0.05f
+
+        const val NAME = "oxygen"
     }
 }

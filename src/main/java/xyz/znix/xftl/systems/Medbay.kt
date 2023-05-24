@@ -41,4 +41,8 @@ class Medbay(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint, 
             crew.health = min(crew.health + healing, crew.maxHealth)
         }
     }
+
+    companion object {
+        const val NAME = "medbay"
+    }
 }

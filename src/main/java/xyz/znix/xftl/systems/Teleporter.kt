@@ -171,5 +171,7 @@ class Teleporter(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepri
 
     companion object {
         private const val BASE_GLOW: Int = 6
+
+        const val NAME = "teleporter"
     }
 }

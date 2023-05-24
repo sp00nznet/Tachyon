@@ -542,4 +542,8 @@ class Hacking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
             return null
         }
     }
+
+    companion object {
+        const val NAME = "hacking"
+    }
 }

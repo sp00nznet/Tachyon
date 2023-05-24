@@ -45,4 +45,8 @@ class Piloting(blueprint: SystemBlueprint, elem: Element) : SubSystem(blueprint,
                 else -> error("Unsupported power level for piloting: $undamagedEnergy")
             }
         }
+
+    companion object {
+        const val NAME = "pilot"
+    }
 }

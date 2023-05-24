@@ -43,5 +43,7 @@ class Engines(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         // https://ftl.fandom.com/wiki/Engines
         private val evasions: Array<Int> = arrayOf(0, 5, 10, 15, 20, 25, 28, 31, 35)
         private val chargeRates = arrayOf(0f, 1f, 1.26f, 1.58f, 1.84f, 2.11f, 2.4f, 2.68f, 2.96f)
+
+        const val NAME = "engines"
     }
 }

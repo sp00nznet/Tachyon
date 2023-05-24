@@ -145,5 +145,7 @@ class Cloaking(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint
         const val COOLDOWN = 20f
         const val TIME_PER_POWER = 5f
         const val FADE_TIMER = 0.5f
+
+        const val NAME = "cloaking"
     }
 }

@@ -6,4 +6,8 @@ class MindControl(blueprint: SystemBlueprint, elem: Element) : MainSystem(bluepr
     override val sortingType: SortingType get() = SortingType.MIND_CONTROL
 
     // TODO implement
+
+    companion object {
+        const val NAME = "mind"
+    }
 }

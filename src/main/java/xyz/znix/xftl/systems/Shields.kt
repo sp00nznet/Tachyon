@@ -150,4 +150,8 @@ class Shields(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
 
         powerStateChanged()
     }
+
+    companion object {
+        const val NAME = "shields"
+    }
 }

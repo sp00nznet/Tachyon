@@ -280,6 +280,10 @@ class Weapons(blueprint: SystemBlueprint, elem: Element) : MainSystem(blueprint,
         // can draw it. It's a bit ugly, but keeps all the target-drawing stuff in one place.
         var beamAiming: SelectedTarget.BeamAim? = null
     }
+
+    companion object {
+        const val NAME = "weapons"
+    }
 }
 
 sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber: Int) {

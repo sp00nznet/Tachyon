@@ -167,4 +167,8 @@ class Drones(blueprint: SystemBlueprint, xml: Element) : MainSystem(blueprint, x
     }
 
     class DroneInfo(val type: DroneBlueprint, var instance: AbstractDrone? = null)
+
+    companion object {
+        const val NAME = "drones"
+    }
 }
