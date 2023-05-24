@@ -3,10 +3,23 @@
  */
 package xyz.znix.xftl;
 
-import xyz.znix.xftl.game.InGameState;
+import xyz.znix.xftl.game.MainGame;
 
 public class App {
     public static void main(String[] args) {
-        Utils.INSTANCE.startSlick(InGameState::new);
+        MainGame.CommandLineArgs cla = new MainGame.CommandLineArgs();
+
+        // Parse the command-line args
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.equals("--new-game")) {
+                cla.newGameShip = args[++i];
+            } else {
+                System.err.printf("Unknown command-line argument '%s'%n", arg);
+                System.exit(1);
+            }
+        }
+
+        Utils.INSTANCE.startSlick(datafile -> new MainGame(datafile, cla));
     }
 }

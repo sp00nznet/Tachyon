@@ -18,7 +18,6 @@ import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
-import xyz.znix.xftl.rendering.ShaderProgramme;
 import xyz.znix.xftl.sector.*;
 import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
@@ -26,8 +25,10 @@ import xyz.znix.xftl.systems.*;
 
 import java.util.*;
 
-public class InGameState extends BasicGame {
+public class InGameState extends MainGame.GameState {
     private static final ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(100, 150);
+
+    private final String playerShipName;
 
     private BlueprintManager blueprintManager;
     private EventManager eventManager;
@@ -84,13 +85,13 @@ public class InGameState extends BasicGame {
      */
     private final ArrayList<Event> delayedQuests = new ArrayList<>();
 
-    public InGameState(Datafile df) {
-        super("Subluminal");
+    public InGameState(Datafile df, String playerShipName) {
         this.df = df;
+        this.playerShipName = playerShipName;
     }
 
     @Override
-    public void init(GameContainer container) throws SlickException {
+    public void init(@NotNull GameContainer container) throws SlickException {
         boolean enableAdvancedEdition = true;
 
         blueprintManager = new BlueprintManager(df, enableAdvancedEdition);
@@ -144,7 +145,7 @@ public class InGameState extends BasicGame {
     }
 
     private void loadPlayerShip() {
-        Element playerXml = ((MiscBlueprint) blueprintManager.get("PLAYER_SHIP_HARD")).loadElem(df);
+        Element playerXml = ((ShipBlueprint) blueprintManager.get(playerShipName)).loadElem(df);
         player = new Ship(df, playerXml, this, null); // Kestral
         player.loadDefaultContents(playerXml);
 
@@ -158,13 +159,13 @@ public class InGameState extends BasicGame {
     }
 
     @Override
-    public void update(GameContainer container, int delta) throws SlickException {
+    public void update(@NotNull GameContainer container, float delta) throws SlickException {
         if (!isPaused())
-            updateGameState(delta / 1000f);
+            updateGameState(delta);
 
-        shipUI.updateAlways(delta / 1000f);
+        shipUI.updateAlways(delta);
 
-        asteroidAnimationTimer += delta / 1000f;
+        asteroidAnimationTimer += delta;
 
         hoveredRoom = null;
 
@@ -183,7 +184,7 @@ public class InGameState extends BasicGame {
         if (!debugConsoleVisible) {
             readKeyboardInput(in);
         } else {
-            debugConsole.update(container, delta / 1000f);
+            debugConsole.update(container, delta);
         }
 
         boolean rightClicked = false;
@@ -294,11 +295,7 @@ public class InGameState extends BasicGame {
     }
 
     @Override
-    public void render(GameContainer container, Graphics g) throws SlickException {
-        // When we use shaders, we have to transform from pixels to NDC
-        // If this is set wrong, all the text etc will be transformed wrong.
-        ShaderProgramme.getSHADER_SCREEN_SIZE().set(container.getWidth(), container.getHeight());
-
+    public void render(@NotNull GameContainer container, @NotNull Graphics g) throws SlickException {
         renderBackground(container, g);
 
         // Get the player's ship away from the top UI

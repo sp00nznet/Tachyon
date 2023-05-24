@@ -209,7 +209,8 @@ object Buttons {
         }
     }
 
-    class ShipButton(pos: IPoint, game: InGameState, private val cb: () -> Unit) : Button(game, pos, ConstPoint(60, 41)) {
+    class ShipButton(pos: IPoint, game: InGameState, private val cb: () -> Unit) :
+        Button(game, pos, ConstPoint(60, 41)) {
         private val imgPos = pos - ConstPoint(7, 7)
 
         private val imgOff = game.getImg("img/statusUI/top_ship_off.png")

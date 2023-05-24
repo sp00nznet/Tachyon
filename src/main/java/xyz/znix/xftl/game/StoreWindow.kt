@@ -9,7 +9,8 @@ import xyz.znix.xftl.draw
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
-class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, private val close: () -> Unit) : Window() {
+class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, private val close: () -> Unit) :
+    Window() {
 
     override val size = ConstPoint(587, 423)
     override val outlineImage get() = error("Store uses a pre-made background image")

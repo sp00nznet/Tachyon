@@ -33,7 +33,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             println("Generating ship from spec '${spec.name}' with seed $seedStr")
         }
 
-        val elem = spec.autoBlueprint.resolve(rand).let { it as MiscBlueprint }.loadElem(df)
+        val elem = spec.autoBlueprint.resolve(rand).let { it as ShipBlueprint }.loadElem(df)
 
         val ship = Ship(df, elem, sys, spec)
         ship.loadDefaultContents(elem)

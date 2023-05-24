@@ -13,8 +13,8 @@ import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.game.FTLSound
-import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
@@ -1133,19 +1133,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     }
 
     companion object {
-        private fun findDefaultShipElement(df: Datafile, name: String): Element? {
-            val blueprints = df.parseXML(df["data/blueprints.xml"])
-
-            for (node in blueprints.rootElement.getChildren("shipBlueprint")) {
-                if (node.getAttributeValue("name") != name)
-                    continue
-
-                return node
-            }
-
-            return null
-        }
-
         const val MAX_AUGMENTS: Int = 3
     }
 

@@ -77,6 +77,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
                 "systemBlueprint" -> buildSystemBlueprint(elem)
                 "crewBlueprint" -> buildCrewBlueprint(elem)
                 "augBlueprint" -> buildAugmentBlueprint(elem)
+                "shipBlueprint" -> ShipBlueprint(elem, file)
 
                 // Intentionally ignore itemBlueprint - this contains fuel, drones, and missiles.
                 // The name 'drones' conflicts with the drones system, and it's the only such name
@@ -84,7 +85,8 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
                 // ignore them.
                 "itemBlueprint" -> null
 
-                else -> buildBlueprint(elem, file)
+                // Ignore unknown blueprints
+                else -> null
             } ?: continue
 
             val bpName = elem.requireAttributeValue("name")
@@ -104,10 +106,6 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
         }
 
         return BlueprintList(items, this)
-    }
-
-    private fun buildBlueprint(elem: Element, file: FTLFile): IBlueprint {
-        return MiscBlueprint(elem, file)
     }
 
     private fun buildWeaponBlueprint(elem: Element): IBlueprint {
@@ -207,7 +205,10 @@ open class Blueprint(elem: Element) : IBlueprint {
     }
 }
 
-class MiscBlueprint(elem: Element, val file: FTLFile) : Blueprint(elem) {
+class ShipBlueprint(elem: Element, val file: FTLFile) : Blueprint(elem) {
+    val layout: String = elem.getAttributeValue("layout")
+    val img: String = elem.getAttributeValue("img")
+
     fun loadElem(df: Datafile): Element {
         val rootXml = df.parseXML(file)
 

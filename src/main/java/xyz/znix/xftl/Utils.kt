@@ -125,7 +125,7 @@ object Utils {
         GL11.glDisable(GL11.GL_STENCIL_TEST)
     }
 
-    fun startSlick(builder: (Datafile) -> BasicGame) {
+    fun startSlick(builder: (Datafile) -> Game) {
         val df = Datafile.createWithDefaultPath()
 
         // Automatically extract the LWJGL natives, if required
