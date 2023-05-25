@@ -48,7 +48,6 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             val target = this.target ?: return
 
-            timeCharged = 0f
             firingAnimationTimer += dt
 
             if (!hasFired && fireAnimationFrame >= animation.fireFrame) {

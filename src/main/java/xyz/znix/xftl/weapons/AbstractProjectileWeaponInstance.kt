@@ -33,8 +33,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
         firingAnimationTimer += dt
 
-        // Don't charge while firing
-        timeCharged = 0f
+        // Surprisingly, weapons charge while firing
 
         if (waitingToFire && fireAnimationFrame >= animation.fireFrame) {
             waitingToFire = false
