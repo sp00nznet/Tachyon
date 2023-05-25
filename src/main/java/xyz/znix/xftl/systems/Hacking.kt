@@ -242,11 +242,11 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
-        TODO("Not yet implemented")
+        throw UnsupportedOperationException("Not yet implemented")
     }
 
     override fun loadSystem(elem: Element, refs: RefLoader) {
-        TODO("Not yet implemented")
+        throw UnsupportedOperationException("Not yet implemented")
     }
 
     // Copied from Cloaking.CloakButton

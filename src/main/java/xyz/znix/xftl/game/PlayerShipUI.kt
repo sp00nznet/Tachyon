@@ -67,6 +67,7 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
             // Show the aiming-in-progress beam on the enemy ship
             ship.weapons!!.selectedTargets.beamAiming = value
         }
+    private val beamTargetingStartPos = Point(0, 0)
 
     // Set by render
     private var height: Int = 500
@@ -308,7 +309,8 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
             } else if (weapon is BeamBlueprint.BeamInstance) {
                 val mousePos = ConstPoint(gc.input.mouseX, gc.input.mouseY)
                 val shipPos = mousePos - game.enemyPosition
-                beamTargeting = SelectedTarget.BeamAim(weapon, id, game.enemy, mousePos, shipPos)
+                beamTargeting = SelectedTarget.BeamAim(weapon, id, game.enemy, shipPos)
+                beamTargetingStartPos.set(mousePos)
             }
         }
         game.clickEvent = selectWeaponClickEvent
@@ -342,9 +344,8 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
 
     private fun updateBeamTargeting(mouseX: Int, mouseY: Int) {
         val beam = beamTargeting ?: return
-        beam.hitRooms.clear()
 
-        val point = Point(beam.startMousePoint)
+        val point = Point(beamTargetingStartPos)
 
         val delta = ConstPoint(mouseX, mouseY) - point
 

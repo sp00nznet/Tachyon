@@ -1,10 +1,14 @@
 package xyz.znix.xftl.weapons
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
@@ -45,6 +49,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
                 // This stops us firing
                 target = null
 
+                // Save space in the savefile, as these aren't written if they're zero.
                 entryAngle = 0f
                 firingAnimationTimer = 0f
             } else {
@@ -101,6 +106,38 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         projectile.setInitialPath(drone.flightController.position, projectile.calculateTargetPosition())
 
         type.launchSounds?.get()?.play()
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addTagBoolIfTrue(elem, "waitingToFire", waitingToFire)
+        SaveUtil.addTagInt(elem, "shotsRemaining", shotsRemaining, 0)
+        SaveUtil.addTagFloat(elem, "entryAngle", entryAngle, 0f)
+        SaveUtil.addTagFloat(elem, "fireAnimationTimer", firingAnimationTimer, 0f)
+
+        if (target != null) {
+            val targetElem = Element("target")
+            SaveUtil.addAttr(targetElem, "ship", refs[target!!.ship])
+            SaveUtil.addAttrInt(targetElem, "roomId", target!!.id)
+            elem.addContent(targetElem)
+        }
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        waitingToFire = SaveUtil.getOptionalTagBool(elem, "waitingToFire") ?: false
+        shotsRemaining = SaveUtil.getOptionalTagInt(elem, "shotsRemaining") ?: 0
+        entryAngle = SaveUtil.getOptionalTagFloat(elem, "entryAngle") ?: 0f
+        firingAnimationTimer = SaveUtil.getOptionalTagFloat(elem, "fireAnimationTimer") ?: 0f
+
+        val targetElem = elem.getChild("target")
+        if (targetElem != null) {
+            val roomId = SaveUtil.getAttrInt(targetElem, "roomId")
+            val shipRef = SaveUtil.getAttr(targetElem, "ship")
+            refs.asyncResolve(Ship::class.java, shipRef) { target = it!!.rooms[roomId] }
+        }
     }
 
     private fun primeShot() {

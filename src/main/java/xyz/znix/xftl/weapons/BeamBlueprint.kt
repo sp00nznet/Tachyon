@@ -13,7 +13,9 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.math.RoomPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.SelectedTarget
 import kotlin.math.*
 import kotlin.random.Random
@@ -34,12 +36,14 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class BeamInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
-        var firing: Boolean = false
-            private set
+        val firing: Boolean get() = target != null
         private var firingTime: Float = 0f
         private var target: SelectedTarget.BeamAim? = null
         private val originPos = Point(0, 0)
-        private var lastRoomPos: RoomPoint? = null
+
+        // This is effectively a RoomPoint, but split up to make serialisation easier.
+        private var lastPos = Point(INVALID_CELL_POS)
+        private var lastRoomId: Int? = null
 
         private val contact: Animation
 
@@ -179,20 +183,23 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                     t += onePixelTime
                     targetShip.screenPosToShipPos(tmp)
 
-                    if (!tmp.equals(lastRoomPos?.shipPoint)) {
-                        val lastRoom = lastRoomPos?.room
-                        lastRoomPos = targetShip.shipToRoomPos(tmp)
+                    if (tmp != lastPos) {
+                        lastPos.set(tmp)
+                        val room = targetShip.shipToRoomPos(tmp)?.room
 
                         // Is this point outside the ship?
-                        if (lastRoomPos == null)
+                        if (room == null) {
+                            lastRoomId = null
                             continue
+                        }
 
                         val shieldLayers = targetShip.shields?.activeShields ?: 0
                         val beamPower = max(0, damage - shieldLayers)
 
                         // If we hit a new room, damage it
-                        if (lastRoom != lastRoomPos!!.room) {
-                            targetShip.damage(lastRoomPos!!.room, beamPower, beamPower, 0)
+                        if (lastRoomId != room.id) {
+                            lastRoomId = room.id
+                            targetShip.damage(room, beamPower, beamPower, 0)
                         }
 
                         // TODO deal crew damage - this is done on entry
@@ -202,7 +209,16 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                 firingTime = newFiringTime
                 if (firingTime >= fireDuration) {
-                    firing = false
+                    firingTime = 0f
+                    target = null
+
+                    // Without this, if the first room hit was the same room as the
+                    // last one hit on the previous shot, no damage would be dealt.
+                    lastPos.set(INVALID_CELL_POS)
+                    lastRoomId = null
+
+                    originPos.set(ConstPoint.ZERO)
+
                     targetShip.inboundBeams.remove(this)
                 }
 
@@ -217,13 +233,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             type.launchSounds?.get()?.play()
 
             timeCharged = 0f
-
-            firing = true
-            firingTime = 0f
-
-            // Without this, if the first room hit was the same room as the
-            // last one hit on the previous shot, no damage would be dealt.
-            lastRoomPos = null
 
             // Find the point the beam is going to come from. Only do this once per
             // shot so the beam doesn't bounce around.
@@ -249,13 +258,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         fun fireFromDrone(drone: CombatDrone, target: SelectedTarget.BeamAim, duration: Float) {
             this.target = target
             fireDuration = duration
-
-            firing = true
-            firingTime = 0f
-
-            // Without this, if the first room hit was the same room as the
-            // last one hit on the previous shot, no damage would be dealt.
-            lastRoomPos = null
         }
 
         // For use by drones, so they can angle themselves correctly.
@@ -273,6 +275,55 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 (distanceAcross * cos(target!!.angle)).toInt(),
                 (distanceAcross * sin(target!!.angle)).toInt()
             )
+        }
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            super.saveToXML(elem, refs)
+
+            SaveUtil.addTagFloat(elem, "firingTime", firingTime, 0f)
+            SaveUtil.addTagFloat(elem, "fireDuration", fireDuration, this@BeamBlueprint.fireDuration)
+
+            if (target != null) {
+                val targetElem = Element("target")
+                target!!.saveToXML(targetElem, refs)
+                elem.addContent(targetElem)
+            }
+
+            if (!(originPos posEq ConstPoint.ZERO)) {
+                SaveUtil.addPoint(elem, "originPos", originPos)
+            }
+
+            if (!(lastPos posEq INVALID_CELL_POS)) {
+                SaveUtil.addPoint(elem, "lastPos", lastPos)
+            }
+            SaveUtil.addTagInt(elem, "lastRoomId", lastRoomId, null)
+        }
+
+        override fun loadFromXML(elem: Element, refs: RefLoader) {
+            super.loadFromXML(elem, refs)
+
+            firingTime = SaveUtil.getOptionalTagFloat(elem, "firingTime") ?: 0f
+            fireDuration = SaveUtil.getOptionalTagFloat(elem, "fireDuration") ?: this@BeamBlueprint.fireDuration
+
+            val targetElem = elem.getChild("target")
+            if (targetElem != null) {
+                SelectedTarget.loadFromXML(ship, targetElem, refs) { target ->
+                    this.target = target as SelectedTarget.BeamAim
+
+                    // Without this, the beam graphic won't render on the target ship.
+                    // Note this only runs if the target is non-null.
+                    target.targetShip.inboundBeams.add(this)
+                }
+            }
+
+            if (elem.getChild("originPos") != null) {
+                originPos.set(SaveUtil.getPoint(elem, "originPos"))
+            }
+
+            if (elem.getChild("lastPos") != null) {
+                lastPos.set(SaveUtil.getPoint(elem, "lastPos"))
+            }
+            lastRoomId = SaveUtil.getOptionalTagInt(elem, "lastRoomId")
         }
     }
 
@@ -475,5 +526,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // A bright red and not completely opaque beam? This is largely guessed.
         private val BEAM_COLOUR_TRANSPARENT = Color(255, 30, 30, 220)
         private val BEAM_COLOUR_OPAQUE = Color(BEAM_COLOUR_TRANSPARENT).apply { a = 1f }
+
+        private val INVALID_CELL_POS = ConstPoint(-999, -999)
     }
 }

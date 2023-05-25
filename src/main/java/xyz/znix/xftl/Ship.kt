@@ -1161,6 +1161,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         for (system in systems) {
             refs.register(system, system.codename)
         }
+        for (hp in hardpoints) {
+            refs.register(hp.weapon, "weapon")
+        }
 
         // Build the XML
         SaveUtil.addObjectId(elem, refs, this)
@@ -1195,7 +1198,19 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         }
         elem.addContent(systemListElem)
 
-        // TODO serialise weapons and drones
+        // Serialise the weapons
+        val weaponsElem = Element("weapons")
+        for ((index, hardpoint) in hardpoints.withIndex()) {
+            val weapon = hardpoint.weapon ?: continue
+
+            val weaponElem = Element("weapon")
+            SaveUtil.addAttrInt(weaponElem, "hardpoint", index)
+            weapon.saveToXML(weaponElem, refs)
+            weaponsElem.addContent(weaponElem)
+        }
+        elem.addContent(weaponsElem)
+
+        // TODO serialise the drones
 
         // Serialise the doors. Most of the time there's nothing interesting
         // about them other than whether they're open or closed, but occasionally
@@ -1293,6 +1308,17 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         for ((index, levelStr) in oxygenLevels.withIndex()) {
             val room = rooms[index]
             room.oxygen = levelStr.toFloat()
+        }
+
+        // Deserialise the weapons
+        for (weaponElem in rootElem.getChild("weapons").getChildren("weapon")) {
+            val hardpointIndex = SaveUtil.getAttrInt(weaponElem, "hardpoint")
+            val type = SaveUtil.getAttr(weaponElem, "type")
+            val blueprint = sys.blueprintManager[type] as AbstractWeaponBlueprint
+
+            val weapon = blueprint.buildInstance(this)
+            weapon.loadFromXML(weaponElem, refs)
+            hardpoints[hardpointIndex].weapon = weapon
         }
 
         updateCrewReservedSlots()

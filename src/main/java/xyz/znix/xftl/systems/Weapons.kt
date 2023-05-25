@@ -10,6 +10,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
@@ -241,9 +242,26 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         return true
     }
 
-    // The weapons are all serialised individually by the ship
-    override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
-    override fun loadSystem(elem: Element, refs: RefLoader) = Unit
+    // The weapons are all serialised individually by the ship, we only
+    // have to serialise the selected targets.
+    override fun saveSystem(elem: Element, refs: ObjectRefs) {
+        for (target in selectedTargets) {
+            val targetElem = Element("target")
+            target.saveToXML(targetElem, refs)
+            elem.addContent(targetElem)
+        }
+    }
+
+    override fun loadSystem(elem: Element, refs: RefLoader) {
+        for (targetElem in elem.getChildren("target")) {
+            SelectedTarget.loadFromXML(ship, targetElem, refs) { target ->
+                when (target) {
+                    is SelectedTarget.RoomAim -> selectedTargets.targetRoom(target.weaponNumber, target.room)
+                    is SelectedTarget.BeamAim -> selectedTargets.targetBeam(target.weaponNumber, target)
+                }
+            }
+        }
+    }
 
     inner class TargetList {
         /**
@@ -294,21 +312,28 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 }
 
 sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber: Int) {
+    abstract val targetShip: Ship
+
     class RoomAim(val room: Room, weapon: IRoomTargetingWeapon, weaponNumber: Int) :
         SelectedTarget(weapon.asWeaponInstance(), weaponNumber) {
 
         val roomTargetingWeapon get() = weapon as IRoomTargetingWeapon
+        override val targetShip: Ship get() = room.ship
     }
 
     class BeamAim(
         weapon: BeamBlueprint.BeamInstance,
         weaponId: Int,
-        val targetShip: Ship,
-        val startMousePoint: IPoint,
+        override val targetShip: Ship,
         val startShipPoint: IPoint
     ) : SelectedTarget(weapon, weaponId) {
         val hitRooms = ArrayList<Room>()
         var angle: Float = 0f
+
+        /**
+         * True if the beam is valid. This is only ever false for the beam
+         * the player is currently aiming.
+         */
         var visible: Boolean = false
 
         val beamWeapon get() = weapon as BeamBlueprint.BeamInstance
@@ -317,6 +342,7 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
          * Update the rooms the beam will hit, based on [angle].
          */
         fun updateHitRooms() {
+            hitRooms.clear()
             visible = true
 
             val length = (weapon.type as BeamBlueprint).length
@@ -347,6 +373,68 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
                 lastRoom = roomPoint.room
 
                 hitRooms.add(roomPoint.room)
+            }
+        }
+    }
+
+    fun saveToXML(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addAttrInt(elem, "hardpoint", weaponNumber)
+        SaveUtil.addAttr(elem, "targetShip", refs[targetShip])
+
+        when (this) {
+            is RoomAim -> {
+                SaveUtil.addAttr(elem, "type", "room")
+                SaveUtil.addAttrInt(elem, "roomId", room.id)
+            }
+
+            is BeamAim -> {
+                require(visible)
+                SaveUtil.addAttr(elem, "type", "beam")
+                SaveUtil.addPoint(elem, "startPos", startShipPoint)
+                SaveUtil.addAttrFloat(elem, "angle", angle)
+            }
+        }
+    }
+
+
+    companion object {
+        fun loadFromXML(hostShip: Ship, elem: Element, refs: RefLoader, onLoaded: (SelectedTarget) -> Unit) {
+            val hardpointIndex = SaveUtil.getAttrInt(elem, "hardpoint")
+            val targetShipRef = SaveUtil.getAttr(elem, "targetShip")
+
+            val type = SaveUtil.getAttr(elem, "type")
+            when (type) {
+                "room" -> {
+                    val roomId = SaveUtil.getAttrInt(elem, "roomId")
+
+                    refs.asyncResolve(Ship::class.java, targetShipRef) { targetShip ->
+                        val weapon = hostShip.hardpoints[hardpointIndex].weapon!!
+                        require(weapon is IRoomTargetingWeapon)
+
+                        val room = targetShip!!.rooms[roomId]
+                        val target = RoomAim(room, weapon, hardpointIndex)
+                        onLoaded(target)
+                    }
+                }
+
+                "beam" -> {
+                    val startPos = SaveUtil.getPoint(elem, "startPos")
+                    val angle = SaveUtil.getAttrFloat(elem, "angle")
+
+                    refs.asyncResolve(Ship::class.java, targetShipRef) { targetShip ->
+                        val weapon = hostShip.hardpoints[hardpointIndex].weapon!!
+                        require(weapon is BeamBlueprint.BeamInstance)
+
+                        val target = BeamAim(weapon, hardpointIndex, targetShip!!, startPos)
+                        target.angle = angle
+                        target.updateHitRooms()
+                        onLoaded(target)
+                    }
+                }
+
+                else -> {
+                    error("Unknown weapon target type '$type'")
+                }
             }
         }
     }

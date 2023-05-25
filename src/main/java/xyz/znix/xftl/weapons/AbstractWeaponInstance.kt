@@ -1,9 +1,13 @@
 package xyz.znix.xftl.weapons
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.Weapons
 import kotlin.math.max
 
@@ -98,6 +102,27 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         }
 
         this.weapons = weapons
+    }
+
+    open fun saveToXML(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addObjectId(elem, refs, this)
+        SaveUtil.addAttr(elem, "type", type.name)
+        SaveUtil.addAttrBool(elem, "powered", isPowered)
+        SaveUtil.addAttrFloat(elem, "chargeTime", timeCharged)
+
+        val expectedSlide = if (isPowered) 1f else 0f
+        SaveUtil.addTagFloat(elem, "slideAnimation", slide, expectedSlide)
+    }
+
+    open fun loadFromXML(elem: Element, refs: RefLoader) {
+        SaveUtil.registerObjectId(elem, refs, this)
+        require(type.name == SaveUtil.getAttr(elem, "type"))
+
+        isPowered = SaveUtil.getAttrBool(elem, "powered")
+        timeCharged = SaveUtil.getAttrFloat(elem, "chargeTime")
+
+        val expectedSlide = if (isPowered) 1f else 0f
+        slide = SaveUtil.getOptionalTagFloat(elem, "slideAnimation") ?: expectedSlide
     }
 }
 

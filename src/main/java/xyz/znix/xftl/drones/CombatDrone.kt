@@ -129,7 +129,6 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
                     weapon,
                     -1, // Only used to pick the hardpoint for the regular firing rendering
                     targetShip,
-                    ConstPoint.ZERO, // The start mouse pos, only used by the player targeting UI
                     startPos
                 )
 
