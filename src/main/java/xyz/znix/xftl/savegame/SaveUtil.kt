@@ -34,10 +34,20 @@ object SaveUtil {
         parent.addContent(elem)
     }
 
+    fun addTagInt(parent: Element, newName: String, value: Int?, omitIfEqual: Int?) {
+        if (value != omitIfEqual)
+            addTagInt(parent, newName, value)
+    }
+
     fun addTagInt(parent: Element, newName: String, value: Int?) {
         val elem = Element(newName)
         elem.setAttribute("i", value?.toString() ?: "null")
         parent.addContent(elem)
+    }
+
+    fun addTagFloat(parent: Element, newName: String, value: Float?, omitIfEqual: Float?) {
+        if (value != omitIfEqual)
+            addTagFloat(parent, newName, value)
     }
 
     fun addTagFloat(parent: Element, newName: String, value: Float?) {
@@ -50,6 +60,11 @@ object SaveUtil {
         val elem = Element(newName)
         elem.setAttribute("b", value.toString())
         parent.addContent(elem)
+    }
+
+    fun addTagBoolIfTrue(parent: Element, newName: String, value: Boolean) {
+        if (value)
+            addTagBool(parent, newName, value)
     }
 
     fun addRef(parent: Element, newName: String, refs: ObjectRefs, value: Any?) {
@@ -96,6 +111,11 @@ object SaveUtil {
         return elem.getAttributeValue("v")
     }
 
+    fun getOptionalTagInt(parent: Element, name: String): Int? {
+        val elem = parent.getChild(name) ?: return null
+        return elem.getAttributeValue("i").toInt()
+    }
+
     fun getTagIntOrNull(parent: Element, name: String): Int? {
         val elem = parent.getChild(name) ?: error("Missing int tag '$name'")
         val value = elem.getAttributeValue("i")
@@ -106,6 +126,12 @@ object SaveUtil {
 
     fun getTagInt(parent: Element, name: String): Int {
         return getTagIntOrNull(parent, name) ?: error("Null int tag '$name'")
+    }
+
+    fun getOptionalTagFloat(parent: Element, name: String): Float? {
+        val elem = parent.getChild(name) ?: return null
+        val value = elem.getAttributeValue("f")
+        return value.toFloat()
     }
 
     fun getTagFloatOrNull(parent: Element, name: String): Float? {
@@ -121,9 +147,22 @@ object SaveUtil {
     }
 
     fun getTagBool(parent: Element, name: String): Boolean {
-        val elem = parent.getChild(name) ?: error("Missing boolean tag '$name'")
+        return getOptionalTagBool(parent, name) ?: error("Missing boolean tag '$name'")
+    }
+
+    fun getOptionalTagBool(parent: Element, name: String): Boolean? {
+        val elem = parent.getChild(name) ?: return null
         val value = elem.getAttributeValue("b")!!
         return value.toBoolean()
+    }
+
+    fun <T> getOptionalRef(parent: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit) {
+        if (parent.getChild(name) == null) {
+            callback(null)
+            return
+        }
+
+        getRef(parent, name, refs, type, callback)
     }
 
     fun <T> getRef(parent: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit) {
@@ -146,5 +185,49 @@ object SaveUtil {
     fun registerObjectId(elem: Element, refs: RefLoader, obj: Any) {
         val id = elem.getAttributeValue("oid") ?: error("Missing object ID!")
         refs.register(obj, id)
+    }
+
+    // Attribute setters
+
+    fun addAttr(elem: Element, name: String, value: String) {
+        elem.setAttribute(name, value)
+    }
+
+    fun addAttrFloat(elem: Element, name: String, value: Float?) {
+        elem.setAttribute(name, value?.toString() ?: "null")
+    }
+
+    fun addAttrInt(elem: Element, name: String, value: Int?) {
+        elem.setAttribute(name, value?.toString() ?: "null")
+    }
+
+    fun addAttrBool(elem: Element, name: String, value: Boolean) {
+        elem.setAttribute(name, value.toString())
+    }
+
+    // Attribute getters
+
+    fun getAttr(elem: Element, name: String): String {
+        return elem.getAttributeValue(name) ?: error("Missing string attribute '$name'")
+    }
+
+    fun getAttrBool(elem: Element, name: String): Boolean {
+        return elem.getAttributeValue(name)?.toBoolean() ?: error("Missing boolean attribute '$name'")
+    }
+
+    fun getAttrIntOrNull(elem: Element, name: String): Int? {
+        val value = elem.getAttributeValue(name) ?: error("Missing int attribute '$name'")
+        if (value == "null")
+            return null
+        return value.toInt()
+    }
+
+    fun getAttrInt(elem: Element, name: String): Int {
+        return getAttrIntOrNull(elem, name) ?: error("Non-nullable int attribute '$name' was null!")
+    }
+
+    fun getAttrFloat(elem: Element, name: String): Float {
+        val value = elem.getAttributeValue(name) ?: error("Missing float attribute '$name'")
+        return value.toFloat()
     }
 }

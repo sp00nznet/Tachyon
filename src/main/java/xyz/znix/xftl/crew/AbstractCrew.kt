@@ -891,12 +891,12 @@ abstract class AbstractCrew(
         // We can't use the normal point serialisation since
         // it doesn't support floating-point values.
         elem.addContent(Element("pos").also {
-            it.setAttribute("x", pixelSpaceX.toString())
-            it.setAttribute("y", pixelSpaceY.toString())
+            SaveUtil.addAttrFloat(it, "x", pixelSpaceX)
+            SaveUtil.addAttrFloat(it, "y", pixelSpaceY)
         })
 
-        SaveUtil.addTagFloat(elem, "health", health)
-        SaveUtil.addTag(elem, "mode", mode.name)
+        SaveUtil.addAttrFloat(elem, "health", health)
+        SaveUtil.addAttr(elem, "mode", mode.name)
 
         if (pathingTarget != null) {
             SaveUtil.addRoomPoint(elem, "pathingTarget", pathingTarget!!)
@@ -933,8 +933,8 @@ abstract class AbstractCrew(
         require(codename == elem.getAttributeValue("type")) { "Wrong crewmember type was spawned!" }
 
         val posElem = elem.getChild("pos")
-        pixelSpaceX = posElem.getAttributeValue("x").toFloat()
-        pixelSpaceY = posElem.getAttributeValue("y").toFloat()
+        pixelSpaceX = SaveUtil.getAttrFloat(posElem, "x")
+        pixelSpaceY = SaveUtil.getAttrFloat(posElem, "y")
 
         // Correctly set what room we're in - as soon as we start setting
         // target positions and stuff like that, we'll be updating the
@@ -942,8 +942,8 @@ abstract class AbstractCrew(
         room = room.ship.rooms.first { it.containsShipSpace(pixelPositionCentre) }
         positionChanged()
 
-        health = SaveUtil.getTagFloat(elem, "health")
-        mode = SlotType.valueOf(SaveUtil.getTag(elem, "mode"))
+        health = SaveUtil.getAttrFloat(elem, "health")
+        mode = SlotType.valueOf(SaveUtil.getAttr(elem, "mode"))
 
         if (elem.getChild("pathingTarget") != null) {
             pathingTarget = SaveUtil.getRoomPoint(elem, "pathingTarget", room.ship)

@@ -481,14 +481,19 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         elem.setAttribute("name", blueprint.name)
         SaveUtil.addObjectId(elem, refs, this)
 
-        SaveUtil.addTagInt(elem, "level", energyLevels)
-        SaveUtil.addTagInt(elem, "damage", damagedEnergyLevels)
-        SaveUtil.addTagInt(elem, "scriptedLimit", scriptedPowerLimit)
-        SaveUtil.addTagFloat(elem, "ionTimer", ionTimer)
-        SaveUtil.addTagInt(elem, "ionPowerLimit", ionPowerLimit)
-        SaveUtil.addRef(elem, "hackedBy", refs, hackedBy)
-        SaveUtil.addTagFloat(elem, "repairProgress", repairProgress)
-        SaveUtil.addTagFloat(elem, "sabotageProgress", sabotageProgress)
+        // Add the level as an attribute, since most of the other tags
+        // are optional we might be able to collapse the element (when
+        // it takes the form of <thing/> rather than <thing></thing>).
+        elem.setAttribute("level", energyLevels.toString())
+
+        SaveUtil.addTagInt(elem, "damage", damagedEnergyLevels, 0)
+        SaveUtil.addTagInt(elem, "scriptedLimit", scriptedPowerLimit, null)
+        SaveUtil.addTagFloat(elem, "ionTimer", ionTimer, 0f)
+        SaveUtil.addTagInt(elem, "ionPowerLimit", ionPowerLimit, null)
+        if (hackedBy != null)
+            SaveUtil.addRef(elem, "hackedBy", refs, hackedBy)
+        SaveUtil.addTagFloat(elem, "repairProgress", repairProgress, 0f)
+        SaveUtil.addTagFloat(elem, "sabotageProgress", sabotageProgress, 0f)
 
         saveSystem(elem, refs)
     }
@@ -497,14 +502,15 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         require(elem.getAttributeValue("name") == blueprint.name)
         SaveUtil.registerObjectId(elem, refs, this)
 
-        energyLevels = SaveUtil.getTagInt(elem, "level")
-        damagedEnergyLevels = SaveUtil.getTagInt(elem, "damage")
-        scriptedPowerLimit = SaveUtil.getTagIntOrNull(elem, "scriptedLimit")
-        ionTimer = SaveUtil.getTagFloat(elem, "ionTimer")
-        ionPowerLimit = SaveUtil.getTagIntOrNull(elem, "ionPowerLimit")
-        SaveUtil.getRef(elem, "hackedBy", refs, Hacking::class.java) { hackedBy = it }
-        repairProgress = SaveUtil.getTagFloat(elem, "repairProgress")
-        sabotageProgress = SaveUtil.getTagFloat(elem, "sabotageProgress")
+        energyLevels = elem.getAttributeValue("level")!!.toInt()
+
+        damagedEnergyLevels = SaveUtil.getOptionalTagInt(elem, "damage") ?: 0
+        scriptedPowerLimit = SaveUtil.getOptionalTagInt(elem, "scriptedLimit")
+        ionTimer = SaveUtil.getOptionalTagFloat(elem, "ionTimer") ?: 0f
+        ionPowerLimit = SaveUtil.getOptionalTagInt(elem, "ionPowerLimit")
+        SaveUtil.getOptionalRef(elem, "hackedBy", refs, Hacking::class.java) { hackedBy = it }
+        repairProgress = SaveUtil.getOptionalTagFloat(elem, "repairProgress") ?: 0f
+        sabotageProgress = SaveUtil.getOptionalTagFloat(elem, "sabotageProgress") ?: 0f
 
         loadSystem(elem, refs)
 

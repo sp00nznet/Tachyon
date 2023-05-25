@@ -254,13 +254,21 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         // This assertion lets us modify the sectors array in the constructor
         require(sectors is ArrayList)
 
-        for (columnElem in elem.getChildren("column")) {
+        val postLoad = ArrayList<(GameMap) -> Unit>()
+
+        for ((columnNumber, columnElem) in elem.getChildren("column").withIndex()) {
             val column = ArrayList<SectorInfo>()
-            for (sectorElem in columnElem.getChildren("sectorInfo")) {
-                val sector = deserialiseSectorInfo(sectorElem, refs)
+            for ((columnIndex, sectorElem) in columnElem.getChildren("sectorInfo").withIndex()) {
+                val sector = deserialiseSectorInfo(sectorElem, refs, columnNumber, columnIndex, postLoad)
                 column += sector
             }
             sectors += column
+        }
+
+        // This is required to link up all the neighbouring sectors, since they're
+        // specified by their index in the next column.
+        for (fn in postLoad) {
+            fn(this)
         }
     }
 
@@ -333,33 +341,37 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
 
         fun saveToXML(elem: Element, refs: ObjectRefs) {
             SaveUtil.addObjectId(elem, refs, this)
-            elem.setAttribute("columnNumber", columnNumber.toString())
-            elem.setAttribute("columnIndex", columnIndex.toString())
             elem.setAttribute("type", type.name)
             elem.setAttribute("class", sectorClass.name)
 
-            for (next in nextSectors) {
-                val nextElem = Element("next")
-                nextElem.setAttribute("rid", refs[next])
-                elem.addContent(nextElem)
-            }
+            // There's a  lot of SectorInfo objects, so put the next sectors
+            // in attributes to save space.
+            require(nextSectors.size <= 2)
+            SaveUtil.addAttrInt(elem, "next1", nextSectors.getOrNull(0)?.columnIndex)
+            SaveUtil.addAttrInt(elem, "next2", nextSectors.getOrNull(1)?.columnIndex)
         }
     }
 
     // Since the sector map relies on the identity of SectorInfo objects,
     // other classes shouldn't be deserialising their own copies.
-    private fun deserialiseSectorInfo(elem: Element, refs: RefLoader): SectorInfo {
-        val columnNumber = elem.getAttributeValue("columnNumber").toInt()
-        val columnIndex = elem.getAttributeValue("columnIndex").toInt()
+    private fun deserialiseSectorInfo(
+        elem: Element, refs: RefLoader,
+        columnNumber: Int, columnIndex: Int,
+        postLoad: ArrayList<(GameMap) -> Unit>
+    ): SectorInfo {
         val typeName = elem.getAttributeValue("type")
         val sectorClass = SectorClass.valueOf(elem.getAttributeValue("class"))
 
         val type = sectorTypes[typeName] ?: error("Missing sector type '$typeName'")
         val sector = SectorInfo(columnNumber, columnIndex, type, sectorClass)
 
-        for (nextElem in elem.getChildren("next")) {
-            val objectId = nextElem.getAttributeValue("rid")
-            refs.asyncResolve(SectorInfo::class.java, objectId) { sector.nextSectors.add(it!!) }
+        for (i in 1..2) {
+            // The index in the column of the next beacon is specified
+            val index = SaveUtil.getAttrIntOrNull(elem, "next$i") ?: continue
+            postLoad += {
+                val nextColumn = it.sectors[columnNumber + 1]
+                sector.nextSectors += nextColumn[index]
+            }
         }
 
         SaveUtil.registerObjectId(elem, refs, sector)

@@ -353,6 +353,40 @@ class Sector {
             elem.addContent(beaconElem)
         }
 
+        // Serialise all the neighbour connections between beacons. Since there's
+        // a huge number of these, we process them here rather than inside the
+        // beacons themselves. This lets us use a much more compact (particularly
+        // in terms of number of lines) format, which makes the pretty-printed
+        // save state easier to read.
+        val indexes = HashMap<Beacon, Int>()
+        for ((i, beacon) in beacons.withIndex()) {
+            indexes[beacon] = i
+        }
+
+        val serialisedNeighbours = StringBuilder()
+        for ((i, beacon) in beacons.withIndex()) {
+            // Only include neighbours that come later in the beacons
+            // list - if they come earlier, we'll already have specified
+            // this pair of neighbours when serialising the other one.
+            val neighbours = beacon.neighbours.filter { i < indexes.getValue(it) }
+
+            if (neighbours.isEmpty())
+                continue
+
+            serialisedNeighbours.append(i)
+            for (neighbour in neighbours) {
+                serialisedNeighbours.append(',')
+                serialisedNeighbours.append(indexes.getValue(neighbour))
+            }
+
+            serialisedNeighbours.append(' ')
+        }
+
+        val neighboursElem = Element("neighbours")
+        serialisedNeighbours.trim()
+        neighboursElem.addContent(serialisedNeighbours.toString())
+        elem.addContent(neighboursElem)
+
         // The game needs to make a reference to the player's current beacon.
         return refs
     }
@@ -371,10 +405,40 @@ class Sector {
         val beaconRefs = RefLoader()
 
         // Load all the beacons
+        val neighboursFor = HashMap<Beacon, ArrayList<Beacon>>()
         for (beaconElem in elem.getChildren("beacon")) {
-            val beacon = Beacon.loadFromXML(beaconElem, refs, this, game)
+            val beacon = Beacon.loadFromXML(beaconElem, refs, game)
             SaveUtil.registerObjectId(beaconElem, beaconRefs, beacon)
             beacons += beacon
+            neighboursFor[beacon] = ArrayList()
+        }
+
+        // Calculate all the neighbours for each beacon
+        val neighbourTuples = elem.getChildTextTrim("neighbours").split(' ', '\t')
+        for (part in neighbourTuples) {
+            // Each entry in the neighbours list of a comma-separated list of beacon indexes.
+            // The first beacon in each entry is then connected to all the subsequent beacons.
+            val partBeacons = part.split(',').map { beacons[it.toInt()] }
+            val mainBeacon = partBeacons[0]
+            val neighbours = partBeacons.subList(1, partBeacons.size)
+
+            val mainNeighbours = neighboursFor.getValue(mainBeacon)
+
+            for (neighbour in neighbours) {
+                val neighbourNeighbours = neighboursFor.getValue(neighbour)
+
+                // Make sure this connection is unique
+                require(!mainNeighbours.contains(neighbour))
+                require(!neighbourNeighbours.contains(mainBeacon))
+
+                mainNeighbours.add(neighbour)
+                neighbourNeighbours.add(mainBeacon)
+            }
+        }
+
+        for (beacon in beacons) {
+            val neighbours = neighboursFor.getValue(beacon)
+            beacon.bindSector(this, neighbours)
         }
 
         beaconRefs.switchToResolveMode()

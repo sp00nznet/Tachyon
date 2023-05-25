@@ -149,26 +149,20 @@ class Beacon(
     fun saveToXML(elem: Element, refs: ObjectRefs) {
         SaveUtil.addObjectId(elem, refs, this)
 
-        SaveUtil.addPoint(elem, "pos", pos)
-        SaveUtil.addTagBool(elem, "isExit", isExit)
-        SaveUtil.addTagBool(elem, "visited", visited)
-        SaveUtil.addTagBool(elem, "hasStore", hasStore)
-        SaveUtil.addTagBool(elem, "hasQuest", hasQuest)
+        SaveUtil.addAttrInt(elem, "x", pos.x)
+        SaveUtil.addAttrInt(elem, "y", pos.y)
+
+        SaveUtil.addAttrBool(elem, "visited", visited)
+        SaveUtil.addTagBoolIfTrue(elem, "isExit", isExit)
+        SaveUtil.addTagBoolIfTrue(elem, "hasStore", hasStore)
+        SaveUtil.addTagBoolIfTrue(elem, "hasQuest", hasQuest)
 
         // Save the event by name - events are immutable and are
         // loaded from the game's XML, so we only need to uniquely
         // identify them, not store all their data.
-        SaveUtil.addTag(elem, "eventId", event.deserialisationId)
+        SaveUtil.addAttr(elem, "eventId", event.deserialisationId)
 
         // TODO save the store data
-
-        // Save references to the neighbour beacons, so we can link
-        // those back up afterwards.
-        for (neighbour in neighbours) {
-            val neighbourElem = Element("neighbour")
-            neighbourElem.setAttribute("idr", refs[neighbour])
-            elem.addContent(neighbourElem)
-        }
 
         // Save the power limits
         for ((system, limit) in powerLimitEffects) {
@@ -185,38 +179,36 @@ class Beacon(
             ship!!.saveToXML(shipElem, refs)
             elem.addContent(shipElem)
         }
+
+        // Note we don't save the neighbours - the sector does that using a more
+        // compact encoding than what we can easily use.
     }
 
     companion object Deserialiser {
-        fun loadFromXML(elem: Element, refs: RefLoader, sector: Sector, game: InGameState): Beacon {
+        fun loadFromXML(elem: Element, refs: RefLoader, game: InGameState): Beacon {
             // To create our beacon, we need to load a few things first.
             // Everything else goes in mutable variables, so we can set them later.
-            val eventId = SaveUtil.getTag(elem, "eventId")
+            val eventId = SaveUtil.getAttr(elem, "eventId")
             val event = game.eventManager.getByDeserialisationId(eventId)
-            val pos = SaveUtil.getPoint(elem, "pos")
-            val isExit = SaveUtil.getTagBool(elem, "isExit")
+            val isExit = SaveUtil.getOptionalTagBool(elem, "isExit") ?: false
+
+            val pos = ConstPoint(
+                SaveUtil.getAttrInt(elem, "x"),
+                SaveUtil.getAttrInt(elem, "y")
+            )
 
             // This gets us all the information we need to create and start
             // populating our beacon.
             val beacon = Beacon(pos, event, isExit)
             SaveUtil.registerObjectId(elem, refs, beacon)
 
-            beacon.visited = SaveUtil.getTagBool(elem, "visited")
-            beacon.hasStore = SaveUtil.getTagBool(elem, "hasStore")
-            beacon.hasQuest = SaveUtil.getTagBool(elem, "hasQuest")
+            beacon.visited = SaveUtil.getAttrBool(elem, "visited")
+            beacon.hasStore = SaveUtil.getOptionalTagBool(elem, "hasStore") ?: false
+            beacon.hasQuest = SaveUtil.getOptionalTagBool(elem, "hasQuest") ?: false
 
             // Deserialise the enemy ship, if present
             val shipElem = elem.getChild("enemyShip")
             beacon.ship = shipElem?.let { game.deserialiseSingleShip(it, refs) }
-
-            val neighbours = ArrayList<Beacon>()
-            for (neighbourElem in elem.getChildren("neighbour")) {
-                val objectId = neighbourElem.getAttributeValue("idr")
-                refs.asyncResolve(Beacon::class.java, objectId) { neighbours += it!! }
-            }
-
-            beacon.sector = sector
-            beacon.neighbours = neighbours
 
             for (powerLimit in elem.getChildren("powerLimit")) {
                 val system = powerLimit.getAttributeValue("system")
