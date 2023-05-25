@@ -8,7 +8,11 @@ import org.newdawn.slick.Graphics;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
+import xyz.znix.xftl.devutil.DebugConsole;
+import xyz.znix.xftl.devutil.DebugFlagManager;
 import xyz.znix.xftl.rendering.ShaderProgramme;
+
+import java.util.List;
 
 public class MainGame implements Game {
     private final Datafile vanillaDatafile;
@@ -78,6 +82,47 @@ public class MainGame implements Game {
     public String getTitle() {
         // TODO come up with a proper name
         return "Codename XFTL";
+    }
+
+    /**
+     * Save the current game to XML, and re-load it.
+     * <p>
+     * This is only for development use, to find bugs in the serialisation logic!
+     */
+    public boolean doSaveLoadGame() {
+        InGameState oldGame = (InGameState) currentState;
+        InGameState newGame;
+
+        Document savedGame;
+        try {
+            savedGame = oldGame.saveGameState();
+            newGame = new InGameState(this, content, gameContainer, savedGame);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+
+        // Only change the state once we've done the save-load, so if
+        // there's an exception while loading the saved state we stay
+        // on the old state for ease of debugging.
+        setCurrentState(newGame);
+
+        // Copy over the debug console history and debug flags.
+        // It'd be annoying to lose those, since they're not supposed
+        // to be saved.
+        newGame.setPaused(oldGame.isPaused());
+
+        DebugConsole oldDebug = oldGame.getDebugConsole();
+        DebugConsole newDebug = newGame.getDebugConsole();
+        newDebug.copyStateFrom(oldDebug);
+
+        List<DebugFlagManager.DebugFlag> oldFlags = oldGame.getDebugFlags().getAll();
+        List<DebugFlagManager.DebugFlag> newFlags = newGame.getDebugFlags().getAll();
+        for (int i = 0; i < newFlags.size(); i++) {
+            newFlags.get(i).setSet(oldFlags.get(i).getSet());
+        }
+
+        return true;
     }
 
     public GameState getCurrentState() {

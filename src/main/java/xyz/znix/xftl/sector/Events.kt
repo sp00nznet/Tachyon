@@ -105,7 +105,7 @@ class Event(
             // Special-case the crew-removing event used in STATION_SICK
             if (count < 0) {
                 for (i in 0 until -count) {
-                    removedCrew.add(RemoveCrew(false, null, null, race == "traitor"))
+                    removedCrew.add(RemoveCrew(false, null, null, race == "traitor", this))
                 }
             }
         }
@@ -115,7 +115,7 @@ class Event(
             val race = killCrew.getChildText("class")
             val clone = killCrew.getChildText("clone")!!.toBoolean()
             val cloneText = loadText(killCrew.getChild("text"))
-            removedCrew.add(RemoveCrew(clone, cloneText, race, false))
+            removedCrew.add(RemoveCrew(clone, cloneText, race, false, this))
         }
 
         val boardersElem = elem.getChild("boarders")
@@ -403,7 +403,14 @@ class RemoveCrew(
      *
      * This is actually set by <crewMember> not <removeCrew>.
      */
-    val turnHostile: Boolean
+    val turnHostile: Boolean,
+
+    /**
+     * The event this object belongs to.
+     *
+     * This is used to uniquely identify a RemoveCrew object during deserialisation.
+     */
+    val event: Event
 )
 
 class EventHullDamage(
@@ -458,7 +465,7 @@ class EventStatus(
     enum class Target { PLAYER, ENEMY }
 }
 
-class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element) {
+class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element, val deserialisationId: String) {
     /**
      * Event to be triggered when this choice is taken. This element is required. One of:
      * A complete event, as detailed above (which can again contain choices).

@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game
 
+import org.jdom2.Element
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
@@ -15,6 +16,8 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.BeamBlueprint
@@ -817,14 +820,8 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
         var hasImmediatelyClosed = false
 
         currentWindow = DialogueWindow(game, ship, event) {
-            currentWindow = null
             hasImmediatelyClosed = true
-
-            // If a store was made available by the dialogue, open it
-            if (game.currentBeacon.hasStore && !storeAlreadyOpened) {
-                updateButtons() // Make the store button show up
-                showStoreWindow()
-            }
+            eventDialogueClosed()
         }
 
         // It's possible for DialogueWindow to call close in its constructor,
@@ -837,6 +834,16 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
         // close without any text set.
         if (hasImmediatelyClosed) {
             currentWindow = null
+        }
+    }
+
+    private fun eventDialogueClosed() {
+        currentWindow = null
+
+        // If a store was made available by the dialogue, open it
+        if (game.currentBeacon.hasStore && !storeAlreadyOpened) {
+            updateButtons() // Make the store button show up
+            showStoreWindow()
         }
     }
 
@@ -933,6 +940,24 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
     fun closeAllDoors() {
         for (door in ship.doors) {
             door.open = false
+        }
+    }
+
+    fun saveToXML(elem: Element, refs: ObjectRefs) {
+        val window = currentWindow
+
+        // If the player is currently playing through an event, save that.
+        if (window is DialogueWindow) {
+            val dialogueElem = Element("dialogue")
+            window.saveToXML(dialogueElem, refs)
+            elem.addContent(dialogueElem)
+        }
+    }
+
+    fun loadFromXML(elem: Element, refs: RefLoader) {
+        val dialogueElem = elem.getChild("dialogue")
+        if (dialogueElem != null) {
+            currentWindow = DialogueWindow(game, ship, dialogueElem, refs, this::eventDialogueClosed)
         }
     }
 

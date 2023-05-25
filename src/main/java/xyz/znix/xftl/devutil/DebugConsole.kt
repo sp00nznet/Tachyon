@@ -173,6 +173,13 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
         }
     }
 
+    fun copyStateFrom(other: DebugConsole) {
+        history.addAll(other.history)
+        lines.addAll(other.lines)
+        input = other.input
+        flashTimer = other.flashTimer
+    }
+
     /**
      * If the user has scrolled back to a previous command, copy
      * that to the buffer.
@@ -763,26 +770,9 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
     }
 
     private fun cmdSaveLoad(@Suppress("UNUSED_PARAMETER") args: List<String>) {
-        val doc = try {
-            game.saveGameState()
-        } catch (ex: Exception) {
-            lines.add("Exception saving game (more in stdout): $ex")
-            ex.printStackTrace()
-            return
-        }
-
-        game.mainGame.loadSavedGame(doc)
-
-        // Copy over the debug console history and debug flags.
-        // It'd be annoying to lose those, since they're not supposed
-        // to be saved.
-        val newGame = game.mainGame.currentState as InGameState
-
-        val newDebug = newGame.debugConsole
-        newDebug.history.addAll(history)
-
-        for ((i, flag) in game.debugFlags.all.withIndex()) {
-            newGame.debugFlags.all[i].set = flag.set
+        val successful = game.mainGame.doSaveLoadGame()
+        if (!successful) {
+            lines.add("Failed to reload game, more details are in the console.")
         }
     }
 

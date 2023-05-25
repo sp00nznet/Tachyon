@@ -925,7 +925,7 @@ abstract class AbstractCrew(
         }
     }
 
-    fun loadFromXML(elem: Element, refs: RefLoader) {
+    open fun loadFromXML(elem: Element, refs: RefLoader) {
         SaveUtil.registerObjectId(elem, refs, this)
 
         // The 'type' property is already read by the class that spawns us,

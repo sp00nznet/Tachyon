@@ -81,6 +81,8 @@ public class InGameState extends MainGame.GameState {
 
     private float asteroidAnimationTimer;
 
+    private boolean isCurrentlyLoadingSave;
+
     /**
      * The quest events that couldn't be fit in the current sector,
      * and were delayed to the next one.
@@ -120,13 +122,19 @@ public class InGameState extends MainGame.GameState {
             throw new IllegalArgumentException("Cannot load a game with content that doesn't match it's AE state!");
         }
 
-        Beacon beacon = loadGameState(root);
-        shipUI = new PlayerShipUI(df, player, this);
+        isCurrentlyLoadingSave = true;
+        loadGameState(root);
+        isCurrentlyLoadingSave = false;
 
-        // This uses shipUI, so it has to come after it.
-        setCurrentBeacon(beacon);
+        // This just loads stuff from XML, we don't need to serialise it
+        lootPool = new LootPool(blueprintManager, currentBeacon.getSector().getType());
 
+        // Load in the previous enemy
         // FIXME keep crew-killed enemy ships around, currently they disappear
+        enemyIsHostile = true;
+        setEnemy(currentBeacon.getShip());
+
+        loadBeaconEnvironment();
     }
 
     private InGameState(MainGame mainGame, GameContent content, GameContainer container) {
@@ -251,6 +259,17 @@ public class InGameState extends MainGame.GameState {
             }
         }
 
+        updateClickEvent(container);
+
+        // Hammer away at the serialisation logic, if that flag is set.
+        // Only do it while un-paused, since we can't properly use
+        // the console if we're constantly reloading.
+        if (debugFlags.getContinuousSaveLoad().getSet() && !isPaused()) {
+            mainGame.doSaveLoadGame();
+        }
+    }
+
+    private void updateClickEvent(GameContainer container) {
         // Handle stuff like weapon targeting where the player
         // highlights a room on the enemy (or their) ship.
         if (clickEvent == null)
@@ -522,6 +541,13 @@ public class InGameState extends MainGame.GameState {
 
         currentBeacon.setVisited(true);
 
+        // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
+
+        // Load the visual stuff like this beacon's background
+        loadBeaconEnvironment();
+    }
+
+    private void loadBeaconEnvironment() {
         background = eventManager.getImageList("BACKGROUND").get(this);
         planet = eventManager.getImageList("PLANET").get(this);
 
@@ -543,8 +569,6 @@ public class InGameState extends MainGame.GameState {
         // TODO show the flagship rebel/fed mixed fight backgrounds
 
         // TODO load image settings from text tags
-
-        // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
     }
 
     public void loadEventShip(Event event) {
@@ -667,10 +691,25 @@ public class InGameState extends MainGame.GameState {
         // is at the same beacon.
         SaveUtil.INSTANCE.addRef(root, "currentBeacon", sectorRefs, currentBeacon);
 
+        // Save the list of visited sectors, which is used by the sector map.
+        Element visitedSectorsXML = new Element("visitedSectors");
+        for (GameMap.SectorInfo visited : visitedSectors) {
+            String ref = sectorRefs.get(visited);
+            Element visitedElem = new Element("sectorInfo");
+            visitedElem.setAttribute("idr", ref);
+            visitedSectorsXML.addContent(visitedElem);
+        }
+        root.addContent(visitedSectorsXML);
+
+        // If the player saves while they're currently in the event UI, save that.
+        Element shipUiXML = new Element("shipUI");
+        shipUI.saveToXML(shipUiXML, refs);
+        root.addContent(shipUiXML);
+
         return new Document(root);
     }
 
-    private Beacon loadGameState(Element root) {
+    private void loadGameState(Element root) {
         RefLoader refs = new RefLoader();
 
         // Load the player ship
@@ -692,13 +731,22 @@ public class InGameState extends MainGame.GameState {
         Element sectorXML = root.getChild("currentSector");
         new Sector(sectorXML, refs, this, mapRefLoader);
 
+        Element shipUiXML = root.getChild("shipUI");
+        shipUI = new PlayerShipUI(df, player, this);
+        shipUI.loadFromXML(shipUiXML, refs);
+
         // This resolves any async-resolved object references.
         refs.switchToResolveMode();
 
+        // Load the list of visited sectors, which is used by the sector map.
+        for (Element visitedElem : root.getChild("visitedSectors").getChildren("sectorInfo")) {
+            String ref = visitedElem.getAttributeValue("idr");
+            GameMap.SectorInfo visited = mapRefLoader.resolve(GameMap.SectorInfo.class, ref);
+            visitedSectors.add(visited);
+        }
+
         // We can finally load out our current beacon.
-        // We can't actually switch to it - the ship UI has to be opened
-        // first - but our caller will do that.
-        return SaveUtil.INSTANCE.getRefImmediate(root, "currentBeacon", refs, Beacon.class);
+        currentBeacon = SaveUtil.INSTANCE.getRefImmediate(root, "currentBeacon", refs, Beacon.class);
     }
 
     /**
@@ -718,6 +766,15 @@ public class InGameState extends MainGame.GameState {
         ship.loadFromXml(shipElement, refs);
 
         return ship;
+    }
+
+    /**
+     * Set whether the game is paused or not.
+     * <p>
+     * This is only for debugging use!
+     */
+    public void setPaused(boolean paused) {
+        this.paused = paused;
     }
 
     @NotNull
@@ -872,6 +929,10 @@ public class InGameState extends MainGame.GameState {
         return content.nameManager;
     }
 
+    public GameContent getContent() {
+        return content;
+    }
+
     public DebugFlagManager getDebugFlags() {
         return debugFlags;
     }
@@ -891,6 +952,16 @@ public class InGameState extends MainGame.GameState {
      */
     public MainGame getMainGame() {
         return mainGame;
+    }
+
+    /**
+     * True if stuff is currently being deserialised.
+     * <p>
+     * It's generally a bit ugly to use this, but it's an easy
+     * way to stop stuff from happening while the game is being loaded.
+     */
+    public boolean isCurrentlyLoadingSave() {
+        return isCurrentlyLoadingSave;
     }
 
     @NotNull

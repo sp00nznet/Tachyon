@@ -1,9 +1,13 @@
 package xyz.znix.xftl.game
 
+import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.game.InGameState.GameContent
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.AddCrew
 import xyz.znix.xftl.sector.EventHullDamage
 import xyz.znix.xftl.sector.EventSystemUpgrade
@@ -134,6 +138,120 @@ class ResourceSet() : Map<Resource, Int> {
         this.intruders += other.intruders
         this.damage += other.damage
         this.modifyPursuit += other.modifyPursuit
+    }
+
+    fun saveToXML(elem: Element, refs: ObjectRefs) {
+        for ((name, count) in entries) {
+            elem.setAttribute(name.name, count.toString())
+        }
+
+        for (item in items) {
+            val itemElem = Element("item")
+            itemElem.setAttribute("name", item.name)
+            elem.addContent(itemElem)
+        }
+
+        for (crewMember in crew) {
+            val crewElem = Element("addCrew")
+            crewElem.setAttribute("race", crewMember.race.name)
+            crewElem.setAttribute("humanName", crewMember.name)
+            elem.addContent(crewElem)
+        }
+
+        for (crewMember in intruders) {
+            val crewElem = Element("intruder")
+            crewElem.setAttribute("race", crewMember.race.name)
+            crewElem.setAttribute("humanName", crewMember.name)
+            elem.addContent(crewElem)
+        }
+
+        for (removeCrew in lostCrew) {
+            val crewElem = Element("removeCrew")
+            crewElem.setAttribute("rid", refs[removeCrew.crew])
+
+            // Store the index of the RemoveCrewEval object inside it's event
+            val event = removeCrew.info.event
+            val index = event.removedCrew.indexOf(removeCrew.info)
+            require(index != -1) { "Can't find correct RemoveCrew info on event ${event.deserialisationId}." }
+            crewElem.setAttribute("event", event.deserialisationId)
+            crewElem.setAttribute("index", index.toString())
+
+            elem.addContent(crewElem)
+        }
+
+        for (hullDamage in damage) {
+            val damageElem = Element("hullDamage")
+            damageElem.setAttribute("amount", hullDamage.amount.toString())
+            hullDamage.system?.let { damageElem.setAttribute("system", it) }
+            damageElem.setAttribute("fire", hullDamage.effectFire.toString())
+            damageElem.setAttribute("breach", hullDamage.effectBreach.toString())
+            elem.addContent(damageElem)
+        }
+
+        for (upgrade in upgrades) {
+            val upgradeElem = Element("upgrade")
+            upgradeElem.setAttribute("amount", upgrade.amount.toString())
+            upgradeElem.setAttribute("system", upgrade.system)
+            elem.addContent(upgradeElem)
+        }
+    }
+
+    /**
+     * Deserialise a saved ResourceSet.
+     */
+    constructor(elem: Element, refs: RefLoader, content: GameContent) : this() {
+        for (res in Resource.values()) {
+            val count = elem.getAttributeValue(res.name)?.toInt() ?: 0
+            this[res] = count
+        }
+
+        for (itemElem in elem.getChildren("item")) {
+            val name = itemElem.getAttributeValue("name")
+            items += content.blueprintManager[name] as Blueprint
+        }
+
+        for (crewElem in elem.getChildren("addCrew")) {
+            val race = crewElem.getAttributeValue("race")
+            val name = crewElem.getAttributeValue("humanName")
+            val blueprint = content.blueprintManager[race] as CrewBlueprint
+            crew += AddCrewEval(blueprint, name)
+        }
+
+        for (crewElem in elem.getChildren("intruder")) {
+            val race = crewElem.getAttributeValue("race")
+            val name = crewElem.getAttributeValue("humanName")
+            val blueprint = content.blueprintManager[race] as CrewBlueprint
+            intruders += AddCrewEval(blueprint, name)
+        }
+
+        for (crewElem in elem.getChildren("removeCrew")) {
+            val objectId = crewElem.getAttributeValue("rid")
+
+            // Find the RemoveCrewEval object by its index into it's event
+            val eventId = crewElem.getAttributeValue("event")
+            val index = crewElem.getAttributeValue("index")!!.toInt()
+
+            val event = content.eventManager.getByDeserialisationId(eventId)
+            val info = event.removedCrew[index]
+
+            refs.asyncResolve(LivingCrew::class.java, objectId) {
+                lostCrew += RemoveCrewEval(it!!, info)
+            }
+        }
+
+        for (damageElem in elem.getChildren("hullDamage")) {
+            val amount = damageElem.getAttributeValue("amount")!!.toInt()
+            val system: String? = damageElem.getAttributeValue("system")
+            val fire = damageElem.getAttributeValue("fire")!!.toBoolean()
+            val breach = damageElem.getAttributeValue("breach")!!.toBoolean()
+            damage += EventHullDamage(amount, system, fire, breach)
+        }
+
+        for (upgradeElem in elem.getChildren("upgrade")) {
+            val amount: Int = upgradeElem.getAttributeValue("amount")!!.toInt()
+            val system: String = upgradeElem.getAttributeValue("system")!!
+            upgrades += EventSystemUpgrade(amount, system)
+        }
     }
 
     companion object {

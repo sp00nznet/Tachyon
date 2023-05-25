@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game
 
+import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
@@ -10,6 +11,9 @@ import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Choice
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.sector.EventStatus
@@ -19,7 +23,7 @@ import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.max
 import kotlin.math.min
 
-class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent: Event, val close: () -> Unit) :
+class DialogueWindow private constructor(val game: InGameState, val playerShip: Ship, val close: () -> Unit) :
     Window() {
 
     // We have to include the margin from the glow
@@ -43,7 +47,10 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
 
     private var extraText = ""
 
-    init {
+    private val continueEvent = EvaluatedEvent(null, game, game.translator["continue"])
+
+    constructor(game: InGameState, playerShip: Ship, startingEvent: Event, close: () -> Unit)
+            : this(game, playerShip, close) {
         loadEvent(EvaluatedEvent(startingEvent, game, null))
     }
 
@@ -125,7 +132,7 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
         options = newOptions
 
         if (options.isEmpty()) {
-            options = listOf(EvaluatedEvent(null, game, game.translator["continue"]))
+            options = listOf(continueEvent)
         }
 
         optionBoundingBoxes.clear()
@@ -395,15 +402,15 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
         }
 
         for (crew in resourceSet.crew) {
-            y = drawRewardCrew(crew, pos.x, y, textColour)
+            y += drawRewardCrew(crew, pos.x, y, textColour)
         }
 
         for (crew in resourceSet.lostCrew) {
-            y = drawLostCrew(crew, pos.x, y)
+            y += drawLostCrew(crew, pos.x, y)
         }
 
         for (bp in resourceSet.items) {
-            y = drawRewardBlueprint(bp, pos.x, y, textColour)
+            y += drawRewardBlueprint(bp, pos.x, y, textColour)
         }
 
         if (resourceSet.intruders.isNotEmpty()) {
@@ -485,7 +492,7 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
                 val name = game.translator[bp.title!!]
                 resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY + 22f, name, textColour)
 
-                return textY + 42
+                return 42
             }
 
             is DroneBlueprint -> {
@@ -509,7 +516,7 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
                 font.drawString(boxX + 10f, nameY, game.translator["augment"], textColour)
                 resourceNumFont.drawString(nameX.f, nameY, bp.translateTitle(game), textColour)
 
-                return textY + 32
+                return 32
             }
 
             else -> TODO("Can't draw non-ship/drone/augment blueprint: $bp")
@@ -809,6 +816,77 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
         }
     }
 
+    fun saveToXML(elem: Element, refs: ObjectRefs) {
+        val currentEventElem = Element("currentEvent")
+        saveEEToXML(currentEvent, currentEventElem, refs)
+        elem.addContent(currentEventElem)
+
+        for (option in options) {
+            val optionElem = Element("option")
+            saveEEToXML(option, optionElem, refs)
+            elem.addContent(optionElem)
+        }
+    }
+
+    /**
+     * Deserialise an event window from XML
+     */
+    constructor(game: InGameState, playerShip: Ship, elem: Element, refs: RefLoader, close: () -> Unit)
+            : this(game, playerShip, close) {
+
+        val currentEventElem = elem.getChild("currentEvent")
+        currentEvent = loadEEFromXML(currentEventElem, refs)
+
+        options = ArrayList()
+        for (optionElem in elem.getChildren("option")) {
+            options += loadEEFromXML(optionElem, refs)
+        }
+    }
+
+    private fun saveEEToXML(event: EvaluatedEvent, elem: Element, refs: ObjectRefs) {
+        if (event.isContinue) {
+            elem.setAttribute("continue", "true")
+            return
+        }
+
+        SaveUtil.addTag(elem, "eventId", event.event.deserialisationId)
+        event.choice?.deserialisationId?.let { SaveUtil.addTag(elem, "choiceId", it) }
+
+        // Save the localised version of the relevant text, since it's usually randomised
+        // and we wouldn't want it changing across reloads.
+        // We can't just save the localisation key, since text can be specified as-is without
+        // using the localisation system.
+        event.choiceText?.let { SaveUtil.addTag(elem, "choiceText", it) }
+        event.text?.let { SaveUtil.addTag(elem, "eventText", it) }
+
+        val resourcesElem = Element("resources")
+        event.resources.saveToXML(resourcesElem, refs)
+        elem.addContent(resourcesElem)
+    }
+
+    private fun loadEEFromXML(elem: Element, refs: RefLoader): EvaluatedEvent {
+        if (elem.getAttributeValue("continue") == "true") {
+            return continueEvent
+        }
+
+        val eventId = SaveUtil.getTag(elem, "eventId")
+        val event = game.eventManager.getByDeserialisationId(eventId)
+        val choiceId = SaveUtil.getOptionalTag(elem, "choiceId")
+        val choice = choiceId?.let { game.eventManager.getChoiceByDeserialisationId(it) }
+
+        val choiceText = SaveUtil.getOptionalTag(elem, "choiceText")
+        val text = SaveUtil.getOptionalTag(elem, "eventText")
+
+        val resourcesElem = elem.getChild("resources")
+        val resources = ResourceSet(resourcesElem, refs, game.content)
+
+        val evaluated = EvaluatedEvent(event, game, choiceText, choice)
+        evaluated.textOverride = text
+        evaluated.resourcesOverride = resources
+
+        return evaluated
+    }
+
     /**
      * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)
      */
@@ -820,8 +898,8 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
     ) {
         val isContinue: Boolean = eventInt == null
         val event: Event get() = eventInt ?: throw Exception("Continue does not have an event")
-        val resources by lazy { event.resolveResources(game) }
-        val text by lazy { event.text?.resolve() }
+        val resources by lazy { resourcesOverride ?: event.resolveResources(game) }
+        val text by lazy { textOverride ?: event.text?.resolve() }
 
         /**
          * The resources that should be displayed in a choice. This filters out
@@ -849,6 +927,11 @@ class DialogueWindow(val game: InGameState, val playerShip: Ship, startingEvent:
 
             return@lazy result
         }
+
+        // These are set during deserialisation to replace the randomly-selected
+        // resources and text.
+        var resourcesOverride: ResourceSet? = null
+        var textOverride: String? = null
     }
 
     companion object {

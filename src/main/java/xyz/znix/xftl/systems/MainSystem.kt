@@ -49,9 +49,11 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
     }
 
     override fun loadFromXML(elem: Element, refs: RefLoader) {
-        super.loadFromXML(elem, refs)
-
         simpleSelectedEnergyLevel = SaveUtil.getTagInt(elem, "simpleSelectedEnergyLevel")
+
+        // Load our stuff before calling the super-method, so that when
+        // the system loading code runs it has the correct power level.
+        super.loadFromXML(elem, refs)
     }
 
     // List of the default systems, for sorting purposes

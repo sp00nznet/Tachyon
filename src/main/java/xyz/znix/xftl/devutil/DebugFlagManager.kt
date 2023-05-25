@@ -21,6 +21,11 @@ class DebugFlagManager {
         "Ships don't take damage"
     )
 
+    val continuousSaveLoad = DebugFlag(
+        "cont-save-load", "Continuous save and load", false,
+        "Save and load the game state every update, to test the serialisation logic"
+    )
+
     val infiniteMissiles = DebugFlag(
         "infm", "Infinite Missiles", false,
         "Ships (most importantly enemy ships) don't subtract missiles when they fire things."
@@ -36,6 +41,7 @@ class DebugFlagManager {
         fastWeaponCharge,
         noEnemyFire,
         noDmg,
+        continuousSaveLoad,
         infiniteMissiles,
         infiniteDrones
     )

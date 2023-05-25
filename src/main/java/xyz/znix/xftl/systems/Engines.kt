@@ -33,6 +33,12 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // Play the sound effect when the engines are turned on and off
         val enginesOn = powerSelected > 0
 
+        // Don't play sounds while we're being deserialised
+        if (ship.sys.isCurrentlyLoadingSave) {
+            lastEnginesOn = enginesOn
+            return
+        }
+
         when {
             enginesOn && !lastEnginesOn -> enginesOnSound.play()
             !enginesOn && lastEnginesOn -> enginesOffSound.play()

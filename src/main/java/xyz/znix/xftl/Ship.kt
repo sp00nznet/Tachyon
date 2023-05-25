@@ -1147,9 +1147,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
      */
     fun saveToXML(elem: Element, globalRefs: ObjectRefs) {
         // Create IDs for all the objects that might reference each other
+        // Note that events can reference crewmembers, so register them
+        // into the global refs.
         val refs = ObjectRefs(globalRefs)
         for (crew in this.crew) {
-            refs.register(crew, crew.codename)
+            globalRefs.register(crew, crew.codename)
         }
         for (system in systems) {
             refs.register(system, system.codename)

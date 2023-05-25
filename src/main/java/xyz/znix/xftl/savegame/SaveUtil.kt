@@ -91,6 +91,11 @@ object SaveUtil {
         return elem.getAttributeValue("v")
     }
 
+    fun getOptionalTag(parent: Element, name: String): String? {
+        val elem = parent.getChild(name) ?: return null
+        return elem.getAttributeValue("v")
+    }
+
     fun getTagIntOrNull(parent: Element, name: String): Int? {
         val elem = parent.getChild(name) ?: error("Missing int tag '$name'")
         val value = elem.getAttributeValue("i")

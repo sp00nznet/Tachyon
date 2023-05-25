@@ -15,6 +15,7 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     private val ships = HashMap<String, EnemyShipSpec>()
 
     private val byDeserialisationId = HashMap<String, Event>()
+    private val byChoiceId = HashMap<String, Choice>()
 
     // For the debug console
     val eventNames: Collection<String> = events.keys
@@ -45,6 +46,10 @@ class EventManager(val df: Datafile, private val translator: Translator, private
 
     fun getByDeserialisationId(id: String): Event {
         return byDeserialisationId[id] ?: error("Missing event with deserialisation ID '$id'")
+    }
+
+    fun getChoiceByDeserialisationId(id: String): Choice {
+        return byChoiceId[id] ?: error("Missing choice with deserialisation ID '$id'")
     }
 
     fun getShip(name: String): EnemyShipSpec = ships[name] ?: error("Missing enemy ship spec '$name'")
@@ -166,7 +171,20 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         val text = elem.getChild("text").let(::loadText)
         val deserialisationId = "$parentDeserialisationId::choice$choiceIndex"
         val event = loadEvent(elem.getChild("event"), "choice.ukn", deserialisationId)
-        return Choice(text, event, elem)
+
+        // We could use the same deserialisation ID for a choice and it's event,
+        // but it's probably a bit nicer not to - if you're not that familiar
+        // with the serialisation system, having a different name would let you
+        // tell apart choices and their events.
+        val choiceId = "choiceOf::$deserialisationId"
+        val choice = Choice(text, event, elem, choiceId)
+
+        if (byChoiceId.containsKey(choiceId)) {
+            error("Choice deserialisation ID '$choiceId' is not unique!")
+        }
+        byChoiceId[choiceId] = choice
+
+        return choice
     }
 
     private fun loadText(elem: Element): IEventText {

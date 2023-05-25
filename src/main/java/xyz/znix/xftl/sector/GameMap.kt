@@ -227,10 +227,16 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
     }
 
     fun saveToXML(elem: Element, refs: ObjectRefs) {
+        // Register all the sectors now, since they reference each other.
+        for (column in sectors) {
+            for (sector in column) {
+                refs.register(sector, "sectorInfo")
+            }
+        }
+
         for (column in sectors) {
             val columnElem = Element("column")
             for (sector in column) {
-                refs.register(sector, "sectorInfo")
                 val sectorElem = Element("sectorInfo")
                 sector.saveToXML(sectorElem, refs)
                 columnElem.addContent(sectorElem)
@@ -331,6 +337,12 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
             elem.setAttribute("columnIndex", columnIndex.toString())
             elem.setAttribute("type", type.name)
             elem.setAttribute("class", sectorClass.name)
+
+            for (next in nextSectors) {
+                val nextElem = Element("next")
+                nextElem.setAttribute("rid", refs[next])
+                elem.addContent(nextElem)
+            }
         }
     }
 
@@ -344,6 +356,11 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
 
         val type = sectorTypes[typeName] ?: error("Missing sector type '$typeName'")
         val sector = SectorInfo(columnNumber, columnIndex, type, sectorClass)
+
+        for (nextElem in elem.getChildren("next")) {
+            val objectId = nextElem.getAttributeValue("rid")
+            refs.asyncResolve(SectorInfo::class.java, objectId) { sector.nextSectors.add(it!!) }
+        }
 
         SaveUtil.registerObjectId(elem, refs, sector)
         return sector

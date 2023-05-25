@@ -6,6 +6,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.random.Random
 
@@ -61,5 +62,12 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
         SaveUtil.addTag(elem, "selectedName", selectedName)
         SaveUtil.addRef(elem, "ownerShip", refs, ownerShip)
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        selectedName = SaveUtil.getTag(elem, "selectedName")
+        SaveUtil.getRef(elem, "ownerShip", refs, Ship::class.java) { ownerShip = it }
     }
 }
