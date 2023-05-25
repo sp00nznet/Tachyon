@@ -135,6 +135,16 @@ public class InGameState extends MainGame.GameState {
         setEnemy(currentBeacon.getShip());
 
         loadBeaconEnvironment();
+
+        // Give all the ships an update, for stuff like the
+        // doors automatically opening. This must only be done once all
+        // the ships are loaded, otherwise it'd break hacking since the
+        // hacked system would think it wasn't being hacked any more.
+        for (Beacon beacon : currentBeacon.getSector().getBeacons()) {
+            if (beacon.getShip() != null)
+                beacon.getShip().update(0f);
+        }
+        player.update(0f);
     }
 
     private InGameState(MainGame mainGame, GameContent content, GameContainer container) {

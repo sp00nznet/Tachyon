@@ -905,6 +905,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         for (augment in augments) {
             augment.onJump(this)
         }
+
+        // TODO when we implement door attacking, clear out the damage
+        //  during a jump to reduce the size of the save file. This doesn't
+        //  exactly match vanilla, but it's exceedingly unlikely to matter
+        //  as long as there aren't any boarders.
     }
 
     /**
@@ -1192,9 +1197,34 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         // TODO serialise weapons and drones
 
-        // TODO serialise doors
+        // Serialise the doors. Most of the time there's nothing interesting
+        // about them other than whether they're open or closed, but occasionally
+        // they have more information (like the damage they've taken from
+        // being attacked).
+        val doorsElem = Element("doors")
+        val doorStateString = StringBuilder()
+        for ((index, door) in doors.withIndex()) {
+            val thisDoorElem = door.saveToXML()
+            thisDoorElem?.setAttribute("doorIndex", index.toString())
+            thisDoorElem?.let { doorsElem.addContent(it) }
 
-        // TODO serialise room oxygen levels
+            doorStateString.append(if (door.open) 'Y' else 'n')
+        }
+        val doorStateElem = Element("isOpen")
+        doorStateElem.addContent(doorStateString.toString())
+        doorsElem.addContent(doorStateElem)
+        elem.addContent(doorsElem)
+
+        // Serialise the room oxygen levels. Since there's a lot of rooms,
+        // don't serialise them all individually.
+        val oxygenLevelString = StringBuilder()
+        for (room in rooms) {
+            oxygenLevelString.append(room.oxygen)
+            oxygenLevelString.append(' ')
+        }
+        val oxygenLevelElem = Element("oxygenLevels")
+        oxygenLevelElem.addContent(oxygenLevelString.toString().trim())
+        elem.addContent(oxygenLevelElem)
     }
 
     fun loadFromXml(rootElem: Element, refs: RefLoader) {
@@ -1244,6 +1274,25 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         }
         for (room in rooms) {
             room.updateCrewInRoom()
+        }
+
+        // Deserialise the doors.
+        val doorsElem = rootElem.getChild("doors")
+        for (doorElem in doorsElem.getChildren("door")) {
+            val index = SaveUtil.getAttrInt(doorElem, "doorIndex")
+            doors[index].loadFromXML(doorElem)
+        }
+        val doorStateString = doorsElem.getChildTextTrim("isOpen")
+        for ((index, door) in doors.withIndex()) {
+            val open = doorStateString[index] == 'Y'
+            door.loadSavedOpen(open)
+        }
+
+        // Deserialise the oxygen levels, which are just numbers for each room.
+        val oxygenLevels = rootElem.getChildTextTrim("oxygenLevels").split(' ', '\t')
+        for ((index, levelStr) in oxygenLevels.withIndex()) {
+            val room = rooms[index]
+            room.oxygen = levelStr.toFloat()
         }
 
         updateCrewReservedSlots()

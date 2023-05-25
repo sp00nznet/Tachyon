@@ -1,5 +1,6 @@
 package xyz.znix.xftl.layout
 
+import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants
@@ -250,6 +251,30 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         if (!isVertical) {
             g.rotate(x.f, y.f, -90f)
         }
+    }
+
+    fun saveToXML(): Element? {
+        // Currently we have nothing to serialise. Returning null means there
+        // isn't a blank element in the savefile.
+        // Note that whether the door is open or closed is serialised separately.
+        // TODO when we can take damage from intruders, save that here.
+        // When we do create an element, it must be named 'door'.
+        return null
+    }
+
+    fun loadFromXML(elem: Element) {
+        // Nothing to deserialise.
+    }
+
+    fun loadSavedOpen(open: Boolean) {
+        // Called when this door's open/closed state is loaded.
+        this.open = open
+
+        // Skip the animation when the door is first opened.
+        // Note the crew gets a few updates before this is called, so crew
+        // requests will be handled properly.
+        visualOpen = open || crewOpenDemand
+        stateAnimation = if (visualOpen) 1f else 0f
     }
 
     companion object {
