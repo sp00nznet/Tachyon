@@ -35,6 +35,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
+            weapon.bindToWeaponsSystem(this)
             weapon.update(dt, !opponentCloakActive, isHackActive)
 
             // Update the weapon slide

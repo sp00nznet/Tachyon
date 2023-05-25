@@ -385,7 +385,7 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
 
             when (tgt) {
                 is SelectedTarget.BeamAim -> tgt.beamWeapon.fire(tgt)
-                is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire(ship.weapons!!, tgt.room)
+                is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire(tgt.room)
             }
         }
 

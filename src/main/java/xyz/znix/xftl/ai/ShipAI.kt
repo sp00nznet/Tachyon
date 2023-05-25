@@ -82,7 +82,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
             when (weapon) {
                 is IRoomTargetingWeapon -> {
-                    weapon.fire(weapons, pickTarget())
+                    weapon.fire(pickTarget())
                 }
             }
         }

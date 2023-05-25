@@ -1,7 +1,6 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Image
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.math.ConstPoint
@@ -149,12 +148,25 @@ class Animations(df: Datafile) {
 
         val chargedImage: Image get() = spriteAt(chargedFrame)
 
-        // It *appears* that FTL plays the shoot animation at around 30fps
-        fun shoot() = Animation(sheet, x + chargedFrame, y, x + length - 1, y, true, 1000 / 30, false)
-
         fun spriteAt(i: Int): Image {
             if (i >= length) throw IndexOutOfBoundsException(i)
             return sheet.getSprite(x + i, y)
+        }
+
+        /**
+         * This finds what frame of the firing animation should be shown at a given
+         * [time] after the firing animation started.
+         *
+         * [duration] is the time the animation is supposed to last, and should
+         * be either [PROJECTILE_WEAPON_FIRE_TIME] or [BOMB_FIRE_TIME] to match FTL.
+         */
+        fun fireIndex(time: Float, duration: Float): Int {
+            val progress = time / duration
+
+            val startFrame = chargedFrame
+            val fireLength = length - startFrame
+
+            return (progress * fireLength).toInt().coerceIn(0 until fireLength) + startFrame
         }
     }
 
@@ -163,5 +175,10 @@ class Animations(df: Datafile) {
     companion object {
         val PLAYER_BASE_REGEX = Pattern.compile("(img/people/.*)_base.png")
         val TMP_BROKEN_IMAGES = setOf("artillery_fed", "explosion_big1", "room_touch2x2", "room_touch2x1")
+
+        // How long it takes a weapon animation to play from the charged frame to the end.
+        // These were reverse-engineered from vanilla FTL.
+        const val PROJECTILE_WEAPON_FIRE_TIME = 0.25f
+        const val BOMB_FIRE_TIME = 1f
     }
 }

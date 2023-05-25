@@ -3,13 +3,13 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
+import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.systems.Weapons
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -24,14 +24,20 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class BombInstance(ship: Ship) : AbstractWeaponInstance(this, ship), IRoomTargetingWeapon {
-        private var firingAnimation: Animation? = null
+        private var firingAnimationTimer: Float = 0f
         private var target: Room? = null
         private var hasFired = false
 
+        private val fireAnimationFrame: Int
+            get() {
+                require(target != null)
+                return animation.fireIndex(firingAnimationTimer, Animations.BOMB_FIRE_TIME)
+            }
+
         override fun render(g: Graphics) {
-            val fa = firingAnimation
-            if (fa != null) {
-                fa.draw()
+            if (target != null) {
+                val frame = animation.spriteAt(fireAnimationFrame)
+                frame.draw()
             } else {
                 super.render(g)
             }
@@ -40,22 +46,20 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
             super.update(dt, canCharge, isHacked)
 
-            val firingAnimation = firingAnimation ?: return
+            val target = this.target ?: return
 
             timeCharged = 0f
-            firingAnimation.update((1000 * dt).toLong())
+            firingAnimationTimer += dt
 
-            if (firingAnimation.frame >= animation.chargedFrame && !hasFired) {
-                val target = target ?: error("Ended teleport animation without target set - what happened?")
+            if (!hasFired && fireAnimationFrame >= animation.fireFrame) {
                 doBombFire(target)
-
                 hasFired = true
-                this.target = null
             }
 
-            if (firingAnimation.isStopped) {
-                this.firingAnimation = null
+            if (firingAnimationTimer >= Animations.BOMB_FIRE_TIME) {
+                this.target = null
                 hasFired = false
+                firingAnimationTimer = 0f
             }
         }
 
@@ -66,12 +70,9 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             target.ship.inboundBombs += fb
         }
 
-        override fun fire(weapons: Weapons, target: Room) {
+        override fun fire(target: Room) {
             fire()
             this.target = target
-            val fa = this.animation.shoot()
-            firingAnimation = fa
-            fa.setLooping(false)
 
             type.launchSounds?.get()?.play()
         }

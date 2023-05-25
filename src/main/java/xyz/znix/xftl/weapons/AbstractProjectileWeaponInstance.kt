@@ -1,44 +1,53 @@
 package xyz.znix.xftl.weapons
 
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
+import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.systems.Weapons
 
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
-    val isFiring: Boolean get() = !(firingAnimation?.isStopped ?: true)
 
-    var firingAnimation: Animation? = null
-    var hasFired: Boolean = false
-
-    protected var weapons: Weapons? = null
     protected var target: Room? = null
+    private val isFiring: Boolean get() = target != null
 
-    protected var shotsFired: Int = 0
-    protected var lastProjectile: AbstractProjectile? = null
+    private var firingAnimationTimer: Float = 0f
+    private var waitingToFire: Boolean = false
+
+    private val fireAnimationFrame: Int
+        get() {
+            require(isFiring)
+            return animation.fireIndex(firingAnimationTimer, Animations.PROJECTILE_WEAPON_FIRE_TIME)
+        }
+
+    protected var shotsRemaining: Int = 0
+    protected var entryAngle: Float = 0f
 
     override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
         super.update(dt, canCharge, isHacked)
 
-        val fa = firingAnimation ?: return
+        if (!isFiring) {
+            return
+        }
 
-        fa.update((dt * 1000).toLong())
+        firingAnimationTimer += dt
 
         // Don't charge while firing
         timeCharged = 0f
 
-        if (fa.frame >= animation.fireFrame - animation.chargedFrame && !hasFired) {
-            hasFired = true
+        if (waitingToFire && fireAnimationFrame >= animation.fireFrame) {
+            waitingToFire = false
             fireFrameHit()
         }
 
-        if (fa.isStopped) {
-            if (shotsFired >= type.shots) {
-                firingAnimation = null
-                lastProjectile = null
+        if (firingAnimationTimer >= Animations.PROJECTILE_WEAPON_FIRE_TIME) {
+            if (shotsRemaining <= 0) {
+                // This stops us firing
+                target = null
+
+                entryAngle = 0f
+                firingAnimationTimer = 0f
             } else {
                 primeShot()
             }
@@ -46,32 +55,30 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     }
 
     override fun render(g: Graphics) {
-        if (isFiring)
-            firingAnimation!!.draw(0f, 0f)
-        else
+        if (isFiring) {
+            val frame = animation.spriteAt(fireAnimationFrame)
+            frame.draw(0f, 0f)
+        } else {
             super.render(g)
+        }
     }
 
     protected open fun fireFrameHit() {
         val projectile = buildProjectile(target!!)
-        val hp = weapons!!.findHardpoint(this)
-        lastProjectile?.run { projectile.entryAngle = entryAngle }
-        weapons!!.launchProjectile(hp, projectile)
-        lastProjectile = projectile
+        val hp = weapons.findHardpoint(this)
+        projectile.entryAngle = entryAngle
+        weapons.launchProjectile(hp, projectile)
 
         type.launchSounds?.get()?.play()
     }
 
-    override fun fire(weapons: Weapons, target: Room) {
+    override fun fire(target: Room) {
         check(!isFiring) { "Cannot file while already firing!" }
 
-        this.weapons = weapons
         this.target = target
-        shotsFired = 0
+        shotsRemaining = type.shots
+        entryAngle = (Math.random() * Math.PI * 2).toFloat()
         fire()
-        val anim = animation.shoot()
-        anim.setLooping(false)
-        firingAnimation = anim
         primeShot()
     }
 
@@ -98,9 +105,9 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     }
 
     private fun primeShot() {
-        shotsFired++
-        hasFired = false
-        firingAnimation!!.restart()
+        shotsRemaining--
+        waitingToFire = true
+        firingAnimationTimer = 0f
     }
 
     protected abstract fun buildProjectile(target: Room): AbstractProjectile
