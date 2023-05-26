@@ -1167,7 +1167,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         // Build the XML
         SaveUtil.addObjectId(elem, refs, this)
-        elem.setAttribute("shipId", name)
+
+        // These two are read by InGameState, as they're needed for constructor arguments.
+        SaveUtil.addAttr(elem, "shipId", name)
+        SaveUtil.addAttr(elem, "specId", spec?.name ?: "null")
 
         SaveUtil.addTagInt(elem, "fuelCount", fuelCount)
         SaveUtil.addTagInt(elem, "missileCount", missilesCount)

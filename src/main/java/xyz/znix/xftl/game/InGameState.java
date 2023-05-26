@@ -769,10 +769,19 @@ public class InGameState extends MainGame.GameState {
     public Ship deserialiseSingleShip(Element shipElement, RefLoader refs) {
         // Load the appropriate ship definition XML element from the blueprints
         String shipId = shipElement.getAttributeValue("shipId");
+
+        String specId = shipElement.getAttributeValue("specId");
+        EnemyShipSpec spec;
+        if (specId.equals("null")) {
+            spec = null;
+        } else {
+            spec = content.eventManager.getShip(specId);
+        }
+
         Element playerXml = ((ShipBlueprint) blueprintManager.get(shipId)).loadElem(df);
 
         // And use that to build and deserialise the ship
-        Ship ship = new Ship(df, playerXml, this, null);
+        Ship ship = new Ship(df, playerXml, this, spec);
         ship.loadFromXml(shipElement, refs);
 
         return ship;
