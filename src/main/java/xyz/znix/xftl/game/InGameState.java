@@ -71,8 +71,8 @@ public class InGameState extends MainGame.GameState {
     // the current one.
     private final ArrayList<GameMap.SectorInfo> visitedSectors = new ArrayList<>();
 
-    private Image background;
-    private Image planet;
+    private EnvironmentImage background;
+    private EnvironmentImage planet;
 
     private DebugConsole debugConsole;
     private boolean debugConsoleVisible;
@@ -398,10 +398,10 @@ public class InGameState extends MainGame.GameState {
         }
 
         if (background != null) {
-            background.draw();
+            background.getImg(this).draw();
         }
         if (planet != null) {
-            planet.draw();
+            planet.getImg(this).draw();
         }
     }
 
@@ -558,25 +558,9 @@ public class InGameState extends MainGame.GameState {
     }
 
     private void loadBeaconEnvironment() {
-        background = eventManager.getImageList("BACKGROUND").get(this);
-        planet = eventManager.getImageList("PLANET").get(this);
-
-        String environmentBg = currentBeacon.getEnvironmentType().getBackgroundName();
-        if (environmentBg != null) {
-            background = getImg("img/stars/" + environmentBg + ".png");
-            planet = null;
-        }
-
-        ImageList planetList = currentBeacon.getEvent().getPlanetImg();
-        if (planetList != null)
-            planet = planetList.get(this);
-
-        ImageList backList = currentBeacon.getEvent().getBackImg();
-        if (backList != null)
-            background = backList.get(this);
-
-        // TODO show the rebel fleet in the background if we're at an overtaken beacon
-        // TODO show the flagship rebel/fed mixed fight backgrounds
+        var images = currentBeacon.getEnvironmentImages(this);
+        planet = images.getFirst();
+        background = images.getSecond();
 
         // TODO load image settings from text tags
     }

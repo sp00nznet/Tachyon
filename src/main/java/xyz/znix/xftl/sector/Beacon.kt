@@ -128,6 +128,9 @@ class Beacon(
             }
         }
 
+    private var backgroundImageIndex: Int = Random.nextInt(999)
+    private var planetImageIndex: Int = Random.nextInt(999)
+
     fun getStore(game: InGameState): StoreData? {
         if (!hasStore)
             return null
@@ -146,6 +149,45 @@ class Beacon(
         }
     }
 
+    /**
+     * Get the image to use for the planet and background (in that order in the pair).
+     */
+    fun getEnvironmentImages(game: InGameState): Pair<EnvironmentImage?, EnvironmentImage> {
+        // We have three goals here:
+        // 1. If the environment or event changes, the background should too.
+        // 3. We can't be random here, we need to deserialise to the same values each time.
+        // 3. Make the planet/background information easy to serialise.
+        // Thus pick the image list for the planet and background deterministically,
+        // and serialise the index into that list. If the list changes and the index
+        // becomes invalid, we can just pick a new one.
+        // This does have the limitation that if the event changes to one with a new
+        // image list that's larger than the previous one we won't be able to access
+        // all it's images. To get around it, we actually serialise a large random number
+        // which we then use as an index into the image list, modulo the list's size.
+
+        var backgroundList: ImageList = game.eventManager.getImageList("BACKGROUND")
+        var planetList: ImageList = game.eventManager.getImageList("PLANET")
+
+        val bgName = environmentType.backgroundName
+        if (bgName != null) {
+            val backgroundImg = EnvironmentImage("img/stars/$bgName.png")
+            return Pair(null, backgroundImg)
+        }
+
+        event.backImg?.let { backgroundList = it }
+        event.planetImg?.let { planetList = it }
+
+        val backImg = backgroundList.getRandom(backgroundImageIndex)
+        val planetImg = planetList.getRandom(planetImageIndex)
+
+        requireNotNull(backImg) { "Cannot set NONE as a background image with event ${event.deserialisationId}" }
+
+        // TODO show the rebel fleet in the background if we're at an overtaken beacon
+        // TODO show the flagship rebel/fed mixed fight backgrounds
+
+        return Pair(planetImg, backImg)
+    }
+
     fun saveToXML(elem: Element, refs: ObjectRefs) {
         SaveUtil.addObjectId(elem, refs, this)
 
@@ -161,6 +203,10 @@ class Beacon(
         // loaded from the game's XML, so we only need to uniquely
         // identify them, not store all their data.
         SaveUtil.addAttr(elem, "eventId", event.deserialisationId)
+
+        // See getEnvironmentImages for more information on these.
+        SaveUtil.addAttrInt(elem, "planetImg", planetImageIndex)
+        SaveUtil.addAttrInt(elem, "backImg", backgroundImageIndex)
 
         // TODO save the store data
 
@@ -205,6 +251,9 @@ class Beacon(
             beacon.visited = SaveUtil.getAttrBool(elem, "visited")
             beacon.hasStore = SaveUtil.getOptionalTagBool(elem, "hasStore") ?: false
             beacon.hasQuest = SaveUtil.getOptionalTagBool(elem, "hasQuest") ?: false
+
+            beacon.planetImageIndex = SaveUtil.getAttrInt(elem, "planetImg")
+            beacon.backgroundImageIndex = SaveUtil.getAttrInt(elem, "backImg")
 
             // Deserialise the enemy ship, if present
             val shipElem = elem.getChild("enemyShip")

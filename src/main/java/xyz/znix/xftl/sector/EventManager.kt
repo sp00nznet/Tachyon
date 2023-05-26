@@ -204,12 +204,12 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         if (elem.getAttributeValue("ui") == "ipad") return
 
         val name = elem.requireAttributeValue("name")
-        val images = ArrayList<String>()
+        val images = ArrayList<EnvironmentImage>()
         for (child in elem.children) {
             check(child.name == "img")
             val path = "img/" + child.textTrim
             check(df.getOrNull(path) != null)
-            images += path
+            images += EnvironmentImage(path)
         }
         imageLists[name] = ImageList(name, images)
     }

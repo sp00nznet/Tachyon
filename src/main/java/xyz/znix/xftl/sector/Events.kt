@@ -532,16 +532,32 @@ class TextList(val name: String, val items: List<IEventText>) : IEventText {
 
 class EventText(val localised: String) : IEventText {
     override fun resolve(): String = localised
+
+    // TODO handle the 'planet' and 'back' image names
 }
 
-class ImageList(val name: String, val images: List<String>) {
-    fun get(game: InGameState): Image? {
-        if (this == NONE) return null
-        return game.getImg(images.random())
+class ImageList(val name: String, val images: List<EnvironmentImage>) {
+    // This makes sense in the context of Beacon.getEnvironmentImages
+    fun getRandom(seed: Int): EnvironmentImage? {
+        if (this == NONE)
+            return null
+
+        return images[seed % images.size]
     }
 
     companion object {
-        // The special image list 'NONE' can be specified to remove an inhertied image
+        // The special image list 'NONE' can be specified to remove an inherited image
         val NONE = ImageList("NONE", emptyList())
     }
+}
+
+/**
+ * Represents an image specified in an <imageList>, used for a background or planet.
+ */
+class EnvironmentImage(val path: String) {
+    fun getImg(game: InGameState): Image {
+        return game.getImg(path)
+    }
+
+    // TODO do the width and height matter?
 }
