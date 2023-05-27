@@ -49,9 +49,6 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                     val projectile = FlakProjectile(target!!, spec)
                     projectile.entryAngle = angle
 
-                    if (spec.fake)
-                        continue
-
                     weapons.launchProjectile(hp, projectile)
                 }
             }
@@ -70,6 +67,8 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override val defaultSpeed: Int get() = 60
 
         override val isMissileForDD: Boolean get() = true
+
+        override val collisionsEnabled: Boolean get() = !spec.fake
 
         init {
             // Pick where in the circle this bit of flack will land

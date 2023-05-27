@@ -777,6 +777,23 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
                 if (!second.collisionsEnabled)
                     continue
 
+                // Make sure the projectiles are targeting different ships - otherwise
+                // you could shoot down your own projectiles, and in particular flak
+                // projectiles would collide with each other.
+                if (first !is AbstractProjectile || second !is AbstractProjectile) {
+                    continue
+                }
+                if (first.targetShip == second.targetShip) {
+                    continue
+                }
+
+                // Prevent defence drones from accidentally hitting your missiles
+                if (first.targetShip == null || second.targetShip == null) {
+                    continue
+                }
+
+                // Check how close the projectiles are - their collision shape is represented
+                // by a couple of circles, so this is how we do the check.
                 val distSq = first.position.distToSq(second.position)
                 val maxDist = first.hitboxRadius + second.hitboxRadius
 
