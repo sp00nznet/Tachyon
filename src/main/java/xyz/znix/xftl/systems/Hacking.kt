@@ -1,9 +1,13 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import org.newdawn.slick.*
+import org.newdawn.slick.Color
+import org.newdawn.slick.Graphics
+import org.newdawn.slick.Input
+import org.newdawn.slick.Renderable
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants.ROOM_SIZE
+import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
@@ -297,14 +301,9 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val onImage = game.getImg("img/ship/drones/drone_hack_on.png")
         val lightOverlay = game.getImg("img/ship/drones/drone_hack_light1.png")
 
-        val flyAnimation = game.animations["drone_hack_fly"].start()
-        val landAnimation = game.animations["drone_hack_land"].start()
-        val extendAnimation = game.animations["drone_hack_extend"].start()
-
-        init {
-            landAnimation.setLooping(false)
-            extendAnimation.setLooping(false)
-        }
+        val flyAnimation = game.animations["drone_hack_fly"].startLooping()
+        val landAnimation = game.animations["drone_hack_land"].startSingle()
+        val extendAnimation = game.animations["drone_hack_extend"].startSingle()
 
         // Pick the direction the drone is coming from - for example,
         // a drone flying up from the bottom of the screen would be DOWN.
@@ -393,8 +392,8 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
             // Update the currently-playing animation
             val image = currentImage
-            if (image is Animation) {
-                image.update((dt * 1000).toLong())
+            if (image is FTLAnimation) {
+                image.update(dt)
             }
 
             // Animate the flashing antenna lights

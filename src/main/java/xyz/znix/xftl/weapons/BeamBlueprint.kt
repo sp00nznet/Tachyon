@@ -1,12 +1,12 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.opengl.TextureImpl
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
+import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
@@ -45,7 +45,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         private var lastPos = Point(INVALID_CELL_POS)
         private var lastRoomId: Int? = null
 
-        private val contact: Animation
+        private val contact: FTLAnimation
 
         // Copy this in as a mutable variable so it can be changed for drones.
         private var fireDuration: Float = this@BeamBlueprint.fireDuration
@@ -53,8 +53,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         init {
             // Turns out this is a one-frame animation, leave it looping in case
             // a mod replaces it or something.
-            contact = ship.sys.animations[projectile!!].start()
-            contact.setLooping(true)
+            contact = ship.sys.animations[projectile!!].startLooping()
         }
 
         override fun render(g: Graphics) {
@@ -222,7 +221,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                     targetShip.inboundBeams.remove(this)
                 }
 
-                contact.update((dt * 1000).toLong())
+                contact.update(dt)
             }
         }
 

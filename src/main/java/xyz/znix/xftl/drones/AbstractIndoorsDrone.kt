@@ -1,7 +1,7 @@
 package xyz.znix.xftl.drones
 
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
+import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
@@ -114,7 +114,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
         var powerUpDuration: Float = 0f
         var onLastUpdate: Boolean = false
-        var newPowerAnimation: Animation? = null
+        var newPowerAnimation: FTLAnimation? = null
 
         override val canManSystem: Boolean get() = false
         override val canFight: Boolean get() = false
@@ -149,7 +149,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
                 if (pawn != null)
                     updatePawn(dt)
             } else {
-                icon.update((dt * 1000).toLong())
+                icon.update(dt)
 
                 if (powerUpDuration != 0f && isRunning) {
                     powerUpDuration -= dt
@@ -177,9 +177,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             }
 
             val animation = ship.sys.animations["${codename}_$powerDir"]
-            newPowerAnimation = animation.start().apply {
-                setLooping(false)
-            }
+            newPowerAnimation = animation.startSingle()
 
             if (!isRunning) {
                 powerUpDuration = animation.totalTime

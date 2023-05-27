@@ -1,13 +1,9 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.Animations
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.drones.CombatDrone
-import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import kotlin.math.PI
@@ -63,8 +59,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         private fun doBombFire(target: Room) {
-            val animation = target.ship.sys.animations[projectile!!].start(2f, true)
-            animation.setLooping(false)
+            val animation = target.ship.sys.animations[projectile!!].startSingle(0.5f, true)
             val fb = FiredBomb(this@BombBlueprint, target, animation)
             target.ship.projectiles += fb
         }
@@ -84,7 +79,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
     }
 
-    class FiredBomb(val type: BombBlueprint, val target: Room, val animation: Animation) : IProjectile {
+    class FiredBomb(val type: BombBlueprint, val target: Room, val animation: FTLAnimation) : IProjectile {
         val missed = Math.random() * 100 < target.ship.evasion
         val hitSuperShield = target.ship.superShield > 0 && !missed
         override val position: ConstPoint
@@ -125,12 +120,8 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
         }
 
-        init {
-            animation.setLooping(false)
-        }
-
         override fun update(dt: Float, currentSpace: Ship) {
-            animation.update((dt * 1000).toLong())
+            animation.update(dt)
 
             if (!animation.isStopped)
                 return

@@ -1,6 +1,5 @@
 package xyz.znix.xftl.layout
 
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
@@ -70,8 +69,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
     val obstructions = HashSet<ConstPoint>()
 
-    private var computerHackAnimation: Animation? = null
-    private var bigSparksHackAnimation: Animation? = null
+    private var computerHackAnimation: FTLAnimation? = null
+    private var bigSparksHackAnimation: FTLAnimation? = null
     private var bigSparksRotation: Float = 0f
     private var bigSparksMaskX: Int = 0
 
@@ -93,8 +92,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         updateCrewInRoom()
 
-        computerHackAnimation?.update((dt * 1000).toLong())
-        bigSparksHackAnimation?.update((dt * 1000).toLong())
+        computerHackAnimation?.update(dt)
+        bigSparksHackAnimation?.update(dt)
     }
 
     fun updateCrewInRoom() {
@@ -232,7 +231,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             // unless the hacking system is powered down.
             if (system.hackedBy?.isPoweredUp == true) {
                 if (computerHackAnimation == null)
-                    computerHackAnimation = ship.sys.animations["hacked_console"].start()
+                    computerHackAnimation = ship.sys.animations["hacked_console"].startLooping()
 
                 // This can't be merged with drawing the computer above, as
                 // some decals have computers drawn into them.
@@ -249,9 +248,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         if (system.isHackActive) {
             if (bigSparksHackAnimation == null || bigSparksHackAnimation?.isStopped == true) {
-                bigSparksHackAnimation = ship.sys.animations["stun_spark_big"].start().also {
-                    it.setLooping(false)
-                }
+                bigSparksHackAnimation = ship.sys.animations["stun_spark_big"].startSingle()
 
                 // See doc/hacking for details about this
                 if (width == 1 || height == 1) {

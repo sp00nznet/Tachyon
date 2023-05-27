@@ -1,17 +1,13 @@
 package xyz.znix.xftl.crew
 
 import org.jdom2.Element
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.SpriteSheet
-import xyz.znix.xftl.Animations
+import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
-import xyz.znix.xftl.random
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -28,8 +24,12 @@ abstract class AbstractCrew(
 ) {
     val codename: String get() = blueprint.name
 
-    var icon: Animation
-    val backImg: SpriteSheet?
+    var icon: FTLAnimation
+    val backImg: SpriteSheet? = anims["${codename}_portrait"].sheet.secondary
+    val portraitAnim: AnimationSpec
+
+    // This is used to avoid restarting the walking animation unless necessary.
+    private var walkDirection: Direction? = null
 
     // When you set the room, be sure to call positionChanged!
     var room: Room = initialRoom
@@ -122,13 +122,6 @@ abstract class AbstractCrew(
         set(value) {
             field = value
 
-            // In order to preserve the invariant that moving
-            // implies a non-null nextTargetPos, immediately switch
-            // to idle, even if we'll switch back next frame.
-            if (value == null && currentAction == Action.MOVING) {
-                currentAction = Action.IDLE
-            }
-
             // The direction may have changed
             updateAnimation()
         }
@@ -181,14 +174,24 @@ abstract class AbstractCrew(
         }
 
     init {
-        val anim = anims["${codename}_portrait"]
-        icon = anim.start()
-        backImg = anim.sheet.secondary
+
+        // Since the portrait doesn't have a background colour frame, use the top-left frame.
+        // Drones need to use the correct image, though!
+        val portrait = anims["${codename}_portrait"]
+        portraitAnim = if (backImg == null) {
+            portrait
+        } else {
+            val name = "$codename synthetic portrait animation"
+            AnimationSpec(portrait.sheet, name, 0, 0, 1, 1f)
+        }
+
+        icon = portraitAnim.startLooping()
+
         updateAnimation()
     }
 
     open fun update(dt: Float) {
-        icon.update((dt * 1000).toLong())
+        icon.update(dt)
 
         if (room.oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL) {
             dealDamage(6.4f * dt * suffocationMultiplier)
@@ -475,7 +478,7 @@ abstract class AbstractCrew(
                 stretch = icon.frame * TELEPORT_IMAGE_STRETCH
             } else {
                 // Teleporting down (the 2nd half of the animation)
-                stretch = (icon.frameCount - icon.frame) * TELEPORT_IMAGE_STRETCH
+                stretch = icon.frame * TELEPORT_IMAGE_STRETCH
                 opacity *= progress
             }
         }
@@ -642,28 +645,27 @@ abstract class AbstractCrew(
 
     protected fun updateAnimation() {
         icon = when (currentAction) {
-            Action.IDLE -> {
-                // Since the portrait doesn't have a background colour frame, use the top-left frame.
-                // Drones need to use the correct image, though!
-                val portrait = anims["${codename}_portrait"]
-                if (backImg == null) {
-                    portrait.start()
-                } else {
-                    Animation(portrait.sheet.sheet, 0, 0, 0, 0, true, 1, false)
-                }
-            }
+            Action.IDLE -> portraitAnim.startLooping()
 
-            // Guard against movement being null, which could potentially
-            // happen if the user cancels the movement while paused at the
-            // perfect moment?
             Action.MOVING -> {
-                val deltaX = nextTargetPos!!.x - pixelSpaceX
-                val deltaY = nextTargetPos!!.y - pixelSpaceY
-                anims["${codename}_walk_${dirAsString(Direction.bestFit(deltaX, deltaY))}"].start()
+                // We can have a null targetPos for a short amount of time, while
+                // changing as we reach a target position before it's reset.
+                val target = nextTargetPos ?: return
+
+                val deltaX = target.x - pixelSpaceX
+                val deltaY = target.y - pixelSpaceY
+                val direction = Direction.bestFit(deltaX, deltaY)
+
+                // If we're already using the right animation, don't restart it.
+                if (walkDirection == direction)
+                    return
+                walkDirection = direction
+
+                anims["${codename}_walk_${dirAsString(direction)}"].startLooping()
             }
 
-            Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"].start()
-            Action.REPAIRING -> anims["${codename}_repair"].start()
+            Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"].startLooping()
+            Action.REPAIRING -> anims["${codename}_repair"].startLooping()
             Action.FIGHTING, Action.SABOTAGE -> {
                 // Figure out the direction.
                 val dir: Direction = when {
@@ -695,47 +697,43 @@ abstract class AbstractCrew(
                     else -> Direction.bestFit(pixelPosition, enemyToAttack!!.pixelPosition)
                 }
 
-                val icon = when (isPunching) {
-                    true -> anims["${codename}_punch_${dirAsString(dir)}"].start()
-                    false -> anims["${codename}_shoot_${dirAsString(dir)}"].start()
-                }
-
                 // We have to update the icon each time the punch timer expires,
-                // so make it obvious if that isn't done.
-                icon.setLooping(false)
+                // so make it obvious if that isn't done by not looping.
+                val icon = when (isPunching) {
+                    true -> anims["${codename}_punch_${dirAsString(dir)}"].startSingle()
+                    false -> anims["${codename}_shoot_${dirAsString(dir)}"].startSingle()
+                }
 
                 // Only use the first frame of shooting animations - this seems
                 // a bit weird, but also seems to match FTL.
                 if (!isPunching) {
-                    icon.stop()
+                    icon.isPaused = true
                 }
 
                 // Leave the animation at its default 1 second if
                 // the attack timer isn't set, as the animation will
                 // be updated again once it's set.
                 if (attackTimer != null) {
-                    val frameDurationMs = (attackTimer!! / icon.frameCount * 1000).toInt()
-                    for (i in 0 until icon.frameCount)
-                        icon.setDuration(i, frameDurationMs)
+                    icon.duration = attackTimer!!
                 }
 
                 icon
             }
 
-            Action.DYING -> anims["${codename}_death_right"].start().apply {
-                // Don't loop, we'll disappear when the animation finishes
-                setLooping(false)
-            }
+            // Don't loop, we'll disappear when the animation finishes
+            Action.DYING -> anims["${codename}_death_right"].startSingle()
 
             Action.TELEPORTING -> {
                 // If we're beaming back down on the destination ship, play it backwards.
                 val backwards = teleportingTo?.ship == room.ship
 
-                anims["${codename}_teleport"].start(1f, backwards).apply {
-                    // Stop, as it would look weird if we restarted for a moment.
-                    setLooping(false)
-                }
+                // Stop at the end, as it would look weird if we restarted for a moment.
+                anims["${codename}_teleport"].startSingle(1f, backwards)
             }
+        }
+
+        if (currentAction != Action.MOVING) {
+            walkDirection = null
         }
     }
 

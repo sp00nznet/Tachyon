@@ -1,9 +1,9 @@
 package xyz.znix.xftl.drones
 
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
+import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
@@ -69,7 +69,7 @@ abstract class AbstractExternalDrone(
     private var ionStunTimer: Float = 0f
 
     protected var stunRotationAnimation: Float = 0f
-    private var stunSparksAnimation: Animation? = null
+    private var stunSparksAnimation: FTLAnimation? = null
     private var stunSparksMirror: Boolean = false
 
     protected val game: InGameState get() = ownerShip.sys
@@ -106,7 +106,7 @@ abstract class AbstractExternalDrone(
 
         if (isStunned) {
             stunRotationAnimation += Math.toRadians(480.0).toFloat() * dt
-            stunSparksAnimation?.update((dt * 1000).toLong())
+            stunSparksAnimation?.update(dt)
             return
         }
         stunRotationAnimation = 0f
@@ -178,9 +178,7 @@ abstract class AbstractExternalDrone(
         }
 
         if (stunSparksAnimation == null || stunSparksAnimation?.isStopped == true) {
-            stunSparksAnimation = game.animations["stun_spark_big"].start().also {
-                it.setLooping(false)
-            }
+            stunSparksAnimation = game.animations["stun_spark_big"].startSingle()
 
             // See doc/hacking for details about this
             stunSparksMirror = Random.nextBoolean()

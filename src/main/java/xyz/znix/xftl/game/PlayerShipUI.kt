@@ -1,7 +1,6 @@
 package xyz.znix.xftl.game
 
 import org.jdom2.Element
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
@@ -980,11 +979,11 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
 
         override val disabled: Boolean get() = empty
 
-        private var hackingSparks: Animation? = null
+        private var hackingSparks: FTLAnimation? = null
         private var hackingOffsetX: Int = 0
         private var hackingMaskY: Int = 0
         private var hackingMirror: Boolean = false
-        private var hackingLastMS: Long = 0
+        private var hackingLastNS: Long = 0
 
         // Move these out to save a few allocations
         // (it's probably well into paranoid territory, but why not)
@@ -1102,24 +1101,20 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
                 return
             }
 
-            val currentMS = System.nanoTime() / 1_000_000L
+            val currentNS = System.nanoTime()
+            val dt = (currentNS - hackingLastNS) / 1_000_000_000f
+            hackingLastNS = currentNS
 
             if (hackingSparks == null || hackingSparks?.isStopped == true) {
-                hackingSparks = ship.sys.animations["stun_spark_big"].start().also {
-                    it.setLooping(false)
-                }
+                hackingSparks = ship.sys.animations["stun_spark_big"].startSingle()
 
                 hackingOffsetX = Random.nextInt(25)
                 hackingMaskY = Random.nextInt(31)
                 hackingMirror = Random.nextBoolean()
-                hackingLastMS = currentMS
             }
 
             // Update the animation regardless of whether we're paused.
-            // We can't use auto-update since we need to mask part of
-            // the image, which we need to do via the underlying frame image.
-            hackingSparks!!.update(currentMS - hackingLastMS)
-            hackingLastMS = currentMS
+            hackingSparks!!.update(dt)
 
             val frame = hackingSparks!!.currentFrame
             val cutoutWidth = 69

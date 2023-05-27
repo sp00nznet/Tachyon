@@ -58,7 +58,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     private inner class FlakProjectile(room: Room, val spec: ProjectileSpec) : AbstractWeaponProjectile(this, room) {
-        private val animation = room.ship.sys.animations[spec.animation].start()
+        private val animation = room.ship.sys.animations[spec.animation].startLooping()
 
         private val destinationOffset: IPoint
 
@@ -84,7 +84,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         override fun update(dt: Float, currentSpace: Ship) {
             super.update(dt, currentSpace)
-            animation.update((dt * 1000).toLong())
+            animation.update(dt)
         }
 
         override fun renderPreTranslated(g: Graphics) {
