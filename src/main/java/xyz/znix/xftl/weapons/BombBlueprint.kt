@@ -66,7 +66,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             val animation = target.ship.sys.animations[projectile!!].start(2f, true)
             animation.setLooping(false)
             val fb = FiredBomb(this@BombBlueprint, target, animation)
-            target.ship.inboundBombs += fb
+            target.ship.projectiles += fb
         }
 
         override fun fire(target: Room) {
@@ -84,10 +84,15 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
     }
 
-    class FiredBomb(val type: BombBlueprint, val target: Room, val animation: Animation) {
+    class FiredBomb(val type: BombBlueprint, val target: Room, val animation: Animation) : IProjectile {
         val missed = Math.random() * 100 < target.ship.evasion
         val hitSuperShield = target.ship.superShield > 0 && !missed
-        val position: ConstPoint
+        override val position: ConstPoint
+
+        // Can't collide with drones or other projectiles
+        override val collisionsEnabled: Boolean get() = false
+        override val antiDroneBP: AbstractWeaponBlueprint? get() = null
+        override val antiDroneExemption: Ship? get() = null
 
         init {
             val ship = target.ship
@@ -124,26 +129,29 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             animation.setLooping(false)
         }
 
-        fun update(dt: Float) {
+        override fun update(dt: Float, currentSpace: Ship) {
             animation.update((dt * 1000).toLong())
 
-            if (animation.isStopped) {
-                target.ship.inboundBombs.remove(this)
+            if (!animation.isStopped)
+                return
 
-                if (missed) {
-                    target.ship.playDamageEffect(type, position)
-                } else if (hitSuperShield) {
-                    // TODO support ships without a shields system
-                    target.ship.shields?.popShieldLayer(type)
-                    target.ship.playDamageEffect(type, position)
-                } else {
-                    target.ship.damage(target, type)
-                }
+            currentSpace.projectiles.remove(this)
+
+            if (missed) {
+                currentSpace.playDamageEffect(type, position)
+            } else if (hitSuperShield) {
+                // TODO support ships without a shields system
+                currentSpace.shields?.popShieldLayer(type)
+                currentSpace.playDamageEffect(type, position)
+            } else {
+                currentSpace.damage(target, type)
             }
         }
 
-        fun render() {
+        override fun render(g: Graphics, currentSpace: Ship) {
             animation.draw(position.x.f - animation.width / 2, position.y.f - animation.height / 2)
         }
+
+        override fun hitOtherProjectile(currentSpace: Ship) = error("Bombs have collision disabled")
     }
 }

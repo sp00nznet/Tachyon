@@ -99,7 +99,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     // This contains all the projectiles, both incoming and outgoing.
     val projectiles: MutableList<IProjectile> = ArrayList()
 
-    val inboundBombs: MutableList<BombBlueprint.FiredBomb> = ArrayList()
     val inboundBeams: MutableList<BeamBlueprint.BeamInstance> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
 
@@ -523,10 +522,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             }
         }
 
-        for (bomb in inboundBombs) {
-            bomb.render()
-        }
-
         for (beam in inboundBeams) {
             beam.renderInbound()
         }
@@ -765,9 +760,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         // Walk backwards, since projectiles may remove themselves
         for (i in projectiles.size - 1 downTo 0) {
             projectiles[i].update(dt, this)
-        }
-        for (i in inboundBombs.size - 1 downTo 0) {
-            inboundBombs[i].update(dt)
         }
 
         // Check for collisions between any two projectiles. To avoid
