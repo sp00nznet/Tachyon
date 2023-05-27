@@ -2,11 +2,14 @@ package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -24,6 +27,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         projectileSpecs = ArrayList()
         xml.getChild("projectiles")?.getChildren("projectile")?.forEach { proj ->
             projectileSpecs += ProjectileSpec(
+                projectileSpecs.size,
                 proj.getAttributeValue("count")!!.toInt(),
                 proj.textTrim,
                 proj.getAttributeValue("fake")!!.toBoolean()
@@ -32,6 +36,20 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance = FlakInstance(ship)
+
+    override fun loadProjectileFromXML(
+        game: InGameState,
+        elem: Element, refs: RefLoader,
+        callback: ProjectileLoadCallback
+    ) {
+        val specId = SaveUtil.getAttrInt(elem, "specId")
+
+        SaveUtil.getRoomRef(elem, "target", refs) { target ->
+            val projectile = FlakProjectile(target, projectileSpecs[specId])
+            projectile.loadPropertiesFromXML(elem, refs)
+            callback(projectile)
+        }
+    }
 
     inner class FlakInstance(ship: Ship) : AbstractProjectileWeaponInstance(this, ship) {
         override fun buildProjectile(target: Room) = error("Building a single flak projectile isn't supported")
@@ -57,10 +75,12 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
     }
 
-    private inner class FlakProjectile(room: Room, val spec: ProjectileSpec) : AbstractWeaponProjectile(this, room) {
+    private inner class FlakProjectile(room: Room, val spec: ProjectileSpec) :
+        AbstractWeaponProjectile(this@FlakBlueprint, room) {
+
         private val animation = room.ship.sys.animations[spec.animation].startLooping()
 
-        private val destinationOffset: IPoint
+        private var destinationOffset: IPoint
 
         // It seems to use the same initialisation code as a laser,
         // so it probably copies its default speed.
@@ -142,20 +162,26 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun calculateTargetPosition(): IPoint {
             return super.calculateTargetPosition() + destinationOffset
         }
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            super.saveToXML(elem, refs)
+            SaveUtil.addRoomRef(elem, "target", refs, target)
+            SaveUtil.addAttrInt(elem, "specId", spec.specId)
+            SaveUtil.addAttrFloat(elem, "spinAnimation", animation.timer)
+
+            // We only need to save this because it is (or will be) shown in the UI.
+            // We only use it here when we switch to the target ship space, so the
+            // UI is the only reason you could notice it changing.
+            SaveUtil.addPoint(elem, "destOffset", destinationOffset)
+        }
+
+        override fun loadPropertiesFromXML(elem: Element, refs: RefLoader) {
+            super.loadPropertiesFromXML(elem, refs)
+            destinationOffset = SaveUtil.getPoint(elem, "destOffset")
+            animation.timer = SaveUtil.getAttrFloat(elem, "spinAnimation")
+        }
     }
 
     // Corresponds to a <projectile> tag in the XML
-    private class ProjectileSpec(val count: Int, val animation: String, val fake: Boolean)
-
-    // For some reason Slick doesn't seem to have a good way to scale an image?
-    // There's getScaledCopy, but that changes the region
-    // of the image that is drawn.
-    private class ScaledImage(copyOf: Image, scale: Float) : Image(copyOf) {
-        init {
-            width = (width * scale).toInt()
-            height = (height * scale).toInt()
-            centerX *= scale
-            centerY *= scale
-        }
-    }
+    private class ProjectileSpec(val specId: Int, val count: Int, val animation: String, val fake: Boolean)
 }

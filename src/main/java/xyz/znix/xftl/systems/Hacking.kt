@@ -319,6 +319,8 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         override val antiDroneBP: AbstractWeaponBlueprint? get() = null
         override val antiDroneExemption: Ship? get() = null
 
+        override val serialisationType: String get() = throw UnsupportedOperationException("TODO")
+
         override val isMissileForDD: Boolean get() = !hasLanded
 
         private var lightFlashTimer: Float = 0f

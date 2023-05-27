@@ -1261,6 +1261,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             animationsElem.addContent(animElem)
         }
         elem.addContent(animationsElem)
+
+        // Serialise in-flight projectile
+        val projectilesElem = Element("projectiles")
+        for (projectile in projectiles) {
+            val projectileElem = Element("projectile")
+            SaveUtil.addAttr(projectileElem, "loadType", projectile.serialisationType)
+            projectile.saveToXML(projectileElem, refs)
+            projectilesElem.addContent(projectileElem)
+        }
+        elem.addContent(projectilesElem)
     }
 
     fun loadFromXml(rootElem: Element, refs: RefLoader) {
@@ -1345,6 +1355,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         // Deserialise explosion (and similar) animations
         for (animElem in rootElem.getChild("animations").getChildren("animation")) {
             animations += FloatingAnimation.loadFromXML(animElem, sys)
+        }
+
+        // Deserialise the in-flight projectiles
+        for (projectileElem in rootElem.getChild("projectiles").getChildren("projectile")) {
+            val serialisationType = SaveUtil.getAttr(projectileElem, "loadType")
+            IProjectile.loadFromXML(sys, projectileElem, refs, serialisationType) { projectiles += it }
         }
 
         updateCrewReservedSlots()

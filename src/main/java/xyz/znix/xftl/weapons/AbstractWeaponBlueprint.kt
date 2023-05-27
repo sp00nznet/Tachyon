@@ -9,6 +9,7 @@ import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.savegame.RefLoader
 
 abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val launcher: String = xml.getChildTextTrim("weaponArt")
@@ -74,6 +75,14 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     }
 
     abstract fun buildInstance(ship: Ship): AbstractWeaponInstance
+
+    open fun loadProjectileFromXML(
+        game: InGameState,
+        elem: Element, refs: RefLoader,
+        callback: ProjectileLoadCallback
+    ) {
+        throw UnsupportedOperationException("Weapon blueprint '$name' doesn't support weapon projectile deserialisation.")
+    }
 
     class SoundList(elem: Element) {
         private val names: List<String> = elem.getChildren("sound").map { it.textTrim }

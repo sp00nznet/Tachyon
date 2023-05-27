@@ -1,8 +1,12 @@
 package xyz.znix.xftl.weapons
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
 
 interface IProjectile {
     /**
@@ -61,6 +65,12 @@ interface IProjectile {
     val antiDroneExemption: Ship?
 
     /**
+     * The ID used to describe what object must deserialise this projectile
+     * once it's saved to XML.
+     */
+    val serialisationType: String
+
+    /**
      * Called to update this projectile.
      *
      * [currentSpace] is the ship in whose space this projectile
@@ -75,4 +85,34 @@ interface IProjectile {
      * before it's destroyed.
      */
     fun hitOtherProjectile(currentSpace: Ship)
+
+    /**
+     * Serialise this projectile to XML.
+     */
+    fun saveToXML(elem: Element, refs: ObjectRefs)
+
+    companion object {
+        fun loadFromXML(
+            game: InGameState,
+            elem: Element, refs: RefLoader,
+            serialisationType: String,
+            callback: ProjectileLoadCallback
+        ) {
+            when (serialisationType) {
+                AbstractWeaponProjectile.SERIALISATION_TYPE -> AbstractWeaponProjectile.loadFromXML(
+                    game,
+                    elem,
+                    refs,
+                    callback
+                )
+
+                BombBlueprint.SERIALISATION_TYPE -> BombBlueprint.loadProjectileFromXML(game, elem, refs, callback)
+                else -> {
+                    error("Invalid serialised projectile with serialisation type '$serialisationType'")
+                }
+            }
+        }
+    }
 }
+
+typealias ProjectileLoadCallback = (IProjectile) -> Unit

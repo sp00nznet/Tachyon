@@ -356,6 +356,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         override val antiDroneBP: AbstractWeaponBlueprint get() = weapon
         override val antiDroneExemption: Ship get() = ownerShip
 
+        override val serialisationType: String get() = throw UnsupportedOperationException("TODO")
+
         override fun renderPreTranslated(g: Graphics) {
             val spr = animation.spriteAt(0)
 

@@ -2,6 +2,7 @@ package xyz.znix.xftl.savegame
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
@@ -71,6 +72,13 @@ object SaveUtil {
         // IDR stands for 'ID Reference'
         val elem = Element(newName)
         elem.setAttribute("idr", refs[value])
+        parent.addContent(elem)
+    }
+
+    fun addRoomRef(parent: Element, newName: String, refs: ObjectRefs, room: Room) {
+        val elem = Element(newName)
+        elem.setAttribute("shipRef", refs[room.ship])
+        elem.setAttribute("roomId", room.id.toString())
         parent.addContent(elem)
     }
 
@@ -177,6 +185,16 @@ object SaveUtil {
         val elem = parent.getChild(name) ?: error("Missing reference tag '$name'")
         val ref = elem.getAttributeValue("idr")!!
         return refs.resolve(type, ref)
+    }
+
+    fun getRoomRef(parent: Element, name: String, refs: RefLoader, callback: (Room) -> Unit) {
+        val elem = parent.getChild(name) ?: error("Missing room reference tag '$name'")
+        val shipRef = elem.getAttributeValue("shipRef")
+        val roomId = elem.getAttributeValue("roomId").toInt()
+
+        refs.asyncResolve(Ship::class.java, shipRef) { ship ->
+            callback(ship!!.rooms[roomId])
+        }
     }
 
     /**

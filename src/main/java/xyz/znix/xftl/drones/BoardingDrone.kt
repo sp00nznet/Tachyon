@@ -152,6 +152,8 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         override val antiDroneBP: AbstractWeaponBlueprint? get() = null
         override val antiDroneExemption: Ship? get() = null
 
+        override val serialisationType: String get() = throw UnsupportedOperationException("TODO")
+
         override fun reachedTarget() {
             // We've hit our target room.
 

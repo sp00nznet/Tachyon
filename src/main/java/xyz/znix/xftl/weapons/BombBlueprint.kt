@@ -4,8 +4,12 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.*
 import xyz.znix.xftl.drones.CombatDrone
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -17,6 +21,11 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return BombInstance(ship)
+    }
+
+    private fun makeBomb(target: Room): FiredBomb {
+        val animation = target.ship.sys.animations[projectile!!].startSingle(0.5f, true)
+        return FiredBomb(this@BombBlueprint, target, animation)
     }
 
     inner class BombInstance(ship: Ship) : AbstractWeaponInstance(this, ship), IRoomTargetingWeapon {
@@ -59,9 +68,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         private fun doBombFire(target: Room) {
-            val animation = target.ship.sys.animations[projectile!!].startSingle(0.5f, true)
-            val fb = FiredBomb(this@BombBlueprint, target, animation)
-            target.ship.projectiles += fb
+            target.ship.projectiles += makeBomb(target)
         }
 
         override fun fire(target: Room) {
@@ -80,9 +87,13 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     class FiredBomb(val type: BombBlueprint, val target: Room, val animation: FTLAnimation) : IProjectile {
-        val missed = Math.random() * 100 < target.ship.evasion
-        val hitSuperShield = target.ship.superShield > 0 && !missed
-        override val position: ConstPoint
+        private var missed = Math.random() * 100 < target.ship.evasion
+        private var hitSuperShield = target.ship.superShield > 0 && !missed
+
+        override var position: ConstPoint = ConstPoint.ZERO
+            private set
+
+        override val serialisationType: String get() = SERIALISATION_TYPE
 
         // Can't collide with drones or other projectiles
         override val collisionsEnabled: Boolean get() = false
@@ -144,5 +155,52 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) = error("Bombs have collision disabled")
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            SaveUtil.addAttr(elem, "type", type.name)
+
+            SaveUtil.addAttr(elem, "targetShip", refs[target.ship])
+            SaveUtil.addAttrInt(elem, "targetRoomId", target.id)
+            SaveUtil.addAttrFloat(elem, "animationTimer", animation.timer)
+
+            SaveUtil.addTagBoolIfTrue(elem, "missed", missed)
+            SaveUtil.addTagBoolIfTrue(elem, "hitSuperShield", hitSuperShield)
+
+            // The position will always be the same if we hit, but if we miss
+            // or hit a zoltan shield then it's randomised.
+            SaveUtil.addPoint(elem, "position", position)
+        }
+
+        fun loadFromXML(elem: Element) {
+            missed = SaveUtil.getOptionalTagBool(elem, "missed") ?: false
+            hitSuperShield = SaveUtil.getOptionalTagBool(elem, "hitSuperShield") ?: false
+
+            position = SaveUtil.getPoint(elem, "position")
+
+            animation.timer = SaveUtil.getAttrFloat(elem, "animationTimer")
+        }
+    }
+
+    companion object {
+        fun loadProjectileFromXML(
+            game: InGameState,
+            elem: Element, refs: RefLoader,
+            callback: ProjectileLoadCallback
+        ) {
+            val typeName = SaveUtil.getAttr(elem, "type")
+            val type = game.blueprintManager[typeName] as BombBlueprint
+
+            val targetShip = SaveUtil.getAttr(elem, "targetShip")
+            val targetRoomId = SaveUtil.getAttrInt(elem, "targetRoomId")
+
+            refs.asyncResolve(Ship::class.java, targetShip) {
+                val room = it!!.rooms[targetRoomId]
+                val bomb = type.makeBomb(room)
+                bomb.loadFromXML(elem)
+                callback(bomb)
+            }
+        }
+
+        const val SERIALISATION_TYPE = "firedBomb"
     }
 }

@@ -1,13 +1,18 @@
 package xyz.znix.xftl.weapons
 
+import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -232,10 +237,53 @@ abstract class AbstractProjectile(
     private fun setRotationFromTarget() {
         rotation = atan2(targetPos.y - posY, targetPos.x - posX)
     }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addAttrFloat(elem, "x", posX)
+        SaveUtil.addAttrFloat(elem, "y", posY)
+
+        SaveUtil.addAttrFloat(elem, "entryAngle", entryAngle)
+        SaveUtil.addAttrFloat(elem, "rotation", rotation)
+
+        SaveUtil.addTagBoolIfTrue(elem, "reachedTarget", hasReachedTarget)
+        SaveUtil.addTagBoolIfTrue(elem, "passedShields", hasPassedShields)
+
+        SaveUtil.addPoint(elem, "targetPos", targetPos)
+
+        // Just in case this gets set on the last update before serialisation,
+        // after our update function was run.
+        SaveUtil.addTagBoolIfTrue(elem, "dead", dead)
+    }
+
+    /**
+     * Load back in all the parameters we saved in [saveToXML].
+     *
+     * Note this is different to [IProjectile.loadFromXML], as it only updates
+     * the properties of a previously-created instance, rather than creating
+     * a new one.
+     */
+    open fun loadPropertiesFromXML(elem: Element, refs: RefLoader) {
+        posX = SaveUtil.getAttrFloat(elem, "x")
+        posY = SaveUtil.getAttrFloat(elem, "y")
+
+        entryAngle = SaveUtil.getAttrFloat(elem, "entryAngle")
+        rotation = SaveUtil.getAttrFloat(elem, "rotation")
+
+        hasReachedTarget = SaveUtil.getOptionalTagBool(elem, "reachedTarget") ?: false
+        hasPassedShields = SaveUtil.getOptionalTagBool(elem, "passedShields") ?: false
+
+        targetPos = SaveUtil.getPoint(elem, "targetPos")
+
+        // Just in case this gets set on the last update before serialisation,
+        // after our update function was run.
+        dead = SaveUtil.getOptionalTagBool(elem, "dead") ?: false
+    }
 }
 
 abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val target: Room) :
     AbstractProjectile(target.ship) {
+
+    override val serialisationType: String get() = SERIALISATION_TYPE
 
     /**
      * The default speed for this projectile, if it's not set in the blueprint.
@@ -342,5 +390,39 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
             missSound.play()
             return
         }
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        // Used to figure out what blueprint creates the projectile instance
+        // during deserialisation.
+        SaveUtil.addAttr(elem, "launcher", type.name)
+
+        SaveUtil.addTagBoolIfTrue(elem, "drawUnderShip", drawUnderShip)
+        SaveUtil.addTagBoolIfTrue(elem, "firedByDrone", firedByDrone)
+
+        if (missed != null) {
+            SaveUtil.addTagBool(elem, "missed", missed!!)
+        }
+    }
+
+    override fun loadPropertiesFromXML(elem: Element, refs: RefLoader) {
+        super.loadPropertiesFromXML(elem, refs)
+
+        drawUnderShip = SaveUtil.getOptionalTagBool(elem, "drawUnderShip") ?: false
+        firedByDrone = SaveUtil.getOptionalTagBool(elem, "firedByDrone") ?: false
+
+        missed = SaveUtil.getOptionalTagBool(elem, "missed")
+    }
+
+    companion object {
+        fun loadFromXML(game: InGameState, elem: Element, refs: RefLoader, callback: ProjectileLoadCallback) {
+            val launcher = SaveUtil.getAttr(elem, "launcher")
+            val type = game.blueprintManager[launcher] as AbstractWeaponBlueprint
+            type.loadProjectileFromXML(game, elem, refs, callback)
+        }
+
+        const val SERIALISATION_TYPE = "weaponProjectile"
     }
 }

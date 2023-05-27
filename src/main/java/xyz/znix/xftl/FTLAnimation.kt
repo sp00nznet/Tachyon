@@ -9,6 +9,10 @@ class FTLAnimation(val spec: AnimationSpec, var loop: Boolean, val speed: Float,
     val height: Int = spec.spriteAt(0).height
 
     var timer: Float = 0f
+        set(value) {
+            field = value
+            updateImage()
+        }
 
     val isStopped: Boolean get() = timer >= duration && !loop
 
@@ -46,8 +50,6 @@ class FTLAnimation(val spec: AnimationSpec, var loop: Boolean, val speed: Float,
                 else -> timer = duration
             }
         }
-
-        updateImage()
     }
 
     private fun updateImage() {
