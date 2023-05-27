@@ -305,23 +305,12 @@ abstract class AbstractCrew(
                 pixelSpaceY += directionY * movement
             }
 
-            // Check if we've now reached our destination. If we're
-            // very close, snap to the exact position.
-            val newDistance = sqrt((nextTargetPos.x - pixelSpaceX).pow(2) + (nextTargetPos.y - pixelSpaceY).pow(2))
-            if (newDistance < 0.01f) {
-                pixelSpaceX = nextTargetPos.x.f
-                pixelSpaceY = nextTargetPos.y.f
-
-                this.nextTargetPos = null
-
-                // TODO get stuck on locked doors
-
-                // Calculate the next movement
-                updateMovement()
-            }
-
             // Check if we've switched room. Use our centre position, so
             // we switch room when we appear half-way across.
+            // We must do this before updating our movement - if we're running
+            // with a very high delta-time (for example, if we were stopped in
+            // a debugger) then we'd be marked as being in the wrong room when
+            // updateMovement was called.
             @Suppress("FoldInitializerAndIfToElvis")
             if (!room.containsShipSpace(pixelPositionCentre)) {
                 val newRoom = room.ship.rooms.firstOrNull { it.containsShipSpace(pixelPositionCentre) }
@@ -336,6 +325,21 @@ abstract class AbstractCrew(
                 // a door so we shouldn't have a roomPosition set, but check for
                 // that just in case - if so, we need to update the room.
                 positionChanged()
+            }
+
+            // Check if we've now reached our destination. If we're
+            // very close, snap to the exact position.
+            val newDistance = sqrt((nextTargetPos.x - pixelSpaceX).pow(2) + (nextTargetPos.y - pixelSpaceY).pow(2))
+            if (newDistance < 0.01f) {
+                pixelSpaceX = nextTargetPos.x.f
+                pixelSpaceY = nextTargetPos.y.f
+
+                this.nextTargetPos = null
+
+                // TODO get stuck on locked doors
+
+                // Calculate the next movement
+                updateMovement()
             }
 
             // Check if a door needs to be held open for us.
