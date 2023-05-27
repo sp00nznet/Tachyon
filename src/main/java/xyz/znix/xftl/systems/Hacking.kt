@@ -423,7 +423,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         override fun hitOtherProjectile(currentSpace: Ship) {
             val explodeAnimation = currentSpace.sys.animations["explosion_random"]
-            currentSpace.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), position)
+            currentSpace.animations += Ship.FloatingAnimation.centred(explodeAnimation, position)
         }
 
         override fun onSwitchedToTarget() {

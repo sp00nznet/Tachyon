@@ -196,7 +196,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             destroy()
 
             // Play the explosion animation whenever a drone is killed.
-            ship.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), getPixelPositionCentre())
+            ship.animations += Ship.FloatingAnimation.centred(explodeAnimation, getPixelPositionCentre())
             explodeSound.play()
         }
     }

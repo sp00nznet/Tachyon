@@ -117,7 +117,7 @@ abstract class AbstractExternalDrone(
     override fun destroy() {
         super.destroy()
 
-        targetShip.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), flightController.position)
+        targetShip.animations += Ship.FloatingAnimation.centred(explodeAnimation, flightController.position)
         explodeSound.play()
     }
 

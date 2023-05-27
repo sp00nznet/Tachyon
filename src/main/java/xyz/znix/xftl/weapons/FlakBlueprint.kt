@@ -1,7 +1,6 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Ship
@@ -9,6 +8,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -119,23 +119,25 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         private fun playAnimation() {
-            val baseAnimation = target.ship.sys.animations[explosion].start()
+            val baseAnimation = target.ship.sys.animations[explosion]
 
-            val animation: Animation
             if (spec.fake) {
                 // Fake explosions are scaled down by about 5 times, though
                 // this isn't an exact measurement (though I have confirmed
                 // they're the same animation).
-                animation = Animation()
-                for (i in 0 until baseAnimation.frameCount) {
-                    val image = ScaledImage(baseAnimation.getImage(i), 0.2f)
-                    animation.addFrame(image, baseAnimation.getDuration(i))
-                }
-            } else {
-                animation = baseAnimation
-            }
+                val scaling = 0.2f
 
-            target.ship.animations += Ship.FloatingAnimation.centered(animation, position)
+                // Find the position to place the image at to centre it on our position
+                val firstFrame = baseAnimation.spriteAt(0)
+                val offsetPos = ConstPoint(
+                    position.x - (firstFrame.width / 2 * scaling).roundToInt(),
+                    position.y - (firstFrame.height / 2 * scaling).roundToInt()
+                )
+
+                target.ship.animations += Ship.FloatingAnimation(baseAnimation, offsetPos, scaling)
+            } else {
+                target.ship.animations += Ship.FloatingAnimation.centred(baseAnimation, position)
+            }
         }
 
         override fun calculateTargetPosition(): IPoint {

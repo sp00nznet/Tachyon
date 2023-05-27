@@ -1,7 +1,6 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
-import org.newdawn.slick.Animation
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
@@ -533,7 +532,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         // Draw the floating animations (eg, from projectile explosions)
         for (a in animations)
-            a.render()
+            a.render(g)
 
         animations.removeIf { a -> a.isFinished }
     }
@@ -857,7 +856,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
     fun playDamageEffect(type: AbstractWeaponBlueprint, position: IPoint) {
         val animation = sys.animations[type.explosion ?: error("Default explosion not set")]
-        animations += FloatingAnimation.centered(animation.start(), position)
+        animations += FloatingAnimation.centred(animation, position)
     }
 
     fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
@@ -1235,6 +1234,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         val oxygenLevelElem = Element("oxygenLevels")
         oxygenLevelElem.addContent(oxygenLevelString.toString().trim())
         elem.addContent(oxygenLevelElem)
+
+        // Serialise any floating animations, like the animations from a weapon
+        // hitting a room or the shields.
+        val animationsElem = Element("animations")
+        for (animation in animations) {
+            val animElem = Element("animation")
+            animation.saveToXML(animElem)
+            animationsElem.addContent(animElem)
+        }
+        elem.addContent(animationsElem)
     }
 
     fun loadFromXml(rootElem: Element, refs: RefLoader) {
@@ -1316,6 +1325,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             hardpoints[hardpointIndex].weapon = weapon
         }
 
+        // Deserialise explosion (and similar) animations
+        for (animElem in rootElem.getChild("animations").getChildren("animation")) {
+            animations += FloatingAnimation.loadFromXML(animElem, sys)
+        }
+
         updateCrewReservedSlots()
         updateAvailableSystems()
     }
@@ -1334,26 +1348,58 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         var weapon: AbstractWeaponInstance? = null
     }
 
-    class FloatingAnimation(val animation: Animation, val pos: ConstPoint) {
-        val isFinished get() = animation.isStopped
+    class FloatingAnimation(val spec: AnimationSpec, val pos: ConstPoint, val scaling: Float = 1f) {
+        private var timer: Float = 0f
+        val isFinished get() = timer >= spec.totalTime
 
-        init {
-            animation.setLooping(false)
-            animation.setAutoUpdate(false)
-        }
+        fun render(g: Graphics) {
+            val frameId = (timer / spec.time).toInt().coerceIn(0 until spec.length)
+            val frame = spec.spriteAt(frameId)
 
-        fun render() {
-            animation.draw(pos.x.f, pos.y.f)
+            if (scaling == 1f) {
+                frame.draw(pos.x.f, pos.y.f)
+                return
+            }
+
+            // This is used for flak
+            g.pushTransform()
+            g.translate(pos.x.f, pos.y.f)
+            g.scale(scaling, scaling)
+            frame.draw()
+            g.popTransform()
         }
 
         fun update(dt: Float) {
-            animation.update((dt * 1000).toLong())
+            timer += dt
+        }
+
+        fun saveToXML(elem: Element) {
+            SaveUtil.addAttr(elem, "name", spec.name)
+            SaveUtil.addAttrInt(elem, "x", pos.x)
+            SaveUtil.addAttrInt(elem, "y", pos.y)
+            SaveUtil.addAttrFloat(elem, "timer", timer)
+            SaveUtil.addAttrFloat(elem, "scaling", scaling)
         }
 
         companion object {
-            fun centered(animation: Animation, center: IPoint): FloatingAnimation {
-                val offsetPos = ConstPoint(center.x - animation.width / 2, center.y - animation.height / 2)
+            fun centred(animation: AnimationSpec, centre: IPoint): FloatingAnimation {
+                val firstFrame = animation.spriteAt(0)
+                val offsetPos = ConstPoint(centre.x - firstFrame.width / 2, centre.y - firstFrame.height / 2)
                 return FloatingAnimation(animation, offsetPos)
+            }
+
+            fun loadFromXML(elem: Element, game: InGameState): FloatingAnimation {
+                val name = SaveUtil.getAttr(elem, "name")
+                val spec = game.animations[name]
+
+                val x = SaveUtil.getAttrInt(elem, "x")
+                val y = SaveUtil.getAttrInt(elem, "y")
+                val scaling = SaveUtil.getAttrFloat(elem, "scaling")
+
+                val anim = FloatingAnimation(spec, ConstPoint(x, y), scaling)
+                anim.timer = SaveUtil.getAttrFloat(elem, "timer")
+
+                return anim
             }
         }
     }

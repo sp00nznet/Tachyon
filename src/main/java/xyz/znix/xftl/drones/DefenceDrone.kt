@@ -369,7 +369,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         // Since we don't override crossedShieldLine, we completely ignore shields.
 
         override fun hitOtherProjectile(currentSpace: Ship) {
-            currentSpace.animations += Ship.FloatingAnimation.centered(hitAnimation.start(), position)
+            currentSpace.animations += Ship.FloatingAnimation.centred(hitAnimation, position)
         }
     }
 

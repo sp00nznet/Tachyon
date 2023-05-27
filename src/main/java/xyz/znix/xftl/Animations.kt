@@ -20,12 +20,12 @@ class Animations(df: Datafile) {
         load(df, "data/dlcAnimations.xml")
     }
 
-    private fun load(df: Datafile, name: String) {
+    private fun load(df: Datafile, filePath: String) {
         sheets as MutableMap
         animations as MutableMap
         weaponAnimations as MutableMap
 
-        val doc = df.parseXML(df[name])
+        val doc = df.parseXML(df[filePath])
 
         // Parse the sheets
         for (elem in doc.rootElement.getChildren("animSheet")) {
@@ -78,15 +78,17 @@ class Animations(df: Datafile) {
 
         for (xml in doc.rootElement.getChildren("anim")) {
             val name = xml.getAttributeValue("name")
-            animations[name] = buildAnimation(xml) ?: continue
+            animations[name] = buildAnimation(xml, name) ?: continue
         }
 
         for (xml in doc.rootElement.getChildren("weaponAnim")) {
             val name = xml.getAttributeValue("name")
 
             // Add this here since weapon animations don't have time elements
+            // Supply some fixed name that'll be easy to identify if this somehow
+            // ends up being used - it shouldn't, we throw it away very soon.
             xml.addContent(Element("time").apply { text = "-1" })
-            val anim = buildAnimation(xml) ?: continue
+            val anim = buildAnimation(xml, "<unnamed-weapon-anim>") ?: continue
 
             val chargedFrame = xml.getChild("chargedFrame").textTrim.toInt()
             val fireFrame = xml.getChild("fireFrame").textTrim.toInt()
@@ -110,7 +112,7 @@ class Animations(df: Datafile) {
         }
     }
 
-    private fun buildAnimation(xml: Element): AnimationSpec? {
+    private fun buildAnimation(xml: Element, name: String): AnimationSpec? {
         val sheetName = xml.getChild("sheet").textTrim
 
         // Skip the broken animation files
@@ -128,7 +130,7 @@ class Animations(df: Datafile) {
         // Convert from per-cycle to per-frame
         val time = xml.getChild("time").textTrim.toFloat() / length
 
-        return AnimationSpec(sheet, x, y, length, time)
+        return AnimationSpec(sheet, name, x, y, length, time)
     }
 
     operator fun get(name: String): AnimationSpec {

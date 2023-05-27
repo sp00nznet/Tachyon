@@ -204,7 +204,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) {
-            currentSpace.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), position)
+            currentSpace.animations += Ship.FloatingAnimation.centred(explodeAnimation, position)
         }
 
         override fun crossedShieldLine() {
@@ -213,7 +213,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
             // Hitting a super shield doesn't damage it, but does destroy the drone.
             if (target.ship.superShield > 0) {
                 destroy()
-                target.ship.animations += Ship.FloatingAnimation.centered(explodeAnimation.start(), position)
+                target.ship.animations += Ship.FloatingAnimation.centred(explodeAnimation, position)
             }
         }
     }
