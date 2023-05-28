@@ -337,14 +337,14 @@ class Sector {
             refs.register(beacon, "beacon")
         }
 
-        SaveUtil.addRef(elem, "sectorInfo", refs, info)
+        SaveUtil.addAttrRef(elem, "sectorInfo", refs, info)
 
-        SaveUtil.addTagInt(elem, "fleetAdvanceModifier", fleetAdvanceModifier)
-        SaveUtil.addTagBool(elem, "mapRevealed", mapRevealed)
+        SaveUtil.addAttrInt(elem, "fleetAdvanceModifier", fleetAdvanceModifier)
+        SaveUtil.addAttrBool(elem, "mapRevealed", mapRevealed)
         SaveUtil.addPoint(elem, "dangerZoneCentre", dangerZoneCentre)
 
-        SaveUtil.addRef(elem, "startBeacon", refs, startBeacon)
-        SaveUtil.addRef(elem, "finishBeacon", refs, finishBeacon)
+        SaveUtil.addAttrRef(elem, "startBeacon", refs, startBeacon)
+        SaveUtil.addAttrRef(elem, "finishBeacon", refs, finishBeacon)
 
         // Serialise all the beacons
         for (beacon in beacons) {
@@ -395,10 +395,10 @@ class Sector {
      * Deserialise this sector from XML.
      */
     constructor(elem: Element, refs: RefLoader, game: InGameState, mapRefs: RefLoader) {
-        info = SaveUtil.getRefImmediate(elem, "sectorInfo", mapRefs, GameMap.SectorInfo::class.java)!!
+        info = SaveUtil.getAttrRefImmediate(elem, "sectorInfo", mapRefs, GameMap.SectorInfo::class.java)!!
 
-        fleetAdvanceModifier = SaveUtil.getTagInt(elem, "fleetAdvanceModifier")
-        mapRevealed = SaveUtil.getTagBool(elem, "mapRevealed")
+        fleetAdvanceModifier = SaveUtil.getAttrInt(elem, "fleetAdvanceModifier")
+        mapRevealed = SaveUtil.getAttrBool(elem, "mapRevealed")
         dangerZoneCentre = Point(SaveUtil.getPoint(elem, "dangerZoneCentre"))
 
         // Use a separate RefLoader to find the start and finish beacons
@@ -442,8 +442,8 @@ class Sector {
         }
 
         beaconRefs.switchToResolveMode()
-        startBeacon = SaveUtil.getRefImmediate(elem, "startBeacon", beaconRefs, Beacon::class.java)!!
-        finishBeacon = SaveUtil.getRefImmediate(elem, "finishBeacon", beaconRefs, Beacon::class.java)
+        startBeacon = SaveUtil.getAttrRefImmediate(elem, "startBeacon", beaconRefs, Beacon::class.java)!!
+        finishBeacon = SaveUtil.getAttrRefImmediate(elem, "finishBeacon", beaconRefs, Beacon::class.java)
     }
 
     companion object {

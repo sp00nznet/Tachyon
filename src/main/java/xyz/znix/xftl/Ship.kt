@@ -13,6 +13,7 @@ import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.ResourceSet
 import xyz.znix.xftl.game.ShipGib
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
@@ -1189,18 +1190,25 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         SaveUtil.addAttr(elem, "shipId", name)
         SaveUtil.addAttr(elem, "specId", spec?.name ?: "null")
 
-        SaveUtil.addTagInt(elem, "fuelCount", fuelCount)
-        SaveUtil.addTagInt(elem, "missileCount", missilesCount)
-        SaveUtil.addTagInt(elem, "dronesCount", dronesCount)
-        SaveUtil.addTagInt(elem, "scrap", scrap)
-        SaveUtil.addTagFloat(elem, "ftlChargeProgress", ftlChargeProgress)
-        SaveUtil.addTagInt(elem, "purchasedReactorPower", purchasedReactorPower)
-        SaveUtil.addTagInt(elem, "health", health)
-        SaveUtil.addTagInt(elem, "escapeHealth", escapeHealth)
-        SaveUtil.addTagInt(elem, "surrenderHealth", surrenderHealth)
-        SaveUtil.addTagFloat(elem, "escapeTimer", escapeTimer)
-        SaveUtil.addTagInt(elem, "maxSuperShield", maxSuperShield)
-        SaveUtil.addTagInt(elem, "superShield", superShield)
+        val resources = ResourceSet()
+        resources.fuel = fuelCount
+        resources.missiles = missilesCount
+        resources.droneParts = dronesCount
+        resources.scrap = scrap
+
+        val resourcesElem = Element("resources")
+        resources.saveToXML(resourcesElem, refs)
+        elem.addContent(resourcesElem)
+
+        SaveUtil.addAttrFloat(elem, "ftlProgress", ftlChargeProgress)
+        SaveUtil.addAttrInt(elem, "reactorPower", purchasedReactorPower)
+        SaveUtil.addAttrInt(elem, "health", health)
+
+        SaveUtil.addTagInt(elem, "escapeHealth", escapeHealth, 0)
+        SaveUtil.addTagInt(elem, "surrenderHealth", surrenderHealth, 0)
+        SaveUtil.addTagFloat(elem, "escapeTimer", escapeTimer, null)
+        SaveUtil.addTagInt(elem, "maxSuperShield", maxSuperShield, 5)
+        SaveUtil.addTagInt(elem, "superShield", superShield, 0)
 
         val crewListElem = Element("crew")
         for (crew in this.crew) {
@@ -1285,20 +1293,23 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     fun loadFromXml(rootElem: Element, refs: RefLoader) {
         SaveUtil.registerObjectId(rootElem, refs, this)
 
-        fuelCount = SaveUtil.getTagInt(rootElem, "fuelCount")
-        missilesCount = SaveUtil.getTagInt(rootElem, "missileCount")
-        dronesCount = SaveUtil.getTagInt(rootElem, "dronesCount")
-        scrap = SaveUtil.getTagInt(rootElem, "scrap")
-        ftlChargeProgress = SaveUtil.getTagFloat(rootElem, "ftlChargeProgress")
-        purchasedReactorPower = SaveUtil.getTagInt(rootElem, "purchasedReactorPower")
-        health = SaveUtil.getTagInt(rootElem, "health")
-        escapeHealth = SaveUtil.getTagInt(rootElem, "escapeHealth")
-        surrenderHealth = SaveUtil.getTagInt(rootElem, "surrenderHealth")
-        escapeTimer = SaveUtil.getTagFloatOrNull(rootElem, "escapeTimer")
-        maxSuperShield = SaveUtil.getTagInt(rootElem, "maxSuperShield")
+        val resources = ResourceSet(rootElem.getChild("resources"), refs, sys.content)
+        fuelCount = resources.fuel
+        missilesCount = resources.missiles
+        dronesCount = resources.droneParts
+        scrap = resources.scrap
+
+        ftlChargeProgress = SaveUtil.getAttrFloat(rootElem, "ftlProgress")
+        purchasedReactorPower = SaveUtil.getAttrInt(rootElem, "reactorPower")
+        health = SaveUtil.getAttrInt(rootElem, "health")
+
+        escapeHealth = SaveUtil.getOptionalTagInt(rootElem, "escapeHealth") ?: 0
+        surrenderHealth = SaveUtil.getOptionalTagInt(rootElem, "surrenderHealth") ?: 0
+        escapeTimer = SaveUtil.getOptionalTagFloat(rootElem, "escapeTimer")
+        maxSuperShield = SaveUtil.getOptionalTagInt(rootElem, "maxSuperShield") ?: 5
 
         // This must be set after maxSuperShield to avoid it being wrongly clamped
-        superShield = SaveUtil.getTagInt(rootElem, "superShield")
+        superShield = SaveUtil.getOptionalTagInt(rootElem, "superShield") ?: 0
 
         // Load the systems
         for (elem in rootElem.getChild("systems").getChildren("system")) {

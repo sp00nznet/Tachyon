@@ -941,10 +941,8 @@ abstract class AbstractCrew(
 
         // We can't use the normal point serialisation since
         // it doesn't support floating-point values.
-        elem.addContent(Element("pos").also {
-            SaveUtil.addAttrFloat(it, "x", pixelSpaceX)
-            SaveUtil.addAttrFloat(it, "y", pixelSpaceY)
-        })
+        SaveUtil.addAttrFloat(elem, "x", pixelSpaceX)
+        SaveUtil.addAttrFloat(elem, "y", pixelSpaceY)
 
         SaveUtil.addAttrFloat(elem, "health", health)
         SaveUtil.addAttr(elem, "mode", mode.name)
@@ -983,9 +981,8 @@ abstract class AbstractCrew(
         // we just need to check it.
         require(codename == elem.getAttributeValue("type")) { "Wrong crewmember type was spawned!" }
 
-        val posElem = elem.getChild("pos")
-        pixelSpaceX = SaveUtil.getAttrFloat(posElem, "x")
-        pixelSpaceY = SaveUtil.getAttrFloat(posElem, "y")
+        pixelSpaceX = SaveUtil.getAttrFloat(elem, "x")
+        pixelSpaceY = SaveUtil.getAttrFloat(elem, "y")
 
         // Correctly set what room we're in - as soon as we start setting
         // target positions and stuff like that, we'll be updating the

@@ -489,7 +489,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         // it takes the form of <thing/> rather than <thing></thing>).
         elem.setAttribute("level", energyLevels.toString())
 
-        SaveUtil.addTagInt(elem, "damage", damagedEnergyLevels, 0)
+        SaveUtil.addAttrInt(elem, "damage", damagedEnergyLevels)
         SaveUtil.addTagInt(elem, "scriptedLimit", scriptedPowerLimit, null)
         SaveUtil.addTagFloat(elem, "ionTimer", ionTimer, 0f)
         SaveUtil.addTagInt(elem, "ionPowerLimit", ionPowerLimit, null)
@@ -507,7 +507,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
         energyLevels = elem.getAttributeValue("level")!!.toInt()
 
-        damagedEnergyLevels = SaveUtil.getOptionalTagInt(elem, "damage") ?: 0
+        damagedEnergyLevels = SaveUtil.getAttrInt(elem, "damage")
         scriptedPowerLimit = SaveUtil.getOptionalTagInt(elem, "scriptedLimit")
         ionTimer = SaveUtil.getOptionalTagFloat(elem, "ionTimer") ?: 0f
         ionPowerLimit = SaveUtil.getOptionalTagInt(elem, "ionPowerLimit")

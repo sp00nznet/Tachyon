@@ -155,17 +155,17 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
-        SaveUtil.addTagInt(elem, "selectedShields", selectedShieldBars)
-        SaveUtil.addTagInt(elem, "activeShields", activeShields)
-        SaveUtil.addTagFloat(elem, "rechargeTimer", rechargeTimer)
-        SaveUtil.addTagBool(elem, "discharging", discharging)
+        SaveUtil.addAttrInt(elem, "selected", selectedShieldBars)
+        SaveUtil.addAttrInt(elem, "active", activeShields)
+        SaveUtil.addTagFloat(elem, "rechargeTimer", rechargeTimer, 0f)
+        SaveUtil.addTagBoolIfTrue(elem, "discharging", discharging)
     }
 
     override fun loadSystem(elem: Element, refs: RefLoader) {
-        selectedShieldBars = SaveUtil.getTagInt(elem, "selectedShields")
-        activeShields = SaveUtil.getTagInt(elem, "activeShields")
-        rechargeTimer = SaveUtil.getTagFloat(elem, "rechargeTimer")
-        discharging = SaveUtil.getTagBool(elem, "discharging")
+        selectedShieldBars = SaveUtil.getAttrInt(elem, "selected")
+        activeShields = SaveUtil.getAttrInt(elem, "active")
+        rechargeTimer = SaveUtil.getOptionalTagFloat(elem, "rechargeTimer") ?: 0f
+        discharging = SaveUtil.getOptionalTagBool(elem, "discharging") ?: false
     }
 
     companion object {

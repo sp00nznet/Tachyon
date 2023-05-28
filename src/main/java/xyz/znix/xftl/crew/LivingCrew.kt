@@ -73,14 +73,14 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
         super.saveToXML(elem, refs)
 
-        SaveUtil.addTag(elem, "selectedName", selectedName)
-        SaveUtil.addRef(elem, "ownerShip", refs, ownerShip)
+        SaveUtil.addAttr(elem, "selectedName", selectedName)
+        SaveUtil.addAttrRef(elem, "ownerShip", refs, ownerShip)
     }
 
     override fun loadFromXML(elem: Element, refs: RefLoader) {
         super.loadFromXML(elem, refs)
 
-        selectedName = SaveUtil.getTag(elem, "selectedName")
-        SaveUtil.getRef(elem, "ownerShip", refs, Ship::class.java) { ownerShip = it }
+        selectedName = SaveUtil.getAttr(elem, "selectedName")
+        SaveUtil.getAttrRef(elem, "ownerShip", refs, Ship::class.java) { ownerShip = it }
     }
 }

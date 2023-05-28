@@ -223,6 +223,10 @@ object SaveUtil {
         elem.setAttribute(name, value.toString())
     }
 
+    fun addAttrRef(elem: Element, name: String, refs: ObjectRefs, value: Any?) {
+        elem.setAttribute(name, refs[value])
+    }
+
     // Attribute getters
 
     fun getAttr(elem: Element, name: String): String {
@@ -247,5 +251,15 @@ object SaveUtil {
     fun getAttrFloat(elem: Element, name: String): Float {
         val value = elem.getAttributeValue(name) ?: error("Missing float attribute '$name'")
         return value.toFloat()
+    }
+
+    fun <T> getAttrRef(elem: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit) {
+        val ref = elem.getAttributeValue(name) ?: error("Missing reference attribute '$name'")
+        refs.asyncResolve(type, ref, callback)
+    }
+
+    fun <T> getAttrRefImmediate(elem: Element, name: String, refs: RefLoader, type: Class<T>): T? {
+        val ref = elem.getAttributeValue(name) ?: error("Missing reference attribute '$name'")
+        return refs.resolve(type, ref)
     }
 }
