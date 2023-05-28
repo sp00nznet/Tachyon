@@ -409,13 +409,25 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         return point.x + point.y * width
     }
 
-    fun isSlotFree(point: IPoint, type: AbstractCrew.SlotType): Boolean {
+    /**
+     * Check if a given cell in a room is not currently occupied by another
+     * crewmember, whether they're standing there or walking towards there.
+     *
+     * This also checks if there's an obstruction (eg, the medbay or clonebay stuff)
+     * in the given slot.
+     *
+     * If the [allow] argument is non-null, the slot is still considered free
+     * if that crewmember is occupying the slot. This is intended for crew to check
+     * if someone else is in the slot.
+     */
+    fun isSlotFree(point: IPoint, type: AbstractCrew.SlotType, allow: AbstractCrew? = null): Boolean {
         // Skip obstructed cells - eg, healer in the medbay
         if (obstructions.contains(point))
             return false
 
         val slots = slotsFor(type)
-        return slots[pointToSlot(point)] == null
+        val occupier = slots[pointToSlot(point)]
+        return occupier == null || occupier == allow
     }
 
     /**

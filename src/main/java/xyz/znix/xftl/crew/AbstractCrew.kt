@@ -452,6 +452,8 @@ abstract class AbstractCrew(
             }
 
             // Walk to the computer if no-one is occupying that slot.
+            // (don't specify ourselves as the allow argument, as we don't want
+            //  to constantly call setTargetRoom when we're standing there)
             if (room.isSlotFree(computerPoint, mode)) {
                 setTargetRoom(room)
             }
@@ -774,18 +776,19 @@ abstract class AbstractCrew(
     }
 
     private fun setTargetRoom(value: Room, pos: IPoint): Boolean {
+        // Check if the slot is free. We have to do this *before* checking
+        // if we're already pathing to or in the slot.
+        // This only matters if we're not marked as occupying this slot - this
+        // should never be the case, but if two crew walk into the same
+        // slot somehow it will happen while the conflict is being resolved.
+        if (!value.isSlotFree(pos, mode, this))
+            return false
+
         // If we're already going to, or are at, this point then do nothing.
         if (pathingTarget?.room == value && pathingTarget!! posEq pos)
             return true
         if (room == value && standingPosition?.posEq(pos) == true)
             return true
-
-        // If this slot isn't empty, we should skip it.
-        // We should never be in this slot ourselves, the checks above should
-        // filter out those cases.
-        // This also checks for obstructed cells (eg, healer in the medbay)
-        if (!value.isSlotFree(pos, mode))
-            return false
 
         // Verify we have a path to this room
         val pf = room.ship.pathFinder
