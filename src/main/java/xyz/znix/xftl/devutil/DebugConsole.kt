@@ -10,6 +10,7 @@ import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.*
@@ -58,6 +59,7 @@ class DebugConsole(var game: InGameState) {
         Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
         Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
         Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
+        Cmd("killcrew", 0, this::cmdKillCrew, "Kill one all of your crewmembers"),
         Cmd("sectors", 0, this::cmdSectors, "Open the sector map, regardless of the current beacon"),
         Cmd("system", 1, this::cmdSystem, "Unlock a system on the current ship, or 'list' or 'all'"),
         Cmd("spawn-ship", 2, this::cmdSpawnShip, "Spawn an enemy ship directly from a seed"),
@@ -390,6 +392,55 @@ class DebugConsole(var game: InGameState) {
         enemy.health = 0
 
         lines.add("Added 100 points of damage to the enemy ship")
+    }
+
+    private fun cmdKillCrew(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        val options = ArrayList<Pair<String, () -> Unit>>()
+
+        val allCrew = ship.crew.mapNotNull { it as? LivingCrew }
+
+        if (allCrew.isEmpty()) {
+            lines.add("No living crew on this ship.")
+            return
+        }
+
+        options += Pair("Kill all player crew") {
+            for (crew in allCrew) {
+                if (crew.ownerShip != ship)
+                    continue
+                crew.health = 0f
+            }
+            lines.add("Killed all player crew.")
+            return@Pair
+        }
+
+        if (allCrew.any { it.ownerShip != ship }) {
+            options += Pair("Kill all boarders") {
+                for (crew in allCrew) {
+                    if (crew.ownerShip == ship)
+                        continue
+                    crew.health = 0f
+                }
+                lines.add("Killed all enemy boarders on player ship.")
+                return@Pair
+            }
+        }
+
+        options += allCrew.map {
+            var name = "${it.blueprint.name} - ${it.selectedName}"
+
+            if (it.ownerShip != ship) {
+                name += " (boarder)"
+            }
+
+            Pair(name) {
+                it.health = 0f
+                lines.add("Killed crewmember ${it.selectedName} (${it.blueprint.name})")
+                return@Pair
+            }
+        }
+
+        pickFromList("KILL CREW", options) { it() }
     }
 
     private fun cmdSectors(@Suppress("UNUSED_PARAMETER") args: List<String>) {
