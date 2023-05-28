@@ -76,7 +76,13 @@ abstract class AbstractCrew(
      */
     val standingPosition: RoomPoint?
         get() {
-            if (currentAction == Action.MOVING || pathingTarget != null) {
+            // Note that we have to check if nextTargetPos is non-null rather than
+            // if currentAction is MOVING. This is because when we come to a stop,
+            // currentAction isn't instantly changed - on the last update where we're
+            // still set to moving, we'll end the update having completed our movement.
+            // This would break the updateCrewReservedSlots system, since we'd
+            // still count as moving and thus not occupy a slot.
+            if (nextTargetPos != null || pathingTarget != null) {
                 return null
             }
             return roomPosition
