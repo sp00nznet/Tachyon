@@ -26,7 +26,7 @@ import kotlin.random.Random
 /**
  * A development console, to quickly do stuff like load events or get scrap.
  */
-class DebugConsole(val game: InGameState, val ship: Ship) {
+class DebugConsole(var game: InGameState) {
     private val history = ArrayList<String>()
     private var historyCursor: Int = -1
 
@@ -36,6 +36,8 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
     private val lines = ArrayList<String>()
 
     private val font = game.getFont("c&c")
+
+    private val ship: Ship get() = game.player
 
     private var flashTimer: Float = 0f
 
@@ -172,13 +174,6 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
                 input += c
             }
         }
-    }
-
-    fun copyStateFrom(other: DebugConsole) {
-        history.addAll(other.history)
-        lines.addAll(other.lines)
-        input = other.input
-        flashTimer = other.flashTimer
     }
 
     /**
@@ -1393,6 +1388,11 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
                 sortedEntries.sortByDescending { searcher.rank(it.first) }
             }
         }
+    }
+
+    fun onFailedSaveRestore() {
+        lines.add("Continuous save/restore - exception during serialisation!")
+        lines.add("Details are in the console, the game has been paused.")
     }
 
     private data class Cmd(val name: String, val argCount: Int?, val func: (List<String>) -> Unit, val helpText: String)

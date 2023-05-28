@@ -98,6 +98,7 @@ public class MainGame implements Game {
             savedGame = oldGame.saveGameState();
             newGame = new InGameState(this, content, gameContainer, savedGame);
         } catch (Exception ex) {
+            oldGame.debugFailedSaveRestore();
             ex.printStackTrace();
             return false;
         }
@@ -107,20 +108,8 @@ public class MainGame implements Game {
         // on the old state for ease of debugging.
         setCurrentState(newGame);
 
-        // Copy over the debug console history and debug flags.
-        // It'd be annoying to lose those, since they're not supposed
-        // to be saved.
-        newGame.setPaused(oldGame.isPaused());
-
-        DebugConsole oldDebug = oldGame.getDebugConsole();
-        DebugConsole newDebug = newGame.getDebugConsole();
-        newDebug.copyStateFrom(oldDebug);
-
-        List<DebugFlagManager.DebugFlag> oldFlags = oldGame.getDebugFlags().getAll();
-        List<DebugFlagManager.DebugFlag> newFlags = newGame.getDebugFlags().getAll();
-        for (int i = 0; i < newFlags.size(); i++) {
-            newFlags.get(i).setSet(oldFlags.get(i).getSet());
-        }
+        // Copy over some basic UI stuff
+        newGame.debugContinuousSaveRestore(oldGame);
 
         return true;
     }

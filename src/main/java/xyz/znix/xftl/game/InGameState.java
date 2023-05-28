@@ -180,7 +180,7 @@ public class InGameState extends MainGame.GameState {
                 if (!debugConsoleVisible)
                     return;
 
-                debugConsole.keyPressed(key, c);
+                getDebugConsole().keyPressed(key, c);
             }
         });
     }
@@ -215,9 +215,6 @@ public class InGameState extends MainGame.GameState {
         Input in = container.getInput();
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
-            // Create the debug console if that's not already happened.
-            getDebugConsole();
-
             debugConsoleVisible = !debugConsoleVisible;
         }
 
@@ -225,7 +222,7 @@ public class InGameState extends MainGame.GameState {
         if (!debugConsoleVisible) {
             readKeyboardInput(in);
         } else {
-            debugConsole.update(container, delta);
+            getDebugConsole().update(container, delta);
         }
 
         boolean rightClicked = false;
@@ -377,7 +374,7 @@ public class InGameState extends MainGame.GameState {
         shipUI.renderMenus(container, g);
 
         if (debugConsoleVisible) {
-            debugConsole.render(container, g);
+            getDebugConsole().render(container, g);
         }
     }
 
@@ -771,15 +768,6 @@ public class InGameState extends MainGame.GameState {
         return ship;
     }
 
-    /**
-     * Set whether the game is paused or not.
-     * <p>
-     * This is only for debugging use!
-     */
-    public void setPaused(boolean paused) {
-        this.paused = paused;
-    }
-
     @NotNull
     public Image getImg(String name) {
         Image img = content.images.get(name);
@@ -943,7 +931,7 @@ public class InGameState extends MainGame.GameState {
     public DebugConsole getDebugConsole() {
         // Create the debug console if it doesn't already exist
         if (debugConsole == null) {
-            debugConsole = new DebugConsole(this, player);
+            debugConsole = new DebugConsole(this);
         }
 
         return debugConsole;
@@ -1115,6 +1103,57 @@ public class InGameState extends MainGame.GameState {
         if (modifier > 0)
             modifier--;
         sector.setFleetAdvanceModifier(modifier);
+    }
+
+    /**
+     * FOR DEBUG USE ONLY!
+     * <p>
+     * When reloading the game every frame, some UI stuff (like the selection
+     * rectangle) breaks. It'd be a bit silly to serialise this, but it's
+     * also very hard to meaningfully play with it being constantly cleared.
+     * <p>
+     * Thus, this copies over basic UI stuff that's very unlikely to cover
+     * up any serialisation bugs.
+     */
+    void debugContinuousSaveRestore(InGameState prev) {
+        // Swap over the entire debug console, since it has no state.
+        // Without this, the debug console would close across a reload.
+        // Note we copy it whether or not it's open, so we don't loose
+        // it's command history when you close it.
+        if (prev.debugConsole != null) {
+            debugConsole = prev.debugConsole;
+            debugConsole.setGame(this);
+        }
+        debugConsoleVisible = prev.debugConsoleVisible;
+
+        shipUI.debugContinuousSaveRestore(prev.shipUI);
+        System.arraycopy(prev.mouseDownPrev, 0, mouseDownPrev, 0, mouseDownPrev.length);
+
+        paused = prev.paused;
+
+        // Copy over the debug flags.
+        // It'd be annoying to lose those, since they're not supposed
+        // to be saved.
+        List<DebugFlagManager.DebugFlag> oldFlags = prev.debugFlags.getAll();
+        List<DebugFlagManager.DebugFlag> newFlags = debugFlags.getAll();
+        for (int i = 0; i < newFlags.size(); i++) {
+            newFlags.get(i).setSet(oldFlags.get(i).getSet());
+        }
+    }
+
+    /**
+     * FOR DEBUGGING USE ONLY!
+     * <p>
+     * This is called by {@link MainGame} when we're in continuous save-load mode,
+     * and there's an exception during the save-load process.
+     */
+    public void debugFailedSaveRestore() {
+        // Pause the game so we don't get an ongoing stream of these errors.
+        paused = true;
+
+        // Print a message in the debug console, so the player knows what happened.
+        debugConsoleVisible = true;
+        getDebugConsole().onFailedSaveRestore();
     }
 
     public interface RoomClickListener {

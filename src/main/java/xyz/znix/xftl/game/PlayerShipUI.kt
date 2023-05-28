@@ -943,6 +943,27 @@ class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) 
         }
     }
 
+    /**
+     * FOR DEBUG USE ONLY!
+     *
+     * See [InGameState.debugContinuousSaveRestore] for more information.
+     */
+    fun debugContinuousSaveRestore(prev: PlayerShipUI) {
+        crewSelectionRectangle = prev.crewSelectionRectangle
+
+        // Copy over the selected crew, based on the index into the ship
+        // crew list. This is hacky but it's fine for a debug flag.
+        for (prevCrew in prev.selectedCrew) {
+            val index = prev.ship.crew.indexOf(prevCrew)
+
+            // Don't bother with crew on the enemy ship.
+            if (index == -1)
+                continue
+
+            selectedCrew += ship.crew[index]
+        }
+    }
+
     fun saveToXML(elem: Element, refs: ObjectRefs) {
         val window = currentWindow
 
