@@ -62,6 +62,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         SHIELD,
         ENGINES,
         MEDBAY,
+        CLONEBAY,
         OXYGEN,
         TELEPORTER,
         CLOAKING,

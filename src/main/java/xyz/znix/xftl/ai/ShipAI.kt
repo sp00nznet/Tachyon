@@ -237,7 +237,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
             return when (system) {
                 is Shields -> 0
                 is Weapons -> 1
-                // TODO Clonebay=1
+                is Clonebay -> 1
                 // TODO Artillery=2
                 is Oxygen -> 3
                 is Engines, is Drones, is Piloting -> 4

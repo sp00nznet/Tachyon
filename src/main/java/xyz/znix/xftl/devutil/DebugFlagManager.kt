@@ -26,6 +26,12 @@ class DebugFlagManager {
         "Save and load the game state every update, to test the serialisation logic"
     )
 
+    // This is useful for working on the clonebay UI
+    val noClone = DebugFlag(
+        "noclone", "Don't clone or kill crew", false,
+        "When the clonebay finishes it's clone or kill animation, don't do anything."
+    )
+
     val infiniteMissiles = DebugFlag(
         "infm", "Infinite Missiles", false,
         "Ships (most importantly enemy ships) don't subtract missiles when they fire things."
@@ -42,6 +48,7 @@ class DebugFlagManager {
         noEnemyFire,
         noDmg,
         continuousSaveLoad,
+        noClone,
         infiniteMissiles,
         infiniteDrones
     )

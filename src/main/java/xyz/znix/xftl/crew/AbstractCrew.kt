@@ -151,6 +151,8 @@ abstract class AbstractCrew(
     private var teleportingTo: Room? = null
     private var teleportTimer: Float = 0f
 
+    private var cloneAnimationTimer: Float = 0f
+
     val screenX: Int get() = pixelPosition.x
     val screenY: Int
         get() {
@@ -205,7 +207,7 @@ abstract class AbstractCrew(
 
         if (health == 0f) {
             if (!hasDyingAnimation) {
-                removeFromShip()
+                onDied()
                 return
             }
 
@@ -213,8 +215,15 @@ abstract class AbstractCrew(
             currentAction = Action.DYING
 
             if (icon.isStopped)
-                removeFromShip()
+                onDied()
 
+            return
+        }
+
+        // Playing the clone animation after being revived?
+        if (cloneAnimationTimer > 0f) {
+            cloneAnimationTimer = max(0f, cloneAnimationTimer - dt)
+            currentAction = Action.CLONING
             return
         }
 
@@ -495,6 +504,15 @@ abstract class AbstractCrew(
             }
         }
 
+        if (currentAction == Action.CLONING) {
+            // Cloning has the same animation as the 2nd half of teleporting.
+            // Note here though that cloneAnimationTimer goes down rather than up.
+            val progress = 1 - cloneAnimationTimer / TELEPORT_ANIMATION_TIME
+            spriteY -= 8
+            stretch = icon.frame * TELEPORT_IMAGE_STRETCH
+            opacity *= progress
+        }
+
         // Calculate the bounds of the image
         val height = cf.height * (stretch + 1)
         val x0 = screenX.f
@@ -742,6 +760,11 @@ abstract class AbstractCrew(
                 // Stop at the end, as it would look weird if we restarted for a moment.
                 anims["${codename}_teleport"].startSingle(1f, backwards)
             }
+
+            Action.CLONING -> {
+                // This just re-uses the teleport animation
+                anims["${codename}_teleport"].startSingle(1f, true)
+            }
         }
 
         if (currentAction != Action.MOVING) {
@@ -834,6 +857,23 @@ abstract class AbstractCrew(
     open fun removeFromShip() {
         room.ship.crew.remove(this)
         room.ship.updateCrewReservedSlots()
+    }
+
+    open fun onDied() {
+        removeFromShip()
+    }
+
+    open fun onCloned() {
+        health = maxHealth
+
+        // Play the teleport animation after cloning.
+        cloneAnimationTimer = TELEPORT_ANIMATION_TIME
+
+        // Clear out movement for the same reason as when teleporting - we might
+        // be respawning on a different ship than the one we were killed on.
+        // In any case, in vanilla crew don't run back to the place they died.
+        nextTargetPos = null
+        pathingTarget = null
     }
 
     /**
@@ -1004,6 +1044,7 @@ abstract class AbstractCrew(
         SABOTAGE,
         TELEPORTING,
         DYING,
+        CLONING, // Playing the animation after being cloned
     }
 
     companion object {

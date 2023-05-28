@@ -31,6 +31,7 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
         const val LONG_RANGE_SCANNERS: String = "ADV_SCANNERS"
         const val RECONSTRUCTIVE_TELEPORT: String = "TELEPORT_HEAL"
         const val OXYGEN_MASKS: String = "O2_MASKS"
+        const val BACKUP_DNA: String = "BACKUP_DNA"
     }
 }
 

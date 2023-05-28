@@ -53,6 +53,19 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         }
     }
 
+    override fun onDied() {
+        super.onDied()
+
+        val clonebay = ownerShip?.clonebay ?: return
+        clonebay.addDeadCrew(this)
+    }
+
+    override fun onCloned() {
+        super.onCloned()
+
+        // TODO deduct skills
+    }
+
     protected fun hasAugment(name: String): Boolean {
         return ownerShip?.hasAugment(name) == true
     }

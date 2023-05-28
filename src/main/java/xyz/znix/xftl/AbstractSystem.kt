@@ -149,7 +149,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         }
     }
 
-    fun drawRoom(g: Graphics) {
+    open fun drawRoom(g: Graphics) {
         // Draw the system icon
         val room = room!!
         val img = room.ship.sys.getImg(blueprint.roomIconPath)
@@ -188,6 +188,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         ionTimer += 5f * ionDamage
 
         powerStateChanged()
+    }
+
+    open fun onJump() {
     }
 
     // Something - anything - happened to the system's power level.
@@ -663,7 +666,7 @@ class SystemInstallConfiguration(systemNode: Element, game: InGameState, val roo
         // The medbay at least (and maybe other systems, TODO check) use the
         // computer to represent a cell that is obstructed.
         val computerIsObstruction = when (system.type) {
-            Medbay.NAME, "clonebay" -> true
+            Medbay.NAME, Clonebay.NAME -> true
             else -> false
         }
         if (computerIsObstruction && compPoint != null) {

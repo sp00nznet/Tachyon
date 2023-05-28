@@ -227,6 +227,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     var medbay: Medbay? = null
         private set
 
+    var clonebay: Clonebay? = null
+        private set
+
     var cloaking: Cloaking? = null
         private set
 
@@ -915,6 +918,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             augment.onJump(this)
         }
 
+        for (system in systems) {
+            system.onJump()
+        }
+
         // TODO when we implement door attacking, clear out the damage
         //  during a jump to reduce the size of the save file. This doesn't
         //  exactly match vanilla, but it's exceedingly unlikely to matter
@@ -1040,6 +1047,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         engines = systems.mapNotNull { it as? Engines }.firstOrNull()
         shields = systems.mapNotNull { it as? Shields }.firstOrNull()
         medbay = systems.mapNotNull { it as? Medbay }.firstOrNull()
+        clonebay = systems.mapNotNull { it as? Clonebay }.firstOrNull()
         cloaking = systems.mapNotNull { it as? Cloaking }.firstOrNull()
         teleporter = systems.mapNotNull { it as? Teleporter }.firstOrNull()
         hacking = systems.mapNotNull { it as? Hacking }.firstOrNull()

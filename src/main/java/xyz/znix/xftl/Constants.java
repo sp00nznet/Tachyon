@@ -116,6 +116,8 @@ public class Constants {
     // TODO measure more accurately
     public static final float BASE_REPAIR_TIME = 13.0f;
 
+    public static final Color CLONE_DYING_FILTER = new Color(1f, 0.3f, 0.3f);
+
     private Constants() {
     }
 }

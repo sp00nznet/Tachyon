@@ -35,6 +35,7 @@ class SystemBlueprint(xml: Element) : Blueprint(xml) {
             // AE-only
             MindControl.NAME -> MindControl(this)
             Hacking.NAME -> Hacking(this)
+            Clonebay.NAME -> Clonebay(this)
             BackupBattery.NAME -> BackupBattery(this)
 
             else -> {
