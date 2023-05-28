@@ -68,6 +68,7 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
         Cmd("super-shield", null, this::cmdSuperShield, "Give the player (or enemy) a super-shield (see help sub-cmd)"),
         Cmd("dump-save", null, this::cmdDumpSave, "Save the game to XML, and print it to standard output"),
         Cmd("save-load", null, this::cmdSaveLoad, "Save the game to XML, and load it back in."),
+        Cmd("gc", null, this::cmdGC, "Manually trigger Java's Garbage Collector."),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("reload-flags", 0, this::cmdReloadFlags, "Reload the debug flags (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
@@ -774,6 +775,11 @@ class DebugConsole(val game: InGameState, val ship: Ship) {
         if (!successful) {
             lines.add("Failed to reload game, more details are in the console.")
         }
+    }
+
+    private fun cmdGC(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        System.gc()
+        lines.add("Finished Java GC operation.")
     }
 
     private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {
