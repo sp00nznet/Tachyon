@@ -188,6 +188,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             return used
         }
 
+    /**
+     * This is the list of all the possible systems that can be installed on this ship.
+     *
+     * It's simply the sum of all the [Room.systemSlots] lists.
+     */
+    val systemSlots: List<SystemInstallConfiguration>
+
     var systems: List<AbstractSystem> = emptyList()
         private set
 
@@ -344,19 +351,15 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         }
 
         for (node in shipNode.getChild("systemList").children) {
-            if (node.name == "clonebay") {
-                // TODO support
-                // for now, just don't overwrite the medbay
-                continue
-            }
-
             val room = rooms[node.getAttributeValue("room").toInt()]
 
             // Load the information about the available system into the room.
             // This will be used when loading the system from a save, spawning
             // a new ship, or buying a system at a store.
-            room.systemSlot = SystemInstallConfiguration(node, sys, room)
+            room.systemSlots += SystemInstallConfiguration(node, sys, room)
         }
+
+        systemSlots = rooms.flatMap { it.systemSlots }
 
         val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"]).rootElement
 
@@ -413,13 +416,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         purchasedReactorPower = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()
 
         // Load the starting systems
-        for (room in rooms) {
-            val config = room.systemSlot ?: continue
-
+        for (config in systemSlots) {
             if (!config.availableByDefault)
                 continue
 
-            room.setSystem(config)
+            config.room.setSystem(config)
         }
 
         // Load all the weapon blueprints
@@ -1296,11 +1297,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             // Spawn in the system
             val name: String = elem.getAttributeValue("name")
             val blueprint = sys.blueprintManager[name] as SystemBlueprint
-            val room = rooms.first { it.systemSlot?.system == blueprint }
-            room.setSystem(room.systemSlot!!)
+
+            val slot = systemSlots.first { it.system == blueprint }
+            slot.room.setSystem(slot)
 
             // Re-load the system's properties
-            room.system!!.loadFromXML(elem, refs)
+            slot.room.system!!.loadFromXML(elem, refs)
         }
 
         // Load the crew

@@ -261,6 +261,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         )
 
         for ((i, system) in store.systems.withIndex()) {
+            val systemSlot = ship.systemSlots.firstOrNull { it.system == system }
             val buttonPos = pos + ConstPoint(5, 17 + i * 53)
             buyButtons.add(object : BuyButton(buttonPos, images, ConstPoint(345, 27)) {
                 override val blueprint: Blueprint? get() = system
@@ -275,23 +276,18 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                             return true
 
                         // Stop the user from buying a system their ship doesn't support
-                        return ship.rooms.none { it.systemSlot?.system == system }
+                        if (systemSlot == null)
+                            return true
+
+                        // Stop the user from installing the same system twicee
+                        return systemSlot.isInstalled
                     }
 
                 override fun buy() {
                     store.systems[i] = null
                     updateButtons() // Make this button show as sold out
 
-                    for (room in ship.rooms) {
-                        val config = room.systemSlot ?: continue
-                        if (config.system != system)
-                            continue
-
-                        room.setSystem(config)
-                        return
-                    }
-
-                    error("Couldn't find candidate room for installing system $system")
+                    systemSlot!!.room.setSystem(systemSlot)
                 }
             })
         }

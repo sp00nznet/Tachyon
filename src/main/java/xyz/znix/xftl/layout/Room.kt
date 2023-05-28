@@ -25,12 +25,15 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         private set
 
     /**
-     * This specifies what system can be installed into this room,
+     * This specifies what systems can be installed into this room,
      * and how it's computer should be placed.
      *
      * This is set in the ship layout.
+     *
+     * This is only used for more than one system (in Vanilla) when
+     * a ship has both a medbay and a clonebay in the same slot, which they all do.
      */
-    var systemSlot: SystemInstallConfiguration? = null
+    var systemSlots = ArrayList<SystemInstallConfiguration>()
 
     private var _doors: List<Door>? = null
     val doors: List<Door>

@@ -553,7 +553,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
  * the system and the location of its computer, along with any XML data
  * that's specified in the ship blueprint.
  */
-class SystemInstallConfiguration(systemNode: Element, game: InGameState, room: Room) {
+class SystemInstallConfiguration(systemNode: Element, game: InGameState, val room: Room) {
     val system: SystemBlueprint = game.blueprintManager[systemNode.name] as SystemBlueprint
 
     val startingPower = systemNode.getAttributeValue("power").toInt()
@@ -573,6 +573,8 @@ class SystemInstallConfiguration(systemNode: Element, game: InGameState, room: R
     val computerPoint: ConstPoint?
     val computerDirection: Direction?
     val obstructionPoint: ConstPoint?
+
+    val isInstalled: Boolean get() = room.system?.blueprint == system
 
     // Parse out the computer point and direction
     init {
@@ -616,6 +618,8 @@ class SystemInstallConfiguration(systemNode: Element, game: InGameState, room: R
                     "1" -> ConstPoint(1, 0)
                     "2" -> ConstPoint(0, 1)
                     "3" -> ConstPoint(1, 1)
+                    // -2 appears to be used for the medbay to indicate no obstruction in 2-cell medbays
+                    "-2" -> null
                     else -> error("Invalid point value '${idx[0].textTrim}'")
                 }
 
@@ -659,7 +663,7 @@ class SystemInstallConfiguration(systemNode: Element, game: InGameState, room: R
         // The medbay at least (and maybe other systems, TODO check) use the
         // computer to represent a cell that is obstructed.
         val computerIsObstruction = when (system.type) {
-            Medbay.NAME -> true // TODO and clonebay
+            Medbay.NAME, "clonebay" -> true
             else -> false
         }
         if (computerIsObstruction && compPoint != null) {

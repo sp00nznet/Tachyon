@@ -113,20 +113,21 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             Difficulty.HARD -> 30
         }).coerceAtLeast(10)
 
-        for (room in ship.rooms) {
-            if (room.system != null)
+        for (system in ship.systemSlots) {
+            // Don't install one system by uninstalling another.
+            // This also checks if this system is already installed.
+            if (system.room.system != null)
                 continue
-            val system = room.systemSlot ?: continue
 
             if (!rand.rollChance(optionalSystemChance))
                 continue
 
             // Install the system
-            room.setSystem(system)
+            system.room.setSystem(system)
 
             // Add a power cost for adding this system.
             // Don't check the current power here, it's allowed to go negative.
-            val category = getSystemCategory(room.system!!)
+            val category = getSystemCategory(system.room.system!!)
             val basePowerUse = when {
                 category == SystemCategory.OFFENSIVE /* TODO and not artillery */ -> 1
                 difficulty == Difficulty.HARD -> 1

@@ -404,11 +404,15 @@ class DebugConsole(var game: InGameState) {
             lines.add("Systems on the player ship:")
             for (room in ship.rooms) {
                 val system = room.system
-                val systemSlot = room.systemSlot
                 if (system != null) {
                     lines.add("  ${system.codename} (purchased)")
-                } else if (systemSlot != null) {
-                    lines.add("  ${systemSlot.system.type}")
+                }
+
+                for (slot in room.systemSlots) {
+                    val installed = ship.systems.any { it.blueprint == slot.system }
+                    if (!installed) {
+                        lines.add("  ${slot.system.type}")
+                    }
                 }
             }
             return
@@ -419,33 +423,31 @@ class DebugConsole(var game: InGameState) {
             for (room in ship.rooms) {
                 if (room.system != null)
                     continue
-                val system = room.systemSlot ?: continue
+
+                // If there's multiple systems available (eg medbay and clonebay),
+                // just pick the first one.
+                val system = room.systemSlots.firstOrNull() ?: continue
                 room.setSystem(system)
             }
             lines.add("Unlocked all systems on the player ship.")
             return
         }
 
-        for (room in ship.rooms) {
-            val system = room.system
-            if (system != null) {
-                if (system.codename == systemName) {
-                    lines.add("System $systemName is already purchased.")
-                    return
-                }
-                continue
-            }
+        val selectedSystem = ship.systemSlots.firstOrNull { it.system.name == systemName }
 
-            val purchasable = room.systemSlot ?: continue
-            if (purchasable.system.type != systemName)
-                continue
-
-            room.setSystem(purchasable)
-            lines.add("Unlocked system $systemName")
+        if (selectedSystem == null) {
+            lines.add("No such system named '$systemName' on the current ship, try using 'system list'.")
             return
         }
 
-        lines.add("No such system named '$systemName' on the current ship, try using 'system list'.")
+        if (selectedSystem.isInstalled) {
+            lines.add("System $systemName is already purchased.")
+            return
+        }
+
+        selectedSystem.room.setSystem(selectedSystem)
+
+        lines.add("Unlocked system $systemName")
     }
 
     private fun cmdSpawnShip(args: List<String>) {
