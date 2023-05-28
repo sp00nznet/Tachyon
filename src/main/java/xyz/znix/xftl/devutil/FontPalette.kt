@@ -4,6 +4,7 @@ import org.newdawn.slick.*
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils
+import xyz.znix.xftl.rendering.ShaderProgramme
 import kotlin.math.max
 import kotlin.math.min
 
@@ -49,6 +50,8 @@ object FontPalette {
         override fun update(container: GameContainer, delta: Int) {}
 
         override fun render(container: GameContainer, g: Graphics) {
+            ShaderProgramme.SHADER_SCREEN_SIZE.set(container.width, container.height)
+
             g.background = Color.white
             g.clear()
 
@@ -140,7 +143,7 @@ object FontPalette {
 
             val isLatinChar = c in 'a'..'z' || c in 'A'..'Z'
             val isNum = c in '0'..'9'
-            val isSimplePunc = ", .?!;:".contains(c)
+            val isSimplePunc = ", .?!;:+-".contains(c)
 
             if (isLatinChar || isNum || isSimplePunc) {
                 text += c
