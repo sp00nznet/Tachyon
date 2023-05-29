@@ -50,6 +50,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // Copy this in as a mutable variable so it can be changed for drones.
         private var fireDuration: Float = this@BeamBlueprint.fireDuration
 
+        // Similarly, this is used for artillery
+        private var length: Int = this@BeamBlueprint.length
+
         init {
             // Turns out this is a one-frame animation, leave it looping in case
             // a mod replaces it or something.
@@ -100,6 +103,14 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             renderInbound(droneCentre)
         }
 
+        fun drawArtilleryBeam(startPos: IPoint, destPos: IPoint) {
+            if (!firing)
+                return
+
+            // Draw the beam line
+            drawBeam(damage, startPos, destPos)
+        }
+
         private fun renderInbound(from: IPoint) {
             // Draw the beam on the enemy ship, including the little contact burning animation
 
@@ -140,7 +151,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             // drawn, which is the same as a one-power beam.
             val visualPower = max(1, damage)
 
-            val shieldLayers = targetShip.shields?.activeShields ?: 0
+            var shieldLayers = targetShip.shields?.activeShields ?: 0
+            shieldLayers = max(0, shieldLayers - type.shieldPiercing)
             val piercing = max(0, visualPower - shieldLayers)
 
             // TODO make the transition around the shield line a bit cleaner - it's a clear
@@ -192,7 +204,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                             continue
                         }
 
-                        val shieldLayers = targetShip.shields?.activeShields ?: 0
+                        var shieldLayers = targetShip.shields?.activeShields ?: 0
+                        shieldLayers = max(0, shieldLayers - type.shieldPiercing)
                         val beamPower = max(0, damage - shieldLayers)
 
                         // If we hit a new room, damage it
@@ -210,6 +223,10 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 if (firingTime >= fireDuration) {
                     firingTime = 0f
                     target = null
+
+                    // Reset these to make the savegame more compact
+                    fireDuration = this@BeamBlueprint.fireDuration
+                    length = this@BeamBlueprint.length
 
                     // Without this, if the first room hit was the same room as the
                     // last one hit on the previous shot, no damage would be dealt.
@@ -259,6 +276,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             fireDuration = duration
         }
 
+        fun fireFromArtillery(target: SelectedTarget.BeamAim, length: Int) {
+            fire(target)
+            this.length = length
+        }
+
         // For use by drones, so they can angle themselves correctly.
         fun getCurrentTargetPoint(): IPoint {
             if (!firing)
@@ -281,6 +303,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             SaveUtil.addTagFloat(elem, "firingTime", firingTime, 0f)
             SaveUtil.addTagFloat(elem, "fireDuration", fireDuration, this@BeamBlueprint.fireDuration)
+            SaveUtil.addTagInt(elem, "length", length, this@BeamBlueprint.length)
 
             if (target != null) {
                 val targetElem = Element("target")
@@ -303,10 +326,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             firingTime = SaveUtil.getOptionalTagFloat(elem, "firingTime") ?: 0f
             fireDuration = SaveUtil.getOptionalTagFloat(elem, "fireDuration") ?: this@BeamBlueprint.fireDuration
+            length = SaveUtil.getOptionalTagInt(elem, "length") ?: this@BeamBlueprint.length
 
             val targetElem = elem.getChild("target")
             if (targetElem != null) {
-                SelectedTarget.loadFromXML(ship, targetElem, refs) { target ->
+                SelectedTarget.loadFromXML(targetElem, refs, { this }) { target ->
                     this.target = target as SelectedTarget.BeamAim
 
                     // Without this, the beam graphic won't render on the target ship.

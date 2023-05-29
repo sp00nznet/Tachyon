@@ -253,8 +253,10 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun loadSystem(elem: Element, refs: RefLoader) {
+        val getWeapon: (Int) -> AbstractWeaponInstance = { ship.hardpoints[it].weapon!! }
+
         for (targetElem in elem.getChildren("target")) {
-            SelectedTarget.loadFromXML(ship, targetElem, refs) { target ->
+            SelectedTarget.loadFromXML(targetElem, refs, getWeapon) { target ->
                 when (target) {
                     is SelectedTarget.RoomAim -> selectedTargets.targetRoom(target.weaponNumber, target.room)
                     is SelectedTarget.BeamAim -> selectedTargets.targetBeam(target.weaponNumber, target)
@@ -398,7 +400,11 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
 
 
     companion object {
-        fun loadFromXML(hostShip: Ship, elem: Element, refs: RefLoader, onLoaded: (SelectedTarget) -> Unit) {
+        fun loadFromXML(
+            elem: Element, refs: RefLoader,
+            getWeapon: (Int) -> AbstractWeaponInstance,
+            onLoaded: (SelectedTarget) -> Unit
+        ) {
             val hardpointIndex = SaveUtil.getAttrInt(elem, "hardpoint")
             val targetShipRef = SaveUtil.getAttr(elem, "targetShip")
 
@@ -408,7 +414,7 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
                     val roomId = SaveUtil.getAttrInt(elem, "roomId")
 
                     refs.asyncResolve(Ship::class.java, targetShipRef) { targetShip ->
-                        val weapon = hostShip.hardpoints[hardpointIndex].weapon!!
+                        val weapon = getWeapon(hardpointIndex)
                         require(weapon is IRoomTargetingWeapon)
 
                         val room = targetShip!!.rooms[roomId]
@@ -422,7 +428,7 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
                     val angle = SaveUtil.getAttrFloat(elem, "angle")
 
                     refs.asyncResolve(Ship::class.java, targetShipRef) { targetShip ->
-                        val weapon = hostShip.hardpoints[hardpointIndex].weapon!!
+                        val weapon = getWeapon(hardpointIndex)
                         require(weapon is BeamBlueprint.BeamInstance)
 
                         val target = BeamAim(weapon, hardpointIndex, targetShip!!, startPos)

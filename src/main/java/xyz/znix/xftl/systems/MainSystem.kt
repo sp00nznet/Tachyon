@@ -66,6 +66,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         OXYGEN,
         TELEPORTER,
         CLOAKING,
+        ARTILLERY,
         MIND_CONTROL,
         HACKING,
         WEAPONS,

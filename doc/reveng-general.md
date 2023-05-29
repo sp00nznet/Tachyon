@@ -24,3 +24,13 @@ You may therefore see something using the constant 0.0625 (1/16) to recover the 
 ```c
 timer += SpeedFactor * 0.0625;
 ```
+
+# Weapon blueprint IDs
+
+The usage of the `Blueprint.type` field for weapons is as follows:
+
+* 0 = lasers
+* 1 = missiles
+* 2 = beams
+* 3 = bombs
+* 4 = burst (flak, swarm missiles)

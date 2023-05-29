@@ -1,0 +1,11 @@
+Aiming is handled in ArtillerySystem::OnLoop
+
+For beam weapons, it randomly selects one room and then picks a second room that is
+as far away from the first room as possible.
+
+For burst weapons (eg the flak on Fed C), it picks as many targets as required.
+
+For any other type of weapon (AFAIK this means for the flagship) it picks as many
+targets as are required, but these targets are unique - it actually appears to be
+possible to get the game stuck in an infinite loop if the artillery fires more
+projectiles than the target ship has weapons.

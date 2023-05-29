@@ -16,6 +16,7 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.*
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.*
 import kotlin.reflect.KProperty
 
@@ -571,6 +572,10 @@ class SystemInstallConfiguration(systemNode: Element, game: InGameState, val roo
 
     // The room interior image
     val interiorImage: String? = systemNode.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
+
+    // For artillery weapons, this is the weapon they're using internally.
+    val weapon: AbstractWeaponBlueprint? =
+        systemNode.getAttributeValue("weapon")?.let { game.blueprintManager[it] as AbstractWeaponBlueprint }
 
     val computerPoint: ConstPoint?
     val computerDirection: Direction?

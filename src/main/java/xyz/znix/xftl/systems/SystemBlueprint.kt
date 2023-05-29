@@ -31,6 +31,7 @@ class SystemBlueprint(xml: Element) : Blueprint(xml) {
             Weapons.NAME -> Weapons(this)
             Drones.NAME -> Drones(this)
             Teleporter.NAME -> Teleporter(this)
+            Artillery.NAME -> Artillery(this)
 
             // AE-only
             MindControl.NAME -> MindControl(this)
