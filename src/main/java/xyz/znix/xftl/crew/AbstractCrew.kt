@@ -1001,12 +1001,18 @@ abstract class AbstractCrew(
 
         if (elem.getChild("pathingTarget") != null) {
             pathingTarget = SaveUtil.getRoomPoint(elem, "pathingTarget", room.ship)
+        } else {
+            // This might be required if we're spawned into the wrong
+            // room, while we're being created but before being deserialised.
+            pathingTarget = null
         }
 
         // Have to deserialise this after pathingTarget, since setting
         // that overwrites it.
         if (elem.getChild("nextTargetPos") != null) {
             nextTargetPos = SaveUtil.getPoint(elem, "nextTargetPos")
+        } else {
+            nextTargetPos = null
         }
 
         // Combat stuff
