@@ -609,9 +609,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             val weaponNumber = min(target.weaponNumber + 1, 4)
             val img = sys.getImg("img/misc/crosshairs_placed${weaponNumber}.png")
 
-            val pos = Point(room.offsetX, room.offsetY)
-            pos.x += room.pixelWidth / 2
-            pos.y += room.pixelHeight / 2
+            val pos = Point(room.pixelCentre)
 
             pos.x -= img.width / 2
             pos.y -= img.height / 2
@@ -869,9 +867,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         if (!vfx) return
 
-        val centreX = target.offsetX + target.pixelWidth / 2
-        val centreY = target.offsetY + target.pixelHeight / 2
-        playDamageEffect(type, ConstPoint(centreX, centreY))
+        playDamageEffect(type, target.pixelCentre)
 
         type.hitShipSounds?.get()?.play()
     }

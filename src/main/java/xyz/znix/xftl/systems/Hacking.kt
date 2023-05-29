@@ -176,17 +176,13 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (target.system == null)
             return
 
-        val roomCentre = Point(room!!.offsetX, room!!.offsetY)
-        roomCentre.x += room!!.width * ROOM_SIZE / 2
-        roomCentre.y += room!!.height * ROOM_SIZE / 2
-
         // The direction the probe flies in depends on whether this is
         // a player ship or an enemy ship, as it's supposed to go
         // forwards out of both of them.
         // Note we need to use a very large value, so it's always
         // outside of the -800 to 800 bounds - otherwise it'll think
         // it reached the enemy ship.
-        val endPoint = roomCentre + if (ship.isPlayerShip) {
+        val endPoint = room!!.pixelCentre + if (ship.isPlayerShip) {
             // Fly right
             ConstPoint(5000, 0)
         } else {
@@ -196,7 +192,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         projectile = HackingDroneProjectile(target).also {
             it.hacking = this
-            it.setInitialPath(roomCentre, endPoint)
+            it.setInitialPath(room!!.pixelCentre, endPoint)
             ship.projectiles += it
         }
 
@@ -479,12 +475,6 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             val maxRoomY = rooms.map { it.y + it.height }.max()!!
             val bounds = ConstPoint(maxRoomX, maxRoomY)
 
-            // TODO move this into Room
-            val targetCentre = ConstPoint(
-                target.offsetX + ROOM_SIZE * target.width / 2,
-                target.offsetY + ROOM_SIZE * target.height / 2
-            )
-
             // Keep track of the best (closest to the target room)
             // position we've found.
             var bestDist = Int.MAX_VALUE
@@ -540,7 +530,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 }
 
                 // Note that we use the first available position if there's a tie.
-                val dist = destPixelPos.distToSq(targetCentre)
+                val dist = destPixelPos.distToSq(target.pixelCentre)
                 if (dist < bestDist) {
                     // Duplicate the position as we're changing it
                     bestDestPos = ConstPoint(destPixelPos)

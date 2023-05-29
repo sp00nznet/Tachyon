@@ -1,8 +1,11 @@
 package xyz.znix.xftl.drones
 
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.draw
+import xyz.znix.xftl.f
+import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -199,10 +202,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
             // Copied from AbstractWeaponProjectile.
 
             // Aim for the centre of the target room.
-            return ConstPoint(
-                target.offsetX + target.width * Constants.ROOM_SIZE / 2,
-                target.offsetY + target.height * Constants.ROOM_SIZE / 2
-            )
+            return target.pixelCentre
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) {

@@ -8,11 +8,7 @@ import org.newdawn.slick.Graphics;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
-import xyz.znix.xftl.devutil.DebugConsole;
-import xyz.znix.xftl.devutil.DebugFlagManager;
 import xyz.znix.xftl.rendering.ShaderProgramme;
-
-import java.util.List;
 
 public class MainGame implements Game {
     private final Datafile vanillaDatafile;

@@ -2,8 +2,11 @@ package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Animations
+import xyz.znix.xftl.FTLAnimation
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
+import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -123,11 +126,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                     )
                 }
 
-                else -> {
-                    val centreX = target.offsetX + target.width * Constants.ROOM_SIZE / 2
-                    val centreY = target.offsetY + target.height * Constants.ROOM_SIZE / 2
-                    ConstPoint(centreX, centreY)
-                }
+                else -> target.pixelCentre
             }
         }
 

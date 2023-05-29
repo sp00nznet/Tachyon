@@ -354,10 +354,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
 
     override fun calculateTargetPosition(): IPoint {
         // Aim for the centre of the target room.
-        return ConstPoint(
-            target.offsetX + target.pixelWidth / 2,
-            target.offsetY + target.pixelHeight / 2
-        )
+        return target.pixelCentre
     }
 
     protected open fun hitShields() {

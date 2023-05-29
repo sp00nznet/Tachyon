@@ -62,6 +62,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val offsetX get() = ROOM_SIZE * (x + ship.offset.x)
     val offsetY get() = ROOM_SIZE * (y + ship.offset.y)
 
+    val pixelCentre: ConstPoint by lazy { ConstPoint(offsetX + pixelWidth / 2, offsetY + pixelHeight / 2) }
+
     val position = ConstPoint(x, y)
 
     val pixelWidth = width * ROOM_SIZE

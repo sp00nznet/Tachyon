@@ -154,10 +154,7 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         target = targetShip.rooms.random()
 
         // Tell the drone where it is, so it can rotate accordingly
-        flightController.nextStopTarget = ConstPoint(
-            target.offsetX + target.width * Constants.ROOM_SIZE / 2,
-            target.offsetY + target.height * Constants.ROOM_SIZE / 2
-        )
+        flightController.nextStopTarget = target.pixelCentre
     }
 
     companion object {
