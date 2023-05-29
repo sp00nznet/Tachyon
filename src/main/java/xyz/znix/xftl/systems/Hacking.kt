@@ -21,9 +21,11 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
+import xyz.znix.xftl.weapons.IProjectile
 import kotlin.math.max
 import kotlin.math.min
 
@@ -193,6 +195,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         projectile = HackingDroneProjectile(target).also {
+            it.hacking = this
             it.setInitialPath(roomCentre, endPoint)
             ship.projectiles += it
         }
@@ -246,11 +249,23 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
-        throw UnsupportedOperationException("Not yet implemented")
+        SaveUtil.addTagFloat(elem, "timeRemaining", timeRemaining, null)
+
+        if (selectedTarget != null) {
+            SaveUtil.addRoomRef(elem, "selectedTarget", refs, selectedTarget!!)
+        }
+
+        // Don't save any reference to the projectile, because it might be
+        // in another ship's projectiles list so we can't reference it directly.
+        // We can rely on the projectile linking itself to us when it's deserialised.
     }
 
     override fun loadSystem(elem: Element, refs: RefLoader) {
-        throw UnsupportedOperationException("Not yet implemented")
+        timeRemaining = SaveUtil.getOptionalTagFloat(elem, "timeRemaining")
+
+        if (elem.getChild("selectedTarget") != null) {
+            SaveUtil.getRoomRef(elem, "selectedTarget", refs) { selectedTarget = it }
+        }
     }
 
     // Copied from Cloaking.CloakButton
@@ -292,7 +307,9 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
     }
 
-    private inner class HackingDroneProjectile(val target: Room) : AbstractProjectile(target.ship) {
+    private class HackingDroneProjectile(val target: Room) : AbstractProjectile(target.ship) {
+        lateinit var hacking: Hacking
+
         val game: InGameState = target.ship.sys
 
         val blueprint = game.blueprintManager["DRONE_HACKING"] as DroneBlueprint
@@ -307,7 +324,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // Pick the direction the drone is coming from - for example,
         // a drone flying up from the bottom of the screen would be DOWN.
-        val fromDirection = Direction.CARDINALS.random()
+        var fromDirection = Direction.CARDINALS.random()
 
         var hasLanded: Boolean = false
 
@@ -319,11 +336,12 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         override val antiDroneBP: AbstractWeaponBlueprint? get() = null
         override val antiDroneExemption: Ship? get() = null
 
-        override val serialisationType: String get() = throw UnsupportedOperationException("TODO")
+        override val serialisationType: String get() = PROBE_SERIALISATION_TYPE
 
         override val isMissileForDD: Boolean get() = !hasLanded
 
-        private var lightFlashTimer: Float = 0f
+        var lightFlashTimer: Float = 0f
+
         override val speed: Int
             get() {
                 // Stop once we've reached our destination
@@ -337,7 +355,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 // And when the system power is turned off - this is important as
                 // it's how the defence drone bypass exploit works.
                 // TODO add an option to disable this.
-                if (powerSelected == 0)
+                if (hacking.powerSelected == 0)
                     return 0
 
                 // Standard 16x multiplier for FTL time units to seconds.
@@ -354,7 +372,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 !extendAnimation.isStopped -> extendAnimation
 
                 // Once we've landed, use the powered-up image if that's true
-                powerSelected == 0 -> offImage
+                hacking.powerSelected == 0 -> offImage
                 else -> onImage
             }
 
@@ -380,13 +398,13 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         override fun update(dt: Float, currentSpace: Ship) {
             // Has something odd happened?
-            if (this != this@Hacking.projectile) {
+            if (this != hacking.projectile) {
                 dead = true
             }
 
             // Go away if the target is dying or the sender is dead.
             // TODO or if the target is playing the jump animation
-            if (target.ship.isDead || !target.ship.sys.isShipPresent(this@Hacking.ship)) {
+            if (target.ship.isDead || !target.ship.sys.isShipPresent(hacking.ship)) {
                 dead = true
             }
 
@@ -413,13 +431,13 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             hasLanded = true
 
             // Tell the system it's being hacked
-            target.system?.hackedBy = this@Hacking
+            target.system?.hackedBy = hacking
 
             // Update the start button size
-            updateButton()
+            hacking.updateButton()
 
             // Play the landing sound
-            landSound.play()
+            hacking.landSound.play()
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) {
@@ -552,9 +570,74 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
             return null
         }
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            super.saveToXML(elem, refs)
+
+            SaveUtil.addRoomRef(elem, "target", refs, target)
+
+            SaveUtil.addAttrBool(elem, "hasLanded", hasLanded)
+            SaveUtil.addAttrFloat(elem, "flashTimer", lightFlashTimer)
+            SaveUtil.addTagBoolIfTrue(elem, "drawUnderShip", drawUnderShip)
+            SaveUtil.addAttr(elem, "fromDir", fromDirection.name)
+
+            if (hasLanded) {
+                SaveUtil.addTagFloat(elem, "landAnim", landAnimation.timer, landAnimation.duration)
+                SaveUtil.addTagFloat(elem, "extendAnim", extendAnimation.timer, extendAnimation.duration)
+            } else {
+                // This animation is just a single frame in vanilla, but it's
+                // probably worth saving this in case a mod changes it.
+                SaveUtil.addTagFloat(elem, "flyAnim", flyAnimation.timer)
+            }
+
+            // Save the ship that owns us, and we can easily grab it's hacking
+            // system from there.
+            SaveUtil.addAttrRef(elem, "owner", refs, hacking.ship)
+        }
+
+        override fun loadPropertiesFromXML(elem: Element, refs: RefLoader) {
+            super.loadPropertiesFromXML(elem, refs)
+
+            hasLanded = SaveUtil.getAttrBool(elem, "hasLanded")
+            lightFlashTimer = SaveUtil.getAttrFloat(elem, "flashTimer")
+            drawUnderShip = SaveUtil.getOptionalTagBool(elem, "drawUnderShip") ?: false
+            fromDirection = Direction.valueOf(SaveUtil.getAttr(elem, "fromDir"))
+
+            if (hasLanded) {
+                landAnimation.timer = SaveUtil.getOptionalTagFloat(elem, "landAnim") ?: landAnimation.duration
+                extendAnimation.timer = SaveUtil.getOptionalTagFloat(elem, "extendAnim") ?: extendAnimation.duration
+            } else {
+                // This animation is just a single frame in vanilla, but it's
+                // probably worth saving this in case a mod changes it.
+                flyAnimation.timer = SaveUtil.getTagFloat(elem, "flyAnim")
+            }
+
+            // It's safe to use immediate resolution, since we're only being called
+            // after the target room has been resolved.
+            val ownerShip = SaveUtil.getAttrRefImmediate(elem, "owner", refs, Ship::class.java)
+            hacking = ownerShip!!.hacking!!
+
+            // Make ourselves known to the hacking system
+            hacking.projectile = this
+
+            // Systems don't store who they're being hacked by, so we have to set it up again.
+            if (hasLanded) {
+                target.system!!.hackedBy = hacking
+            }
+        }
     }
 
     companion object {
         const val NAME = "hacking"
+
+        const val PROBE_SERIALISATION_TYPE = "hackingProbe"
+
+        fun loadProjectileFromXML(game: InGameState, elem: Element, refs: RefLoader, callback: (IProjectile) -> Unit) {
+            SaveUtil.getRoomRef(elem, "target", refs) { target ->
+                val probe = HackingDroneProjectile(target)
+                probe.loadPropertiesFromXML(elem, refs)
+                callback(probe)
+            }
+        }
     }
 }

@@ -493,10 +493,10 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         SaveUtil.addTagInt(elem, "scriptedLimit", scriptedPowerLimit, null)
         SaveUtil.addTagFloat(elem, "ionTimer", ionTimer, 0f)
         SaveUtil.addTagInt(elem, "ionPowerLimit", ionPowerLimit, null)
-        if (hackedBy != null)
-            SaveUtil.addRef(elem, "hackedBy", refs, hackedBy)
         SaveUtil.addTagFloat(elem, "repairProgress", repairProgress, 0f)
         SaveUtil.addTagFloat(elem, "sabotageProgress", sabotageProgress, 0f)
+
+        // Don't save hackedBy, it'll be set by the enemy hacking system when it loads.
 
         saveSystem(elem, refs)
     }
@@ -511,7 +511,6 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         scriptedPowerLimit = SaveUtil.getOptionalTagInt(elem, "scriptedLimit")
         ionTimer = SaveUtil.getOptionalTagFloat(elem, "ionTimer") ?: 0f
         ionPowerLimit = SaveUtil.getOptionalTagInt(elem, "ionPowerLimit")
-        SaveUtil.getOptionalRef(elem, "hackedBy", refs, Hacking::class.java) { hackedBy = it }
         repairProgress = SaveUtil.getOptionalTagFloat(elem, "repairProgress") ?: 0f
         sabotageProgress = SaveUtil.getOptionalTagFloat(elem, "sabotageProgress") ?: 0f
 

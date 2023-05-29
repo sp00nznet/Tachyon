@@ -7,6 +7,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.systems.Hacking
 
 interface IProjectile {
     /**
@@ -100,13 +101,13 @@ interface IProjectile {
         ) {
             when (serialisationType) {
                 AbstractWeaponProjectile.SERIALISATION_TYPE -> AbstractWeaponProjectile.loadFromXML(
-                    game,
-                    elem,
-                    refs,
-                    callback
+                    game, elem, refs, callback
                 )
 
                 BombBlueprint.SERIALISATION_TYPE -> BombBlueprint.loadProjectileFromXML(game, elem, refs, callback)
+
+                Hacking.PROBE_SERIALISATION_TYPE -> Hacking.loadProjectileFromXML(game, elem, refs, callback)
+
                 else -> {
                     error("Invalid serialised projectile with serialisation type '$serialisationType'")
                 }
