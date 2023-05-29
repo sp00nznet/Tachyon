@@ -946,6 +946,7 @@ abstract class AbstractCrew(
 
         SaveUtil.addAttrFloat(elem, "health", health)
         SaveUtil.addAttr(elem, "mode", mode.name)
+        SaveUtil.addAttr(elem, "action", currentAction.name)
 
         if (pathingTarget != null) {
             SaveUtil.addRoomPoint(elem, "pathingTarget", pathingTarget!!)
@@ -972,6 +973,10 @@ abstract class AbstractCrew(
             teleport.setAttribute("timer", teleportTimer.toString())
             elem.addContent(teleport)
         }
+
+        // Serialise the animation progress, so we can use it for stuff like
+        // checking if the dying animation has finished.
+        SaveUtil.addAttrFloat(elem, "animTimer", icon.timer)
     }
 
     open fun loadFromXML(elem: Element, refs: RefLoader) {
@@ -992,6 +997,7 @@ abstract class AbstractCrew(
 
         health = SaveUtil.getAttrFloat(elem, "health")
         mode = SlotType.valueOf(SaveUtil.getAttr(elem, "mode"))
+        currentAction = Action.valueOf(SaveUtil.getAttr(elem, "action"))
 
         if (elem.getChild("pathingTarget") != null) {
             pathingTarget = SaveUtil.getRoomPoint(elem, "pathingTarget", room.ship)
@@ -1019,6 +1025,10 @@ abstract class AbstractCrew(
             refs.asyncResolve(Ship::class.java, shipRef) { teleportingTo = it!!.rooms[roomId] }
             teleportTimer = teleport.getAttributeValue("timer").toFloat()
         }
+
+        // Load this *after* currentAction is set, so the timer doesn't get
+        // overwritten by updating our icon.
+        icon.timer = SaveUtil.getAttrFloat(elem, "animTimer")
     }
 
     enum class SlotType {
