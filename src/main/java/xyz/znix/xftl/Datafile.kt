@@ -116,6 +116,7 @@ constructor(private val data_file: File) {
 
     fun parseXML(file: FTLFile): Document {
         val builder = SAXBuilder()
+        builder.expandEntities = false
         return builder.build(open(file))
     }
 

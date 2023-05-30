@@ -15,3 +15,6 @@ hs_err_pid*
 
 # LWJGL Natives
 /natives
+
+# Ignore the user's debug savefiles (TODO move this to the regular saves dir)
+/debug-saves

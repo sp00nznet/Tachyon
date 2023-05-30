@@ -1,5 +1,7 @@
 package xyz.znix.xftl.devutil
 
+import org.jdom2.Document
+import org.jdom2.input.SAXBuilder
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import org.newdawn.slick.Color
@@ -21,8 +23,12 @@ import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.shipgen.ShipGenerator
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
+import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
+import java.util.stream.Collectors
 import kotlin.random.Random
 
 /**
@@ -42,6 +48,10 @@ class DebugConsole(var game: InGameState) {
     private val ship: Ship get() = game.player
 
     private var flashTimer: Float = 0f
+
+    // TODO move this to somewhere in appdata (or platform equivalent) when we pick
+    //  somewhere to store the regular savegames.
+    private val debugSaveDir = Path.of("debug-saves")
 
     // Used for event searches - put them here so they persiste between
     // searches.
@@ -74,6 +84,8 @@ class DebugConsole(var game: InGameState) {
         Cmd("dump-save", null, this::cmdDumpSave, "Save the game to XML, and print it to standard output"),
         Cmd("save-load", null, this::cmdSaveLoad, "Save the game to XML, and load it back in."),
         Cmd("gc", null, this::cmdGC, "Manually trigger Java's Garbage Collector."),
+        Cmd("save", 1, this::cmdSave, "Save the game to a file of a custom name."),
+        Cmd("load", 0, this::cmdLoad, "Load a game saved via the 'save' command."),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("reload-flags", 0, this::cmdReloadFlags, "Reload the debug flags (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
@@ -829,6 +841,103 @@ class DebugConsole(var game: InGameState) {
     private fun cmdGC(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         System.gc()
         lines.add("Finished Java GC operation.")
+    }
+
+    private fun cmdSave(args: List<String>) {
+        // First, try serialising the game.
+        val doc = try {
+            game.saveGameState()
+        } catch (ex: Exception) {
+            lines.add("Exception saving game (more in stdout): $ex")
+            ex.printStackTrace()
+            return
+        }
+
+        // Create the saves directory if it doesn't already exist
+        if (!Files.exists(debugSaveDir)) {
+            try {
+                Files.createDirectory(debugSaveDir)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                lines.add("Exception while creating debug save directory!")
+                return
+            }
+        }
+
+        val file = debugSaveDir.resolve(args[1] + ".xml")
+
+        fun doSave() {
+            val xmlOutput = XMLOutputter(Format.getPrettyFormat())
+
+            try {
+                Files.newBufferedWriter(file, Charsets.UTF_8).use { writer ->
+                    xmlOutput.output(doc, writer)
+                }
+            } catch (ex: Exception) {
+                println("While writing save to $file")
+                ex.printStackTrace()
+                lines.add("Exception while writing save!")
+            }
+        }
+
+        // Now check if a file of the same name already exists.
+        if (Files.exists(file)) {
+            val options = listOf(
+                Pair("Yes, overwrite the save", true),
+                Pair("No, cancel and don't overwrite the save.", false)
+            )
+            pickFromList("A save with this name exists, overwrite it?", options) {
+                if (it) {
+                    lines.add("Overwriting save '${args[1]}'")
+                    doSave()
+                } else {
+                    lines.add("Save cancelled.")
+                }
+            }
+        } else {
+            lines.add("Writing save '${args[1]}'")
+            doSave()
+        }
+    }
+
+    private fun cmdLoad(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        val files: List<Path> = try {
+            Files.list(debugSaveDir).filter { it.fileName.toString().endsWith(".xml") }.collect(Collectors.toList())
+        } catch (ex: IOException) {
+            ex.printStackTrace()
+            lines.add("Exception while listing debug saves, see the console for details.")
+            lines.add("(This may occur if you've never made a debug save, so the folder doesn't exist)")
+            return
+        }
+
+        if (files.isEmpty()) {
+            lines.add("No debug saves available.")
+            return
+        }
+
+        val items = files.map { Pair(it.fileName.toString().removeSuffix(".xml"), it) }
+
+        pickFromList("Select save", items) { path ->
+            val doc: Document = try {
+                Files.newBufferedReader(path).use { reader ->
+                    val builder = SAXBuilder()
+                    builder.expandEntities = false
+                    builder.build(reader)
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                lines.add("Exception while reading save, see the console for details.")
+                return@pickFromList
+            }
+
+            try {
+                game.mainGame.loadSavedGame(doc)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                lines.add("Exception while loading save, see the console for details.")
+                return@pickFromList
+            }
+        }
     }
 
     private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {
