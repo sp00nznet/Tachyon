@@ -3,6 +3,7 @@ package xyz.znix.xftl.crew
 import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.Image
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
@@ -541,8 +542,37 @@ abstract class AbstractCrew(
         }
 
         // Draw the actual image
-        val opacityColour = Color(1f, 1f, 1f, opacity)
-        cf.draw(x0, y0, x1, y1, 0f, 0f, cf.width.f, cf.height.f, opacityColour)
+        // This is moved into its own function so that living crew with layered
+        // rendering can apply their different colour filters.
+        drawImage(x0, y0, x1, y1, cf, opacity)
+    }
+
+    fun drawPortrait(x: Int, y: Int, scale: Float = 1f) {
+        val img = portraitAnim.spriteAt(0)
+        drawImage(
+            x.f, y.f,
+            x.f + img.width * scale, y.f + img.height * scale,
+            img, 1f
+        )
+    }
+
+    protected open fun drawImage(
+        // The corners of the image as it should be drawn on-screen.
+        // This is stretched for the teleport animation.
+        x0: Float, y0: Float,
+        x1: Float, y1: Float,
+
+        // The image to be drawn, from the base sprite sheet.
+        baseFrame: Image,
+
+        alpha: Float
+    ) {
+        // Use nearest filtering so the image looks good when scaled up
+        // in the crew management screen.
+        baseFrame.filter = Image.FILTER_NEAREST
+        baseFrame.alpha = alpha
+        baseFrame.draw(x0, y0, x1, y1, 0f, 0f, baseFrame.width.f, baseFrame.height.f)
+        baseFrame.alpha = 1f
     }
 
     fun drawForeground(g: Graphics) {

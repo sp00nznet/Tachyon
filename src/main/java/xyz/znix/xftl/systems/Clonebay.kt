@@ -217,10 +217,8 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 hiddenCrewFont.drawString(windowX + 11f, windowY + 15f, numStr, Color.white)
             } else {
                 // Draw the crewmember portrait
-                // TODO layer rendering
                 val crew = queue[index]
-                val portrait = game.animations["${crew.codename}_portrait"].spriteAt(0)
-                portrait.draw(windowX, windowY - 5)
+                crew.drawPortrait(windowX, windowY - 5)
             }
 
             // Draw the crew dying bar

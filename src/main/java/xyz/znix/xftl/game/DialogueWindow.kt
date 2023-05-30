@@ -524,7 +524,8 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     }
 
     private fun drawRewardCrew(crew: AddCrewEval, x: Int, y: Int, textColour: Color): Int {
-        // TODO layers, and unify the crew drawing with stores and ShipWindow
+        // TODO find some way to use AbstractCrew.drawPortrait for this
+        // (This way doesn't draw the tinted layers)
         val portrait = game.animations["${crew.race.name}_portrait"].spriteAt(0)
 
         portrait.draw(x - 2f, y - 2f)
@@ -535,10 +536,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     }
 
     private fun drawLostCrew(crew: RemoveCrewEval, x: Int, y: Int): Int {
-        // TODO layers, and unify the crew drawing with stores and ShipWindow
-        val portrait = game.animations["${crew.crew.codename}_portrait"].spriteAt(0)
-
-        portrait.draw(x - 2f, y - 2f)
+        crew.crew.drawPortrait(x - 2, y - 2)
 
         val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
         val message = game.translator[messageKey].replace("\\1", crew.crew.selectedName)

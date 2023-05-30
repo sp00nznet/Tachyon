@@ -476,15 +476,11 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, Color.white)
 
                 // Draw the crewmember portrait
-                // TODO layer rendering
-                val portrait = game.animations["${crew.codename}_portrait"].spriteAt(0)
-
-                portrait.filter = Image.FILTER_NEAREST
-
                 // TODO align properly
-                portrait.draw(
-                    pos.x + 2f + (96 - portrait.width * 2) / 2,
-                    pos.y + 2f + (45 - portrait.height * 2) / 2,
+                val portrait = crew.icon.currentFrame
+                crew.drawPortrait(
+                    pos.x + 2 + (96 - portrait.width * 2) / 2,
+                    pos.y + 2 + (45 - portrait.height * 2) / 2,
                     2f
                 )
             }

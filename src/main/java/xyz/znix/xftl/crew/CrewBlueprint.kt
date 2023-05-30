@@ -1,6 +1,7 @@
 package xyz.znix.xftl.crew
 
 import org.jdom2.Element
+import org.newdawn.slick.Color
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.layout.Room
 
@@ -15,6 +16,14 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
     val powerStringIds: List<String> =
         elem.getChild("powerList")?.getChildren("power")?.map { it.getAttributeValue("id") }
             ?: emptyList()
+
+    /**
+     * A list of all the colour filters that can be used as a filter
+     * for rendering the layer1 (or in the case of humans, layer2) images.
+     */
+    val colourFilters: List<List<Color>> = elem.getChild("colorList")
+        ?.getChildren("layer")?.map { parseColourLayer(it) }
+        ?: emptyList()
 
     fun spawn(room: Room, mode: AbstractCrew.SlotType): LivingCrew {
         val animations = room.ship.sys.animations
@@ -49,5 +58,19 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
             "crystal",
             "anaerobic"
         )
+
+        private fun parseColourLayer(layerElem: Element): List<Color> {
+            val colourElements = layerElem.getChildren("color")
+
+            return colourElements.map {
+                // Alpha is 0-1, the others are 0-255
+                Color(
+                    it.getAttributeValue("r").toInt() / 255f,
+                    it.getAttributeValue("g").toInt() / 255f,
+                    it.getAttributeValue("b").toInt() / 255f,
+                    it.getAttributeValue("a").toFloat()
+                )
+            }
+        }
     }
 }
