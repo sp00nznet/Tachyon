@@ -29,6 +29,18 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
     val fireDuration: Float = 1f * length / speedPixelsPerSecond
 
+    val beamColour: Color? = xml.getChild("color")?.let {
+        Color(
+            it.getChildTextTrim("r").toInt(),
+            it.getChildTextTrim("g").toInt(),
+            it.getChildTextTrim("b").toInt()
+        )
+    }
+
+    private val transparentColour = Color(beamColour ?: DEFAULT_COLOUR).also {
+        it.a = 220f / 255f // This is largely guessed
+    }
+
     // TODO implement super-shield (Zoltan shield) support
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
@@ -74,7 +86,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // Note that since we're in image space, forwards is up so forwards
                 // is negative Y. Use some 'long enough' arbitrary length.
                 val offset = animation.firePoint
-                drawBeam(damage, offset, offset + ConstPoint(0, -5000))
+                val visibleStrength = max(1, damage)
+                drawBeam(visibleStrength, offset, offset + ConstPoint(0, -5000))
             } else {
                 super.render(g)
             }
@@ -168,7 +181,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             // Draw the contact animation
             // FIXME hardcode the offset of the contact point relative
             //  to the image - I can't see this specified anywhere.
-            contact.draw(targetPos.x - 24f, targetPos.y - 32f, BEAM_COLOUR_OPAQUE)
+            contact.draw(targetPos.x - 24f, targetPos.y - 32f, beamColour ?: DEFAULT_COLOUR)
         }
 
         override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
@@ -208,14 +221,28 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         shieldLayers = max(0, shieldLayers - type.shieldPiercing)
                         val beamPower = max(0, damage - shieldLayers)
 
+                        if (shieldLayers > 0 && beamPower == 0) {
+                            // Couldn't pierce the shields?
+                            // Note we need to check if shieldLayers is non-zero,
+                            // otherwise it'd block non-hull-damaging weapons even
+                            // when the shields are down.
+                            lastRoomId = room.id
+                            continue
+                        }
+
                         // If we hit a new room, damage it
                         if (lastRoomId != room.id) {
                             lastRoomId = room.id
                             targetShip.damage(room, beamPower, beamPower, 0)
                         }
 
-                        // TODO deal crew damage - this is done on entry
-                        //  to a new cell, not only to a new room.
+                        // Deal crew damage - this is done on entry to a new cell, not only to a new room.
+                        val crewDamage = (personnelDamage ?: beamPower) * 15f
+                        val crew = room.crew.filter { it.findNearestRoomPos().shipPoint posEq tmp }
+
+                        for (crewmember in crew) {
+                            crewmember.dealDamage(crewDamage)
+                        }
                     }
                 }
 
@@ -369,7 +396,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val dstA = FPos(dst.x + tangent.x, dst.y + tangent.y)
         val dstB = FPos(dst.x - tangent.x, dst.y - tangent.y)
 
-        drawGradient(srcA, srcB, dstA, dstB, BEAM_COLOUR_TRANSPARENT)
+        drawGradient(srcA, srcB, dstA, dstB, transparentColour)
     }
 
     /**
@@ -546,9 +573,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // The default speed, in the same units as the XML.
         private const val DEFAULT_SPEED = 5
 
-        // A bright red and not completely opaque beam? This is largely guessed.
-        private val BEAM_COLOUR_TRANSPARENT = Color(255, 30, 30, 220)
-        private val BEAM_COLOUR_OPAQUE = Color(BEAM_COLOUR_TRANSPARENT).apply { a = 1f }
+        // A bright red beam? This is largely guessed.
+        private val DEFAULT_COLOUR = Color(255, 30, 30)
 
         private val INVALID_CELL_POS = ConstPoint(-999, -999)
     }
