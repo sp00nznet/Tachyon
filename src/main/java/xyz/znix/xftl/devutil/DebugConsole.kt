@@ -10,6 +10,7 @@ import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.f
@@ -359,9 +360,7 @@ class DebugConsole(var game: InGameState) {
     private fun cmdCrew(args: List<String>) {
         val race = args[1]
 
-        val races = setOf(
-            "human"
-        )
+        val races = game.blueprintManager.blueprints.values.mapNotNull { (it as? CrewBlueprint)?.name }
 
         if (race == "races") {
             lines.add("Supported crew races:")
@@ -376,6 +375,8 @@ class DebugConsole(var game: InGameState) {
             return
         }
 
+        // If it's an unknown race, this will replace it with a human.
+        // This saves us from having to maintain two lists of the supported crew.
         ship.addCrewMember(race, false)
     }
 

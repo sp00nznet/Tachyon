@@ -20,7 +20,14 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
         val animations = room.ship.sys.animations
 
         return when (name) {
-            "human" -> HumanCrew(this, animations, room, mode)
+            "human" -> CrewHuman(this, animations, room, mode)
+            "engi" -> CrewEngi(this, animations, room, mode)
+            "mantis" -> CrewMantis(this, animations, room, mode)
+            "rock" -> CrewRock(this, animations, room, mode)
+            "energy" -> CrewZoltan(this, animations, room, mode)
+            "slug" -> CrewSlug(this, animations, room, mode)
+            "crystal" -> CrewCrystal(this, animations, room, mode)
+            "anaerobic" -> CrewAnaerobic(this, animations, room, mode)
 
             // Until we've implemented all the others, don't give a hard error here.
             else -> {
