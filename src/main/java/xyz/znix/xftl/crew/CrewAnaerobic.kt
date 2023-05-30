@@ -6,5 +6,8 @@ import xyz.znix.xftl.layout.Room
 class CrewAnaerobic(blueprint: CrewBlueprint, animations: Animations, room: Room, mode: SlotType) :
     LivingCrew(blueprint, animations, room, mode) {
 
-    // TODO implement
+    override val movementSpeed: Float get() = BASE_MOVEMENT_SPEED * 0.85f
+    override val suffocationMultiplier: Float get() = 0f
+
+    // TODO implement oxygen draining
 }

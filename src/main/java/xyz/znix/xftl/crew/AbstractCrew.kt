@@ -106,6 +106,7 @@ abstract class AbstractCrew(
     open val hasDyingAnimation: Boolean get() = true
     open val suffocationMultiplier: Float get() = 1f
     open val playerControllable: Boolean get() = true
+    open val movementSpeed: Float get() = BASE_MOVEMENT_SPEED
 
     var pathingTarget: RoomPoint? = null
         private set(value) {
@@ -316,7 +317,7 @@ abstract class AbstractCrew(
                 val directionY = deltaY / distance
 
                 // Move closer towards our position
-                val movement = min(distance, dt * BASE_MOVEMENT_SPEED)
+                val movement = min(distance, dt * movementSpeed)
                 pixelSpaceX += directionX * movement
                 pixelSpaceY += directionY * movement
             }
@@ -434,6 +435,7 @@ abstract class AbstractCrew(
             updateAttack(Action.SABOTAGE, dt, {}, {})
 
             // Sabotage doesn't deal damage in bursts - it's constant 16% damage/second.
+            // Note this is the same for any crew, regardless of the attack damage multiplier.
             system.attack(dt * 0.16f)
 
             return

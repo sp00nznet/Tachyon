@@ -6,5 +6,10 @@ import xyz.znix.xftl.layout.Room
 class CrewCrystal(blueprint: CrewBlueprint, animations: Animations, room: Room, mode: SlotType) :
     LivingCrew(blueprint, animations, room, mode) {
 
-    // TODO implement
+    override val suffocationMultiplier: Float get() = 0.5f
+    override val movementSpeed: Float get() = BASE_MOVEMENT_SPEED * 0.8f
+    override val maxHealth: Float get() = 125f
+
+    // TODO implement slower fire fighting
+    // TODO implement special ability
 }

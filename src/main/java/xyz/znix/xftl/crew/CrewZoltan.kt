@@ -6,5 +6,9 @@ import xyz.znix.xftl.layout.Room
 class CrewZoltan(blueprint: CrewBlueprint, animations: Animations, room: Room, mode: SlotType) :
     LivingCrew(blueprint, animations, room, mode) {
 
-    // TODO implement
+    override val maxHealth: Float get() = 70f
+
+    // TODO on-death animation
+
+    // TODO implement power
 }

@@ -6,5 +6,7 @@ import xyz.znix.xftl.layout.Room
 class CrewMantis(blueprint: CrewBlueprint, animations: Animations, room: Room, mode: SlotType) :
     LivingCrew(blueprint, animations, room, mode) {
 
-    // TODO implement
+    override val repairSpeed: Float get() = 0.5f
+    override val attackDamageMult: Float get() = 1.5f
+    override val movementSpeed: Float get() = BASE_MOVEMENT_SPEED * 1.2f
 }
