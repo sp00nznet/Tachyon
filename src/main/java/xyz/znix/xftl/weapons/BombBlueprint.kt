@@ -87,6 +87,27 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             doBombFire(target)
         }
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            super.saveToXML(elem, refs)
+
+            SaveUtil.addTagFloat(elem, "firingAnimationTimer", firingAnimationTimer, 0f)
+            SaveUtil.addTagBoolIfTrue(elem, "hasFired", hasFired)
+            if (target != null) {
+                SaveUtil.addRoomRef(elem, "target", refs, target!!)
+            }
+        }
+
+        override fun loadFromXML(elem: Element, refs: RefLoader) {
+            super.loadFromXML(elem, refs)
+
+            firingAnimationTimer = SaveUtil.getOptionalTagFloat(elem, "firingAnimationTimer") ?: 0f
+            hasFired = SaveUtil.getOptionalTagBool(elem, "hasFired") ?: false
+
+            if (elem.getChild("target") != null) {
+                SaveUtil.getRoomRef(elem, "target", refs) { target = it }
+            }
+        }
     }
 
     class FiredBomb(val type: BombBlueprint, val target: Room, val animation: FTLAnimation) : IProjectile {
