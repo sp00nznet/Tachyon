@@ -787,12 +787,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
                 if (first !is AbstractProjectile || second !is AbstractProjectile) {
                     continue
                 }
-                if (first.targetShip == second.targetShip) {
-                    continue
-                }
 
-                // Prevent defence drones from accidentally hitting your missiles
-                if (first.targetShip == null || second.targetShip == null) {
+                // A projectile that's not fired at a ship is assumed to be friendly,
+                // like a defence drone laser.
+                val isFirstFriendly = first.targetShip != this
+                val isSecondFriendly = second.targetShip != this
+                if (isFirstFriendly == isSecondFriendly) {
                     continue
                 }
 
