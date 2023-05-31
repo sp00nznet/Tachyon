@@ -1,9 +1,13 @@
 package xyz.znix.xftl.drones
 
+import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.f
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.DroneBlueprint
 
 class HullRepairDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
@@ -84,7 +88,6 @@ class HullRepairDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false)
             remainingRepairs--
 
             if (remainingRepairs <= 0) {
-                destroy()
                 removeInstance()
             }
         }
@@ -93,5 +96,21 @@ class HullRepairDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false)
     private fun onReachedDestination() {
         flightController.paused = true
         stopTimer = 0.5f
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addAttrFloat(elem, "animation", animationProgress)
+        SaveUtil.addAttrFloat(elem, "stopTimer", stopTimer)
+        SaveUtil.addAttrInt(elem, "remainingRepairs", remainingRepairs)
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        animationProgress = SaveUtil.getAttrFloat(elem, "animation")
+        stopTimer = SaveUtil.getAttrFloat(elem, "stopTimer")
+        remainingRepairs = SaveUtil.getAttrInt(elem, "remainingRepairs")
     }
 }

@@ -65,6 +65,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // Similarly, this is used for artillery
         private var length: Int = this@BeamBlueprint.length
 
+        var isOnDrone: Boolean = false
+
         init {
             // Turns out this is a one-frame animation, leave it looping in case
             // a mod replaces it or something.
@@ -362,7 +364,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                     // Without this, the beam graphic won't render on the target ship.
                     // Note this only runs if the target is non-null.
-                    target.targetShip.inboundBeams.add(this)
+                    if (!isOnDrone) {
+                        target.targetShip.inboundBeams.add(this)
+                    }
                 }
             }
 

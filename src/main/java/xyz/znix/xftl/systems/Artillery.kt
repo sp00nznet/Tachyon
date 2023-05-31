@@ -56,6 +56,11 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         if (powerSelected <= 0) {
             chargeProgress -= dt / DISCHARGE_TIME
+
+            // Make the beam disappear if we were shooting when we were turned off.
+            weapon.forceSetPowered(false)
+            weapon.update(dt, false, false)
+
             return
         }
 

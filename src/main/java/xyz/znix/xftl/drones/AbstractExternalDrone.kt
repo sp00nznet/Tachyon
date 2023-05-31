@@ -1,5 +1,6 @@
 package xyz.znix.xftl.drones
 
+import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
@@ -10,6 +11,10 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.savegame.ISerialReferencable
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.IProjectile
 import kotlin.math.*
@@ -77,11 +82,16 @@ abstract class AbstractExternalDrone(
     override fun init(ownerShip: Ship) {
         super.init(ownerShip)
 
-        targetShip = when {
-            onEnemy -> ownerShip.sys.getEnemyOf(ownerShip)
-                ?: error("Cannot deploy drone '${type.name}' with no enemy present!")
+        // If we're being deserialised, targetShip will already be set.
+        // This is required since we don't know what the player and enemy
+        // ship are during deserialisation.
+        if (!this::targetShip.isInitialized) {
+            targetShip = when {
+                onEnemy -> ownerShip.sys.getEnemyOf(ownerShip)
+                    ?: error("Cannot deploy drone '${type.name}' with no enemy present!")
 
-            else -> ownerShip
+                else -> ownerShip
+            }
         }
 
         targetShip.externalDrones.add(this)
@@ -168,10 +178,10 @@ abstract class AbstractExternalDrone(
         g.popTransform()
 
         // If we're ion-stunned or being hacked, draw sparks on top
-        renderStunSparks(g)
+        renderStunSparks()
     }
 
-    private fun renderStunSparks(g: Graphics) {
+    private fun renderStunSparks() {
         if (!isStunned) {
             stunSparksAnimation = null
             return
@@ -251,6 +261,30 @@ abstract class AbstractExternalDrone(
             return
         }
     }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addAttrRef(elem, "targetShip", refs, targetShip)
+
+        val elemFC = Element("flightControl")
+        flightController.saveToXML(elemFC, refs)
+        elem.addContent(elemFC)
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        // We have to load the target ship before running the super method,
+        // so that's initialised before init() is called.
+        SaveUtil.getAttrRef(elem, "targetShip", refs, Ship::class.java) { targetShip = it!! }
+
+        super.loadFromXML(elem, refs)
+
+        // Don't deserialise the flight controller until after init() is called.
+        // Thus we have to delay it until reference resolution time.
+        refs.addOnResolveFunction {
+            flightController.loadFromXML(elem.getChild("flightControl"), refs)
+        }
+    }
 }
 
 abstract class DroneFlightController(val drone: AbstractExternalDrone) {
@@ -289,6 +323,18 @@ abstract class DroneFlightController(val drone: AbstractExternalDrone) {
      * Called when the owner drone has finished seting itself up.
      */
     open fun init() {
+    }
+
+    open fun saveToXML(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addAttrFloat(elem, "x", posX)
+        SaveUtil.addAttrFloat(elem, "y", posY)
+        SaveUtil.addAttrFloat(elem, "rotation", rotation)
+    }
+
+    open fun loadFromXML(elem: Element, refs: RefLoader) {
+        posX = SaveUtil.getAttrFloat(elem, "x")
+        posY = SaveUtil.getAttrFloat(elem, "y")
+        rotation = SaveUtil.getAttrFloat(elem, "rotation")
     }
 
     companion object {
@@ -437,6 +483,24 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
         rotation = 0f
         posX = ship.shieldOrigin.x.f + (a * cos(theta))
         posY = ship.shieldOrigin.y.f + (b * sin(theta))
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addAttrFloat(elem, "angleAboutShip", theta)
+        SaveUtil.addAttrFloat(elem, "speedX", speedX)
+        SaveUtil.addAttrFloat(elem, "speedY", speedY)
+        SaveUtil.addAttrBool(elem, "poweredLastFrame", poweredLastFrame)
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        theta = SaveUtil.getAttrFloat(elem, "angleAboutShip")
+        speedX = SaveUtil.getAttrFloat(elem, "speedX")
+        speedY = SaveUtil.getAttrFloat(elem, "speedY")
+        poweredLastFrame = SaveUtil.getAttrBool(elem, "poweredLastFrame")
     }
 }
 
@@ -648,6 +712,38 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         // interpolate between them.
         lastDestRotation = nextDestRotation
         nextDestRotation = getAngleFrom(nextDestination, nextStopTarget)
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addPoint(elem, "nextDestination", nextDestination)
+        SaveUtil.addPoint(elem, "nextStopTarget", nextStopTarget)
+        SaveUtil.addAttrFloat(elem, "currentDestAngle", currentDestAngle)
+        SaveUtil.addAttrFloat(elem, "speedX", speedX)
+        SaveUtil.addAttrFloat(elem, "speedY", speedY)
+        SaveUtil.addAttrFloat(elem, "pauseTimer", pauseTimer)
+        SaveUtil.addAttrFloat(elem, "lastDestRotation", lastDestRotation)
+        SaveUtil.addAttrFloat(elem, "nextDestRotation", nextDestRotation)
+        SaveUtil.addAttrFloat(elem, "movementDistance", movementDistance)
+        SaveUtil.addAttrBool(elem, "paused", paused)
+        SaveUtil.addAttrFloat(elem, "pauseStopTime", pauseStopTime)
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        nextDestination = SaveUtil.getPoint(elem, "nextDestination")
+        nextStopTarget = SaveUtil.getPoint(elem, "nextStopTarget")
+        currentDestAngle = SaveUtil.getAttrFloat(elem, "currentDestAngle")
+        speedX = SaveUtil.getAttrFloat(elem, "speedX")
+        speedY = SaveUtil.getAttrFloat(elem, "speedY")
+        pauseTimer = SaveUtil.getAttrFloat(elem, "pauseTimer")
+        lastDestRotation = SaveUtil.getAttrFloat(elem, "lastDestRotation")
+        nextDestRotation = SaveUtil.getAttrFloat(elem, "nextDestRotation")
+        movementDistance = SaveUtil.getAttrFloat(elem, "movementDistance")
+        paused = SaveUtil.getAttrBool(elem, "paused")
+        pauseStopTime = SaveUtil.getAttrFloat(elem, "pauseStopTime")
     }
 }
 

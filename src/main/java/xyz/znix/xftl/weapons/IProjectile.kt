@@ -3,6 +3,7 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.drones.DefenceDrone
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -107,6 +108,8 @@ interface IProjectile {
                 BombBlueprint.SERIALISATION_TYPE -> BombBlueprint.loadProjectileFromXML(game, elem, refs, callback)
 
                 Hacking.PROBE_SERIALISATION_TYPE -> Hacking.loadProjectileFromXML(game, elem, refs, callback)
+
+                DefenceDrone.LASER_SERIALISATION_TYPE -> DefenceDrone.loadProjectileFromXML(game, elem, refs, callback)
 
                 else -> {
                     error("Invalid serialised projectile with serialisation type '$serialisationType'")

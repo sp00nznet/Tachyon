@@ -1229,7 +1229,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         }
         elem.addContent(weaponsElem)
 
-        // TODO serialise the drones
+        // Serialise the drones. If a drone is deployed to another ship, it's
+        // serialised on that ship instead of this one.
+        // Indoor drones are serialised as crewmembers (via their pawn).
+        val dronesElem = Element("externalDrones")
+        for (drone in externalDrones) {
+            val droneElem = Element("drone")
+            drone.saveToXML(droneElem, refs)
+            dronesElem.addContent(droneElem)
+        }
+        elem.addContent(dronesElem)
 
         // Serialise the doors. Most of the time there's nothing interesting
         // about them other than whether they're open or closed, but occasionally
@@ -1362,6 +1371,17 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             val weapon = blueprint.buildInstance(this)
             weapon.loadFromXML(weaponElem, refs)
             hardpoints[hardpointIndex].weapon = weapon
+        }
+
+        // Deserialise the external drones, both friendly and not.
+        for (droneElem in rootElem.getChild("externalDrones").getChildren("drone")) {
+            val type = SaveUtil.getAttr(droneElem, "type")
+            val blueprint = sys.blueprintManager[type] as DroneBlueprint
+
+            val drone = blueprint.makeInstance() as AbstractExternalDrone
+            drone.loadFromXML(droneElem, refs)
+
+            // The drone will add itself to the externalDrones list.
         }
 
         // Deserialise explosion (and similar) animations

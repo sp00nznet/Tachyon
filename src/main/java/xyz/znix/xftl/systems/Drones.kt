@@ -5,6 +5,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.DroneBlueprint
 
 class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
@@ -168,9 +169,28 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
     }
 
-    // The drones are all serialised by the ship separately.
-    override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
-    override fun loadSystem(elem: Element, refs: RefLoader) = Unit
+    // The drone instances are all serialised separate, but we store the blueprints here.
+    override fun saveSystem(elem: Element, refs: ObjectRefs) {
+        for (drone in drones) {
+            if (drone == null)
+                continue
+
+            val droneElem = Element("drone")
+            SaveUtil.addAttr(droneElem, "type", drone.type.name)
+            elem.addContent(droneElem)
+        }
+    }
+
+    override fun loadSystem(elem: Element, refs: RefLoader) {
+        for (droneElem in elem.getChildren("drone")) {
+            val type = SaveUtil.getAttr(droneElem, "type")
+            val blueprint = ship.sys.blueprintManager[type] as DroneBlueprint
+
+            val firstSlot = drones.indexOf(null)
+            require(firstSlot != -1) { "More serialised drones than drone slots!" }
+            drones[firstSlot] = DroneInfo(blueprint, null)
+        }
+    }
 
     class DroneInfo(val type: DroneBlueprint, var instance: AbstractDrone? = null)
 

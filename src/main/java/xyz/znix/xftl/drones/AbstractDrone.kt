@@ -1,9 +1,13 @@
 package xyz.znix.xftl.drones
 
+import org.jdom2.Element
 import xyz.znix.xftl.AnimationSpec
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.rollChance
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.random.Random
 
@@ -114,5 +118,47 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
      * ship, such as it being destroyed or changing as we jump away.
      */
     open fun onEnemyShipUpdated() {
+    }
+
+    open fun saveToXML(elem: Element, refs: ObjectRefs) {
+        SaveUtil.addAttr(elem, "type", type.name)
+        SaveUtil.addAttrRef(elem, "owner", refs, ownerShip)
+        SaveUtil.addAttrBool(elem, "powered", isPowered)
+
+        SaveUtil.addTagFloat(elem, "stunTotalTimer", stunTotalTimer, 0f)
+        SaveUtil.addTagFloat(elem, "stunDestroyTimer", stunDestroyTimer, 0f)
+
+        // Save a reference to the slot of our owning drones system that we're in.
+        // This is how we link ourselves back up with the DroneInfo object.
+        val slot = ownerShip.drones!!.drones.indexOfFirst { it?.instance == this }
+        SaveUtil.addAttrInt(elem, "slot", if (slot == -1) null else slot)
+    }
+
+    open fun loadFromXML(elem: Element, refs: RefLoader) {
+        require(type.name == SaveUtil.getAttr(elem, "type"))
+
+        isPowered = SaveUtil.getAttrBool(elem, "powered")
+
+        stunTotalTimer = SaveUtil.getOptionalTagFloat(elem, "stunTotalTimer") ?: 0f
+        stunDestroyTimer = SaveUtil.getOptionalTagFloat(elem, "stunDestroyTimer") ?: 0f
+
+        // This runs after all the other initialisation
+        val slot = SaveUtil.getAttrIntOrNull(elem, "slot")
+        SaveUtil.getAttrRef(elem, "owner", refs, Ship::class.java) {
+            init(it!!)
+
+            if (slot != null) {
+                val info = it.drones!!.drones[slot]!!
+
+                // A couple of simple checks to make sure we're not ending up in the wrong slot.
+                require(info.type == type)
+                require(info.instance == null)
+
+                info.instance = this
+            }
+
+            // TODO support orphan drones properly (or remove it and make drones blow up
+            //  when you remove their blueprint).
+        }
     }
 }

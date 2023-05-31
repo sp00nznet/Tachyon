@@ -135,15 +135,27 @@ class RefLoader {
      * Queue up a function to be run when it's possible to resolve an ID.
      */
     fun <T : ISerialReferencable> asyncResolve(type: Class<T>, id: String, fn: (T?) -> Unit) {
-        // This is only supposed to be used before we enter resolving mode
+        // If we're already resolving references, we can run the callback immediately.
         if (resolving) {
-            throw IllegalArgumentException("Cannot async-resolve object '$id' while in resolving mode!")
+            fn(resolve(type, id))
+            return
         }
 
         resolveFunctions += {
             val result = resolve(type, id)
             fn(result)
         }
+    }
+
+    /**
+     * Adds an arbitrary function that is run once [switchToResolveMode] is called.
+     */
+    fun addOnResolveFunction(fn: () -> Unit) {
+        if (resolving) {
+            throw IllegalArgumentException("Cannot add on-resolve function after switchToResolveMode was called!")
+        }
+
+        resolveFunctions += fn
     }
 }
 

@@ -1,13 +1,18 @@
 package xyz.znix.xftl.drones
 
+import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.*
 import kotlin.math.*
 
@@ -57,9 +62,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         // Just assume we're using a laser, it could get a bit silly otherwise.
         weapon = type.weaponBlueprint!! as LaserBlueprint
 
-        // On that note, assume the speed defaults to 60 which is the case for lasers.
-        // (x16 is to convert the speed into pixels-per-second)
-        weaponSpeed = (weapon.speed ?: 60) * 16
+        weaponSpeed = speedFor(weapon)
     }
 
     override fun onRender(g: Graphics) {
@@ -334,7 +337,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         // If we were previously targeting a drone, pick another one.
         currentDroneTarget = null
 
-        val shot = InterceptorLaser()
+        val shot = InterceptorLaser(ownerShip, weapon)
         targetShip.projectiles += shot
 
         shot.setInitialPath(flightController.position, point)
@@ -345,18 +348,39 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         lastShotAtTarget = interception.target
     }
 
-    private inner class InterceptorLaser : AbstractProjectile(null) {
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addAttrFloat(elem, "aimAngle", aimAngle)
+        SaveUtil.addAttrFloat(elem, "cooldown", cooldown)
+
+        // TODO serialise (these aren't *that* important, but we should still do them):
+        // lastShotAtTarget
+        // currentDroneTarget
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        aimAngle = SaveUtil.getAttrFloat(elem, "aimAngle")
+        cooldown = SaveUtil.getAttrFloat(elem, "cooldown")
+    }
+
+    private class InterceptorLaser(
+        val ownerShip: Ship,
+        val weapon: LaserBlueprint
+    ) : AbstractProjectile(null) {
 
         private val animation = ownerShip.sys.animations[weapon.projectile!!]
 
         private val hitAnimation = ownerShip.sys.animations[weapon.explosion]
 
-        override val speed: Int get() = weaponSpeed
+        override val speed: Int = speedFor(weapon)
 
         override val antiDroneBP: AbstractWeaponBlueprint get() = weapon
         override val antiDroneExemption: Ship get() = ownerShip
 
-        override val serialisationType: String get() = throw UnsupportedOperationException("TODO")
+        override val serialisationType: String get() = LASER_SERIALISATION_TYPE
 
         override fun renderPreTranslated(g: Graphics) {
             val spr = animation.spriteAt(0)
@@ -373,16 +397,42 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         override fun hitOtherProjectile(currentSpace: Ship) {
             currentSpace.animations += Ship.FloatingAnimation.centred(hitAnimation, position)
         }
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            super.saveToXML(elem, refs)
+
+            SaveUtil.addAttrRef(elem, "ownerShip", refs, ownerShip)
+            SaveUtil.addAttr(elem, "weapon", weapon.name)
+        }
     }
 
     private class InterceptResult(val target: AbstractProjectile?, val point: IPoint, val time: Float)
 
     companion object {
+        const val LASER_SERIALISATION_TYPE = "defenceDroneLaser"
+
         // The target type used by defence 2 drones, this also shoots
         // at asteroids/missiles.
         private const val LASERS_TARGET = "LASERS"
 
         // Used by anti-drones, this only fires at drones.
         private const val DRONES_TARGET = "DRONES"
+
+        fun loadProjectileFromXML(game: InGameState, elem: Element, refs: RefLoader, callback: (IProjectile) -> Unit) {
+            val weaponName = SaveUtil.getAttr(elem, "weapon")
+            val weapon = game.blueprintManager[weaponName] as LaserBlueprint
+
+            SaveUtil.getAttrRef(elem, "ownerShip", refs, Ship::class.java) { owner ->
+                val laser = InterceptorLaser(owner!!, weapon)
+                laser.loadPropertiesFromXML(elem, refs)
+                callback(laser)
+            }
+        }
+
+        private fun speedFor(type: LaserBlueprint): Int {
+            // On that note, assume the speed defaults to 60 which is the case for lasers.
+            // (x16 is to convert the speed into pixels-per-second)
+            return (type.speed ?: 60) * 16
+        }
     }
 }

@@ -1,10 +1,14 @@
 package xyz.znix.xftl.drones
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.SelectedTarget
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
@@ -36,6 +40,10 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         chargedImage = game.getImg("img/ship/drones/${type.droneImage}_charged.png")
 
         weapon = type.weaponBlueprint!!.buildInstance(ownerShip)
+
+        // Tell beam weapons they're on a drone, and thus they shouldn't use
+        // the normal incoming beam system
+        (weapon as? BeamBlueprint.BeamInstance)?.isOnDrone = true
 
         flightController.onReachedDestination = this::onReachedDestination
         flightController.pauseStopTime = 0.5f
@@ -155,6 +163,30 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
 
         // Tell the drone where it is, so it can rotate accordingly
         flightController.nextStopTarget = target.pixelCentre
+    }
+
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        SaveUtil.addAttrFloat(elem, "fireTimer", fireTimer)
+        SaveUtil.addRoomRef(elem, "target", refs, target)
+
+        val weaponElem = Element("weapon")
+        weapon.saveToXML(weaponElem, refs)
+        elem.addContent(weaponElem)
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader) {
+        super.loadFromXML(elem, refs)
+
+        fireTimer = SaveUtil.getAttrFloat(elem, "fireTimer")
+        SaveUtil.getRoomRef(elem, "target", refs) { target = it }
+
+        // We can't load the weapon until onInit was run to initialise it.
+        refs.addOnResolveFunction {
+            val weaponElem = elem.getChild("weapon")
+            weapon.loadFromXML(weaponElem, refs)
+        }
     }
 
     companion object {
