@@ -131,6 +131,7 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
         SaveUtil.addAttr(elem, "selectedName", selectedName)
         SaveUtil.addAttrRef(elem, "ownerShip", refs, ownerShip)
+        SaveUtil.addAttrInt(elem, "colour", crewColour)
     }
 
     override fun loadFromXML(elem: Element, refs: RefLoader) {
@@ -138,5 +139,6 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
         selectedName = SaveUtil.getAttr(elem, "selectedName")
         SaveUtil.getAttrRef(elem, "ownerShip", refs, Ship::class.java) { ownerShip = it }
+        crewColour = SaveUtil.getAttrInt(elem, "colour")
     }
 }
