@@ -5,6 +5,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.savegame.ISerialReferencable
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -29,7 +30,7 @@ class Beacon(
      * True if this is the exit beacon to progress to the next sector.
      */
     val isExit: Boolean
-) {
+) : ISerialReferencable {
 
     /**
      * Without long-range scanners, what should this beacon be displayed as?

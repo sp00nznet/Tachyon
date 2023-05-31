@@ -6,6 +6,7 @@ import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.mapChildrenText
 import xyz.znix.xftl.requireAttributeValue
+import xyz.znix.xftl.savegame.ISerialReferencable
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -350,7 +351,7 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         var type: SectorType,
 
         val sectorClass: SectorClass
-    ) {
+    ) : ISerialReferencable {
         /**
          * The sectors the player can jump to from this one.
          */

@@ -483,7 +483,6 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
     open fun saveToXML(elem: Element, refs: ObjectRefs) {
         elem.setAttribute("name", blueprint.name)
-        SaveUtil.addObjectId(elem, refs, this)
 
         // Add the level as an attribute, since most of the other tags
         // are optional we might be able to collapse the element (when
@@ -504,7 +503,6 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
     open fun loadFromXML(elem: Element, refs: RefLoader) {
         require(elem.getAttributeValue("name") == blueprint.name)
-        SaveUtil.registerObjectId(elem, refs, this)
 
         energyLevels = elem.getAttributeValue("level")!!.toInt()
 

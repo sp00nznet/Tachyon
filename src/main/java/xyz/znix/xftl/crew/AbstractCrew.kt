@@ -9,6 +9,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.savegame.ISerialReferencable
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -22,7 +23,8 @@ abstract class AbstractCrew(
     private val anims: Animations,
     initialRoom: Room,
     mode: SlotType
-) {
+) : ISerialReferencable {
+
     val codename: String get() = blueprint.name
 
     var icon: FTLAnimation

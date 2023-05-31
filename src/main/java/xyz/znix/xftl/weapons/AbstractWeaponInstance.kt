@@ -105,7 +105,6 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     }
 
     open fun saveToXML(elem: Element, refs: ObjectRefs) {
-        SaveUtil.addObjectId(elem, refs, this)
         SaveUtil.addAttr(elem, "type", type.name)
         SaveUtil.addAttrBool(elem, "powered", isPowered)
         SaveUtil.addAttrFloat(elem, "chargeTime", timeCharged)
@@ -115,7 +114,6 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     }
 
     open fun loadFromXML(elem: Element, refs: RefLoader) {
-        SaveUtil.registerObjectId(elem, refs, this)
         require(type.name == SaveUtil.getAttr(elem, "type"))
 
         isPowered = SaveUtil.getAttrBool(elem, "powered")

@@ -68,7 +68,7 @@ object SaveUtil {
             addTagBool(parent, newName, value)
     }
 
-    fun addRef(parent: Element, newName: String, refs: ObjectRefs, value: Any?) {
+    fun addRef(parent: Element, newName: String, refs: ObjectRefs, value: ISerialReferencable?) {
         // IDR stands for 'ID Reference'
         val elem = Element(newName)
         elem.setAttribute("idr", refs[value])
@@ -86,7 +86,7 @@ object SaveUtil {
      * Add the attribute that denotes an element represents an object
      * that can be referenced by its unique ID.
      */
-    fun addObjectId(elem: Element, refs: ObjectRefs, obj: Any) {
+    fun addObjectId(elem: Element, refs: ObjectRefs, obj: ISerialReferencable) {
         val id = refs[obj]
         elem.setAttribute("oid", id)
     }
@@ -164,7 +164,10 @@ object SaveUtil {
         return value.toBoolean()
     }
 
-    fun <T> getOptionalRef(parent: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit) {
+    fun <T : ISerialReferencable> getOptionalRef(
+        parent: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit
+    ) {
+
         if (parent.getChild(name) == null) {
             callback(null)
             return
@@ -173,14 +176,16 @@ object SaveUtil {
         getRef(parent, name, refs, type, callback)
     }
 
-    fun <T> getRef(parent: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit) {
+    fun <T : ISerialReferencable> getRef(
+        parent: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit
+    ) {
         // IDR stands for 'ID Reference'
         val elem = parent.getChild(name) ?: error("Missing reference tag '$name'")
         val ref = elem.getAttributeValue("idr")!!
         return refs.asyncResolve(type, ref, callback)
     }
 
-    fun <T> getRefImmediate(parent: Element, name: String, refs: RefLoader, type: Class<T>): T? {
+    fun <T : ISerialReferencable> getRefImmediate(parent: Element, name: String, refs: RefLoader, type: Class<T>): T? {
         // IDR stands for 'ID Reference'
         val elem = parent.getChild(name) ?: error("Missing reference tag '$name'")
         val ref = elem.getAttributeValue("idr")!!
@@ -200,7 +205,7 @@ object SaveUtil {
     /**
      * This is the counterpart of [addObjectId].
      */
-    fun registerObjectId(elem: Element, refs: RefLoader, obj: Any) {
+    fun registerObjectId(elem: Element, refs: RefLoader, obj: ISerialReferencable) {
         val id = elem.getAttributeValue("oid") ?: error("Missing object ID!")
         refs.register(obj, id)
     }
@@ -223,7 +228,7 @@ object SaveUtil {
         elem.setAttribute(name, value.toString())
     }
 
-    fun addAttrRef(elem: Element, name: String, refs: ObjectRefs, value: Any?) {
+    fun addAttrRef(elem: Element, name: String, refs: ObjectRefs, value: ISerialReferencable?) {
         elem.setAttribute(name, refs[value])
     }
 
@@ -253,12 +258,16 @@ object SaveUtil {
         return value.toFloat()
     }
 
-    fun <T> getAttrRef(elem: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit) {
+    fun <T : ISerialReferencable> getAttrRef(
+        elem: Element, name: String, refs: RefLoader, type: Class<T>, callback: (T?) -> Unit
+    ) {
         val ref = elem.getAttributeValue(name) ?: error("Missing reference attribute '$name'")
         refs.asyncResolve(type, ref, callback)
     }
 
-    fun <T> getAttrRefImmediate(elem: Element, name: String, refs: RefLoader, type: Class<T>): T? {
+    fun <T : ISerialReferencable> getAttrRefImmediate(
+        elem: Element, name: String, refs: RefLoader, type: Class<T>
+    ): T? {
         val ref = elem.getAttributeValue(name) ?: error("Missing reference attribute '$name'")
         return refs.resolve(type, ref)
     }

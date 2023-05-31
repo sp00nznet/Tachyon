@@ -138,7 +138,6 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         SaveUtil.addAttrFloat(elem, "charge", chargeProgress)
 
         val weaponElem = Element("weapon")
-        refs.register(weapon, "artilleryWeapon")
         weapon.saveToXML(weaponElem, refs)
         elem.addContent(weaponElem)
     }

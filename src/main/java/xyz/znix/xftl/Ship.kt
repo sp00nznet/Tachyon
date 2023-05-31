@@ -19,6 +19,7 @@ import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.savegame.ISerialReferencable
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -29,7 +30,7 @@ import java.awt.Rectangle
 import java.util.stream.Collectors
 import kotlin.math.min
 
-class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: EnemyShipSpec?) {
+class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: EnemyShipSpec?) : ISerialReferencable {
     val name: String = shipNode.getAttributeValue("name")
     val rooms: List<Room>
     val doors: MutableList<Door> = ArrayList()
@@ -1171,12 +1172,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         val refs = ObjectRefs(globalRefs)
         for (crew in this.crew) {
             globalRefs.register(crew, crew.codename)
-        }
-        for (system in systems) {
-            refs.register(system, system.codename)
-        }
-        for (hp in hardpoints) {
-            refs.register(hp.weapon, "weapon")
         }
 
         // Build the XML

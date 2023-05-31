@@ -8,7 +8,7 @@ package xyz.znix.xftl.savegame
  * use [RefLoader] for deserialisation.
  */
 class ObjectRefs {
-    private val objectIds = HashMap<Any, String>()
+    private val objectIds = HashMap<ISerialReferencable, String>()
     private val parent: ObjectRefs?
     private val rootParent: ObjectRefs
 
@@ -42,7 +42,7 @@ class ObjectRefs {
         rootParent = parent.rootParent
     }
 
-    fun register(obj: Any?, prefix: String) {
+    fun register(obj: ISerialReferencable?, prefix: String) {
         // Registering a null object is legal, to avoid having to null-check
         // objects while registering them.
         if (obj == null)
@@ -60,14 +60,14 @@ class ObjectRefs {
         objectIds[obj] = id
     }
 
-    operator fun get(obj: Any?): String {
+    operator fun get(obj: ISerialReferencable?): String {
         if (obj == null)
             return "null"
 
         return lookup(obj) ?: throw IllegalArgumentException("Unregistered object $obj")
     }
 
-    private fun lookup(obj: Any): String? {
+    private fun lookup(obj: ISerialReferencable): String? {
         objectIds[obj]?.let { return it }
 
         // Recursively lookup objects
@@ -84,12 +84,12 @@ class ObjectRefs {
  * and prevent bugs that depend on the order things are deserialised in.
  */
 class RefLoader {
-    private val objectIds = HashMap<String, Any>()
+    private val objectIds = HashMap<String, ISerialReferencable>()
     private var resolving = false
 
     private val resolveFunctions = ArrayList<() -> Unit>()
 
-    fun register(obj: Any, id: String) {
+    fun register(obj: ISerialReferencable, id: String) {
         if (resolving) {
             throw IllegalArgumentException("Cannot register object '$id' while in resolve mode!")
         }
@@ -111,7 +111,7 @@ class RefLoader {
         resolveFunctions.clear()
     }
 
-    fun <T> resolve(type: Class<T>, id: String): T? {
+    fun <T : ISerialReferencable> resolve(type: Class<T>, id: String): T? {
         if (!resolving) {
             throw IllegalArgumentException("Cannot resolve object '$id' while in registering mode!")
         }
@@ -134,7 +134,7 @@ class RefLoader {
     /**
      * Queue up a function to be run when it's possible to resolve an ID.
      */
-    fun <T> asyncResolve(type: Class<T>, id: String, fn: (T?) -> Unit) {
+    fun <T : ISerialReferencable> asyncResolve(type: Class<T>, id: String, fn: (T?) -> Unit) {
         // This is only supposed to be used before we enter resolving mode
         if (resolving) {
             throw IllegalArgumentException("Cannot async-resolve object '$id' while in resolving mode!")
@@ -146,3 +146,8 @@ class RefLoader {
         }
     }
 }
+
+/**
+ * This interface marks a class as being referencable in game saves, via [ObjectRefs] and [RefLoader].
+ */
+interface ISerialReferencable
