@@ -223,7 +223,28 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
             }
         }
 
-        return Sector(sectorInfo, eventPool, specialEvents)
+        // Try ten times to generate a suitable sector
+        var attemptCount = 0
+        while (true) {
+            val sector = Sector(sectorInfo, eventPool, specialEvents)
+
+            val path = sector.findShortestPath(sector.startBeacon, sector.finishBeacon!!)
+
+            // If there isn't a path to the finish beacon, try again regardless
+            // of how many attempts we've previously made.
+            if (path == null) {
+                attemptCount++
+                continue
+            }
+
+            // Otherwise try and require at least a five-beacon path
+            if (path.size < 5 && attemptCount < 10) {
+                attemptCount++
+                continue
+            }
+
+            return sector
+        }
     }
 
     fun saveToXML(elem: Element, refs: ObjectRefs) {

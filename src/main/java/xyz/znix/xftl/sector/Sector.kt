@@ -144,8 +144,10 @@ class Sector {
             // If we're at the right-most side of the map, add an exit beacon.
             // Since we're using the grid cells in a random order, we can
             // just add this in the first time we see such a beacon.
+            // (Note this applies to the last two columns, which is how you can
+            //  get obnoxiously early exit beacons)
             // TODO don't place this in the final sector.
-            if (gridPos.x == GRID_SIZE.x - 1 && tmpFinishBeacon == null) {
+            if (gridPos.x >= GRID_SIZE.x - 2 && tmpFinishBeacon == null) {
                 event = specialEvents.exit.resolve()
                 isFinish = true
             }
@@ -178,7 +180,8 @@ class Sector {
                 tmpStartBeacon = beacon
         }
 
-        // TODO check this sector is valid (has a path from start to finish)
+        // We'll check in GameMap whether this sector has a path from start
+        // to end, so we don't need to do anything like that here.
 
         for (b in beacons) {
             // Find the position of our beacon on the grid
