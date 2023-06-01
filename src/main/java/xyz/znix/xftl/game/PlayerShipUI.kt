@@ -28,12 +28,12 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.random.Random
 
-class PlayerShipUI(df: Datafile, val ship: Ship, private val game: InGameState) {
+class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val font = game.getFont("HL2", 2f)
-    private val weaponNameText = SILFontLoader(df, df["fonts/JustinFont8.font"])
-    private val weaponNumberFont = SILFontLoader(df, df["fonts/c&c.font"])
-    private val numberFont = SILFontLoader(df, df["fonts/num_font.font"])
-    private val oxygenEvadeFont = SILFontLoader(df, df["fonts/JustinFont10.font"])
+    private val weaponNameText = game.getFont("JustinFont8")
+    private val weaponNumberFont = game.getFont("c&c")
+    private val numberFont = game.getFont("num_font")
+    private val oxygenEvadeFont = game.getFont("JustinFont10")
 
     private val powerUpSound = game.sounds.getSample("powerUpSystem")
     private val powerUpFailSound = game.sounds.getSample("powerUpFail")

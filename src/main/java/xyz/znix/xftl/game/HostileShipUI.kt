@@ -9,16 +9,16 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 
-class HostileShipUI(private val game: InGameState, df: Datafile, private val enemy: Ship) {
+class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     private val mutableShipPos = Point(0, 0)
     val shipPos: IPoint get() = mutableShipPos
 
-    private val font = SILFontLoader(df, df["fonts/HL2.font"])
+    private val font = game.getFont("HL2")
 
-    private val shieldIconStandard = df.readImage("img/combatUI/box_hostiles_shield1.png")
-    private val shieldIconBroken = df.readImage("img/combatUI/box_hostiles_shield2.png")
-    private val shieldIconStandardHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked_charged.png")
-    private val shieldIconBrokenHacked = df.readImage("img/combatUI/box_hostiles_shield2_hacked.png")
+    private val shieldIconStandard = game.getImg("img/combatUI/box_hostiles_shield1.png")
+    private val shieldIconBroken = game.getImg("img/combatUI/box_hostiles_shield2.png")
+    private val shieldIconStandardHacked = game.getImg("img/combatUI/box_hostiles_shield2_hacked_charged.png")
+    private val shieldIconBrokenHacked = game.getImg("img/combatUI/box_hostiles_shield2_hacked.png")
 
     private val superShieldBar = game.getImg("img/combatUI/box_hostiles_shield_super5.png") // TODO flagship
     private val shieldChargeBar = game.getImg("img/combatUI/box_hostiles_shield_charge.png")

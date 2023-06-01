@@ -53,12 +53,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     // Played when any two projectiles collide.
     private val projectileCollisionSound: FTLSound = sys.sounds.getSample("hitHull1")
 
-    val floorImage: Image? = base.getOrNull("img/ship/${imageName}_floor.png")?.let { i -> base.readImage(i) }
-    val hullImage: Image = base.readImage("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
+    val floorImage: Image? = sys.getImgIfExists("img/ship/${imageName}_floor.png")
+    val hullImage: Image = sys.getImg("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
     val cloakImage: Image?
     val gibs: List<ShipGib>
 
-    val shieldImage: Image = base.readImage(
+    val shieldImage: Image = sys.getImg(
         if (isPlayerShip) "img/ship/${
             shipNode.getChildTextTrim("shieldImage")
                 ?: imageName
@@ -279,7 +279,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         // guess based on the ship name (this is required on the Kestrel, for example).
         val customCloakName = shipNode.getChildTextTrim("cloakImage")
         val customCloakImage = customCloakName?.let { sys.getImg("img/ship/${it}_cloak.png") }
-        val autoCloakImage = base.getOrNull("img/ship/${imageName}_cloak.png")?.let { base.readImage(it) }
+        val autoCloakImage = sys.getImgIfExists("img/ship/${imageName}_cloak.png")
         cloakImage = customCloakImage ?: autoCloakImage
 
         val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])

@@ -95,7 +95,7 @@ public class InGameState extends MainGame.GameState {
         gameMap = new GameMap(df, eventManager, enableAdvancedEdition, Random.Default);
 
         createNewPlayerShip(playerShipName);
-        shipUI = new PlayerShipUI(df, player, this);
+        shipUI = new PlayerShipUI(player, this);
 
         // Start at the first beacon of the first sector
         // Be sure we do this after creating the player ship, it's used by the enemy AI
@@ -591,7 +591,7 @@ public class InGameState extends MainGame.GameState {
 
         if (enemy != null) {
             enemyAI = new ShipAI(enemy, player);
-            hostileShipUI = new HostileShipUI(this, df, enemy);
+            hostileShipUI = new HostileShipUI(this, enemy);
         } else {
             enemyAI = null;
             hostileShipUI = null;
@@ -723,7 +723,7 @@ public class InGameState extends MainGame.GameState {
         new Sector(sectorXML, refs, this, mapRefLoader);
 
         Element shipUiXML = root.getChild("shipUI");
-        shipUI = new PlayerShipUI(df, player, this);
+        shipUI = new PlayerShipUI(player, this);
         shipUI.loadFromXML(shipUiXML, refs);
 
         // This resolves any async-resolved object references.
@@ -775,6 +775,27 @@ public class InGameState extends MainGame.GameState {
             return img;
 
         img = df.readImage(name);
+        content.images.put(name, img);
+        return img;
+    }
+
+    /**
+     * Loads an image if it's file exists, or returns null.
+     * <p>
+     * Try to avoid this if you can - normally image paths are specified in
+     * some predictable way, so you shouldn't be guessing their names.
+     */
+    @Nullable
+    public Image getImgIfExists(String name) {
+        Image img = content.images.get(name);
+        if (img != null)
+            return img;
+
+        FTLFile file = df.getOrNull(name);
+        if (file == null)
+            return null;
+
+        img = df.readImage(file);
         content.images.put(name, img);
         return img;
     }
