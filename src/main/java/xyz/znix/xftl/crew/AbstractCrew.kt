@@ -186,7 +186,6 @@ abstract class AbstractCrew(
         }
 
     init {
-
         // Since the portrait doesn't have a background colour frame, use the top-left frame.
         // Drones need to use the correct image, though!
         val portrait = anims["${codename}_portrait"]
@@ -707,7 +706,7 @@ abstract class AbstractCrew(
         }
     }
 
-    protected fun updateAnimation() {
+    protected open fun updateAnimation() {
         icon = when (currentAction) {
             Action.IDLE -> portraitAnim.startLooping()
 

@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -176,8 +177,8 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         elem.addContent(weaponElem)
     }
 
-    override fun loadFromXML(elem: Element, refs: RefLoader) {
-        super.loadFromXML(elem, refs)
+    override fun loadFromXML(elem: Element, refs: RefLoader, containingShip: Ship) {
+        super.loadFromXML(elem, refs, containingShip)
 
         fireTimer = SaveUtil.getAttrFloat(elem, "fireTimer")
         SaveUtil.getRoomRef(elem, "target", refs) { target = it }

@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
@@ -421,5 +422,21 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         }
 
         const val SERIALISATION_TYPE = "weaponProjectile"
+    }
+}
+
+/**
+ * This represents a drone flying on its way to its destination, such as a boarding drone.
+ *
+ * (This class exists to make adding new types of flying drones easier, Vanilla only has
+ *  the boarding drone. Note that we don't count the hacking probe as a drone at all.)
+ */
+abstract class FlyingDroneProjectile(targetShip: Ship) : AbstractProjectile(targetShip) {
+    abstract val drone: AbstractDrone
+
+    override val serialisationType: String get() = SERIALISATION_TYPE
+
+    companion object {
+        const val SERIALISATION_TYPE = "flyingDrone"
     }
 }

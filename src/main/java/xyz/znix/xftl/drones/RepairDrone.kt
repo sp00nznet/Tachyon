@@ -15,7 +15,11 @@ class RepairDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         super.init(ownerShip)
         val dronesRoom = ownerShip.rooms.find { it.system is Drones }
         requireNotNull(dronesRoom) { "Owner ship '${ownerShip.name}' spawned a ship repair drone without a drones system" }
-        spawn(dronesRoom)
+
+        // Don't spawn in a pawn if that's already been done by deserialisation.
+        if (pawn == null) {
+            spawn(dronesRoom)
+        }
     }
 
     override fun updatePawn(dt: Float) {

@@ -1,11 +1,15 @@
 package xyz.znix.xftl.drones
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.DroneBlueprint
 
 /**
@@ -37,8 +41,6 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
     var pawn: Pawn? = null
         private set
-
-    private var lastStunned: Boolean = false
 
     /**
      * Spawn in [targetRoom], or one of the nearby rooms if that's full.
@@ -73,13 +75,6 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
     override fun update(dt: Float) {
         super.update(dt)
 
-        // If we start or stop being stunned, that effectively
-        // turns the pawn on or off.
-        if (lastStunned != isStunned) {
-            lastStunned = isStunned
-            pawn?.onPowerChanged()
-        }
-
         // If something weird happens and our pawn disappears
         // from the enemy ship, assume it was destroyed.
         val pawn = this.pawn
@@ -92,14 +87,33 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
     protected abstract fun drawPawn()
 
-    override fun onPowerChanged() {
-        super.onPowerChanged()
-
-        pawn?.onPowerChanged()
+    private fun getPawnBlueprint(game: InGameState): CrewBlueprint {
+        return game.blueprintManager[pawnCodename] as CrewBlueprint
     }
 
-    private fun getPawnBlueprint(): CrewBlueprint {
-        return ownerShip.sys.blueprintManager[pawnCodename] as CrewBlueprint
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        if (pawn != null) {
+            val pawnElem = Element("pawn")
+            pawn!!.saveToXML(pawnElem, refs)
+            elem.addContent(pawnElem)
+        }
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader, containingShip: Ship) {
+        super.loadFromXML(elem, refs, containingShip)
+
+        ship = containingShip
+
+        val pawnElem = elem.getChild("pawn")
+        if (pawnElem != null) {
+            // Pick an arbitrary room to spawn in, we'll move while loading the pawn's XML anyway.
+            pawn = makePawn(ship.rooms[0])
+            ship.crew.add(pawn!!)
+
+            pawn!!.loadFromXML(pawnElem, refs)
+        }
     }
 
     /**
@@ -109,12 +123,14 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
      * immediately spawn. Also, [AbstractCrew] needs the initial room in its
      * constructor, which is inconvenient for us.
      */
+    @Suppress("LeakingThis") // Because we use occupancySlotType
     open inner class Pawn(room: Room) :
-        AbstractCrew(getPawnBlueprint(), room.ship.sys.animations, room, occupancySlotType) {
+        AbstractCrew(getPawnBlueprint(room.ship.sys), room.ship.sys.animations, room, occupancySlotType) {
+
+        val drone: AbstractIndoorsDrone = this@AbstractIndoorsDrone
 
         var powerUpDuration: Float = 0f
-        var onLastUpdate: Boolean = false
-        var newPowerAnimation: FTLAnimation? = null
+        var runningLastUpdate: Boolean = false
 
         override val canManSystem: Boolean get() = false
         override val canFight: Boolean get() = false
@@ -132,11 +148,18 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
                 return
             }
 
-            // If a new animation has been selected while paused, apply that now.
-            // This avoids stuff changing while paused, which makes paused not
-            // feel properly paused, for lack of a better term.
-            newPowerAnimation?.let { icon = it }
-            newPowerAnimation = null
+            // If the drone was turned off or on again, we only apply that
+            // when the game unpauses.
+            if (isRunning != runningLastUpdate) {
+                if (isRunning) {
+                    powerUpDuration = ship.sys.animations["${codename}_power_up"].totalTime
+                } else {
+                    powerUpDuration = 0f
+                }
+
+                runningLastUpdate = isRunning
+                updateAnimation()
+            }
 
             // Only progress on movement, fighting, repairs, etc if we're powered,
             // and the power-up/power-down animation isn't playing.
@@ -159,10 +182,19 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
                     }
                 }
             }
+        }
 
-            // Keep track of whether the drone was turned off then on again
-            // while paused, as the turning-on animation won't have to play.
-            onLastUpdate = on
+        override fun updateAnimation() {
+            if (powerUpDuration != 0f) {
+                icon = ship.sys.animations["${codename}_power_up"].startSingle()
+                return
+            }
+            if (!runningLastUpdate) {
+                icon = ship.sys.animations["${codename}_power_down"].startSingle()
+                return
+            }
+
+            super.updateAnimation()
         }
 
         override fun draw(g: Graphics) {
@@ -170,32 +202,31 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             drawPawn()
         }
 
-        fun onPowerChanged() {
-            val powerDir = when (isRunning) {
-                true -> "power_up"
-                false -> "power_down"
-            }
-
-            val animation = ship.sys.animations["${codename}_$powerDir"]
-            newPowerAnimation = animation.startSingle()
-
-            if (!isRunning) {
-                powerUpDuration = animation.totalTime
-            } else if (onLastUpdate) {
-                powerUpDuration = 0f
-            }
-        }
-
         override fun removeFromShip() {
             super.removeFromShip()
 
             // Cleanly kill the drone
-            this@AbstractIndoorsDrone.pawn = null
+            drone.pawn = null
             destroy()
 
             // Play the explosion animation whenever a drone is killed.
             ship.animations += Ship.FloatingAnimation.centred(explodeAnimation, getPixelPositionCentre())
             explodeSound.play()
+        }
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            super.saveToXML(elem, refs)
+
+            SaveUtil.addAttrFloat(elem, "powerUpDuration", powerUpDuration)
+            SaveUtil.addAttrBool(elem, "onLastUpdate", runningLastUpdate)
+        }
+
+        override fun loadFromXML(elem: Element, refs: RefLoader) {
+            // These are used to set the animation, so we have to load them first.
+            powerUpDuration = SaveUtil.getAttrFloat(elem, "powerUpDuration")
+            runningLastUpdate = SaveUtil.getAttrBool(elem, "onLastUpdate")
+
+            super.loadFromXML(elem, refs)
         }
     }
 }

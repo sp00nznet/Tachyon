@@ -359,8 +359,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         // currentDroneTarget
     }
 
-    override fun loadFromXML(elem: Element, refs: RefLoader) {
-        super.loadFromXML(elem, refs)
+    override fun loadFromXML(elem: Element, refs: RefLoader, containingShip: Ship) {
+        super.loadFromXML(elem, refs, containingShip)
 
         aimAngle = SaveUtil.getAttrFloat(elem, "aimAngle")
         cooldown = SaveUtil.getAttrFloat(elem, "cooldown")

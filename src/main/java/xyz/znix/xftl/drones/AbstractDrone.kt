@@ -134,7 +134,11 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
         SaveUtil.addAttrInt(elem, "slot", if (slot == -1) null else slot)
     }
 
-    open fun loadFromXML(elem: Element, refs: RefLoader) {
+    // containingShip is the ship that the drone was serialised inside of.
+    // This is not always the same as ownerShip - for example, boarding drones
+    // or combat drones are serialised as part of the ship they're attacking,
+    // but obviously belong to the other ship.
+    open fun loadFromXML(elem: Element, refs: RefLoader, containingShip: Ship) {
         require(type.name == SaveUtil.getAttr(elem, "type"))
 
         isPowered = SaveUtil.getAttrBool(elem, "powered")

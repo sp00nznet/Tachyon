@@ -11,6 +11,7 @@ import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
+import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.ResourceSet
@@ -1203,6 +1204,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         val crewListElem = Element("crew")
         for (crew in this.crew) {
+            // We save drones separately
+            if (crew is AbstractIndoorsDrone.Pawn)
+                continue
+
             val crewElem = Element("crewMember")
             crew.saveToXML(crewElem, refs)
             crewListElem.addContent(crewElem)
@@ -1231,11 +1236,20 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         // Serialise the drones. If a drone is deployed to another ship, it's
         // serialised on that ship instead of this one.
-        // Indoor drones are serialised as crewmembers (via their pawn).
-        val dronesElem = Element("externalDrones")
+        val dronesElem = Element("drones")
         for (drone in externalDrones) {
             val droneElem = Element("drone")
             drone.saveToXML(droneElem, refs)
+            dronesElem.addContent(droneElem)
+        }
+        for (pawn in crew.mapNotNull { it as? AbstractIndoorsDrone.Pawn }) {
+            val droneElem = Element("drone")
+            pawn.drone.saveToXML(droneElem, refs)
+            dronesElem.addContent(droneElem)
+        }
+        for (flyingDrone in projectiles.mapNotNull { it as? FlyingDroneProjectile }) {
+            val droneElem = Element("drone")
+            flyingDrone.drone.saveToXML(droneElem, refs)
             dronesElem.addContent(droneElem)
         }
         elem.addContent(dronesElem)
@@ -1282,6 +1296,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         // Serialise in-flight projectile
         val projectilesElem = Element("projectiles")
         for (projectile in projectiles) {
+            // A flying drone is saved as a drone rather than a projectile,
+            // though really it's kinda both.
+            if (projectile is FlyingDroneProjectile)
+                continue
+
             val projectileElem = Element("projectile")
             SaveUtil.addAttr(projectileElem, "loadType", projectile.serialisationType)
             projectile.saveToXML(projectileElem, refs)
@@ -1339,9 +1358,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         for (i in 0 until 3) {
             updateCrew(0f)
         }
-        for (room in rooms) {
-            room.updateCrewInRoom()
-        }
 
         // Deserialise the doors.
         val doorsElem = rootElem.getChild("doors")
@@ -1373,15 +1389,15 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             hardpoints[hardpointIndex].weapon = weapon
         }
 
-        // Deserialise the external drones, both friendly and not.
-        for (droneElem in rootElem.getChild("externalDrones").getChildren("drone")) {
+        // Deserialise the drones, both friendly and not.
+        for (droneElem in rootElem.getChild("drones").getChildren("drone")) {
             val type = SaveUtil.getAttr(droneElem, "type")
             val blueprint = sys.blueprintManager[type] as DroneBlueprint
 
-            val drone = blueprint.makeInstance() as AbstractExternalDrone
-            drone.loadFromXML(droneElem, refs)
+            val drone = blueprint.makeInstance()
+            drone.loadFromXML(droneElem, refs, this)
 
-            // The drone will add itself to the externalDrones list.
+            // The drone will add itself to the externalDrones or crew list.
         }
 
         // Deserialise explosion (and similar) animations

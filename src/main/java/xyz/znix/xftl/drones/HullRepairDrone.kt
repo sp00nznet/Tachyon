@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -106,8 +107,8 @@ class HullRepairDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false)
         SaveUtil.addAttrInt(elem, "remainingRepairs", remainingRepairs)
     }
 
-    override fun loadFromXML(elem: Element, refs: RefLoader) {
-        super.loadFromXML(elem, refs)
+    override fun loadFromXML(elem: Element, refs: RefLoader, containingShip: Ship) {
+        super.loadFromXML(elem, refs, containingShip)
 
         animationProgress = SaveUtil.getAttrFloat(elem, "animation")
         stopTimer = SaveUtil.getAttrFloat(elem, "stopTimer")

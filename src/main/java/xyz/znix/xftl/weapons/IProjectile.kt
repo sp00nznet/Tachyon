@@ -111,6 +111,10 @@ interface IProjectile {
 
                 DefenceDrone.LASER_SERIALISATION_TYPE -> DefenceDrone.loadProjectileFromXML(game, elem, refs, callback)
 
+                FlyingDroneProjectile.SERIALISATION_TYPE -> {
+                    error("Cannot deserialise flying drones as projectiles - they must be stored as a drone!")
+                }
+
                 else -> {
                     error("Invalid serialised projectile with serialisation type '$serialisationType'")
                 }

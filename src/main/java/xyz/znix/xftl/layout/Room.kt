@@ -86,6 +86,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     }
 
     fun update(dt: Float) {
+        // Always update who's in the room before updating the system.
+        // This is to make deserialisation easier - some things (eg repair
+        // progress or queued teleports) are cancelled if there's no one
+        // in the room, so be sure this is always up-to-date.
+        updateCrewInRoom()
+
         system?.update(dt)
 
         // On the observation from the FTL wiki that ships loose ~1% oxygen per second
@@ -94,8 +100,6 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         // Note that transferring oxygen through open doors is handled
         // in the Door update function.
-
-        updateCrewInRoom()
 
         computerHackAnimation?.update(dt)
         bigSparksHackAnimation?.update(dt)

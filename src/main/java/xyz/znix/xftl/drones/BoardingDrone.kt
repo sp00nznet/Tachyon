@@ -1,5 +1,6 @@
 package xyz.znix.xftl.drones
 
+import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
@@ -9,9 +10,12 @@ import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.weapons.AbstractProjectile
+import xyz.znix.xftl.savegame.ObjectRefs
+import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
+import xyz.znix.xftl.weapons.FlyingDroneProjectile
 
 class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     // TODO support the Ion Intruder drone, which I can't find anything other
@@ -27,6 +31,13 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     override fun init(ownerShip: Ship) {
         super.init(ownerShip)
 
+        // If we're being deserialised, don't launch another drone.
+        if (projectile == null && pawn == null) {
+            launchDroneProjectile()
+        }
+    }
+
+    private fun launchDroneProjectile() {
         val enemyShip = ownerShip.sys.getEnemyOf(ownerShip)!!
         val target = enemyShip.rooms.random()
         projectile = FlyingDrone(target)
@@ -129,16 +140,45 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
     override fun makePawn(room: Room): Pawn = BoardingPawn(room)
 
+    override fun saveToXML(elem: Element, refs: ObjectRefs) {
+        super.saveToXML(elem, refs)
+
+        if (projectile != null) {
+            val projectileElem = Element("projectile")
+            SaveUtil.addRoomRef(elem, "targetRoom", refs, projectile!!.target)
+            projectile!!.saveToXML(projectileElem, refs)
+            elem.addContent(projectileElem)
+        }
+    }
+
+    override fun loadFromXML(elem: Element, refs: RefLoader, containingShip: Ship) {
+        // Load the flying projectile first, before onInit is called.
+        val projectileElem = elem.getChild("projectile")
+        if (projectileElem != null) {
+            SaveUtil.getRoomRef(elem, "targetRoom", refs) { target ->
+                projectile = FlyingDrone(target)
+                projectile!!.loadPropertiesFromXML(projectileElem, refs)
+                containingShip.projectiles.add(projectile!!)
+            }
+        }
+
+        super.loadFromXML(elem, refs, containingShip)
+    }
+
     /**
      * The projectile that represents the drone flying through space towards
      * the target ship.
      */
-    inner class FlyingDrone(val target: Room) : AbstractProjectile(target.ship) {
+    inner class FlyingDrone(val target: Room) : FlyingDroneProjectile(target.ship) {
+        // We have to use our target ship for initialisation, as we're deserialised
+        // before ownerShip is set.
+        private val game = target.ship.sys
+
         // The portrait frame of the robot, which is shown on top
         // of the thruster sprite
-        val portrait = ownerShip.sys.animations["battle_portrait"].spriteAt(0)
+        val portrait = game.animations["battle_portrait"].spriteAt(0)
 
-        val thruster = ownerShip.sys.getImg("img/ship/drones/boarder_engine.png")
+        val thruster = game.getImg("img/ship/drones/boarder_engine.png")
 
         // Fished out with x32dbg as I couldn't be bothered to find
         // it via static analysis, and it's not guaranteed to be correct
@@ -155,7 +195,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         override val antiDroneBP: AbstractWeaponBlueprint? get() = null
         override val antiDroneExemption: Ship? get() = null
 
-        override val serialisationType: String get() = throw UnsupportedOperationException("TODO")
+        override val drone: AbstractDrone get() = this@BoardingDrone
 
         override fun reachedTarget() {
             // We've hit our target room.
@@ -176,6 +216,13 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         fun destroyFlying() {
             dead = true
             projectile = null
+
+            // If there's even a single update where both the drone and projectile
+            // are alive, this will cause a great deal of trouble since the drone
+            // will be serialised twice - once due to being in the projectiles list,
+            // and once from being in the crew list.
+            // Thus we have to remove ourselves immediately.
+            target.ship.projectiles.remove(this)
         }
 
         override fun renderPreTranslated(g: Graphics) {
@@ -217,6 +264,18 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
                 destroy()
                 target.ship.animations += Ship.FloatingAnimation.centred(explodeAnimation, position)
             }
+        }
+
+        override fun saveToXML(elem: Element, refs: ObjectRefs) {
+            super.saveToXML(elem, refs)
+
+            SaveUtil.addAttrBool(elem, "drawUnderShip", drawUnderShip)
+        }
+
+        override fun loadPropertiesFromXML(elem: Element, refs: RefLoader) {
+            super.loadPropertiesFromXML(elem, refs)
+
+            drawUnderShip = SaveUtil.getAttrBool(elem, "drawUnderShip")
         }
     }
 

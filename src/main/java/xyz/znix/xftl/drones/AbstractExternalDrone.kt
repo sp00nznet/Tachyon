@@ -11,7 +11,6 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.savegame.ISerialReferencable
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -272,12 +271,12 @@ abstract class AbstractExternalDrone(
         elem.addContent(elemFC)
     }
 
-    override fun loadFromXML(elem: Element, refs: RefLoader) {
-        // We have to load the target ship before running the super method,
-        // so that's initialised before init() is called.
-        SaveUtil.getAttrRef(elem, "targetShip", refs, Ship::class.java) { targetShip = it!! }
+    override fun loadFromXML(elem: Element, refs: RefLoader, containingShip: Ship) {
+        // We're always saved as part of the target ship.
+        // This is to deal with cases like an enemy drone after that enemy was destroyed.
+        targetShip = containingShip
 
-        super.loadFromXML(elem, refs)
+        super.loadFromXML(elem, refs, containingShip)
 
         // Don't deserialise the flight controller until after init() is called.
         // Thus we have to delay it until reference resolution time.
