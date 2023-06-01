@@ -10,6 +10,7 @@ import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.game.InGameState.RoomClickListener
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -43,6 +44,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private var targetingSelectedWeapon: Int? = null
 
     private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
+    private val hoveredCrew: MutableList<AbstractCrew> = ArrayList()
 
     private val buttons = ArrayList<Button>()
 
@@ -211,39 +213,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             return
         }
 
-        crewSelectionRectangle?.let { csr ->
+        crewSelectionRectangle?.let {
             if (button != MOUSE_LEFT_BUTTON) return@let
 
+            updateHoveredCrew(x, y, playerShipPosition)
+
             selectedCrew.clear()
-
-            // If a rectangle is visible on screen (ie, the player isn't clicking a point) then build a rectangle
-            val rect = if (!isCrewSelectionPoint) {
-                val pos = csr.first.min(csr.second)
-                val size = (csr.second - csr.first).abs()
-                Rectangle(pos.x.f, pos.y.f, size.x.f, size.y.f)
-            } else null
-
-            // Any intruders on the enemy ship should also be controllable,
-            // including mind controlled enemies (once that's implemented).
-            val controllableCrew = ArrayList(ship.friendlyCrew)
-            game.enemy?.let { controllableCrew.addAll(it.intruders) }
-
-            for (crew in controllableCrew) {
-                // Skip drones and the like which the player isn't allowed to control
-                if (!crew.playerControllable)
-                    continue
-
-                val crewPos = crewScreenPos(crew, playerShipPosition)
-
-                // If we're in rectangle mode, check that it intersects the centre of the player's body
-                val hovered = rect?.contains(crewPos.x.f, crewPos.y.f)
-                // Otherwise check the point overlaps the player
-                    ?: isCrewHovered(crew, csr.first, crewPos)
-
-                if (hovered) {
-                    selectedCrew += crew
-                }
-            }
+            selectedCrew.addAll(hoveredCrew)
 
             crewSelectionRectangle = null
         }
@@ -258,9 +234,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         return ConstPoint(crew.screenX, crew.screenY) + game.enemyPosition
     }
 
-    fun isCrewHovered(crew: AbstractCrew, mousePos: IPoint, crewPos: IPoint): Boolean {
-        return mousePos.x in crewPos.x..crewPos.x + crew.icon.width &&
-                mousePos.y in crewPos.y..crewPos.y + crew.icon.height
+    fun isCrewHovered(crew: AbstractCrew, mouseX: Int, mouseY: Int, crewPos: IPoint): Boolean {
+        return mouseX in crewPos.x..crewPos.x + crew.icon.width &&
+                mouseY in crewPos.y..crewPos.y + crew.icon.height
     }
 
     // Called by SlickGame, used for controlling boarders.
@@ -757,17 +733,74 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, ship.dronesCount)
 
         // Oxygen and evasion indicator
-        val oxyY = 96f;
-        game.getImg("img/statusUI/top_evade_oxygen.png").draw(1f, oxyY - 7)
+        val oxyY = 96
+        game.getImg("img/statusUI/top_evade_oxygen.png").draw(1f, oxyY - 7f)
 
         val evadeBoxLeft = 92f
 
         // Evade
-        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8, "${ship.evasion}%", Color.white)
+        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8f, "${ship.evasion}%", Color.white)
 
         // Oxygen
         val avgOxygen = round(ship.averageOxygen * 100).toInt()
-        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8 + 22, "$avgOxygen%", Color.white)
+        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8f + 22, "$avgOxygen%", Color.white)
+
+        // Draw all the crew boxes
+        // TODO filter out boarders etc
+        // TODO draw cloning crew
+        val crewX = 10
+        var nextCrewY = oxyY + 59
+        for (crew in ship.crew) {
+            // Filter out drones
+            if (crew !is LivingCrew)
+                continue
+
+            val isMindControlled = false // TODO implement when mind control is added
+            val isStunned = false // TODO implement when stunning crew is added
+            val isFlashingHealth = false // TODO
+
+            val colour = when {
+                isMindControlled -> CREW_BOX_MIND_CONTROLLED
+                crew in selectedCrew -> CREW_BOX_SELECT
+                isStunned -> CREW_BOX_STUNNED
+                crew in hoveredCrew -> CREW_BOX_HOVER
+                isFlashingHealth -> CREW_BOX_LOW_HEALTH
+                else -> CREW_BOX_NORMAL
+            }
+
+            // Draw the semi-transparent background
+            g.color = Color(colour.r, colour.g, colour.b, 0.25f)
+            g.fillRect(crewX.f, nextCrewY.f, 86f, 27f)
+
+            // Draw the solid outline, via two unfilled rectangles.
+            g.color = colour
+            g.drawRect(crewX.f, nextCrewY.f, 86f - 1, 27f - 1)
+            g.drawRect(crewX + 1f, nextCrewY + 1f, 86f - 3, 27f - 3)
+
+            // Draw the health bar
+            val maxHpWidth = 49
+            val hpFraction = crew.health / crew.maxHealth
+            val hpWidth = (maxHpWidth * hpFraction).toInt().coerceAtLeast(1)
+
+            if (crew.health == crew.maxHealth) {
+                g.color = Color.green
+            } else {
+                g.color = Color(
+                    1f,
+                    (2f * hpFraction).coerceIn(0f..1f),
+                    0f
+                )
+            }
+            g.fillRect(crewX + 33f, nextCrewY + 19f, hpWidth.f, 4f)
+
+            // Draw the crew portrait, mostly so you can see what race they are.
+            crew.drawPortrait(crewX - 1, nextCrewY - 3)
+
+            // Draw the crew name
+            weaponNameText.drawString(crewX + 33f, nextCrewY + 14f, crew.selectedName, CREW_BOX_NAME_COLOUR)
+
+            nextCrewY += 30
+        }
     }
 
     // Draw the box containing the weapon or drone selection buttons
@@ -809,6 +842,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         crewSelectionRectangle?.second?.set(x, y)
+
+        updateHoveredCrew(x, y, playerShipPosition)
 
         // Update the door hover markers
         for (door in ship.doors) {
@@ -961,6 +996,48 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 continue
 
             selectedCrew += ship.crew[index]
+        }
+    }
+
+    private fun updateHoveredCrew(mouseX: Int, mouseY: Int, playerShipPosition: IPoint) {
+        hoveredCrew.clear()
+
+        // Allow for smart-casting
+        val csr = crewSelectionRectangle
+
+        // If a rectangle is visible on screen (ie, the player isn't clicking a point) then build a rectangle
+        val rect = if (csr != null && !isCrewSelectionPoint) {
+            val pos = csr.first.min(csr.second)
+            val size = (csr.second - csr.first).abs()
+            Rectangle(pos.x.f, pos.y.f, size.x.f, size.y.f)
+        } else null
+
+        // Any intruders on the enemy ship should also be controllable,
+        // including mind controlled enemies (once that's implemented).
+        val controllableCrew = ArrayList(ship.friendlyCrew)
+        game.enemy?.let { controllableCrew.addAll(it.intruders) }
+
+        for (crew in controllableCrew) {
+            // Skip drones and the like which the player isn't allowed to control
+            if (!crew.playerControllable)
+                continue
+
+            val crewPos = crewScreenPos(crew, playerShipPosition)
+
+            // TODO also check if the player is selecting the crew name box
+
+            @Suppress("IfThenToElvis")
+            val hovered = if (rect != null) {
+                // If we're in rectangle mode, check that it intersects the centre of the player's body
+                rect.contains(crewPos.x.f, crewPos.y.f)
+            } else {
+                // Otherwise check the point overlaps the player
+                isCrewHovered(crew, mouseX, mouseY, crewPos)
+            }
+
+            if (hovered) {
+                hoveredCrew += crew
+            }
         }
     }
 

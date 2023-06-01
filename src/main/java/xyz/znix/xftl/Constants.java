@@ -118,6 +118,15 @@ public class Constants {
 
     public static final Color CLONE_DYING_FILTER = new Color(1f, 0.3f, 0.3f);
 
+    public static final Color CREW_BOX_NORMAL = new Color(100, 100, 100);
+    public static final Color CREW_BOX_HOVER = new Color(235, 235, 235);
+    public static final Color CREW_BOX_SELECT = new Color(120, 255, 120);
+    public static final Color CREW_BOX_LOW_HEALTH = new Color(255, 120, 120);
+    public static final Color CREW_BOX_STUNNED = new Color(255, 255, 100);
+    public static final Color CREW_BOX_MIND_CONTROLLED = new Color(255, 0, 255);
+    public static final float CREW_BOX_BG_ALPHA = 0.25f;
+    public static final Color CREW_BOX_NAME_COLOUR = new Color(200, 200, 200);
+
     private Constants() {
     }
 }
