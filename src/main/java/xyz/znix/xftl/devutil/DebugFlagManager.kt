@@ -32,6 +32,11 @@ class DebugFlagManager {
         "When the clonebay finishes it's clone or kill animation, don't do anything."
     )
 
+    val anyJump = DebugFlag(
+        "aj", "Any Jumps", false,
+        "Allow the player to jump to any beacon or sector in the map"
+    )
+
     val infiniteMissiles = DebugFlag(
         "infm", "Infinite Missiles", false,
         "Ships (most importantly enemy ships) don't subtract missiles when they fire things."
@@ -49,6 +54,7 @@ class DebugFlagManager {
         noDmg,
         continuousSaveLoad,
         noClone,
+        anyJump,
         infiniteMissiles,
         infiniteDrones
     )

@@ -324,7 +324,9 @@ class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump:
 
         val hovered = hovered ?: return
 
-        if (!game.currentBeacon.neighbours.contains(hovered))
+        // If the 'aj' (anyjump) flag is set, the player can jump to any
+        // beacon on the map, which is obviously convenient for testing.
+        if (!game.currentBeacon.neighbours.contains(hovered) && !game.debugFlags.anyJump.set)
             return
 
         jump(hovered)

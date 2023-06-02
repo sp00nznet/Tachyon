@@ -266,8 +266,15 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         val oldHovered = hoveredSector
         hoveredSector = null
 
+        // There's a debug flag that lets you jump to any beacon immediately,
+        // and it's convenient to make it also apply to sectors.
+        val clickable = when {
+            game.debugFlags.anyJump.set -> game.gameMap.sectors.flatten()
+            else -> nextSectors
+        }
+
         // Check if the sector icons are hovered
-        for (sector in nextSectors) {
+        for (sector in clickable) {
             getSectorPos(sector, pos)
 
             // Add in a small margin to make the selection feel a bit more reliable
