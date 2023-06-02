@@ -94,6 +94,11 @@ public class Constants {
     public static final Color SECTOR_NAME_TEXT_GREYED = SECTOR_BRANCH_GREYED;
     public static final Color SECTOR_NAME_TEXT_HOVER = SYS_ENERGY_REPAIR;
 
+    // These are the colours of the lines that connect beacons in the jump window
+    public static final Color BEACON_LINE_PLAYER = WEAPONS_ITEM_CHARGED;
+    public static final Color BEACON_LINE_HOVER = Color.yellow;
+    public static final Color BEACON_LINE_FLAGSHIP = new Color(230, 100, 100);
+
     // These are the colours of the augment box
     public static final Color AUGMENT_BOX_OUTLINE = SECTOR_CUTOUT_TEXT;
     public static final Color AUGMENT_BOX_OUTLINE_HOVER = UI_BUTTON_HOVER;

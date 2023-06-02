@@ -4,6 +4,9 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import org.newdawn.slick.Input
+import org.newdawn.slick.opengl.TextureImpl
+import org.newdawn.slick.opengl.renderer.Renderer
+import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.math.ConstPoint
@@ -12,15 +15,12 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Sector
-import kotlin.math.atan2
-import kotlin.math.roundToInt
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
 
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
 // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
 // for us atm.
-class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump: (Beacon?) -> Unit) : Window() {
+class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Beacon?) -> Unit) : Window() {
     override val size = ConstPoint(766, 548)
     override val outlineImage = game.getImg("img/window_outline.png")
 
@@ -48,6 +48,10 @@ class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump:
     private val beaconShipPresent = game.getImg("img/map/map_icon_triangle_yellow.png")
     private val beaconWillOvertakeCircle = game.getImg("img/tutorial/player_circle.png") // This is the right image!
     private val beaconOvertaken = game.getImg("img/map/map_icon_warning.png")
+
+    private val playerShip = game.getImg("img/map/map_icon_ship.png")
+    private val playerShipNoFuel = game.getImg("img/map/map_icon_ship_fuel.png")
+    private val flagshipIcon = game.getImg("img/map/map_icon_boss.png")
 
     private val beaconOffset = Point(-beaconYellow.width / 2, -beaconYellow.height / 2)
 
@@ -102,15 +106,60 @@ class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump:
         mapBase.x = position.x + GLOW + Sector.OFFSET.x
         mapBase.y = position.y + GLOW + Sector.OFFSET.y
 
-        // Test drawing the beacon path
-        drawBeaconLinesTo(game.currentBeacon, Constants.WEAPONS_ITEM_CHARGED) { true }
+        // In the last stand, the danger stripes sit behind everything else.
+        // TODO draw the player and boss ships below this.
+        if (sector.isLastStand) {
+            drawLastStandDangerZone(g)
+        }
+
+        // Draw the connections to the adjacent beacons.
+        drawBeaconLinesTo(game.currentBeacon, Constants.BEACON_LINE_PLAYER) { true }
+
+        // Draw the line showing where the flagship will next jump
+        if (sector.flagshipNextBeacon != null) {
+            if (!sector.flagshipJumping) {
+                // Draw a dotted line if the flagship isn't jumping this turn
+                drawBeaconLine(sector.flagshipBeacon!!, sector.flagshipNextBeacon!!, Constants.BEACON_LINE_FLAGSHIP)
+            } else {
+                // Draw a wide, continuous line if the flagship is jumping this turn.
+                val a = mapBase + sector.flagshipBeacon!!.pos
+                val b = mapBase + sector.flagshipNextBeacon!!.pos
+
+                val width = 10f
+                val angle = atan2(a.y.f - b.y, a.x.f - b.x)
+                val tangentX = cos(angle + PI.toFloat() / 2f) * width / 2
+                val tangentY = sin(angle + PI.toFloat() / 2f) * width / 2
+
+                val gl: SGL = Renderer.get()
+                TextureImpl.bindNone()
+                Constants.BEACON_LINE_FLAGSHIP.bind()
+                gl.glBegin(SGL.GL_QUADS)
+                gl.glVertex2f(a.x + tangentX, a.y + tangentY)
+                gl.glVertex2f(a.x - tangentX, a.y - tangentY)
+                gl.glVertex2f(b.x - tangentX, b.y - tangentY)
+                gl.glVertex2f(b.x + tangentX, b.y + tangentY)
+                gl.glEnd()
+
+                // Draw the animated flagship on top of it.
+                // Note these numbers are approximate.
+                val period = 1_500_000_000
+                val progress: Float = (System.nanoTime() % period).toFloat() / period
+                val movement = 20f + progress * 20f
+                val alpha = min(1f, 2f - progress * 2f)
+
+                g.pushTransform()
+                g.rotate(a.x.f, a.y.f, Math.toDegrees(angle.toDouble()).toFloat() - 90f)
+                flagshipIcon.draw(a.x - 32f, a.y - 32f - movement, Color(1f, 1f, 1f, alpha))
+                g.popTransform()
+            }
+        }
 
         // Make a local immutable copy to avoid nullability errors
         val hovered = hovered
 
         if (hovered != null && hovered != game.currentBeacon) {
             // Draw the lines between the hovered beacon and it's neighbours
-            drawBeaconLinesTo(hovered, Color.yellow) { it != game.currentBeacon }
+            drawBeaconLinesTo(hovered, Constants.BEACON_LINE_HOVER) { it != game.currentBeacon }
         }
 
         val nextFleetPos = Point(sector.dangerZoneCentre)
@@ -121,7 +170,8 @@ class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump:
 
         // Draw the beacons
         for (beacon in sector.beacons) {
-            val pos = mapBase + beacon.pos + beaconOffset
+            val centrePos = mapBase + beacon.pos
+            val pos = centrePos + beaconOffset
 
             val isNeighbour = neighbourVisSet.contains(beacon)
             val showBasicInfo = beacon.visited || sector.mapRevealed || isNeighbour
@@ -176,14 +226,63 @@ class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump:
             if (beacon.isExit)
                 drawBeaconLabel(pos, game.translator["map_icon_exit"])
 
+            if (beacon.isBase)
+                drawBeaconLabel(pos, game.translator["map_icon_base"])
+
             if (beacon == hovered && beacon != game.currentBeacon && game.currentBeacon.neighbours.contains(hovered)) {
                 drawTargetBox(pos)
+            }
+
+            // Draw the player ship rotating around the beacon.
+
+            // We go around once every 20 seconds.
+            val periodNS = 20_000_000_000
+            val timerNS = (System.nanoTime() % periodNS).toFloat()
+            val rotation = timerNS / periodNS * 360f
+
+            if (beacon == game.currentBeacon) {
+                @Suppress("IntroduceWhenSubject")
+                val icon = when {
+                    game.player.fuelCount == 0 -> playerShipNoFuel
+                    else -> playerShip
+                }
+
+                // These offsets are approximate
+                g.pushTransform()
+                g.rotate(centrePos.x.f, centrePos.y.f, -rotation)
+                icon.draw(centrePos.x - 8, centrePos.y - 32)
+                g.popTransform()
+            }
+
+            // Draw the flagship rotating around the beacon.
+            if (beacon == sector.flagshipBeacon && !sector.flagshipJumping) {
+                // These offsets are approximate.
+                // Add an arbitrary rotation offset, so the player and boss
+                // ships aren't at the same angle.
+                g.pushTransform()
+                g.rotate(centrePos.x.f, centrePos.y.f, -rotation + 123f)
+                flagshipIcon.draw(centrePos.x - 8, centrePos.y - 32)
+                g.popTransform()
             }
         }
 
         // TODO draw the fleet advance after the beacons and the circling ship,
         //  but before the labels (which we currently draw at the same time
         //  as the beacons).
+        if (!sector.isLastStand) {
+            drawDangerZone(g)
+        }
+
+        // For debugging, this can draw the grid the sectors fit in
+        // for (x in 0 until Sector.GRID_SIZE.x) {
+        //     for (y in 0 until Sector.GRID_SIZE.y) {
+        //         g.color = Color.red
+        //         g.drawRect(mapBase.x + x * 110f, mapBase.y + y * 110f, 110f, 110f)
+        //     }
+        // }
+    }
+
+    private fun drawDangerZone(g: Graphics) {
         val dangerZoneRHS = sector.dangerZoneCentre.x + Sector.DANGER_ZONE_RADIUS
         val nextDangerZoneRHS = dangerZoneRHS + sector.getFleetAdvanceFor(game.currentBeacon)
         fleetAdvanceImg.draw(
@@ -214,14 +313,18 @@ class JumpWindow(val game: InGameState, val showSectorMap: () -> Unit, val jump:
                 fleetControlTile.draw(fleetControlX, tileY)
             }
         }
+    }
 
-        // For debugging, this can draw the grid the sectors fit in
-        // for (x in 0 until Sector.GRID_SIZE.x) {
-        //     for (y in 0 until Sector.GRID_SIZE.y) {
-        //         g.color = Color.red
-        //         g.drawRect(mapBase.x + x * 110f, mapBase.y + y * 110f, 110f, 110f)
-        //     }
-        // }
+    private fun drawLastStandDangerZone(g: Graphics) {
+        // The last stand is entirely covered in stripes.
+        g.color = fleetAdvanceColour
+        g.fillRect(position.x.f, position.y.f, size.x.f, size.y.f)
+
+        for (tileX in position.x..position.x + size.x step fleetControlTile.width) {
+            for (tileY in position.y..position.y + size.y step fleetControlTile.height) {
+                fleetControlTile.draw(tileX, tileY)
+            }
+        }
     }
 
     override fun draw(g: Graphics) {

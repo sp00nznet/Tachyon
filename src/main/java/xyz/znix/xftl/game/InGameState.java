@@ -1102,6 +1102,13 @@ public class InGameState extends MainGame.GameState {
      */
     public void advanceFleet() {
         Sector sector = currentBeacon.getSector();
+
+        // The last stand works differently, capturing two beacons per jump.
+        if (sector.isLastStand()) {
+            advanceFleetLastStand();
+            return;
+        }
+
         Point dangerZone = sector.getDangerZoneCentre();
 
         int advance = sector.getFleetAdvanceFor(currentBeacon);
@@ -1124,6 +1131,28 @@ public class InGameState extends MainGame.GameState {
         if (modifier > 0)
             modifier--;
         sector.setFleetAdvanceModifier(modifier);
+    }
+
+    private void advanceFleetLastStand() {
+        Sector sector = currentBeacon.getSector();
+
+        // TODO implement fleet advance, capturing two beacons
+
+        // Make the flagship jump
+
+        if (!sector.getFlagshipJumping()) {
+            // Jump every second turn, this turn wasn't a jump.
+            // (except if the flagship doesn't want to jump, when
+            //  it's at the base - this is when the next beacon is null.)
+            sector.updateFlagshipNextBeacon();
+            sector.setFlagshipJumping(sector.getFlagshipNextBeacon() != null);
+        } else {
+            sector.setFlagshipBeacon(sector.getFlagshipNextBeacon());
+            sector.updateFlagshipNextBeacon();
+
+            // Don't jump again next turn
+            sector.setFlagshipJumping(false);
+        }
     }
 
     /**

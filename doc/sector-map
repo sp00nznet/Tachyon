@@ -122,6 +122,18 @@ both the min,max values are exclusive).
 The game will try upto 16 times to satisfy these length constraints, but
 will give up after that.
 
+For the last stand, the flagship position is picked after the aforementioned
+map generation completes. The flagship starts in a random column on the
+two right-most columns (the ones the exit beacon spawns in on a normal
+sector).
+
+The path from the flagship to the base must be 4-6 jumps (which includes
+both the start and end beacons). That is, the shortest path would have two
+beacons between the base and the flagship. Note (at least in the build
+I'm looking at) it does this comparison by using an unsigned comparison
+against a signed number, so it's easy to miss the lower bound if you're
+not looking closely.
+
 
 StarMap::PopulateGrid
 

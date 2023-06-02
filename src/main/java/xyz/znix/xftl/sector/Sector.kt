@@ -28,12 +28,14 @@ class Sector {
 
     val type: SectorType get() = info.type
 
+    val isLastStand: Boolean get() = info.type.name == "FINAL"
+
     val beacons = ArrayList<Beacon>()
 
-    // The start and finish beacon. The finish beacon will only
-    // be null in the final sector.
+    // The start and finish beacon. In the final sector, the finish
+    // beacon represents the location of the rebel base.
     val startBeacon: Beacon
-    val finishBeacon: Beacon?
+    val finishBeacon: Beacon
 
     // The position of the centre of the danger zone circle.
     // See doc/sector-map (heading 'Rebel fleet advance') for more
@@ -57,6 +59,22 @@ class Sector {
      * This is set by events with the <reveal_map/> tag.
      */
     var mapRevealed: Boolean = false
+
+    /**
+     * If this is the last stand, this is the beacon the flagship is currently at.
+     */
+    var flagshipBeacon: Beacon? = null
+
+    /**
+     * The beacon the flagship will be at next time it jumps. This can be set to
+     * null if it doesn't plan on jumping, such as when it's at the fed base.
+     */
+    var flagshipNextBeacon: Beacon? = null
+
+    /**
+     * True if the flagship will move on the next jump.
+     */
+    var flagshipJumping: Boolean = false
 
     // Note there's another constructor for deserialising a sector
     // from XML down at the bottom of the class.
@@ -86,6 +104,8 @@ class Sector {
         val eventPool = ArrayDeque(events.shuffled())
 
         val rand = Random.Default
+
+        val isHard = false // TODO use the correct difficulty
 
         // Generate a random 6x6 grid. Each beacon to be placed will be offset from one position on the grid.
         val grid = ArrayList<IPoint>()
@@ -144,12 +164,22 @@ class Sector {
             // If we're at the right-most side of the map, add an exit beacon.
             // Since we're using the grid cells in a random order, we can
             // just add this in the first time we see such a beacon.
+            // We also re-use this to spawn the rebel base in the last stand.
             // (Note this applies to the last two columns, which is how you can
             //  get obnoxiously early exit beacons)
-            // TODO don't place this in the final sector.
-            if (gridPos.x >= GRID_SIZE.x - 2 && tmpFinishBeacon == null) {
+            // TODO support nebula exits.
+            val exitRange = when {
+                !isLastStand -> 4..5
+                isHard -> 3..4
+                else -> 2..3
+            }
+            if (gridPos.x in exitRange && tmpFinishBeacon == null) {
                 event = specialEvents.exit.resolve()
                 isFinish = true
+
+                if (isLastStand) {
+                    event = specialEvents.fedBase.resolve()
+                }
             }
 
             // Same goes for the start beacon
@@ -170,7 +200,7 @@ class Sector {
                 event = eventPool.pollFirst() ?: specialEvents.filler.resolve()
             }
 
-            val beacon = Beacon(pos.const, event, isFinish)
+            val beacon = Beacon(pos.const, event, isFinish && !isLastStand, isFinish && isLastStand)
             beacons += beacon
             cells[beacon] = gridPos
 
@@ -203,9 +233,11 @@ class Sector {
         }
 
         startBeacon = tmpStartBeacon ?: error("Failed to place a starting beacon!")
-        finishBeacon = tmpFinishBeacon
+        finishBeacon = tmpFinishBeacon ?: error("Failed to place a finish beacon!")
 
         dangerZoneCentre = Point(-959, rand.nextInt(50, 300))
+
+        // The flagship is set up by GameMap.generateSector
     }
 
     fun getFleetAdvanceFor(beacon: Beacon): Int {
@@ -331,6 +363,25 @@ class Sector {
         return path
     }
 
+    fun updateFlagshipNextBeacon() {
+        // We'll change this later if the flagship wants to jump.
+        flagshipNextBeacon = null
+
+        val current = flagshipBeacon ?: run {
+            return
+        }
+
+        // If the flagship is at the rebel base, it'll stay there.
+        if (current == finishBeacon) {
+            return
+        }
+
+        val path = findShortestPath(current, finishBeacon)
+        require(path != null) { "Flagship has no path to the federation base!" }
+
+        flagshipNextBeacon = path.first()
+    }
+
     fun saveToXML(elem: Element, globalRefs: ObjectRefs): ObjectRefs {
         // External stuff shouldn't be able to reference beacons
         val refs = ObjectRefs(globalRefs)
@@ -348,6 +399,12 @@ class Sector {
 
         SaveUtil.addAttrRef(elem, "startBeacon", refs, startBeacon)
         SaveUtil.addAttrRef(elem, "finishBeacon", refs, finishBeacon)
+
+        if (isLastStand) {
+            SaveUtil.addAttrRef(elem, "flagshipBeacon", refs, flagshipBeacon)
+            SaveUtil.addAttrRef(elem, "flagshipNext", refs, flagshipNextBeacon)
+            SaveUtil.addAttrBool(elem, "flagshipJumping", flagshipJumping)
+        }
 
         // Serialise all the beacons
         for (beacon in beacons) {
@@ -446,7 +503,13 @@ class Sector {
 
         beaconRefs.switchToResolveMode()
         startBeacon = SaveUtil.getAttrRefImmediate(elem, "startBeacon", beaconRefs, Beacon::class.java)!!
-        finishBeacon = SaveUtil.getAttrRefImmediate(elem, "finishBeacon", beaconRefs, Beacon::class.java)
+        finishBeacon = SaveUtil.getAttrRefImmediate(elem, "finishBeacon", beaconRefs, Beacon::class.java)!!
+
+        if (isLastStand) {
+            SaveUtil.getAttrRef(elem, "flagshipBeacon", refs, Beacon::class.java) { flagshipBeacon = it }
+            SaveUtil.getAttrRef(elem, "flagshipNext", refs, Beacon::class.java) { flagshipNextBeacon = it }
+            flagshipJumping = SaveUtil.getAttrBool(elem, "flagshipJumping")
+        }
     }
 
     companion object {

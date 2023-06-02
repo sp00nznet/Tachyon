@@ -25,7 +25,8 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         eventManager["START_GAME"],
         eventManager["NEUTRAL"],
         eventManager["FINISH_BEACON"],
-        eventManager["FINISH_BEACON_NEBULA"]
+        eventManager["FINISH_BEACON_NEBULA"],
+        eventManager["FEDERATION_BASE"]
     )
 
     val sectors: List<List<SectorInfo>> = ArrayList()
@@ -226,10 +227,11 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
 
         // Try ten times to generate a suitable sector
         var attemptCount = 0
+        var sector: Sector
         while (true) {
-            val sector = Sector(sectorInfo, eventPool, specialEvents)
+            sector = Sector(sectorInfo, eventPool, specialEvents)
 
-            val path = sector.findShortestPath(sector.startBeacon, sector.finishBeacon!!)
+            val path = sector.findShortestPath(sector.startBeacon, sector.finishBeacon)
 
             // If there isn't a path to the finish beacon, try again regardless
             // of how many attempts we've previously made.
@@ -244,8 +246,39 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
                 continue
             }
 
-            return sector
+            break
         }
+
+        // Set up the flagship, if required.
+        if (sector.isLastStand) {
+            attemptCount = 0
+            while (true) {
+                attemptCount++
+
+                // The flagship goes on one of the two right-most columns.
+                // FIXME this is using the screen position, not the grid position!
+                val flagshipBeacon = sector.beacons.filter { it.pos.x >= 4 }.random()
+
+                // Make sure we have a path to the base!
+                val path = sector.findShortestPath(flagshipBeacon, sector.finishBeacon) ?: continue
+
+                // Try and pick a flagship position that gives the player
+                // enough time to get there!
+                // Note that the path length doesn't include the first beacon,
+                // so the limits here are one lower than specified in doc/sector-map.
+                if (path.size !in 3..5 && attemptCount < 10)
+                    continue
+
+                sector.flagshipBeacon = flagshipBeacon
+                break
+            }
+
+            // This is required so that right from the start, you can see what beacon
+            // the flagship is jumping to next.
+            sector.updateFlagshipNextBeacon()
+        }
+
+        return sector
     }
 
     fun saveToXML(elem: Element, refs: ObjectRefs) {
@@ -323,7 +356,13 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
          */
         val exit: IEvent,
 
-        val exitNebula: IEvent
+        val exitNebula: IEvent,
+
+        /**
+         * This is the event the player sees when they jump to the federation base
+         * in the last stand, without the flagship present.
+         */
+        val fedBase: IEvent
     )
 
     /**

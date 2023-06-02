@@ -29,7 +29,12 @@ class Beacon(
     /**
      * True if this is the exit beacon to progress to the next sector.
      */
-    val isExit: Boolean
+    val isExit: Boolean,
+
+    /**
+     * True if this is the location of the rebel base, in the last stand.
+     */
+    val isBase: Boolean
 ) : ISerialReferencable {
 
     /**
@@ -197,6 +202,7 @@ class Beacon(
 
         SaveUtil.addAttrBool(elem, "visited", visited)
         SaveUtil.addTagBoolIfTrue(elem, "isExit", isExit)
+        SaveUtil.addTagBoolIfTrue(elem, "isBase", isBase)
         SaveUtil.addTagBoolIfTrue(elem, "hasStore", hasStore)
         SaveUtil.addTagBoolIfTrue(elem, "hasQuest", hasQuest)
 
@@ -238,6 +244,7 @@ class Beacon(
             val eventId = SaveUtil.getAttr(elem, "eventId")
             val event = game.eventManager.getByDeserialisationId(eventId)
             val isExit = SaveUtil.getOptionalTagBool(elem, "isExit") ?: false
+            val isBase = SaveUtil.getOptionalTagBool(elem, "isBase") ?: false
 
             val pos = ConstPoint(
                 SaveUtil.getAttrInt(elem, "x"),
@@ -246,7 +253,7 @@ class Beacon(
 
             // This gets us all the information we need to create and start
             // populating our beacon.
-            val beacon = Beacon(pos, event, isExit)
+            val beacon = Beacon(pos, event, isExit, isBase)
             SaveUtil.registerObjectId(elem, refs, beacon)
 
             beacon.visited = SaveUtil.getAttrBool(elem, "visited")
