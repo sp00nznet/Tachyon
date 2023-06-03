@@ -219,6 +219,12 @@ public class InGameState extends MainGame.GameState {
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
             debugConsoleVisible = !debugConsoleVisible;
+
+            // Clear out any pending key presses, so keys pressed while
+            // the console is open don't have an effect once it's closed.
+            in.clearControlPressedRecord();
+            in.clearKeyPressedRecord();
+            in.clearMousePressedRecord();
         }
 
         // Block all key inputs if the debug console is open
