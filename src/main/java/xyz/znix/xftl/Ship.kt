@@ -1268,6 +1268,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         for (system in systems) {
             val systemElem = Element("system")
             system.saveToXML(systemElem, refs)
+
+            // Save the room this system is in, as we'll need it to match up
+            // artillery weapons to the correct room on the flagship.
+            SaveUtil.addAttrInt(systemElem, "room", system.room!!.id)
+
             systemListElem.addContent(systemElem)
         }
         elem.addContent(systemListElem)
@@ -1386,11 +1391,19 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             val name: String = elem.getAttributeValue("name")
             val blueprint = sys.blueprintManager[name] as SystemBlueprint
 
-            val slot = systemSlots.first { it.system == blueprint }
-            slot.room.setSystem(slot)
+            // Find the slot this system is in.
+            // This isn't as simple as it might sound, since for artillery
+            // we can have multiple systems installed. Thus we need to use
+            // the serialised room ID to make sure we load this into the
+            // correct instance of the system.
+            val roomId = SaveUtil.getAttrInt(elem, "room")
+            val room = rooms[roomId]
+
+            val slot = room.systemSlots.first { it.system == blueprint }
+            room.setSystem(slot)
 
             // Re-load the system's properties
-            slot.room.system!!.loadFromXML(elem, refs)
+            room.system!!.loadFromXML(elem, refs)
         }
 
         // Load the crew

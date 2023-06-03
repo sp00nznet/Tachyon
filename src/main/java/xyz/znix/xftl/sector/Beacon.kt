@@ -84,6 +84,12 @@ class Beacon(
      * will be gone.
      */
     var ship: Ship? = null
+        set(value) {
+            field = value
+
+            // The flagship isn't saved at a beacon, as if you jump away it's fully repaired.
+            require(value?.isFlagship != true) { "Cannot save the flagship at a beacon!" }
+        }
 
     /**
      * Has this beacon been previously visited?

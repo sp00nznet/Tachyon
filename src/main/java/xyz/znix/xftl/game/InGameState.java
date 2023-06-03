@@ -129,11 +129,6 @@ public class InGameState extends MainGame.GameState {
         // This just loads stuff from XML, we don't need to serialise it
         lootPool = new LootPool(blueprintManager, currentBeacon.getSector().getType());
 
-        // Load in the previous enemy
-        // FIXME keep crew-killed enemy ships around, currently they disappear
-        enemyIsHostile = true;
-        setEnemy(currentBeacon.getShip());
-
         loadBeaconEnvironment();
 
         // Give all the ships an update, for stuff like the
@@ -570,6 +565,13 @@ public class InGameState extends MainGame.GameState {
     }
 
     private void spawnFlagship() {
+        // If there's a ship at the current beacon, get rid of it. This avoids
+        // it sticking around after the flagship leaves, and saves space
+        // in the serialised game.
+        // Note the flagship isn't marked as belonging to a beacon, since it's
+        // generated whenever the player jumps there.
+        currentBeacon.setShip(null);
+
         String shipName = "BOSS_1_EASY_DLC"; // TODO
 
         Element flagshipXML = ((ShipBlueprint) blueprintManager.get(shipName)).loadElem(df);
@@ -698,11 +700,21 @@ public class InGameState extends MainGame.GameState {
         for (Beacon beacon : sector.getBeacons()) {
             refs.register(beacon.getShip(), "ship");
         }
+        if (enemy != null && enemy.isFlagship()) {
+            refs.register(enemy, "flagship");
+        }
 
         // Serialise the player ship
         Element playerShip = new Element("playerShip");
         player.saveToXML(playerShip, refs);
         root.addContent(playerShip);
+
+        // Serialise the flagship, as it's not stored at a beacon like normal ships.
+        if (enemy != null && enemy.isFlagship()) {
+            Element flagshipElem = new Element("flagship");
+            enemy.saveToXML(flagshipElem, refs);
+            root.addContent(flagshipElem);
+        }
 
         // Serialise the sector map (the one you access via exit beacons)
         Element mapXML = new Element("gameMap");
@@ -744,6 +756,13 @@ public class InGameState extends MainGame.GameState {
         Element playerShip = root.getChild("playerShip");
         player = deserialiseSingleShip(playerShip, refs);
 
+        // Load the flagship, if we're fighting it.
+        Element flagshipElem = root.getChild("flagship");
+        Ship flagship = null;
+        if (flagshipElem != null) {
+            flagship = deserialiseSingleShip(flagshipElem, refs);
+        }
+
         // Load the game map. The sector needs to reference it's SectorInfo
         // objects, so we need a separate reference loader we can switch
         // to resolve mode before loading the sector.
@@ -775,6 +794,15 @@ public class InGameState extends MainGame.GameState {
 
         // We can finally load out our current beacon.
         currentBeacon = SaveUtil.INSTANCE.getRefImmediate(root, "currentBeacon", refs, Beacon.class);
+
+        // Load in the previous enemy
+        // FIXME keep crew-killed enemy ships around, currently they disappear
+        enemyIsHostile = true;
+        if (flagship != null) {
+            setEnemy(flagship);
+        } else {
+            setEnemy(currentBeacon.getShip());
+        }
     }
 
     /**
