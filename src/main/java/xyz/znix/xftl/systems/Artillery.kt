@@ -66,6 +66,8 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         var amount = dt / cooldown
         if (ship.sys.debugFlags.fastWeaponCharge.set)
             amount *= 5
+        if (ship.opponentCloakActive)
+            amount = 0f
         chargeProgress += amount
 
         if (chargeProgress >= 1f) {

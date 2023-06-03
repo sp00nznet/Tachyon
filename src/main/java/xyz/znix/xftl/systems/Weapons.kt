@@ -23,20 +23,13 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     val selectedTargets = TargetList()
 
-    /**
-     * Set by SlickGame, this is true if the opponent's cloak is active.
-     *
-     * This prevents the weapons from charging.
-     */
-    var opponentCloakActive: Boolean = false
-
     override fun update(dt: Float) {
         super.update(dt)
 
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
             weapon.bindToWeaponsSystem(this)
-            weapon.update(dt, !opponentCloakActive, isHackActive)
+            weapon.update(dt, !ship.opponentCloakActive, isHackActive)
 
             // Update the weapon slide
             val slideSpeed = dt * 2

@@ -200,6 +200,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         }
 
     /**
+     * Set by SlickGame, this is true if the opponent's cloak is active.
+     *
+     * This prevents the weapons from charging.
+     */
+    var opponentCloakActive: Boolean = false
+
+    /**
      * This is the list of all the possible systems that can be installed on this ship.
      *
      * It's simply the sum of all the [Room.systemSlots] lists.

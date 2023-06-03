@@ -421,10 +421,8 @@ public class InGameState extends MainGame.GameState {
             // Since we try and limit direct communications between
             // the ships, pass information about the cloak status back
             // and forth here.
-            //noinspection ConstantConditions
-            player.getWeapons().setOpponentCloakActive(enemy.isCloakActive());
-            //noinspection ConstantConditions
-            enemy.getWeapons().setOpponentCloakActive(player.isCloakActive());
+            player.setOpponentCloakActive(enemy.isCloakActive());
+            enemy.setOpponentCloakActive(player.isCloakActive());
 
             if (enemyIsHostile) {
                 enemyAI.update(dt);
@@ -477,8 +475,7 @@ public class InGameState extends MainGame.GameState {
                 currentBeacon.setShip(null);
             }
         } else {
-            //noinspection ConstantConditions
-            player.getWeapons().setOpponentCloakActive(false);
+            player.setOpponentCloakActive(false);
         }
 
         if (!isInDanger()) {
