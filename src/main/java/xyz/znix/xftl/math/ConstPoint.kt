@@ -4,6 +4,7 @@ class ConstPoint(override val x: Int, override val y: Int) : IPoint {
     constructor(p: IPoint) : this(p.x, p.y)
 
     companion object {
+        @JvmField
         val ZERO = ConstPoint(0, 0)
     }
 

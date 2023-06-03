@@ -19,6 +19,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
 
         loadFile(df, "blueprints.xml")
         loadFile(df, "autoBlueprints.xml")
+        loadFile(df, "bosses.xml")
         if (enableAE) {
             loadFile(df, "dlcBlueprints.xml")
             loadFile(df, "dlcBlueprintsOverwrite.xml")

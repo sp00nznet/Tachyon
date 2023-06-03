@@ -20,11 +20,25 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     private val shieldIconStandardHacked = game.getImg("img/combatUI/box_hostiles_shield2_hacked_charged.png")
     private val shieldIconBrokenHacked = game.getImg("img/combatUI/box_hostiles_shield2_hacked.png")
 
-    private val superShieldBar = game.getImg("img/combatUI/box_hostiles_shield_super5.png") // TODO flagship
+    private val superShieldBar = game.getImg("img/combatUI/box_hostiles_shield_super5.png")
+    private val superShieldBarBoss = game.getImg("img/combatUI/box_hostiles_shield_super12.png")
     private val shieldChargeBar = game.getImg("img/combatUI/box_hostiles_shield_charge.png")
 
-    fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, isHostile: Boolean) {
-        val box = game.getImg("img/combatUI/box_hostiles2.png")
+    private val boxNormal = game.getImg("img/combatUI/box_hostiles2.png")
+    private val boxBoss = game.getImg("img/combatUI/box_hostiles_boss.png")
+
+    private val maskNormal = game.getImg("img/combatUI/box_hostiles_mask.png")
+    private val maskBoss = game.getImg("img/combatUI/box_hostiles_boss_mask.png")
+
+    fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, interiorVisible: Boolean) {
+        val box = when (enemy.isFlagship) {
+            true -> boxBoss
+            false -> boxNormal
+        }
+        val mask = when (enemy.isFlagship) {
+            true -> maskBoss
+            false -> maskNormal
+        }
 
         val boxX = gc.width - (box.width - 20) - 18
         val boxY = 54 - 9
@@ -37,10 +51,10 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         box.draw(boxX, boxY)
 
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
-            game.getImg("img/combatUI/box_hostiles_mask.png").draw(boxX, boxY)
+            mask.draw(boxX, boxY)
         }) {
             g.translate(shipPos.x.f, shipPos.y.f)
-            enemy.render(g, isHostile, hoveredRoom)
+            enemy.render(g, interiorVisible, hoveredRoom)
 
             // FIXME this is pretty horrible accessing the player ship like this
             enemy.renderTargeting(g, game.shipUI.ship.weapons!!.selectedTargets)

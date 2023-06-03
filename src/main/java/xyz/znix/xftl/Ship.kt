@@ -39,6 +39,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     val rooms: List<Room>
     val doors: MutableList<Door> = ArrayList()
 
+    // TODO do this properly, to avoid potentially breaking mods
+    val isFlagship: Boolean = name.startsWith("BOSS_")
+
     /**
      * The localisation key of the ship, defining the in-hangar title
      * for player ships (eg 'The Kestrel').
@@ -269,6 +272,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         private set
 
     var oxygen: Oxygen? = null
+        private set
+
+    // The flagship has multiple artillery systems.
+    var artillery: List<Artillery> = emptyList()
         private set
 
     // The ship's evasion, in percent
@@ -1092,9 +1099,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         doorsSystem = systems.mapNotNull { it as? Doors }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
 
+        artillery = systems.mapNotNull { it as? Artillery }
+
         // The UI will need to change to reflect this
-        // Note that shipUI may be called this this function is called
-        // very early on, right after ship initialisation.
+        // Note that this function is called very early on, before shipUI
+        // is initialised, right after ship initialisation.
         sys.shipUI?.shipModified()
     }
 

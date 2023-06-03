@@ -465,6 +465,10 @@ public class InGameState extends MainGame.GameState {
                     IEvent event = enemy.getSpec().getDeadCrew();
                     if (event != null)
                         shipUI.showEventDialogue(event.resolve());
+                } else if (enemy.isFlagship()) {
+                    // TODO turn the enemy into an autoscout
+                    // Event event = eventManager.get("BOSS_AUTOMATED").resolve();
+                    // shipUI.showEventDialogue(event);
                 }
 
                 enemyIsHostile = false;
@@ -543,6 +547,12 @@ public class InGameState extends MainGame.GameState {
             shipUI.showEventDialogue(event);
         }
 
+        // If the flagship is here, spawn it in. Doing this last overwrites
+        // the rebel elite that's already been spawned.
+        if (currentBeacon == currentBeacon.getSector().getFlagshipBeacon()) {
+            spawnFlagship();
+        }
+
         currentBeacon.setVisited(true);
 
         // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
@@ -557,6 +567,36 @@ public class InGameState extends MainGame.GameState {
         background = images.getSecond();
 
         // TODO load image settings from text tags
+    }
+
+    private void spawnFlagship() {
+        String shipName = "BOSS_1_EASY_DLC"; // TODO
+
+        Element flagshipXML = ((ShipBlueprint) blueprintManager.get(shipName)).loadElem(df);
+        Ship flagship = new Ship(df, flagshipXML, this, null);
+        flagship.loadDefaultContents(flagshipXML);
+
+        // TODO handle crew being killed across fights
+        for (int i = 0; i < 11; i++) {
+            LivingCrew crew = flagship.addCrewMember("human", true, false);
+
+            // Put some crew in the artillery rooms
+            for (Artillery artillery : flagship.getArtillery()) {
+                Room room = Objects.requireNonNull(artillery.getRoom());
+
+                boolean anyInRoom = flagship.getCrew().stream().anyMatch(c -> c.getRoom() == room);
+                if (anyInRoom)
+                    continue;
+
+                crew.jumpTo(room, ConstPoint.ZERO);
+            }
+        }
+
+        setEnemy(flagship);
+        enemyIsHostile = true;
+
+        Event event = eventManager.get("BOSS_TEXT_1").resolve();
+        shipUI.showEventDialogue(event);
     }
 
     public void loadEventShip(Event event) {
@@ -814,7 +854,7 @@ public class InGameState extends MainGame.GameState {
 
         font = new SILFontLoader(df, df.get("fonts/" + name + ".font"));
         content.fonts.put(name, font);
-        return font;
+        return new SILFontLoader(font);
     }
 
     /**
