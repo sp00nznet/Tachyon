@@ -119,6 +119,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
         // do anything - those just have very low priorities, and serve
         // to disperse thee crew throughout the ship.
         for (system in ship.systems) {
+            if (isRoomDisabled(system.room!!))
+                continue
+
             tasks += ManningTask(system.room!!)
         }
     }
@@ -135,6 +138,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         for (sys in ship.systems) {
             if (!sys.damaged)
+                continue
+
+            if (isRoomDisabled(sys.room!!))
                 continue
 
             val room = sys.room!!
@@ -165,16 +171,21 @@ class ShipAI(val ship: Ship, val player: Ship) {
         // element of an ArrayList is very fast.
         tasks.sortByDescending { it.priority }
 
-        // Make sure the assignments 1:1 matches the available crew
-        if (!ship.friendlyCrew.containsAll(assignments.keys)) {
-            val missingCrew = assignments.keys.filter { !ship.friendlyCrew.contains(it) }
+        // Make sure the assignments 1:1 matches the available crew.
+        // Filter out crew that are stuck in their own room, with the flagship's
+        // artillery rooms in mind. Without this, crew could be assigned to places
+        // that they can't possibly access.
+        val availableCrew = ship.friendlyCrew.filter { it.room.doors.isNotEmpty() }
+
+        if (!availableCrew.containsAll(assignments.keys)) {
+            val missingCrew = assignments.keys.filter { !availableCrew.contains(it) }
             for (crew in missingCrew) {
                 assignments.remove(crew)
             }
         }
 
-        if (ship.friendlyCrew.size != assignments.size) {
-            for (crew in ship.friendlyCrew) {
+        if (availableCrew.size != assignments.size) {
+            for (crew in availableCrew) {
                 if (!assignments.containsKey(crew))
                     assignments[crew] = null
             }
@@ -221,6 +232,12 @@ class ShipAI(val ship: Ship, val player: Ship) {
         for (task in assignments.values) {
             task?.update()
         }
+    }
+
+    private fun isRoomDisabled(room: Room): Boolean {
+        // Don't set any tasks in inaccessible rooms, since crew can't go there.
+        // This prevents flagship crew from getting stuck when sent to the artillery rooms.
+        return room.doors.isEmpty()
     }
 
     @Suppress("RedundantIf")
