@@ -169,13 +169,21 @@ public class InGameState extends MainGame.GameState {
         }
 
         // Feed inputs to the debug console.
-        container.getInput().addKeyListener(new InputAdapter() {
+        container.getInput().addListener(new InputAdapter() {
             @Override
             public void keyPressed(int key, char c) {
                 if (!debugConsoleVisible)
                     return;
 
                 getDebugConsole().keyPressed(key, c);
+            }
+
+            @Override
+            public void mouseWheelMoved(int change) {
+                if (!debugConsoleVisible)
+                    return;
+
+                getDebugConsole().mouseWheelMoved(change);
             }
         });
     }

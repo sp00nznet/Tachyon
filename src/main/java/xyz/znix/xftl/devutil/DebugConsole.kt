@@ -29,6 +29,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
 import java.util.stream.Collectors
+import kotlin.math.max
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
@@ -48,6 +50,10 @@ class DebugConsole(var game: InGameState) {
     private val ship: Ship get() = game.player
 
     private var flashTimer: Float = 0f
+
+    private var lineScroll: Float = 0f
+
+    private val maxScroll: Int get() = max(0, lines.size - 15)
 
     // TODO move this to somewhere in appdata (or platform equivalent) when we pick
     //  somewhere to store the regular savegames.
@@ -108,6 +114,7 @@ class DebugConsole(var game: InGameState) {
         val fontHeight = 7
         val lineSpacing = fontHeight + 5 // Some letters are a bit outside the font height
 
+        // Draw the prompt line
         var inputLine = prompt + currentLine
         if (flashTimer.rem(FLASH_TIME) > FLASH_TIME / 2) {
             inputLine += "_"
@@ -115,13 +122,32 @@ class DebugConsole(var game: InGameState) {
         font.drawString(20f, y, inputLine, Color.white)
         y -= lineSpacing + 4
 
-        for (i in lines.size - 1 downTo 0) {
+        // Draw all the history lines, which can be scrolled.
+        // The scroll is only stored as a float to make the scrolling smoother.
+        val offset = lineScroll.roundToInt()
+
+        for (i in lines.size - 1 - offset downTo 0) {
             val line = lines[i]
             font.drawString(20f, y, line, Color.white)
 
             y -= lineSpacing
             if (y < 0)
                 break
+        }
+
+        // Draw a warning if we're scrolled, so the player knows they're not
+        // at the latest message.
+        if (offset != 0) {
+            val lineY = height - 6 - fontHeight - 4
+            g.color = Color.red
+            g.drawLine(0f, lineY, gc.width.f, lineY)
+
+            font.drawStringLeftAligned(gc.width - 5f, lineY - 2f, "$offset lines scrolled past", Color.red)
+        }
+
+        // Cut down the history so it doesn't get too crazy.
+        while (lines.size > 1000) {
+            lines.removeAt(0)
         }
 
         continued?.render(gc, g, height)
@@ -191,6 +217,11 @@ class DebugConsole(var game: InGameState) {
         }
     }
 
+    fun mouseWheelMoved(amount: Int) {
+        lineScroll += amount * 0.025f
+        lineScroll = lineScroll.coerceIn(0f..maxScroll.f)
+    }
+
     /**
      * If the user has scrolled back to a previous command, copy
      * that to the buffer.
@@ -203,6 +234,9 @@ class DebugConsole(var game: InGameState) {
     }
 
     private fun runCommand() {
+        // Jump the scroll to the bottom when the player runs something.
+        lineScroll = 0f
+
         // Clear out the input
         val input = this.input
         this.input = ""
