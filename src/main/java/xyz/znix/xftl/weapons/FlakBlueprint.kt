@@ -60,14 +60,12 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             // Make sure all the projectiles come in from the same angle
             val angle: Float = (Math.random() * Math.PI * 2).toFloat()
 
-            val hp = weapons.findHardpoint(this)
-
             for (spec in projectileSpecs) {
                 for (i in 0 until spec.count) {
                     val projectile = FlakProjectile(target!!, spec)
                     projectile.entryAngle = angle
 
-                    weapons.launchProjectile(hp, projectile)
+                    launchProjectile(projectile)
                 }
             }
 

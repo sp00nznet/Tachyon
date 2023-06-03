@@ -6,9 +6,11 @@ import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.systems.Weapons
 
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
@@ -27,6 +29,9 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
     protected var shotsRemaining: Int = 0
     protected var entryAngle: Float = 0f
+
+    // Doesn't need to be serialised, as it's set by the weapons or artillery system.
+    protected lateinit var projectileSpawnPos: IPoint
 
     override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
         super.update(dt, canCharge, isHacked)
@@ -67,13 +72,30 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         }
     }
 
+    override fun bindToWeaponsSystem(weapons: Weapons) {
+        super.bindToWeaponsSystem(weapons)
+
+        if (!this::projectileSpawnPos.isInitialized) {
+            this.projectileSpawnPos = weapons.getProjectileSpawnPos(this)
+        }
+    }
+
     protected open fun fireFrameHit() {
         val projectile = buildProjectile(target!!)
-        val hp = weapons.findHardpoint(this)
         projectile.entryAngle = entryAngle
-        weapons.launchProjectile(hp, projectile)
+        launchProjectile(projectile)
 
         type.launchSounds?.get()?.play()
+    }
+
+    protected fun launchProjectile(projectile: AbstractProjectile) {
+        // Depending on whether we're the player or enemy ship, we need
+        // to fly in different directions as they're angled differently.
+        val endPos = projectileSpawnPos + ship.weaponFireDirection * 5000
+
+        projectile.setInitialPath(projectileSpawnPos, endPos)
+
+        ship.projectiles += projectile
     }
 
     override fun fire(target: Room) {

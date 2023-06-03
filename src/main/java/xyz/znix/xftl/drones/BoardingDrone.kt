@@ -48,13 +48,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         // The direction the drone flies in depends on whether this is
         // a player ship or an enemy ship, as it's supposed to go
         // forwards out of both of them.
-        val endPoint = startingPoint + if (ownerShip.isPlayerShip) {
-            // Fly right
-            ConstPoint(1000, 0)
-        } else {
-            // Fly upwards
-            ConstPoint(0, -1000)
-        }
+        val endPoint = startingPoint + ownerShip.weaponFireDirection * 5000
 
         projectile!!.setInitialPath(startingPoint, endPoint)
 

@@ -8,7 +8,6 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -42,7 +41,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     private val beamDestPos by lazy {
         // Players fire to the right, enemies fire upwards.
-        ship.shieldOrigin + if (ship.isPlayerShip) ConstPoint(5000, 0) else ConstPoint(0, -5000)
+        ship.shieldOrigin + ship.weaponFireDirection * 1000
     }
 
     override fun initialise(ship: Ship) {

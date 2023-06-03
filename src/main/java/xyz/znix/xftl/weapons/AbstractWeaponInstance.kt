@@ -32,9 +32,6 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
     val animation = type.getLauncher(ship.sys)
 
-    protected lateinit var weapons: Weapons
-        private set
-
     open fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
         var chargeMult = when (ship.sys.debugFlags.fastWeaponCharge.set) {
             true -> 10f
@@ -92,16 +89,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         isPowered = newPowerState
     }
 
-    fun bindToWeaponsSystem(weapons: Weapons) {
-        if (this::weapons.isInitialized) {
-            if (this.weapons == weapons) {
-                return
-            }
-
-            error("Cannot re-bind weapon instance ${type.name} to new weapons system!")
-        }
-
-        this.weapons = weapons
+    open fun bindToWeaponsSystem(weapons: Weapons) {
     }
 
     open fun saveToXML(elem: Element, refs: ObjectRefs) {

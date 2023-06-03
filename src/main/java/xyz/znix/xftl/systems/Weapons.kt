@@ -11,7 +11,6 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
@@ -111,8 +110,10 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         throw IllegalArgumentException("No matching hardpoint for weapon $weapon")
     }
 
-    fun launchProjectile(hp: Ship.Hardpoint, projectile: AbstractProjectile) {
-        val anim = hp.weapon!!.animation
+
+    fun getProjectileSpawnPos(weapon: AbstractWeaponInstance): IPoint {
+        val hp = findHardpoint(weapon)
+        val anim = weapon.animation
 
         // Fly off-screen, so it jumps over to the target ship.
 
@@ -141,19 +142,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
         startPos += hp.position
 
-        // Depending on whether we're the player or enemy ship, we need
-        // to fly in different directions as they're angled differently.
-        val endPos = startPos + if (ship.isPlayerShip) {
-            // Fly right
-            ConstPoint(1000, 0)
-        } else {
-            // Fly upwards
-            ConstPoint(0, -1000)
-        }
-
-        projectile.setInitialPath(startPos, endPos)
-
-        ship.projectiles += projectile
+        return startPos
     }
 
     private fun translateHardpoint(g: Graphics, hp: Ship.Hardpoint) {

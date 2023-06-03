@@ -51,6 +51,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
     val isPlayerShip: Boolean = name.startsWith("PLAYER_SHIP_")
 
+    val weaponFireDirection: Direction = when (isPlayerShip) {
+        true -> Direction.RIGHT // Weapons fly right
+        false -> Direction.UP // Weapons fly upwards
+    }
+
     // Played when any two projectiles collide.
     private val projectileCollisionSound: FTLSound = sys.sounds.getSample("hitHull1")
 
