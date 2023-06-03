@@ -8,6 +8,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -39,9 +40,26 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     private val cooldown: Float get() = 60f - powerSelected * 10f
 
+    private val hardpoint by lazy {
+        // Find out what our index is, in all the artillery systems specified
+        // in the ship's XML.
+        // Note we can't use the ship's list of artillery systems, in case
+        // (in a mod) there's a ship where some artillery systems have to be
+        // purchased, in which case the index in the purchased systems might
+        // not match that in the XML.
+        val allSystemSlots = ship.rooms.flatMap { it.systemSlots }
+        val artillerySlots = allSystemSlots.filter { it.system.type == NAME }.sortedBy { it.systemIndex }
+        val index = artillerySlots.indexOf(configuration)
+        require(index != -1) { "Artillery system is not in ship systems list!" }
+
+        // Hardpoints 4 and up (zero-indexed) are used for artillery.
+        // I've confirmed this is how FTL does it.
+        ship.hardpoints[4 + index]
+    }
+
     private val beamDestPos by lazy {
         // Players fire to the right, enemies fire upwards.
-        ship.shieldOrigin + ship.weaponFireDirection * 1000
+        hardpoint.position + ship.weaponFireDirection * 1000
     }
 
     override fun initialise(ship: Ship) {
@@ -85,7 +103,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override fun drawBackground(g: Graphics) {
         super.drawBackground(g)
 
-        (weapon as? BeamBlueprint.BeamInstance)?.drawArtilleryBeam(ship.shieldOrigin, beamDestPos)
+        (weapon as? BeamBlueprint.BeamInstance)?.drawArtilleryBeam(hardpoint.position, beamDestPos)
     }
 
     override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, baseY: Int) {

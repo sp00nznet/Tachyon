@@ -554,7 +554,19 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
  * the system and the location of its computer, along with any XML data
  * that's specified in the ship blueprint.
  */
-class SystemInstallConfiguration(systemNode: Element, game: InGameState, val room: Room) {
+class SystemInstallConfiguration(
+    systemNode: Element,
+    game: InGameState,
+    val room: Room,
+
+    /**
+     * The index of this configuration within the ship's list of systems.
+     *
+     * This is for figuring out the order the artillery systems are specified
+     * in, as that determines what hardpoint they fire from.
+     */
+    val systemIndex: Int
+) {
     val system: SystemBlueprint = game.blueprintManager[systemNode.name] as SystemBlueprint
 
     val startingPower = systemNode.getAttributeValue("power").toInt()

@@ -378,13 +378,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             else -> selectedShieldHalfSize
         }
 
-        for (node in shipNode.getChild("systemList").children) {
+        for ((index, node) in shipNode.getChild("systemList").children.withIndex()) {
             val room = rooms[node.getAttributeValue("room").toInt()]
 
             // Load the information about the available system into the room.
             // This will be used when loading the system from a save, spawning
             // a new ship, or buying a system at a store.
-            room.systemSlots += SystemInstallConfiguration(node, sys, room)
+            room.systemSlots += SystemInstallConfiguration(node, sys, room, index)
         }
 
         systemSlots = rooms.flatMap { it.systemSlots }
@@ -1099,7 +1099,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         doorsSystem = systems.mapNotNull { it as? Doors }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
 
-        artillery = systems.mapNotNull { it as? Artillery }
+        // If we have multiple artillery systems, sort them by the order
+        // they appear in the XML. This probably isn't necessary, but if
+        // we're using this order to display them in the UI or anything
+        // like that it's nice to have this order.
+        artillery = systems.mapNotNull { it as? Artillery }.sortedBy { it.configuration.systemIndex }
 
         // The UI will need to change to reflect this
         // Note that this function is called very early on, before shipUI
