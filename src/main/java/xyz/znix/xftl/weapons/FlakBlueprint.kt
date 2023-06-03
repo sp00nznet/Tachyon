@@ -71,6 +71,30 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             type.launchSounds?.get()?.play()
         }
+
+        override fun fireFromArtillery(possibleTargets: List<Room>, origin: IPoint) {
+            // Unlike the other projectile-based weapons, flak doesn't require
+            // the target rooms are unique (it allows two projectiles to target
+            // the same room).
+
+            // Depending on whether we're the player or enemy ship, we need
+            // to fly in different directions as they're angled differently.
+            val endPos = origin + ship.weaponFireDirection * 5000
+
+            // Make sure all the projectiles come in from the same angle
+            val angle: Float = (Math.random() * Math.PI * 2).toFloat()
+
+            for (spec in projectileSpecs) {
+                for (i in 0 until spec.count) {
+                    val projectile = FlakProjectile(possibleTargets.random(), spec)
+                    projectile.entryAngle = angle
+                    projectile.setInitialPath(origin, endPos)
+                    ship.projectiles += projectile
+                }
+            }
+
+            type.launchSounds?.get()?.play()
+        }
     }
 
     private inner class FlakProjectile(room: Room, val spec: ProjectileSpec) :

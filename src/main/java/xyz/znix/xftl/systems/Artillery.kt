@@ -12,6 +12,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import kotlin.math.atan2
@@ -62,10 +63,13 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         hardpoint.position + ship.weaponFireDirection * 1000
     }
 
+    val weaponFirePoint: IPoint get() = hardpoint.position
+
     override fun initialise(ship: Ship) {
         super.initialise(ship)
 
         weapon = configuration.weapon!!.buildInstance(ship)
+        weapon.bindToArtillery(this)
     }
 
     override fun update(dt: Float) {
@@ -151,8 +155,10 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 weapon.fireFromArtillery(aim, length)
             }
 
-            // TODO burst weapons (flak)
-            // TODO lasers and missiles (pick unique targets per projectile)
+            // This handles flak, missiles, and lasers.
+            is AbstractProjectileWeaponInstance -> {
+                weapon.fireFromArtillery(targetShip.rooms, hardpoint.position)
+            }
 
             else -> error("Artillery system doesn't support weapon ${weapon.type.name} instance $weapon")
         }

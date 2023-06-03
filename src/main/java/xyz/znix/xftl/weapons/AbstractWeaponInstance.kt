@@ -8,6 +8,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.systems.Artillery
 import xyz.znix.xftl.systems.Weapons
 import kotlin.math.max
 
@@ -90,6 +91,9 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     }
 
     open fun bindToWeaponsSystem(weapons: Weapons) {
+    }
+
+    open fun bindToArtillery(artillery: Artillery) {
     }
 
     open fun saveToXML(elem: Element, refs: ObjectRefs) {

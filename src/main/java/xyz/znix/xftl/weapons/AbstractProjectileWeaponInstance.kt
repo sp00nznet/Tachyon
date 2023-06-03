@@ -10,6 +10,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.systems.Artillery
 import xyz.znix.xftl.systems.Weapons
 
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
@@ -80,6 +81,14 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         }
     }
 
+    override fun bindToArtillery(artillery: Artillery) {
+        super.bindToArtillery(artillery)
+
+        if (!this::projectileSpawnPos.isInitialized) {
+            this.projectileSpawnPos = artillery.weaponFirePoint
+        }
+    }
+
     protected open fun fireFrameHit() {
         val projectile = buildProjectile(target!!)
         projectile.entryAngle = entryAngle
@@ -128,6 +137,15 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         projectile.setInitialPath(drone.flightController.position, projectile.calculateTargetPosition())
 
         type.launchSounds?.get()?.play()
+    }
+
+    open fun fireFromArtillery(possibleTargets: List<Room>, origin: IPoint) {
+        // FIXME non-flak weapons should target separate rooms for each shot!
+        target = possibleTargets.random()
+        shotsRemaining = type.shots
+
+        entryAngle = (Math.random() * Math.PI * 2).toFloat()
+        primeShot()
     }
 
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
