@@ -43,7 +43,7 @@ class DebugConsole(var game: InGameState) {
     private var continued: ContinuedCommand? = null
     private var input: String = ""
 
-    private val lines = ArrayList<String>()
+    private val lines = ArrayList<ILine>()
 
     private val font = game.getFont("c&c")
 
@@ -104,10 +104,10 @@ class DebugConsole(var game: InGameState) {
         else history[historyCursor]
 
     fun render(gc: GameContainer, g: Graphics) {
-        val height = gc.height / 2f
+        val height = gc.height / 2
 
         g.color = Color(127, 127, 127, 180)
-        g.fillRect(0f, 0f, gc.width.f, height)
+        g.fillRect(0f, 0f, gc.width.f, height.f)
 
         var y = height - 6
 
@@ -119,7 +119,7 @@ class DebugConsole(var game: InGameState) {
         if (flashTimer.rem(FLASH_TIME) > FLASH_TIME / 2) {
             inputLine += "_"
         }
-        font.drawString(20f, y, inputLine, Color.white)
+        font.drawString(20f, y.f, inputLine, Color.white)
         y -= lineSpacing + 4
 
         // Draw all the history lines, which can be scrolled.
@@ -128,7 +128,7 @@ class DebugConsole(var game: InGameState) {
 
         for (i in lines.size - 1 - offset downTo 0) {
             val line = lines[i]
-            font.drawString(20f, y, line, Color.white)
+            line.draw(20, y)
 
             y -= lineSpacing
             if (y < 0)
@@ -140,7 +140,7 @@ class DebugConsole(var game: InGameState) {
         if (offset != 0) {
             val lineY = height - 6 - fontHeight - 4
             g.color = Color.red
-            g.drawLine(0f, lineY, gc.width.f, lineY)
+            g.drawLine(0f, lineY.f, gc.width.f, lineY.f)
 
             font.drawStringLeftAligned(gc.width - 5f, lineY - 2f, "$offset lines scrolled past", Color.red)
         }
@@ -150,7 +150,7 @@ class DebugConsole(var game: InGameState) {
             lines.removeAt(0)
         }
 
-        continued?.render(gc, g, height)
+        continued?.render(gc, g, height.f)
     }
 
     fun update(@Suppress("UNUSED_PARAMETER") gc: GameContainer, dt: Float) {
@@ -233,6 +233,13 @@ class DebugConsole(var game: InGameState) {
         }
     }
 
+    /**
+     * Print a line of output to the bottom of the console.
+     */
+    private fun addLine(line: String) {
+        lines += SimpleLine(line)
+    }
+
     private fun runCommand() {
         // Jump the scroll to the bottom when the player runs something.
         lineScroll = 0f
@@ -245,7 +252,7 @@ class DebugConsole(var game: InGameState) {
         if (history.lastOrNull() != input && input.isNotBlank())
             history.add(input)
 
-        lines.add(prompt + input)
+        addLine(prompt + input)
 
         // If we're part way through a command that takes multiple
         // lines of input, run that.
@@ -265,13 +272,13 @@ class DebugConsole(var game: InGameState) {
 
         val cmd = commands.firstOrNull { it.name == command }
         if (cmd == null) {
-            lines.add("Unknown command '${command}', see the help command")
+            addLine("Unknown command '${command}', see the help command")
             return
         }
 
         val numArgs = args.size - 1 // Exclude the command itself
         if (cmd.argCount != null && cmd.argCount != numArgs) {
-            lines.add("Command '${command}' takes ${cmd.argCount} arguments, but $numArgs were supplied.")
+            addLine("Command '${command}' takes ${cmd.argCount} arguments, but $numArgs were supplied.")
             return
         }
 
@@ -279,14 +286,14 @@ class DebugConsole(var game: InGameState) {
     }
 
     private fun cmdHelp(@Suppress("UNUSED_PARAMETER") args: List<String>) {
-        lines.add("Available commands:")
+        addLine("Available commands:")
         for (cmd in commands) {
-            lines.add("  ${cmd.name.padEnd(15)} ${cmd.helpText}")
+            addLine("  ${cmd.name.padEnd(15)} ${cmd.helpText}")
         }
     }
 
     private fun cmdRich(@Suppress("UNUSED_PARAMETER") args: List<String>) {
-        lines.add("Resources added.")
+        addLine("Resources added.")
 
         ship.scrap = 5000
         ship.fuelCount = 99
@@ -297,9 +304,9 @@ class DebugConsole(var game: InGameState) {
     private fun cmdWeapon(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         getWeapon { weapon ->
             if (ship.addBlueprint(weapon, false)) {
-                lines.add("Added weapon ${weapon.translateTitle(game)} to ship inventory.")
+                addLine("Added weapon ${weapon.translateTitle(game)} to ship inventory.")
             } else {
-                lines.add("No space in cargo hold, can't add weapon.")
+                addLine("No space in cargo hold, can't add weapon.")
             }
         }
     }
@@ -307,9 +314,9 @@ class DebugConsole(var game: InGameState) {
     private fun cmdDrone(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         getDrone { drone ->
             if (ship.addBlueprint(drone, false)) {
-                lines.add("Added drone ${drone.translateTitle(game)} to ship inventory.")
+                addLine("Added drone ${drone.translateTitle(game)} to ship inventory.")
             } else {
-                lines.add("No space in cargo hold, can't add drone.")
+                addLine("No space in cargo hold, can't add drone.")
             }
         }
     }
@@ -317,9 +324,9 @@ class DebugConsole(var game: InGameState) {
     private fun cmdAugment(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         getAugment { augment ->
             if (ship.addBlueprint(augment, false)) {
-                lines.add("Added augment ${augment.translateTitle(game)} to ship inventory.")
+                addLine("Added augment ${augment.translateTitle(game)} to ship inventory.")
             } else {
-                lines.add("No space in cargo hold, can't add augment.")
+                addLine("No space in cargo hold, can't add augment.")
             }
         }
     }
@@ -328,7 +335,7 @@ class DebugConsole(var game: InGameState) {
         game.currentBeacon.hasStore = true
         game.shipUI.updateButtons()
 
-        lines.add("A store is now available at this beacon.")
+        addLine("A store is now available at this beacon.")
     }
 
     private fun cmdEvent(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -349,11 +356,11 @@ class DebugConsole(var game: InGameState) {
             targetShip = ship
         } else if (args.size == 2 && args[1].toLowerCase(Locale.UK) == "enemy") {
             targetShip = game.enemy ?: run {
-                lines.add("No enemy ship present.")
+                addLine("No enemy ship present.")
                 return
             }
         } else {
-            lines.add("Invalid arguments for 'fix' - takes either one argument 'enemy' or no arguments (for the player)")
+            addLine("Invalid arguments for 'fix' - takes either one argument 'enemy' or no arguments (for the player)")
             return
         }
 
@@ -365,7 +372,7 @@ class DebugConsole(var game: InGameState) {
 
         targetShip.health = targetShip.maxHealth
 
-        lines.add("The ship has been repaired, all regular and ion damage was removed.")
+        addLine("The ship has been repaired, all regular and ion damage was removed.")
     }
 
     private fun cmdClearDrones(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -400,7 +407,7 @@ class DebugConsole(var game: InGameState) {
         clearFor(ship)
         game.enemy?.let { clearFor(it) }
 
-        lines.add("All drones (including orphan drones) have been cleared from all ships")
+        addLine("All drones (including orphan drones) have been cleared from all ships")
     }
 
     private fun cmdCrew(args: List<String>) {
@@ -409,15 +416,15 @@ class DebugConsole(var game: InGameState) {
         val races = game.blueprintManager.blueprints.values.mapNotNull { (it as? CrewBlueprint)?.name }
 
         if (race == "races") {
-            lines.add("Supported crew races:")
+            addLine("Supported crew races:")
             for (r in races) {
-                lines.add("  $r")
+                addLine("  $r")
             }
             return
         }
 
         if (!races.contains(race)) {
-            lines.add("Unknown crew race '$race', try 'crew races' for a list.")
+            addLine("Unknown crew race '$race', try 'crew races' for a list.")
             return
         }
 
@@ -429,7 +436,7 @@ class DebugConsole(var game: InGameState) {
     private fun cmdKill(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         val enemy = game.enemy
         if (enemy == null) {
-            lines.add("No enemy ship")
+            addLine("No enemy ship")
             return
         }
 
@@ -438,7 +445,7 @@ class DebugConsole(var game: InGameState) {
         // In case nodmg is set, manually set the health to zero.
         enemy.health = 0
 
-        lines.add("Added 100 points of damage to the enemy ship")
+        addLine("Added 100 points of damage to the enemy ship")
     }
 
     private fun cmdKillCrew(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -447,7 +454,7 @@ class DebugConsole(var game: InGameState) {
         val allCrew = ship.crew.mapNotNull { it as? LivingCrew }
 
         if (allCrew.isEmpty()) {
-            lines.add("No living crew on this ship.")
+            addLine("No living crew on this ship.")
             return
         }
 
@@ -457,7 +464,7 @@ class DebugConsole(var game: InGameState) {
                     continue
                 crew.health = 0f
             }
-            lines.add("Killed all player crew.")
+            addLine("Killed all player crew.")
             return@Pair
         }
 
@@ -468,7 +475,7 @@ class DebugConsole(var game: InGameState) {
                         continue
                     crew.health = 0f
                 }
-                lines.add("Killed all enemy boarders on player ship.")
+                addLine("Killed all enemy boarders on player ship.")
                 return@Pair
             }
         }
@@ -482,7 +489,7 @@ class DebugConsole(var game: InGameState) {
 
             Pair(name) {
                 it.health = 0f
-                lines.add("Killed crewmember ${it.selectedName} (${it.blueprint.name})")
+                addLine("Killed crewmember ${it.selectedName} (${it.blueprint.name})")
                 return@Pair
             }
         }
@@ -492,24 +499,24 @@ class DebugConsole(var game: InGameState) {
 
     private fun cmdSectors(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         game.shipUI.openSectorMap()
-        lines.add("Sector map window opened.")
+        addLine("Sector map window opened.")
     }
 
     private fun cmdSystem(args: List<String>) {
         val systemName = args[1]
 
         if (systemName == "list") {
-            lines.add("Systems on the player ship:")
+            addLine("Systems on the player ship:")
             for (room in ship.rooms) {
                 val system = room.system
                 if (system != null) {
-                    lines.add("  ${system.codename} (purchased)")
+                    addLine("  ${system.codename} (purchased)")
                 }
 
                 for (slot in room.systemSlots) {
                     val installed = ship.systems.any { it.blueprint == slot.system }
                     if (!installed) {
-                        lines.add("  ${slot.system.type}")
+                        addLine("  ${slot.system.type}")
                     }
                 }
             }
@@ -527,25 +534,25 @@ class DebugConsole(var game: InGameState) {
                 val system = room.systemSlots.firstOrNull() ?: continue
                 room.setSystem(system)
             }
-            lines.add("Unlocked all systems on the player ship.")
+            addLine("Unlocked all systems on the player ship.")
             return
         }
 
         val selectedSystem = ship.systemSlots.firstOrNull { it.system.name == systemName }
 
         if (selectedSystem == null) {
-            lines.add("No such system named '$systemName' on the current ship, try using 'system list'.")
+            addLine("No such system named '$systemName' on the current ship, try using 'system list'.")
             return
         }
 
         if (selectedSystem.isInstalled) {
-            lines.add("System $systemName is already purchased.")
+            addLine("System $systemName is already purchased.")
             return
         }
 
         selectedSystem.room.setSystem(selectedSystem)
 
-        lines.add("Unlocked system $systemName")
+        addLine("Unlocked system $systemName")
     }
 
     private fun cmdSpawnShip(args: List<String>) {
@@ -553,7 +560,7 @@ class DebugConsole(var game: InGameState) {
         val seedB64 = args[2]
 
         if (!game.eventManager.hasShip(specName)) {
-            lines.add("Unknown ship spec '$specName'.")
+            addLine("Unknown ship spec '$specName'.")
             return
         }
         val spec: EnemyShipSpec = game.eventManager.getShip(specName)
@@ -564,7 +571,7 @@ class DebugConsole(var game: InGameState) {
             // Make the sector one-indexed
             val sector = seedB64[0].toString().toInt() - 1
             if (sector < 0) {
-                lines.add("In sector.difficulty mode, the sector must be one-indexed.")
+                addLine("In sector.difficulty mode, the sector must be one-indexed.")
                 return
             }
 
@@ -573,7 +580,7 @@ class DebugConsole(var game: InGameState) {
 
             if (difficulty == null) {
                 val difficultyList = Difficulty.values().joinToString(", ") { it.name }
-                lines.add("Invalid difficulty name '$difficultyStr', should be one of: $difficultyList")
+                addLine("Invalid difficulty name '$difficultyStr', should be one of: $difficultyList")
                 return
             }
 
@@ -582,19 +589,19 @@ class DebugConsole(var game: InGameState) {
             game.debugSpawnShip(spec, difficulty, sector, seed)
 
             val seedStr = ShipGenerator.seedToString(sector, difficulty, seed)
-            lines.add("Spawning ship from spec '${spec.name}' with seed '$seedStr'")
+            addLine("Spawning ship from spec '${spec.name}' with seed '$seedStr'")
             return
         }
 
         val seedBytes = try {
             Base64.getDecoder().decode(seedB64)
         } catch (ex: IllegalArgumentException) {
-            lines.add("Invalid base64 seed '$seedB64': ${ex.localizedMessage}")
+            addLine("Invalid base64 seed '$seedB64': ${ex.localizedMessage}")
             return
         }
 
         if (seedBytes.size != 6) {
-            lines.add("Non-six-byte seed: ${seedBytes.size}")
+            addLine("Non-six-byte seed: ${seedBytes.size}")
             return
         }
 
@@ -603,19 +610,19 @@ class DebugConsole(var game: InGameState) {
         val difficulty = Difficulty.values()[buf.get().toInt()]
         val seed = buf.getInt()
 
-        lines.add("Spawning ship, and setting it as hostile.")
+        addLine("Spawning ship, and setting it as hostile.")
         game.debugSpawnShip(spec, difficulty, sector, seed)
     }
 
     private fun cmdEnemyWeapon(args: List<String>) {
         if (args.size > 2) {
-            lines.add("Too many arguments - see the 'help' subcommand.")
+            addLine("Too many arguments - see the 'help' subcommand.")
             return
         }
 
         val enemy = game.enemy
         if (enemy == null) {
-            lines.add("No enemy ship present.")
+            addLine("No enemy ship present.")
             return
         }
 
@@ -630,11 +637,11 @@ class DebugConsole(var game: InGameState) {
 
                     hp.weapon = weapon.buildInstance(enemy)
                     enemy.cargoUpdated()
-                    lines.add("Added weapon ${weapon.name} to enemy hardpoint $i.")
+                    addLine("Added weapon ${weapon.name} to enemy hardpoint $i.")
                     return@getWeapon
                 }
 
-                lines.add("No free hardpoints on the enemy ship")
+                addLine("No free hardpoints on the enemy ship")
             }
         } else if (args[1] == "remove") {
             val weapons = enemy.hardpoints.mapNotNull { it.weapon }
@@ -646,11 +653,11 @@ class DebugConsole(var game: InGameState) {
 
                     hp.weapon = null
                     enemy.cargoUpdated()
-                    lines.add("Removed weapon ${toRemove.type.name} from the enemy ship.")
+                    addLine("Removed weapon ${toRemove.type.name} from the enemy ship.")
                     return@pickFromList
                 }
 
-                lines.add("The weapon has already disappeared!?")
+                addLine("The weapon has already disappeared!?")
             }
         } else if (args[1] == "clear") {
             // Remove all the enemy weapons
@@ -658,14 +665,14 @@ class DebugConsole(var game: InGameState) {
                 hp.weapon = null
             }
             enemy.cargoUpdated()
-            lines.add("Removed all enemy weapons")
+            addLine("Removed all enemy weapons")
             return
         } else {
-            lines.add("Usage: ${args[0]} [add|clear]")
-            lines.add("The add mode (default if no arguments are set) lets you select a weapon")
-            lines.add("to give the enemy ship.")
-            lines.add("The remove mode lets you remove enemy weapons via a list.")
-            lines.add("The clear mode removes all the enemy weapons.")
+            addLine("Usage: ${args[0]} [add|clear]")
+            addLine("The add mode (default if no arguments are set) lets you select a weapon")
+            addLine("to give the enemy ship.")
+            addLine("The remove mode lets you remove enemy weapons via a list.")
+            addLine("The clear mode removes all the enemy weapons.")
             return
         }
     }
@@ -675,7 +682,7 @@ class DebugConsole(var game: InGameState) {
             system.energyLevels = system.blueprint.maxPower
         }
         ship.purchasedReactorPower = ship.maxReactorPower
-        lines.add("Upgraded all systems to maximum level")
+        addLine("Upgraded all systems to maximum level")
     }
 
     private fun cmdDowngradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -683,7 +690,7 @@ class DebugConsole(var game: InGameState) {
             system.energyLevels = system.blueprint.startPower
         }
         ship.purchasedReactorPower = 5
-        lines.add("Downgraded all systems to their starting level")
+        addLine("Downgraded all systems to their starting level")
     }
 
     private fun cmdSet(args: List<String>) {
@@ -692,12 +699,12 @@ class DebugConsole(var game: InGameState) {
         val flagManager = game.debugFlags
 
         if (name == "help") {
-            lines.add("Use 'set <name>' to enable a debug flag, or 'set !<name>' to disable it.")
-            lines.add("Or use 'set all' or 'set !all' to turn everything on or off.")
-            lines.add("Use 'set vis' or 'set !vis' to turn all debug visuals on or off.")
-            lines.add("Valid names:")
+            addLine("Use 'set <name>' to enable a debug flag, or 'set !<name>' to disable it.")
+            addLine("Or use 'set all' or 'set !all' to turn everything on or off.")
+            addLine("Use 'set vis' or 'set !vis' to turn all debug visuals on or off.")
+            addLine("Valid names:")
             for (flag in flagManager.all) {
-                lines.add("  ${flag.shortName.padEnd(20)} ${flag.set}   ${flag.fullName} - ${flag.description}")
+                addLine("  ${flag.shortName.padEnd(20)} ${flag.set}   ${flag.fullName} - ${flag.description}")
             }
             return
         }
@@ -711,7 +718,7 @@ class DebugConsole(var game: InGameState) {
                 for (flag in flagManager.all) {
                     flag.set = status
                 }
-                lines.add("Set all debug flags to $status")
+                addLine("Set all debug flags to $status")
                 return
             }
 
@@ -721,7 +728,7 @@ class DebugConsole(var game: InGameState) {
                         continue
                     flag.set = status
                 }
-                lines.add("Set all debug visuals to $status")
+                addLine("Set all debug visuals to $status")
                 return
             }
         }
@@ -731,11 +738,11 @@ class DebugConsole(var game: InGameState) {
                 continue
 
             flag.set = status
-            lines.add("Set debug flag '$name' (${flag.fullName}) to $status")
+            addLine("Set debug flag '$name' (${flag.fullName}) to $status")
             return
         }
 
-        lines.add("Unknown debug flag name '$name', see 'set help' for more information.")
+        addLine("Unknown debug flag name '$name', see 'set help' for more information.")
     }
 
     private fun cmdDamage(args: List<String>) {
@@ -743,32 +750,32 @@ class DebugConsole(var game: InGameState) {
         val amount = amountStr.toIntOrNull()
 
         if (amount == null) {
-            lines.add("Invalid amount of damage number '$amount'.")
+            addLine("Invalid amount of damage number '$amount'.")
             return
         }
 
         ship.health -= amount
 
-        lines.add("Applied $amount points of damage to the player ship")
+        addLine("Applied $amount points of damage to the player ship")
     }
 
     private fun cmdForceHack(args: List<String>) {
         val enemy = game.enemy
         if (enemy == null) {
-            lines.add("No enemy ship.")
+            addLine("No enemy ship.")
             return
         }
 
         val hacking = enemy.hacking
         if (hacking == null) {
-            lines.add("The enemy ship doesn't have a hacking system.")
+            addLine("The enemy ship doesn't have a hacking system.")
             return
         }
 
         val sysName = args[1]
         val system = ship.systems.firstOrNull { it.codename == sysName }
         if (system == null) {
-            lines.add("No player system '$sysName'.")
+            addLine("No player system '$sysName'.")
             return
         }
 
@@ -782,7 +789,7 @@ class DebugConsole(var game: InGameState) {
         // the hacking system does.
         hacking.update(0f)
 
-        lines.add("Launched hacking probe at player system $sysName")
+        addLine("Launched hacking probe at player system $sysName")
     }
 
     private fun cmdSuperShield(args: List<String>) {
@@ -794,11 +801,11 @@ class DebugConsole(var game: InGameState) {
         // With no arguments, give the player a normal super-shield
 
         if (args.getOrNull(1) == "help") {
-            lines.add("Usage: ${args[0]} [amount[/max]] [player|enemy]")
-            lines.add("The amount should be either a single number (the shield strength), or")
-            lines.add("two numbers in the form amount/max to set the max super-shield level.")
-            lines.add("The target ship can be optionally specified, but defaults to the player ship.")
-            lines.add("When run without arguments, it gives the player a regular (level-5) super-shield.")
+            addLine("Usage: ${args[0]} [amount[/max]] [player|enemy]")
+            addLine("The amount should be either a single number (the shield strength), or")
+            addLine("two numbers in the form amount/max to set the max super-shield level.")
+            addLine("The target ship can be optionally specified, but defaults to the player ship.")
+            addLine("When run without arguments, it gives the player a regular (level-5) super-shield.")
             return
         }
 
@@ -806,18 +813,18 @@ class DebugConsole(var game: InGameState) {
             val parts = args[1].split("/")
 
             if (parts.size > 2) {
-                lines.add("Invalid super-shield amount '${args[1]}' - 'see ${args[0]} help'.")
+                addLine("Invalid super-shield amount '${args[1]}' - 'see ${args[0]} help'.")
                 return
             }
 
             amount = parts[0].toIntOrNull() ?: run {
-                lines.add("Invalid super-shield amount '${args[1]}' - see '${args[0]} help'")
+                addLine("Invalid super-shield amount '${args[1]}' - see '${args[0]} help'")
                 return
             }
 
             if (parts.size == 2) {
                 max = parts[1].toIntOrNull() ?: run {
-                    lines.add("Invalid super-shield max amount '${args[1]}' - see '${args[0]} help'")
+                    addLine("Invalid super-shield max amount '${args[1]}' - see '${args[0]} help'")
                     return
                 }
             }
@@ -828,12 +835,12 @@ class DebugConsole(var game: InGameState) {
                 "player" -> ship
 
                 "enemy" -> game.enemy ?: run {
-                    lines.add("No enemy ship present.")
+                    addLine("No enemy ship present.")
                     return
                 }
 
                 else -> {
-                    lines.add("Invalid target ship '${args[1]}' (should be 'player' or 'enemy') - see '${args[0]} help'")
+                    addLine("Invalid target ship '${args[1]}' (should be 'player' or 'enemy') - see '${args[0]} help'")
                     return
                 }
             }
@@ -844,14 +851,14 @@ class DebugConsole(var game: InGameState) {
         target.maxSuperShield = max
         target.superShield = amount
 
-        lines.add("Added $amount/$max super-shield to ship ${target.name}.")
+        addLine("Added $amount/$max super-shield to ship ${target.name}.")
     }
 
     private fun cmdDumpSave(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         val doc = try {
             game.saveGameState()
         } catch (ex: Exception) {
-            lines.add("Exception saving game (more in stdout): $ex")
+            addLine("Exception saving game (more in stdout): $ex")
             ex.printStackTrace()
             return
         }
@@ -862,19 +869,19 @@ class DebugConsole(var game: InGameState) {
         println("Savegame dump:")
         println(xmlString.trim())
 
-        lines.add("Savegame dumped to standard output.")
+        addLine("Savegame dumped to standard output.")
     }
 
     private fun cmdSaveLoad(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         val successful = game.mainGame.doSaveLoadGame()
         if (!successful) {
-            lines.add("Failed to reload game, more details are in the console.")
+            addLine("Failed to reload game, more details are in the console.")
         }
     }
 
     private fun cmdGC(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         System.gc()
-        lines.add("Finished Java GC operation.")
+        addLine("Finished Java GC operation.")
     }
 
     private fun cmdSave(args: List<String>) {
@@ -882,7 +889,7 @@ class DebugConsole(var game: InGameState) {
         val doc = try {
             game.saveGameState()
         } catch (ex: Exception) {
-            lines.add("Exception saving game (more in stdout): $ex")
+            addLine("Exception saving game (more in stdout): $ex")
             ex.printStackTrace()
             return
         }
@@ -893,7 +900,7 @@ class DebugConsole(var game: InGameState) {
                 Files.createDirectory(debugSaveDir)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                lines.add("Exception while creating debug save directory!")
+                addLine("Exception while creating debug save directory!")
                 return
             }
         }
@@ -910,7 +917,7 @@ class DebugConsole(var game: InGameState) {
             } catch (ex: Exception) {
                 println("While writing save to $file")
                 ex.printStackTrace()
-                lines.add("Exception while writing save!")
+                addLine("Exception while writing save!")
             }
         }
 
@@ -922,14 +929,14 @@ class DebugConsole(var game: InGameState) {
             )
             pickFromList("A save with this name exists, overwrite it?", options) {
                 if (it) {
-                    lines.add("Overwriting save '${args[1]}'")
+                    addLine("Overwriting save '${args[1]}'")
                     doSave()
                 } else {
-                    lines.add("Save cancelled.")
+                    addLine("Save cancelled.")
                 }
             }
         } else {
-            lines.add("Writing save '${args[1]}'")
+            addLine("Writing save '${args[1]}'")
             doSave()
         }
     }
@@ -939,13 +946,13 @@ class DebugConsole(var game: InGameState) {
             Files.list(debugSaveDir).filter { it.fileName.toString().endsWith(".xml") }.collect(Collectors.toList())
         } catch (ex: IOException) {
             ex.printStackTrace()
-            lines.add("Exception while listing debug saves, see the console for details.")
-            lines.add("(This may occur if you've never made a debug save, so the folder doesn't exist)")
+            addLine("Exception while listing debug saves, see the console for details.")
+            addLine("(This may occur if you've never made a debug save, so the folder doesn't exist)")
             return
         }
 
         if (files.isEmpty()) {
-            lines.add("No debug saves available.")
+            addLine("No debug saves available.")
             return
         }
 
@@ -960,7 +967,7 @@ class DebugConsole(var game: InGameState) {
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                lines.add("Exception while reading save, see the console for details.")
+                addLine("Exception while reading save, see the console for details.")
                 return@pickFromList
             }
 
@@ -968,7 +975,7 @@ class DebugConsole(var game: InGameState) {
                 game.mainGame.loadSavedGame(doc)
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                lines.add("Exception while loading save, see the console for details.")
+                addLine("Exception while loading save, see the console for details.")
                 return@pickFromList
             }
         }
@@ -997,7 +1004,7 @@ class DebugConsole(var game: InGameState) {
     private fun cmdReloadFlags(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         // Same idea and notes as the reload-console command. Read its comment.
         game.reloadDebugFlags();
-        lines.add("Reloaded debug flags");
+        addLine("Reloaded debug flags");
     }
 
     private fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {
@@ -1013,11 +1020,11 @@ class DebugConsole(var game: InGameState) {
             override fun run(line: String) {
                 val weapon = game.blueprintManager.blueprints[line]
                 if (weapon == null) {
-                    lines.add("No such blueprint '$line'")
+                    addLine("No such blueprint '$line'")
                     return
                 }
                 if (weapon !is AbstractWeaponBlueprint) {
-                    lines.add("Blueprint '$line' is not a weapon - ${weapon.javaClass.name}")
+                    addLine("Blueprint '$line' is not a weapon - ${weapon.javaClass.name}")
                     return
                 }
                 callback(weapon)
@@ -1107,11 +1114,11 @@ class DebugConsole(var game: InGameState) {
             override fun run(line: String) {
                 val drone = game.blueprintManager.blueprints[line]
                 if (drone == null) {
-                    lines.add("No such blueprint '$line'")
+                    addLine("No such blueprint '$line'")
                     return
                 }
                 if (drone !is DroneBlueprint) {
-                    lines.add("Blueprint '$line' is not a drone - ${drone.javaClass.name}")
+                    addLine("Blueprint '$line' is not a drone - ${drone.javaClass.name}")
                     return
                 }
                 callback(drone)
@@ -1250,11 +1257,11 @@ class DebugConsole(var game: InGameState) {
             override fun run(line: String) {
                 val bp = game.blueprintManager.blueprints[line]
                 if (bp == null) {
-                    lines.add("No such blueprint '$line'")
+                    addLine("No such blueprint '$line'")
                     return
                 }
                 if (bp !is AugmentBlueprint) {
-                    lines.add("Blueprint '$line' is not an augment - ${bp.javaClass.name}")
+                    addLine("Blueprint '$line' is not an augment - ${bp.javaClass.name}")
                     return
                 }
                 callback(bp)
@@ -1350,7 +1357,7 @@ class DebugConsole(var game: InGameState) {
             override fun run(line: String) {
                 val names = game.eventManager.eventNames
                 if (!names.contains(line)) {
-                    lines.add("No such event '$line'")
+                    addLine("No such event '$line'")
                     return
                 }
                 val event = game.eventManager[line]
@@ -1523,7 +1530,7 @@ class DebugConsole(var game: InGameState) {
             override fun run(line: String) {
                 val item = items.firstOrNull { it.first == line }
                 if (item == null) {
-                    lines.add("No such option '$line'")
+                    addLine("No such option '$line'")
                     return
                 }
                 callback(item.second)
@@ -1588,8 +1595,8 @@ class DebugConsole(var game: InGameState) {
     }
 
     fun onFailedSaveRestore() {
-        lines.add("Continuous save/restore - exception during serialisation!")
-        lines.add("Details are in the console, the game has been paused.")
+        addLine("Continuous save/restore - exception during serialisation!")
+        addLine("Details are in the console, the game has been paused.")
     }
 
     private data class Cmd(val name: String, val argCount: Int?, val func: (List<String>) -> Unit, val helpText: String)
@@ -1636,6 +1643,17 @@ class DebugConsole(var game: InGameState) {
         open fun render(gc: GameContainer, g: Graphics, height: Float) {}
         open fun keyPressed(key: Int, c: Char): Boolean = false
         abstract fun run(line: String)
+    }
+
+    // Represents a line of console output
+    private interface ILine {
+        fun draw(x: Int, y: Int)
+    }
+
+    private inner class SimpleLine(val line: String) : ILine {
+        override fun draw(x: Int, y: Int) {
+            font.drawString(x.f, y.f, line, Color.white)
+        }
     }
 
     companion object {
