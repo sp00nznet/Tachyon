@@ -1,9 +1,12 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import org.lwjgl.BufferUtils
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
+import org.newdawn.slick.opengl.renderer.Renderer
+import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
@@ -523,6 +526,28 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
             if (interiorVisible)
                 drawInterior(g, selected)
+        }
+
+        // Draw the debug hardpoint visuals
+        if (sys.debugFlags.showHardpoints.set) {
+            // Get our translation
+            val buffer = BufferUtils.createFloatBuffer(16)
+            Renderer.get().glGetFloat(SGL.GL_MODELVIEW_MATRIX, buffer)
+            val translateX = buffer[12]
+            val translateY = buffer[13]
+
+            for ((index, hp) in hardpoints.withIndex()) {
+                val pos = hp.position
+                g.color = Color.red
+                g.drawLine(pos.x - 5f, pos.y - 5f, pos.x + 5f, pos.y + 5f)
+                g.drawLine(pos.x + 5f, pos.y - 5f, pos.x - 5f, pos.y + 5f)
+
+                sys.getFont("JustinFont8").drawString(
+                    translateX + pos.x.f + 5f,
+                    translateY + pos.y + 8f,
+                    index.toString(), Color.red
+                )
+            }
         }
 
         // Draw the projectiles, except for those we already

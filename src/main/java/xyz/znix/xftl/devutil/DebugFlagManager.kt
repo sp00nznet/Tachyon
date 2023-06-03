@@ -6,6 +6,11 @@ class DebugFlagManager {
         "Draw a red circle around projectile hitboxes (which are actually circles)"
     )
 
+    val showHardpoints = DebugFlag(
+        "showhp", "Show hardpoints", true,
+        "Draw a red marker on all player and enemy weapon mounts"
+    )
+
     val fastWeaponCharge = DebugFlag(
         "fwc", "Fast Weapon Charge", false,
         "Weapons charge at ten times their normal speed"
@@ -49,6 +54,7 @@ class DebugFlagManager {
 
     val all = listOf(
         showProjectileHitboxes,
+        showHardpoints,
         fastWeaponCharge,
         noEnemyFire,
         noDmg,
