@@ -62,7 +62,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             for (spec in projectileSpecs) {
                 for (i in 0 until spec.count) {
-                    val projectile = FlakProjectile(target!!, spec)
+                    val projectile = FlakProjectile(waitingToFireAt!!, spec)
                     projectile.entryAngle = angle
 
                     launchProjectile(projectile)

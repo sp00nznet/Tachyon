@@ -16,11 +16,16 @@ import xyz.znix.xftl.systems.Weapons
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
 
-    protected var target: Room? = null
-    private val isFiring: Boolean get() = target != null
+    // The list of all the rooms to fire at. This is required since artillery
+    // weapons fire at different rooms for each shot.
+    protected val targets = ArrayList<Room>()
+
+    // This isn't derived from the targets list, since after we fire our last
+    // shot we have to keep running the firing animation until that ends.
+    private var isFiring: Boolean = false
 
     private var firingAnimationTimer: Float = 0f
-    private var waitingToFire: Boolean = false
+    protected var waitingToFireAt: Room? = null
 
     private val fireAnimationFrame: Int
         get() {
@@ -28,7 +33,6 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
             return animation.fireIndex(firingAnimationTimer, Animations.PROJECTILE_WEAPON_FIRE_TIME)
         }
 
-    protected var shotsRemaining: Int = 0
     protected var entryAngle: Float = 0f
 
     // Doesn't need to be serialised, as it's set by the weapons or artillery system.
@@ -37,7 +41,10 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
         super.update(dt, canCharge, isHacked)
 
-        if (!isFiring) {
+        // We shouldn't need to check targets.isEmpty here, but do
+        // so anyway just in case to avoid getting in a situation where
+        // we haven't fired all of our shots.
+        if (!isFiring && targets.isEmpty()) {
             return
         }
 
@@ -45,15 +52,14 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
         // Surprisingly, weapons charge while firing
 
-        if (waitingToFire && fireAnimationFrame >= animation.fireFrame) {
-            waitingToFire = false
+        if (waitingToFireAt != null && fireAnimationFrame >= animation.fireFrame) {
             fireFrameHit()
+            waitingToFireAt = null
         }
 
         if (firingAnimationTimer >= Animations.PROJECTILE_WEAPON_FIRE_TIME) {
-            if (shotsRemaining <= 0) {
-                // This stops us firing
-                target = null
+            if (targets.isEmpty()) {
+                isFiring = false
 
                 // Save space in the savefile, as these aren't written if they're zero.
                 entryAngle = 0f
@@ -90,7 +96,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     }
 
     protected open fun fireFrameHit() {
-        val projectile = buildProjectile(target!!)
+        val projectile = buildProjectile(waitingToFireAt!!)
         projectile.entryAngle = entryAngle
         launchProjectile(projectile)
 
@@ -110,8 +116,10 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     override fun fire(target: Room) {
         check(!isFiring) { "Cannot file while already firing!" }
 
-        this.target = target
-        shotsRemaining = type.shots
+        for (i in 0 until type.shots) {
+            targets.add(target)
+        }
+
         entryAngle = (Math.random() * Math.PI * 2).toFloat()
         fire()
         primeShot()
@@ -140,9 +148,17 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     }
 
     open fun fireFromArtillery(possibleTargets: List<Room>, origin: IPoint) {
-        // FIXME non-flak weapons should target separate rooms for each shot!
-        target = possibleTargets.random()
-        shotsRemaining = type.shots
+        val remaining = ArrayList(possibleTargets)
+
+        // Pick as many shots as required, while avoiding targeting the
+        // same room with more than one projectile.
+        // (Note that flak overrides this function since it doesn't
+        //  have this requirement)
+        for (i in 0 until type.shots) {
+            val target = remaining.random()
+            remaining.remove(target)
+            targets += target
+        }
 
         entryAngle = (Math.random() * Math.PI * 2).toFloat()
         primeShot()
@@ -151,15 +167,21 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
         super.saveToXML(elem, refs)
 
-        SaveUtil.addTagBoolIfTrue(elem, "waitingToFire", waitingToFire)
-        SaveUtil.addTagInt(elem, "shotsRemaining", shotsRemaining, 0)
+        if (waitingToFireAt != null) {
+            val fireAtElem = Element("waitingToFireAt")
+            SaveUtil.addAttr(fireAtElem, "ship", refs[waitingToFireAt!!.ship])
+            SaveUtil.addAttrInt(fireAtElem, "roomId", waitingToFireAt!!.id)
+            elem.addContent(fireAtElem)
+        }
+
         SaveUtil.addTagFloat(elem, "entryAngle", entryAngle, 0f)
+        SaveUtil.addTagBoolIfTrue(elem, "isFiring", isFiring)
         SaveUtil.addTagFloat(elem, "fireAnimationTimer", firingAnimationTimer, 0f)
 
-        if (target != null) {
+        for (target in targets) {
             val targetElem = Element("target")
-            SaveUtil.addAttr(targetElem, "ship", refs[target!!.ship])
-            SaveUtil.addAttrInt(targetElem, "roomId", target!!.id)
+            SaveUtil.addAttr(targetElem, "ship", refs[target.ship])
+            SaveUtil.addAttrInt(targetElem, "roomId", target.id)
             elem.addContent(targetElem)
         }
     }
@@ -167,22 +189,27 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     override fun loadFromXML(elem: Element, refs: RefLoader) {
         super.loadFromXML(elem, refs)
 
-        waitingToFire = SaveUtil.getOptionalTagBool(elem, "waitingToFire") ?: false
-        shotsRemaining = SaveUtil.getOptionalTagInt(elem, "shotsRemaining") ?: 0
         entryAngle = SaveUtil.getOptionalTagFloat(elem, "entryAngle") ?: 0f
         firingAnimationTimer = SaveUtil.getOptionalTagFloat(elem, "fireAnimationTimer") ?: 0f
+        isFiring = SaveUtil.getOptionalTagBool(elem, "isFiring") ?: false
 
-        val targetElem = elem.getChild("target")
-        if (targetElem != null) {
+        val waitingToFireAtElem = elem.getChild("waitingToFireAt")
+        if (waitingToFireAtElem != null) {
+            val roomId = SaveUtil.getAttrInt(waitingToFireAtElem, "roomId")
+            val shipRef = SaveUtil.getAttr(waitingToFireAtElem, "ship")
+            refs.asyncResolve(Ship::class.java, shipRef) { waitingToFireAt = it!!.rooms[roomId] }
+        }
+
+        for (targetElem in elem.getChildren("target")) {
             val roomId = SaveUtil.getAttrInt(targetElem, "roomId")
             val shipRef = SaveUtil.getAttr(targetElem, "ship")
-            refs.asyncResolve(Ship::class.java, shipRef) { target = it!!.rooms[roomId] }
+            refs.asyncResolve(Ship::class.java, shipRef) { targets += it!!.rooms[roomId] }
         }
     }
 
     private fun primeShot() {
-        shotsRemaining--
-        waitingToFire = true
+        isFiring = true
+        waitingToFireAt = targets.removeAt(targets.lastIndex)
         firingAnimationTimer = 0f
     }
 
