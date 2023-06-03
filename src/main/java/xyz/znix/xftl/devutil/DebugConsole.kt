@@ -240,6 +240,48 @@ class DebugConsole(var game: InGameState) {
         lines += SimpleLine(line)
     }
 
+    /**
+     * This adds a bunch of lines to the output, each of which
+     * is split into separate parts that are vertically aligned.
+     *
+     * This is how we can draw a cleanly aligned help menu with
+     * a variable-width font.
+     */
+    private fun addLineGrid(gridLines: List<List<String>>, offsetX: Int = 0) {
+        if (gridLines.isEmpty())
+            return
+
+        // Transpose the input lines into columns
+        val columns = ArrayList<ArrayList<String>>()
+
+        for (i in 0 until gridLines[0].size) {
+            columns.add(ArrayList())
+        }
+
+        for (line in gridLines) {
+            require(line.size == columns.size)
+            for ((index, part) in line.withIndex()) {
+                columns[index] += part
+            }
+        }
+
+        // Find how wide each column is
+        val widths = columns.map { column -> column.map { font.getWidth(it) }.max()!! }
+
+        // Build the positions
+        val positions = ArrayList<Int>()
+        val margin = 15
+        positions += offsetX
+        for (i in 1 until columns.size) {
+            positions += positions[i - 1] + widths[i - 1] + margin
+        }
+
+        // Finally, write out all the lines.
+        for (line in gridLines) {
+            lines += GridLine(line, positions)
+        }
+    }
+
     private fun runCommand() {
         // Jump the scroll to the bottom when the player runs something.
         lineScroll = 0f
@@ -287,9 +329,13 @@ class DebugConsole(var game: InGameState) {
 
     private fun cmdHelp(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         addLine("Available commands:")
+
+        val grid = ArrayList<List<String>>()
         for (cmd in commands) {
-            addLine("  ${cmd.name.padEnd(15)} ${cmd.helpText}")
+            grid += listOf(cmd.name, cmd.helpText)
         }
+
+        addLineGrid(grid, 15)
     }
 
     private fun cmdRich(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -507,19 +553,23 @@ class DebugConsole(var game: InGameState) {
 
         if (systemName == "list") {
             addLine("Systems on the player ship:")
+
+            val grid = ArrayList<List<String>>()
             for (room in ship.rooms) {
                 val system = room.system
                 if (system != null) {
-                    addLine("  ${system.codename} (purchased)")
+                    grid += listOf(system.codename, "(purchased)")
                 }
 
                 for (slot in room.systemSlots) {
                     val installed = ship.systems.any { it.blueprint == slot.system }
                     if (!installed) {
-                        addLine("  ${slot.system.type}")
+                        grid += listOf(slot.system.type, "")
                     }
                 }
             }
+
+            addLineGrid(grid, 10)
             return
         }
 
@@ -703,9 +753,13 @@ class DebugConsole(var game: InGameState) {
             addLine("Or use 'set all' or 'set !all' to turn everything on or off.")
             addLine("Use 'set vis' or 'set !vis' to turn all debug visuals on or off.")
             addLine("Valid names:")
+
+            val grid = ArrayList<List<String>>()
             for (flag in flagManager.all) {
-                addLine("  ${flag.shortName.padEnd(20)} ${flag.set}   ${flag.fullName} - ${flag.description}")
+                grid += listOf(flag.shortName, flag.set.toString(), flag.fullName, flag.description)
             }
+
+            addLineGrid(grid, 15)
             return
         }
 
@@ -1653,6 +1707,15 @@ class DebugConsole(var game: InGameState) {
     private inner class SimpleLine(val line: String) : ILine {
         override fun draw(x: Int, y: Int) {
             font.drawString(x.f, y.f, line, Color.white)
+        }
+    }
+
+    private inner class GridLine(val parts: List<String>, val positions: List<Int>) : ILine {
+        override fun draw(x: Int, y: Int) {
+            for ((index, part) in parts.withIndex()) {
+                val pos = positions[index]
+                font.drawString(x.f + pos, y.f, part, Color.white)
+            }
         }
     }
 
