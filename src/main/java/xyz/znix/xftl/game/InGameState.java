@@ -964,6 +964,11 @@ public class InGameState extends MainGame.GameState {
      */
     @Nullable
     public Ship getEnemyOf(Ship source) {
+        // If there isn't a fight going on, no-one should be shooting at anyone else.
+        if (!enemyIsHostile) {
+            return null;
+        }
+
         if (source == player) {
             return enemy;
         } else {
