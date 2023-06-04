@@ -1421,15 +1421,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             crewMember.loadFromXML(crewElem, refs)
         }
 
-        // Give the crew a couple of zero-time updates, to let them
-        // update stuff like their icons.
-        // Note in particular that if there's a queued teleport action,
-        // the crew have to realise they're standing in a cell otherwise
-        // it'll think there's no-one available to teleport.
-        for (i in 0 until 3) {
-            updateCrew(0f)
-        }
-
         // Deserialise the doors.
         val doorsElem = rootElem.getChild("doors")
         for (doorElem in doorsElem.getChildren("door")) {

@@ -14,7 +14,6 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.Oxygen
-import java.util.*
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -132,8 +131,11 @@ abstract class AbstractCrew(
         set(value) {
             field = value
 
-            // The direction may have changed
-            updateAnimation()
+            // The direction may have changed. Only update the animation if
+            // we're actually moving though, to avoid resetting other animations.
+            if (currentAction == Action.MOVING) {
+                updateAnimation()
+            }
         }
 
     var mode: SlotType = mode
@@ -147,6 +149,7 @@ abstract class AbstractCrew(
     // If we're currently attacking someone, the time until our next
     // punch or shot is fired.
     private var attackTimer: Float? = null
+    private var attackDuration: Float = 1f
     private var damageTime: Float = 0f // Damage is applied half-way through the attack animation
     private var enemyToAttack: AbstractCrew? = null
     private var isPunching: Boolean = false
@@ -630,6 +633,7 @@ abstract class AbstractCrew(
 
         if (attackTimer == null || attackTimer!! <= 0f) {
             attackTimer = (1.0f..1.3f).random(Random.Default)
+            attackDuration = attackTimer!!
 
             // Apply the damage half-way through the animation
             damageTime = attackTimer!! / 2f
@@ -776,8 +780,11 @@ abstract class AbstractCrew(
                 // Leave the animation at its default 1 second if
                 // the attack timer isn't set, as the animation will
                 // be updated again once it's set.
+                // Note we have to use attackDuration not attackTimer,
+                // to avoid the animation duration changing after serialisation
+                // since attackTimer will have decreased.
                 if (attackTimer != null) {
-                    icon.duration = attackTimer!!
+                    icon.duration = attackDuration
                 }
 
                 icon
@@ -997,9 +1004,12 @@ abstract class AbstractCrew(
         // Combat stuff
         if (currentAction == Action.FIGHTING || currentAction == Action.SABOTAGE) {
             val combat = Element("combat")
-            combat.setAttribute("attackTimer", Objects.toString(attackTimer))
-            combat.setAttribute("damageTimer", damageTime.toString())
-            combat.setAttribute("enemy", refs[enemyToAttack])
+            SaveUtil.addAttrFloat(combat, "attackTimer", attackTimer)
+            SaveUtil.addAttrFloat(combat, "attackDuration", attackDuration)
+            SaveUtil.addAttrFloat(combat, "damageTimer", damageTime)
+            SaveUtil.addAttrRef(combat, "enemy", refs, enemyToAttack)
+            SaveUtil.addAttrBool(combat, "isPunching", isPunching)
+            SaveUtil.addAttrBool(combat, "sharesHostileCell", sharesHostileCell)
             // isPunching and sharesHostileCell are only used for animations
             elem.addContent(combat)
         }
@@ -1057,9 +1067,11 @@ abstract class AbstractCrew(
         val combat = elem.getChild("combat")
         if (currentAction == Action.FIGHTING || currentAction == Action.SABOTAGE) {
             attackTimer = combat.getAttributeValue("attackTimer")?.toFloatOrNull()
-            damageTime = combat.getAttributeValue("damageTimer").toFloat()
-            val enemyId = combat.getAttributeValue("enemy")
-            refs.asyncResolve(AbstractCrew::class.java, enemyId) { enemyToAttack = it }
+            attackDuration = SaveUtil.getAttrFloat(combat, "attackDuration")
+            damageTime = SaveUtil.getAttrFloat(combat, "damageTimer")
+            SaveUtil.getAttrRef(combat, "enemy", refs, AbstractCrew::class.java) { enemyToAttack = it }
+            isPunching = SaveUtil.getAttrBool(combat, "isPunching")
+            sharesHostileCell = SaveUtil.getAttrBool(combat, "sharesHostileCell")
         }
 
         val teleport = elem.getChild("teleporting")
@@ -1070,9 +1082,15 @@ abstract class AbstractCrew(
             teleportTimer = teleport.getAttributeValue("timer").toFloat()
         }
 
-        // Load this *after* currentAction is set, so the timer doesn't get
-        // overwritten by updating our icon.
-        icon.timer = SaveUtil.getAttrFloat(elem, "animTimer")
+        // Load this *after* the enemy we're attacking is set, which
+        // means during resolution time.
+        refs.addOnResolveFunction {
+            // The icon might be changed by our newly-loaded combat stuff.
+            // Otherwise, this would be set when currentAction is.
+            updateAnimation()
+
+            icon.timer = SaveUtil.getAttrFloat(elem, "animTimer")
+        }
     }
 
     enum class SlotType {

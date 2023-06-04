@@ -110,9 +110,13 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         if (pawnElem != null) {
             // Pick an arbitrary room to spawn in, we'll move while loading the pawn's XML anyway.
             pawn = makePawn(ship.rooms[0])
-            ship.crew.add(pawn!!)
-
             pawn!!.loadFromXML(pawnElem, refs)
+
+            // Don't add the pawn to the crew list until we've loaded
+            // our owner ship, since that's required for most things.
+            refs.addOnResolveFunction {
+                ship.crew.add(pawn!!)
+            }
         }
     }
 
