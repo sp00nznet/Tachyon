@@ -36,9 +36,13 @@ public class MainGame implements Game {
             // Switch right into a new game
             startNewGame(commandLineArgs.newGameShip);
         } else {
-            SelectShipState state = new SelectShipState(vanillaDatafile, this);
-            setCurrentState(state);
+            switchToShipSelect();
         }
+    }
+
+    public void switchToShipSelect() {
+        SelectShipState state = new SelectShipState(vanillaDatafile, this);
+        setCurrentState(state);
     }
 
     public void startNewGame(@NotNull String shipName) {
@@ -119,6 +123,11 @@ public class MainGame implements Game {
 
         gameContainer.getInput().removeAllListeners();
         gameContainer.getInput().addListener(currentState);
+    }
+
+    public void quitGame() {
+        // Do we need to do anything else?
+        gameContainer.exit();
     }
 
     public static abstract class GameState extends InputAdapter {

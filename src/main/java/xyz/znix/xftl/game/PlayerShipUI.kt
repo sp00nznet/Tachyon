@@ -1059,6 +1059,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
+    fun showGameOverScreen(outcome: GameOverWindow.Outcome) {
+        currentWindow = GameOverWindow(game, outcome)
+    }
+
     private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int, size: ConstPoint) :
         Button(game, pos, size) {
 

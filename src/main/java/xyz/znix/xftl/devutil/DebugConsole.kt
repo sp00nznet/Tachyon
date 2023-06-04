@@ -92,6 +92,7 @@ class DebugConsole(var game: InGameState) {
         Cmd("gc", null, this::cmdGC, "Manually trigger Java's Garbage Collector."),
         Cmd("save", 1, this::cmdSave, "Save the game to a file of a custom name."),
         Cmd("load", 0, this::cmdLoad, "Load a game saved via the 'save' command."),
+        Cmd("gameover", 1, this::cmdGameOver, "End the game with the win/loose screen."),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("reload-flags", 0, this::cmdReloadFlags, "Reload the debug flags (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
@@ -1033,6 +1034,21 @@ class DebugConsole(var game: InGameState) {
                 return@pickFromList
             }
         }
+    }
+
+    private fun cmdGameOver(args: List<String>) {
+        val success: GameOverWindow.Outcome = when (args[1]) {
+            "win" -> GameOverWindow.Outcome.WIN
+            "crew" -> GameOverWindow.Outcome.LOOSE_CREW
+            "hull" -> GameOverWindow.Outcome.LOOSE_HULL
+            "base" -> GameOverWindow.Outcome.LOOSE_BASE_DESTROYED
+            else -> {
+                addLine("Invalid argument '${args[1]}', must be 'win', 'crew', 'hull' or 'base'.")
+                return
+            }
+        }
+
+        game.shipUI.showGameOverScreen(success)
     }
 
     private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {
