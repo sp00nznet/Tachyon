@@ -956,16 +956,21 @@ abstract class AbstractCrew(
         // Calculate our cell-aligned position, if we are cell-aligned.
         val roomPosX = pixelPosition.x - room.offsetX
         val roomPosY = pixelPosition.y - room.offsetY
-        if (roomPosX % ROOM_SIZE == 0 && roomPosY % ROOM_SIZE == 0) {
-            val cellX = roomPosX / ROOM_SIZE
-            val cellY = roomPosY / ROOM_SIZE
-
-            // Only update the position if it has changed
-            val currentPos = roomPosition
-            if (currentPos == null || currentPos.x != cellX || currentPos.y != cellY || currentPos.room != room) {
-                roomPosition = RoomPoint(room, cellX, cellY)
-            }
+        if (roomPosX % ROOM_SIZE != 0 || roomPosY % ROOM_SIZE != 0) {
+            roomPosition = null
+            return
         }
+
+        val cellX = roomPosX / ROOM_SIZE
+        val cellY = roomPosY / ROOM_SIZE
+
+        // Only update the position if it has changed, to save an allocation.
+        val currentPos = roomPosition
+        if (currentPos != null && currentPos.x == cellX && currentPos.y == cellY && currentPos.room == room) {
+            return
+        }
+
+        roomPosition = RoomPoint(room, cellX, cellY)
     }
 
     open fun saveToXML(elem: Element, refs: ObjectRefs) {
