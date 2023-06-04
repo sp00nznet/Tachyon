@@ -1,6 +1,10 @@
 package xyz.znix.xftl.layout
 
+import org.lwjgl.BufferUtils
+import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
+import org.newdawn.slick.opengl.renderer.Renderer
+import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
@@ -203,6 +207,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             drawWall(g, x - 2, y, width - 1, cellY, Direction.RIGHT)
         }
         g.lineWidth = 1f
+
+        drawDebugRoomNumber()
     }
 
     private fun renderSystemStuff(g: Graphics) {
@@ -352,6 +358,22 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
                 inWorldX + lineX, inWorldY + lineY
             )
         }
+    }
+
+    private fun drawDebugRoomNumber() {
+        if (!ship.sys.debugFlags.showRoomNumbers.set)
+            return
+
+        // Get our translation
+        val buffer = BufferUtils.createFloatBuffer(16)
+        Renderer.get().glGetFloat(SGL.GL_MODELVIEW_MATRIX, buffer)
+        val translateX = buffer[12]
+        val translateY = buffer[13]
+        ship.sys.getFont("JustinFont8").drawString(
+            translateX + offsetX + 4f, translateY + offsetY + 12f,
+            id.toString(),
+            Color.blue
+        )
     }
 
     fun setSystem(config: SystemInstallConfiguration) {

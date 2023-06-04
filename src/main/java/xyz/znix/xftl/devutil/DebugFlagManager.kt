@@ -11,6 +11,11 @@ class DebugFlagManager {
         "Draw a red marker on all player and enemy weapon mounts"
     )
 
+    val showRoomNumbers = DebugFlag(
+        "srn", "Show room numbers", true,
+        "Draw the room ID of each room, which is useful for understanding debugger data"
+    )
+
     val fastWeaponCharge = DebugFlag(
         "fwc", "Fast Weapon Charge", false,
         "Weapons charge at ten times their normal speed"
@@ -55,6 +60,7 @@ class DebugFlagManager {
     val all = listOf(
         showProjectileHitboxes,
         showHardpoints,
+        showRoomNumbers,
         fastWeaponCharge,
         noEnemyFire,
         noDmg,
