@@ -76,6 +76,16 @@ class Sector {
      */
     var flagshipJumping: Boolean = false
 
+    /**
+     * True if the flagship is running away from the base, after being killed there.
+     */
+    var flagshipRunningAway: Boolean = false
+
+    /**
+     * The one-indexed flagship stage that the player will next fight.
+     */
+    var flagshipStage: Int = 1
+
     // Note there's another constructor for deserialising a sector
     // from XML down at the bottom of the class.
 
@@ -364,6 +374,12 @@ class Sector {
     }
 
     fun updateFlagshipNextBeacon() {
+        // If the flagship is running away, don't touch its next beacon.
+        // That'll have been set when it was marked as running away.
+        if (flagshipRunningAway) {
+            return
+        }
+
         // We'll change this later if the flagship wants to jump.
         flagshipNextBeacon = null
 
@@ -404,6 +420,8 @@ class Sector {
             SaveUtil.addAttrRef(elem, "flagshipBeacon", refs, flagshipBeacon)
             SaveUtil.addAttrRef(elem, "flagshipNext", refs, flagshipNextBeacon)
             SaveUtil.addAttrBool(elem, "flagshipJumping", flagshipJumping)
+            SaveUtil.addAttrBool(elem, "flagshipRunningAway", flagshipRunningAway)
+            SaveUtil.addAttrInt(elem, "flagshipStage", flagshipStage)
         }
 
         // Serialise all the beacons
@@ -509,6 +527,8 @@ class Sector {
             SaveUtil.getAttrRef(elem, "flagshipBeacon", refs, Beacon::class.java) { flagshipBeacon = it }
             SaveUtil.getAttrRef(elem, "flagshipNext", refs, Beacon::class.java) { flagshipNextBeacon = it }
             flagshipJumping = SaveUtil.getAttrBool(elem, "flagshipJumping")
+            flagshipRunningAway = SaveUtil.getAttrBool(elem, "flagshipRunningAway")
+            flagshipStage = SaveUtil.getAttrInt(elem, "flagshipStage")
         }
     }
 

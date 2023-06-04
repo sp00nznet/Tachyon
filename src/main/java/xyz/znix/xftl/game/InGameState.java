@@ -447,6 +447,10 @@ public class InGameState extends MainGame.GameState {
                         shipUI.showEventDialogue(event.resolve());
                 }
 
+                if (enemy.isFlagship()) {
+                    onFlagshipKilled();
+                }
+
                 setEnemy(null);
                 currentBeacon.setShip(null);
 
@@ -579,6 +583,9 @@ public class InGameState extends MainGame.GameState {
     }
 
     private void spawnFlagship() {
+        int stage = currentBeacon.getSector().getFlagshipStage();
+        Difficulty difficulty = Difficulty.EASY; // TODO
+
         // If there's a ship at the current beacon, get rid of it. This avoids
         // it sticking around after the flagship leaves, and saves space
         // in the serialised game.
@@ -586,7 +593,11 @@ public class InGameState extends MainGame.GameState {
         // generated whenever the player jumps there.
         currentBeacon.setShip(null);
 
-        String shipName = "BOSS_1_EASY_DLC"; // TODO
+        // The ship name is in the format of BOSS_1_NORMAL_DLC
+        String shipName = String.format("BOSS_%d_%s", stage, difficulty);
+        if (content.enableAdvancedEdition) {
+            shipName += "_DLC";
+        }
 
         Element flagshipXML = ((ShipBlueprint) blueprintManager.get(shipName)).loadElem(df);
         Ship flagship = new Ship(df, flagshipXML, this, null);
@@ -611,8 +622,35 @@ public class InGameState extends MainGame.GameState {
         setEnemy(flagship);
         enemyIsHostile = true;
 
-        Event event = eventManager.get("BOSS_TEXT_1").resolve();
+        Event event = eventManager.get("BOSS_TEXT_" + stage).resolve();
         shipUI.showEventDialogue(event);
+    }
+
+    private void onFlagshipKilled() {
+        Sector sector = currentBeacon.getSector();
+        sector.updateFlagshipNextBeacon();
+
+        // If we're not at the base, continue on our path there.
+        // We have to set the is-jumping flag, otherwise the flagship
+        // could wait at the same beacon as the player.
+        if (sector.getFlagshipNextBeacon() != null) {
+            sector.setFlagshipJumping(true);
+        } else {
+            // The flagship is at the base, force it to jump away.
+            List<Beacon> adjacent = currentBeacon.getNeighbours();
+            Beacon next = adjacent.get(Random.Default.nextInt(adjacent.size()));
+
+            sector.setFlagshipRunningAway(true);
+            sector.setFlagshipJumping(true);
+            sector.setFlagshipNextBeacon(next);
+        }
+
+        int stageKilled = sector.getFlagshipStage();
+        if (stageKilled == 3) {
+            shipUI.showGameOverScreen(GameOverWindow.Outcome.WIN);
+        } else {
+            sector.setFlagshipStage(stageKilled + 1);
+        }
     }
 
     public void loadEventShip(Event event) {
@@ -1236,6 +1274,9 @@ public class InGameState extends MainGame.GameState {
 
             // Don't jump again next turn
             sector.setFlagshipJumping(false);
+
+            // If we were running away, we're allowed to go back to the base again.
+            sector.setFlagshipRunningAway(false);
         }
     }
 
