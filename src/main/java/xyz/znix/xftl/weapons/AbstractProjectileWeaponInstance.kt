@@ -10,7 +10,6 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import xyz.znix.xftl.systems.Artillery
 import xyz.znix.xftl.systems.Weapons
 
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
@@ -87,14 +86,6 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         }
     }
 
-    override fun bindToArtillery(artillery: Artillery) {
-        super.bindToArtillery(artillery)
-
-        if (!this::projectileSpawnPos.isInitialized) {
-            this.projectileSpawnPos = artillery.weaponFirePoint
-        }
-    }
-
     protected open fun fireFrameHit() {
         val projectile = buildProjectile(waitingToFireAt!!)
         projectile.entryAngle = entryAngle
@@ -148,6 +139,8 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     }
 
     open fun fireFromArtillery(possibleTargets: List<Room>, origin: IPoint) {
+        this.projectileSpawnPos = origin
+
         val remaining = ArrayList(possibleTargets)
 
         // Pick as many shots as required, while avoiding targeting the

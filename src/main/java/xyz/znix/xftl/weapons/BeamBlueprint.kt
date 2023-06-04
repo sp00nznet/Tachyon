@@ -75,6 +75,15 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         override fun render(g: Graphics) {
             if (firing) {
+                // Draw the beam line
+                // Note that since we're in image space, forwards is up so forwards
+                // is negative Y. Use some 'long enough' arbitrary length.
+                // Note we have to do this first, as we shift the beam inwards a little
+                // to fix the flagship beam.
+                val offset = animation.firePoint
+                val visibleStrength = max(1, damage)
+                drawBeam(visibleStrength, offset + ConstPoint(0, 10), offset + ConstPoint(0, -5000))
+
                 // Manually compute the frames rather than using an animation, since
                 // we're controlling the laser progress on the same timer.
                 val progress = firingTime / fireDuration
@@ -82,14 +91,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 val firingFrames = animation.length - firstFiringFrame
                 val frameNum = firstFiringFrame + (firingFrames * progress).toInt()
 
-                animation.spriteAt(frameNum).draw()
-
-                // Draw the beam line
-                // Note that since we're in image space, forwards is up so forwards
-                // is negative Y. Use some 'long enough' arbitrary length.
-                val offset = animation.firePoint
-                val visibleStrength = max(1, damage)
-                drawBeam(visibleStrength, offset, offset + ConstPoint(0, -5000))
+                // Use coerceIn to ensure we don't access an invalid frame if the progress
+                // is somehow exactly fireDuration.
+                animation.spriteAt(frameNum.coerceIn(0 until animation.length)).draw()
             } else {
                 super.render(g)
             }
@@ -116,14 +120,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             droneCentre.y += sin(fc.rotation).roundToInt()
 
             renderInbound(droneCentre)
-        }
-
-        fun drawArtilleryBeam(startPos: IPoint, destPos: IPoint) {
-            if (!firing)
-                return
-
-            // Draw the beam line
-            drawBeam(damage, startPos, destPos)
         }
 
         private fun renderInbound(from: IPoint) {

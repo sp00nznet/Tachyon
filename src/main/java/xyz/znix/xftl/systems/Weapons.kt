@@ -81,13 +81,6 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 // TODO how much are the weapons retracted by?
 
                 weapon.render(g)
-
-                // Draw the charging glow, if present
-                if (weapon.isCharged) return@run
-                val glow = anim.chargeImage ?: return@run
-
-                glow.alpha = weapon.chargeProgress
-                glow.draw(0f, 0f)
             }
 
             g.popTransform()

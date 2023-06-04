@@ -8,7 +8,6 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -63,8 +62,6 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         hardpoint.position + ship.weaponFireDirection * 1000
     }
 
-    val weaponFirePoint: IPoint get() = hardpoint.position
-
     override fun initialise(ship: Ship) {
         super.initialise(ship)
 
@@ -102,12 +99,31 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         weapon.forceSetPowered(true)
         weapon.update(dt, true, false)
+
+        // Set the weapon's time charged to match our charge progress. This is
+        // so the flagship's weapons show their usual charging animation.
+        weapon.timeCharged = weapon.type.chargeTime * chargeProgress
     }
 
     override fun drawBackground(g: Graphics) {
         super.drawBackground(g)
 
-        (weapon as? BeamBlueprint.BeamInstance)?.drawArtilleryBeam(hardpoint.position, beamDestPos)
+        // Draw the weapon launcher animation
+        g.pushTransform()
+
+        val anim = weapon.animation
+        g.translate(hardpoint.position.x.f, hardpoint.position.y.f)
+        g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
+
+        // The weapon assumes 'up' is the forwards direction, so we need to rotate
+        // the weapon on the player's ship to make this true.
+        if (ship.isPlayerShip) {
+            g.rotate(0f, 0f, 90f)
+        }
+
+        weapon.render(g)
+
+        g.popTransform()
     }
 
     override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, baseY: Int) {
@@ -157,7 +173,13 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
             // This handles flak, missiles, and lasers.
             is AbstractProjectileWeaponInstance -> {
-                weapon.fireFromArtillery(targetShip.rooms, hardpoint.position)
+                // The firing position won't not be right for the player ship (because
+                // of the weapon rotation) if there's a non-zero weapon position,
+                // but it'll be fine for vanilla.
+                val anim = weapon.animation
+                val firePos = hardpoint.position - anim.mountPoint + anim.firePoint
+
+                weapon.fireFromArtillery(targetShip.rooms, firePos)
             }
 
             else -> error("Artillery system doesn't support weapon ${weapon.type.name} instance $weapon")

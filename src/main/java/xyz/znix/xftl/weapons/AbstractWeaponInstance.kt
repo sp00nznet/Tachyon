@@ -75,6 +75,14 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     open fun render(g: Graphics) {
         val launcher = animation.spriteAt((animation.chargedFrame * chargeProgress).toInt())
         launcher.draw(0f, 0f)
+
+        // Draw the charging glow, if present
+        if (isCharged)
+            return
+        val glow = animation.chargeImage ?: return
+
+        glow.alpha = chargeProgress
+        glow.draw(0f, 0f)
     }
 
     fun asWeaponInstance(): AbstractWeaponInstance = this
