@@ -41,8 +41,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         it.a = 220f / 255f // This is largely guessed
     }
 
-    // TODO implement super-shield (Zoltan shield) support
-
     override fun buildInstance(ship: Ship): AbstractWeaponInstance {
         return BeamInstance(ship)
     }
@@ -64,6 +62,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         // Similarly, this is used for artillery
         private var length: Int = this@BeamBlueprint.length
+
+        // True if this beam is ready to pierce Zoltan shields. This has
+        // to be kept, so a beam can instantly pierce a shield deployed
+        // by a shield over-charger drone.
+        private var superShieldReady: Boolean = false
 
         var isOnDrone: Boolean = false
 
@@ -171,7 +174,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             drawBeam(visualPower, from, shieldPoint)
 
             // Draw the inside-the-shield-bubble part
-            if (piercing == 0)
+            if (piercing == 0 || target.targetShip.superShield > 0)
                 return
 
             drawBeam(piercing, shieldPoint, targetPos)
@@ -219,7 +222,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         shieldLayers = max(0, shieldLayers - type.shieldPiercing)
                         val beamPower = max(0, damage - shieldLayers)
 
-                        if (shieldLayers > 0 && beamPower == 0) {
+                        if ((shieldLayers > 0 && beamPower == 0) || targetShip.superShield > 0) {
                             // Couldn't pierce the shields?
                             // Note we need to check if shieldLayers is non-zero,
                             // otherwise it'd block non-hull-damaging weapons even
@@ -244,9 +247,16 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                     }
                 }
 
+                // Damage the super-shield, if applicable.
+                updateSuperShield(firingTime, newFiringTime)
+
+                // Save our updated progress.
                 firingTime = newFiringTime
+
+                // Check if we've hit the end of our travel.
                 if (firingTime >= fireDuration) {
                     firingTime = 0f
+                    superShieldReady = false
                     target = null
 
                     // Reset these to make the savegame more compact
@@ -264,6 +274,45 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 }
 
                 contact.update(dt)
+            }
+        }
+
+        private fun updateSuperShield(oldFiringTime: Float, newFiringTime: Float) {
+            // Guard against zero-time updates to avoid doing damage
+            // more than once.
+            if (oldFiringTime == newFiringTime) {
+                return
+            }
+
+            val targetShip = target!!.targetShip
+
+            // Check if we crossed the two points that let us arm our
+            // super-shield piercing. Note that this stays armed, so that
+            // if a super-shield drone creates a shield we'll remove it
+            // instantly.
+            val oldProgress = firingTime / fireDuration
+            val newProgress = newFiringTime / fireDuration
+            if (SUPER_SHIELD_HIT_1 in oldProgress..newProgress) {
+                superShieldReady = true
+            }
+            if (SUPER_SHIELD_HIT_2 in oldProgress..newProgress && length > 20) {
+                superShieldReady = true
+            }
+
+            // Apply damage when applicable.
+            if (targetShip.superShield > 0 && superShieldReady) {
+                superShieldReady = false
+
+                // TODO ion armour (reverse ion field)
+
+                var damage = type.damage + type.ionDamage * 2
+
+                // For anti-bio and fire beams, clamp to at least one damage.
+                if (damage == 0) {
+                    damage = 1
+                }
+
+                targetShip.superShield -= damage
             }
         }
 
@@ -329,6 +378,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             SaveUtil.addTagFloat(elem, "firingTime", firingTime, 0f)
             SaveUtil.addTagFloat(elem, "fireDuration", fireDuration, this@BeamBlueprint.fireDuration)
             SaveUtil.addTagInt(elem, "length", length, this@BeamBlueprint.length)
+            SaveUtil.addTagBoolIfTrue(elem, "superShieldReady", superShieldReady)
 
             if (target != null) {
                 val targetElem = Element("target")
@@ -577,5 +627,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         private val DEFAULT_COLOUR = Color(255, 30, 30)
 
         private val INVALID_CELL_POS = ConstPoint(-999, -999)
+
+        private const val SUPER_SHIELD_HIT_1: Float = 0.33f
+        private const val SUPER_SHIELD_HIT_2: Float = 0.80f
+        private const val SUPER_SHIELD_MIN_LENGTH: Int = 21
     }
 }

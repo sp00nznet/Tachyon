@@ -1,0 +1,10 @@
+
+Beam super-shield damage
+
+When a super-shield is damaged is controlled by BeamWeapon::OnUpdate, which
+sets bDamageSuperShield to true when it's possible to damage a layer of super-shield.
+
+This enables super-shield damage when the beam reaches 33% of it's travel,
+and again when it reaches 80%. The second time only applies if the beam
+is more than 20 pixels long (NOT greater than or equal to, which matters
+for the level-1 beam drone).
