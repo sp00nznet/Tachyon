@@ -471,6 +471,14 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
                 val name = node.getAttributeValue("name")
                 val drone = sys.blueprintManager[name] as DroneBlueprint
 
+                // If the ship doesn't have enough drone slots, just give it some more.
+                // This is required for the flagship at least, but it makes sense
+                // that if there is some fixed list of included drones then there ought
+                // to be enough space for them.
+                if (drones!!.drones.size <= idx) {
+                    drones!!.drones.add(null)
+                }
+
                 drones!!.drones[idx] = Drones.DroneInfo(drone, null)
             }
 
