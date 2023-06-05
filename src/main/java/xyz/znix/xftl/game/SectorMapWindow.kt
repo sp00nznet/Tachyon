@@ -28,6 +28,8 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
     private val targetBoxHover = game.getImg("img/map/map_targetbox_sector_g.png")
     private val targetBoxOption = game.getImg("img/map/map_targetbox_sector_y.png")
 
+    private val playerShip = game.getImg("img/map/map_icon_ship.png")
+
     private val closeButton = Buttons.BasicButton(
         game, size + ConstPoint(-132, 7),
         ConstPoint(103, 32), game.translator["button_close"],
@@ -82,8 +84,6 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
                 drawSector(g, sector)
             }
         }
-
-        // TODO draw the circling ship
 
         // Draw the labels naming the next sectors
         val updateBoxes = nextSectorNameBoxes.isEmpty()
@@ -181,6 +181,23 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         g.lineWidth = 1f
 
         drawSectorCircle(g, pos.x, pos.y, branchColour, colour)
+
+        // Draw the player ship. Note this is duplicated from JumpWindow, though
+        // the player ship offset was changed to move it closer in.
+        if (info == currentSector) {
+            val periodNS = 20_000_000_000
+            val timerNS = (System.nanoTime() % periodNS).toFloat()
+            val rotation = timerNS / periodNS * 360f
+
+            val centreX = pos.x + SECTOR_RADIUS
+            val centreY = pos.y + SECTOR_RADIUS
+
+            // These offsets are approximate
+            g.pushTransform()
+            g.rotate(centreX.f, centreY.f, -rotation)
+            playerShip.draw(centreX - 12, centreY - 32)
+            g.popTransform()
+        }
 
         // Draw the hover icon, if appropriate
         val isOption = nextSectors.contains(info)
