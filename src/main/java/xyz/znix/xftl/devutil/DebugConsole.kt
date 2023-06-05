@@ -93,6 +93,7 @@ class DebugConsole(var game: InGameState) {
         Cmd("save", 1, this::cmdSave, "Save the game to a file of a custom name."),
         Cmd("load", 0, this::cmdLoad, "Load a game saved via the 'save' command."),
         Cmd("gameover", 1, this::cmdGameOver, "End the game with the win/loose screen."),
+        Cmd("reset-ftl", 0, this::cmdResetFTL, "Reset the player's FTL charge timer"),
         Cmd("reload-console", 0, this::cmdReloadConsole, "Reload the console (useful with Java HotSwap)"),
         Cmd("reload-flags", 0, this::cmdReloadFlags, "Reload the debug flags (useful with Java HotSwap)"),
         Cmd("help", 0, this::cmdHelp, "Show the available commands")
@@ -1049,6 +1050,11 @@ class DebugConsole(var game: InGameState) {
         }
 
         game.shipUI.showGameOverScreen(success)
+    }
+
+    private fun cmdResetFTL(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        ship.ftlChargeProgress = 0f
+        addLine("Reset the player's FTL charge progress.")
     }
 
     private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {
