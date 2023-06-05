@@ -63,6 +63,15 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val hullWarning50 = WarningFlasher(game, ConstPoint(437, 100), "warning_hull_50", true, hullWarningLines)
     private val hullWarning75 = WarningFlasher(game, ConstPoint(437, 100), "warning_hull_75", true, hullWarningLines)
 
+    private val shieldsWarning = WarningFlasher(
+        game, ConstPoint(204, 132), "warning_shields", true,
+        listOf(
+            ConstPoint(129, 93),
+            ConstPoint(151, 114),
+            ConstPoint(250, 114)
+        )
+    )
+
     private var lastHealth: Int = -1
 
     val isWindowOpen: Boolean get() = currentWindow != null
@@ -700,7 +709,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         ship.shields?.let { shields ->
             // Draw the shields indicator
-            game.getImg("img/statusUI/top_shields4_on.png").draw(0, shieldY)
+            val broken = shields.energyLevels - shields.damagedEnergyLevels < 2
+            val shieldBox = when {
+                broken -> game.getImg("img/statusUI/top_shields4_red.png")
+                shields.selectedShieldBars == 0 -> game.getImg("img/statusUI/top_shields4_off.png")
+                else -> game.getImg("img/statusUI/top_shields4_on.png")
+            }
+            shieldBox.draw(0, shieldY)
             val hacked = shields.isHackActive
             if (hacked) {
                 game.getImg("img/statusUI/top_shields4_purple.png").draw(31 - 8, shieldY)
@@ -750,6 +765,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 }
                 img.draw(30 + 23 * i, shieldY + 4)
             }
+
+            when {
+                broken -> shieldsWarning.startFor(1f)
+                else -> shieldsWarning.stop()
+            }
+            shieldsWarning.draw(g)
         }
 
         fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int, redThreshold: Int = 0) {
