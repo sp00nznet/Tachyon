@@ -3,6 +3,7 @@ package xyz.znix.xftl.ai
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
@@ -325,7 +326,7 @@ class RepairTask(val room: Room) : AITask() {
 
 class ManningTask(val room: Room) : AITask() {
     override val priority: Int = run {
-        val isHard = false // TODO
+        val isHard = room.ship.sys.difficulty == Difficulty.HARD
 
         // See doc/crew-ai
         val systemPriority = when (room.system) {

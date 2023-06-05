@@ -37,6 +37,8 @@ public class InGameState extends MainGame.GameState {
 
     private final GameContent content;
 
+    private Difficulty difficulty = Difficulty.NORMAL;
+
     // These are copied from the GameContent object for convenience
     private final Datafile df;
     private final boolean enableAdvancedEdition;
@@ -89,8 +91,9 @@ public class InGameState extends MainGame.GameState {
      */
     private final ArrayList<Event> delayedQuests = new ArrayList<>();
 
-    public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName) {
+    public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName, Difficulty difficulty) {
         this(mainGame, content, container);
+        this.difficulty = difficulty;
 
         gameMap = new GameMap(df, eventManager, enableAdvancedEdition, Random.Default);
 
@@ -121,6 +124,8 @@ public class InGameState extends MainGame.GameState {
         if (saveEnabledAE != content.enableAdvancedEdition) {
             throw new IllegalArgumentException("Cannot load a game with content that doesn't match it's AE state!");
         }
+
+        difficulty = Difficulty.valueOf(root.getAttributeValue("difficulty"));
 
         isCurrentlyLoadingSave = true;
         loadGameState(root);
@@ -536,8 +541,6 @@ public class InGameState extends MainGame.GameState {
         if (currentBeacon.getState() == Beacon.State.OVERTAKEN) {
             // See doc/sector-map for information on these events
 
-            Difficulty difficulty = Difficulty.NORMAL; // TODO set this properly
-
             String eventName;
 
             if (currentBeacon.isExit()) {
@@ -584,7 +587,6 @@ public class InGameState extends MainGame.GameState {
 
     private void spawnFlagship() {
         int stage = currentBeacon.getSector().getFlagshipStage();
-        Difficulty difficulty = Difficulty.EASY; // TODO
 
         // If there's a ship at the current beacon, get rid of it. This avoids
         // it sticking around after the flagship leaves, and saves space
@@ -656,9 +658,8 @@ public class InGameState extends MainGame.GameState {
     public void loadEventShip(Event event) {
         if (event.getLoadShipName() != null) {
             EnemyShipSpec spec = eventManager.getShip(event.getLoadShipName());
-            // TODO use the proper difficulty
             int sector = currentBeacon.getSector().getSectorNumber();
-            setEnemy(content.generator.buildShip(this, spec, sector, Difficulty.NORMAL, null));
+            setEnemy(content.generator.buildShip(this, spec, sector, difficulty, null));
 
             // Ships aren't hostile by default
             this.enemyIsHostile = false;
@@ -743,6 +744,7 @@ public class InGameState extends MainGame.GameState {
     public Document saveGameState() {
         Element root = new Element("xftlSaveGame");
         root.setAttribute("enableAE", Boolean.toString(enableAdvancedEdition));
+        root.setAttribute("difficulty", difficulty.name());
 
         ObjectRefs refs = new ObjectRefs();
         Sector sector = currentBeacon.getSector();
@@ -1096,6 +1098,10 @@ public class InGameState extends MainGame.GameState {
      */
     public boolean isCurrentlyLoadingSave() {
         return isCurrentlyLoadingSave;
+    }
+
+    public Difficulty getDifficulty() {
+        return difficulty;
     }
 
     @NotNull

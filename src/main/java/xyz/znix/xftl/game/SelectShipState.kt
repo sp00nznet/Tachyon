@@ -105,7 +105,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     override fun mouseClicked(button: Int, x: Int, y: Int, clickCount: Int) {
         if (hovered != null) {
-            main.startNewGame(hovered!!.name)
+            main.startNewGame(hovered!!.name, Difficulty.NORMAL)
         }
     }
 }

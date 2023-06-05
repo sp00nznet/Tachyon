@@ -180,7 +180,7 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
     }
 
     private fun restartClicked() {
-        game.mainGame.startNewGame(game.player.name)
+        game.mainGame.startNewGame(game.player.name, game.difficulty)
     }
 
     private fun statsClicked() {

@@ -34,7 +34,7 @@ public class MainGame implements Game {
 
         if (commandLineArgs.newGameShip != null) {
             // Switch right into a new game
-            startNewGame(commandLineArgs.newGameShip);
+            startNewGame(commandLineArgs.newGameShip, Difficulty.NORMAL);
         } else {
             switchToShipSelect();
         }
@@ -45,8 +45,8 @@ public class MainGame implements Game {
         setCurrentState(state);
     }
 
-    public void startNewGame(@NotNull String shipName) {
-        InGameState inGameState = new InGameState(this, content, gameContainer, shipName);
+    public void startNewGame(@NotNull String shipName, Difficulty difficulty) {
+        InGameState inGameState = new InGameState(this, content, gameContainer, shipName, difficulty);
         setCurrentState(inGameState);
     }
 
