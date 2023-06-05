@@ -13,6 +13,7 @@ import kotlin.random.Random
 val Int.f get() = toFloat()
 
 fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
+fun Image.draw(x: Int, y: Int, filter: Color) = draw(x.f, y.f, filter)
 fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
 val Image.imageSize: IPoint get() = ConstPoint(width, height)
 

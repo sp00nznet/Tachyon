@@ -374,7 +374,7 @@ public class InGameState extends MainGame.GameState {
             boolean anyLivingBoarders = enemy.getIntruders().stream().anyMatch(crew -> crew instanceof LivingCrew);
             enemyInteriorVisible = enemyIsHostile || anyLivingBoarders;
 
-            hostileShipUI.render(container, g, hoveredRoom, enemyInteriorVisible);
+            hostileShipUI.render(container, g, hoveredRoom, enemyInteriorVisible, enemyIsHostile);
         }
 
         // Draw the paused text before the UI, so the UI goes on top.

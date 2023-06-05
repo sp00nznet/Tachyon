@@ -139,6 +139,12 @@ public class Constants {
     public static final Color WARNING_COLOUR_RED = new Color(253, 84, 70);
     public static final Color WARNING_COLOUR_WHITE = SECTOR_CUTOUT_TEXT;
 
+    public static final Color SHIP_BOX_NEUTRAL = Color.white;
+    public static final Color SHIP_BOX_HOSTILE = new Color(1f, 0.7f, 0.7f);
+
+    public static final Color SHIP_BOX_TEXT_NEUTRAL = new Color(116, 119, 114);
+    public static final Color SHIP_BOX_TEXT_HOSTILE = new Color(116, 83, 80);
+
     private Constants() {
     }
 }

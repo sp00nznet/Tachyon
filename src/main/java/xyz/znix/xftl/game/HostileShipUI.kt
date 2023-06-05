@@ -14,6 +14,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     val shipPos: IPoint get() = mutableShipPos
 
     private val font = game.getFont("HL2")
+    private val titleFont = game.getFont("HL2", 2f)
 
     private val shieldIconStandard = game.getImg("img/combatUI/box_hostiles_shield1.png")
     private val shieldIconBroken = game.getImg("img/combatUI/box_hostiles_shield2.png")
@@ -30,7 +31,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     private val maskNormal = game.getImg("img/combatUI/box_hostiles_mask.png")
     private val maskBoss = game.getImg("img/combatUI/box_hostiles_boss_mask.png")
 
-    fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, interiorVisible: Boolean) {
+    fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, interiorVisible: Boolean, isHostile: Boolean) {
         val box = when (enemy.isFlagship) {
             true -> boxBoss
             false -> boxNormal
@@ -38,6 +39,15 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         val mask = when (enemy.isFlagship) {
             true -> maskBoss
             false -> maskNormal
+        }
+
+        val filter = when (isHostile) {
+            true -> Constants.SHIP_BOX_HOSTILE
+            false -> Constants.SHIP_BOX_NEUTRAL
+        }
+        val textColour = when (isHostile) {
+            true -> Constants.SHIP_BOX_TEXT_HOSTILE
+            false -> Constants.SHIP_BOX_TEXT_NEUTRAL
         }
 
         val boxX = gc.width - (box.width - 20) - 18
@@ -48,7 +58,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         mutableShipPos.y = boxY + (box.height - enemy.hullImage.height) / 2
         mutableShipPos -= enemy.hullOffset
 
-        box.draw(boxX, boxY)
+        box.draw(boxX, boxY, filter)
 
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
             mask.draw(boxX, boxY)
@@ -64,23 +74,26 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
 
         val textX = boxX + 12
 
+        // Draw the title
+        titleFont.drawString(textX + 1f, boxY + 25f, game.translator["target_window"], textColour)
+
         // Draw the hull level
         val hullY = boxY + 29 + 4
-        renderSmallbar(textX, hullY, "HULL")
+        renderSmallbar(textX, hullY, "status_hull", filter, textColour)
         val hpWidth = 11 * enemy.health
         val hpX = textX + 5
         val hpY = hullY + 12
         val hull = game.getImg("img/combatUI/box_hostiles_hull2.png")
-        // TODO colour
         hull.draw(
             hpX.f, hpY.f, hpX.f + hpWidth, hpY.f + hull.height,
-            0f, 0f, hpWidth.f, hull.height.f
+            0f, 0f, hpWidth.f, hull.height.f,
+            Constants.SHIP_HEALTH_HIGH
         )
 
         enemy.shields?.let { shields ->
             // Draw the shield bubbles
             val shieldsY = hullY + 27
-            renderSmallbar(textX, shieldsY, "SHIELDS")
+            renderSmallbar(textX, shieldsY, "status_shields", filter, textColour)
 
             var bubbleX = textX + 7
 
@@ -135,21 +148,22 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         }
     }
 
-    private fun renderSmallbar(x: Int, y: Int, text: String) {
-        // TODO colours
+    private fun renderSmallbar(x: Int, y: Int, key: String, filter: Color, textColour: Color) {
+        val text = game.translator[key]
 
         val textX = 2
         val textWidth = font.getWidth(text)
 
         val left = game.getImg("img/combatUI/box_hostiles_smallbar_left.png")
-        left.draw(x, y)
+        left.draw(x, y, filter)
         val middle = game.getImg("img/combatUI/box_hostiles_smallbar_middle.png")
         middle.filter = Image.FILTER_NEAREST
         val midWidth = textWidth + textX - left.width
-        middle.draw(x.f + left.width, y.f, midWidth.f, middle.height.f)
+        middle.draw(x.f + left.width, y.f, midWidth.f, middle.height.f, filter)
 
-        game.getImg("img/combatUI/box_hostiles_smallbar_right.png").draw(x + left.width + midWidth, y)
+        val rightImg = game.getImg("img/combatUI/box_hostiles_smallbar_right.png")
+        rightImg.draw(x + left.width + midWidth, y, filter)
 
-        font.drawStringLegacy(x + 2f, y + 7f, text, Color.black)
+        font.drawString(x + 2f, y + 9f, text, textColour)
     }
 }
