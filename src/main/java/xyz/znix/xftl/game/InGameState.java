@@ -212,6 +212,14 @@ public class InGameState extends MainGame.GameState {
         if (!isPaused())
             updateGameState(delta);
 
+        Input in = container.getInput();
+
+        // For debugging, this lets you either step or fast-forward through time.
+        if (container.getInput().isKeyDown(Input.KEY_TAB))
+            updateGameState(delta * 4);
+        if (container.getInput().isKeyPressed(Input.KEY_PERIOD))
+            updateGameState(0.01f);
+
         shipUI.updateAlways(delta);
 
         asteroidAnimationTimer += delta;
@@ -219,8 +227,6 @@ public class InGameState extends MainGame.GameState {
         hoveredRoom = null;
 
         content.sounds.updateLoopedSounds(isPaused());
-
-        Input in = container.getInput();
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
             debugConsoleVisible = !debugConsoleVisible;
