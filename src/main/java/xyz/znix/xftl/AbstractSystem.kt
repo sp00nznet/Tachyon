@@ -257,10 +257,20 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             else -> "green"
         }
 
-    open fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, baseY: Int) {
+    /**
+     * Draw the system icon and it's power bars.
+     *
+     * [x] and [y] specify the top-left corner of the box that contains
+     * the system icon, NOT including the 19-pixel glow around the icon.
+     */
+    open fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, y: Int) {
+        // Account for the 19px of padding
+        val iconX = x - 19
+        val iconY = y - 19
+
         if (!isIonised) {
             // TODO flash blue when hacking/mind control/cloaking/backup battery is active
-            game.getImg("img/icons/s_${codename}_${iconColourName}1.png").draw(x.f, baseY.f)
+            game.getImg("img/icons/s_${codename}_${iconColourName}1.png").draw(iconX, iconY)
         } else {
             // Levels are rounded up, so <5s shows 1, <10s shows 2, etc.
             val levels = min(9, ceil(ionTimer / TIME_PER_ION).toInt())
@@ -268,7 +278,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             // Use the appropriate image to match whether this is a subsystem or not
             val imgType = if (this is MainSystem) "ring" else "octa"
 
-            game.getImg("img/icons/locking/s_${imgType}_${levels}_base.png").draw(x.f, baseY.f)
+            game.getImg("img/icons/locking/s_${imgType}_${levels}_base.png").draw(iconX, iconY)
 
             // Draw the ring around the outside - because this involves drawing
             // a pie-slice from the ring image, it's a bit messy.
@@ -276,7 +286,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
             // Use a transform to save having to add x/baseY to everything
             g.pushTransform()
-            g.translate(x.f, baseY.f)
+            g.translate(iconX.f, iconY.f)
 
             val gl = Renderer.get()
 
@@ -347,14 +357,14 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             g.popTransform()
         }
 
-        val barX = x + 24f
-        val topBarY = baseY + 8f - (energyLevels - 1) * 8
+        val barX = x + 5f
+        val topBarY = y - 11f - (energyLevels - 1) * 8
 
         // Need to grab this as a local so the compiler knows it won't change
         val scriptedPowerLimit = this.scriptedPowerLimit
 
         for (i in 0 until energyLevels) {
-            val y = baseY + 8 - i * 8
+            val y = y - 11 - i * 8
 
             when {
                 i >= energyLevels - damagedEnergyLevels -> {

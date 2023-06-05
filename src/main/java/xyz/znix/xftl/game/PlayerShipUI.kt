@@ -1308,7 +1308,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         Button(game, pos, ConstPoint(26, 26)) {
 
         override fun draw(g: Graphics) {
-            system.drawIconAndPower(game, g, pos.x - 19, pos.y - 19)
+            system.drawIconAndPower(game, g, pos.x, pos.y)
         }
 
         override fun click(button: Int) {

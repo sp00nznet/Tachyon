@@ -151,14 +151,13 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         topImage.draw(x, y)
     }
 
-    override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, baseY: Int) {
-        super.drawIconAndPower(game, g, x, baseY)
+    override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, y: Int) {
+        super.drawIconAndPower(game, g, x, y)
 
-        // Find the position of the top power bar
-        val barX = x + 24
-        val barY = baseY + 8 - (energyLevels - 1) * 8
+        val queueX = x - 7 - 6
 
-        val queueX = barX - 12 - 6
+        // Find the position of the top energy bar, which we put the queue on top of.
+        val barY = y - 11 - (energyLevels - 1) * 8
 
         // This is the bottom of the contents area of the boxes, not
         // including the white outline.

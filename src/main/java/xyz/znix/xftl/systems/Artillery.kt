@@ -126,11 +126,11 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         g.popTransform()
     }
 
-    override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, baseY: Int) {
-        super.drawIconAndPower(game, g, x, baseY)
+    override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, y: Int) {
+        super.drawIconAndPower(game, g, x, y)
 
-        val boxX = x + 35
-        val boxY = baseY - 40
+        val boxX = x + 22 - 6
+        val boxY = y - 53 - 6
 
         val imageId = max(0, powerSelected - 1)
 
