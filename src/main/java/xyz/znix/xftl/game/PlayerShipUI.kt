@@ -402,9 +402,15 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         height = gc.height
 
         drawTopBar(g)
+        drawSystems(g)
+        drawSubSystems(gc, g)
 
+        updatingButtons = false
+    }
+
+    private fun drawSystems(g: Graphics) {
         val powerTreeX = 86 - 53
-        val powerTreeY = gc.height - 21 - 302
+        val powerTreeY = height - 21 - 302
         val powerTreeMaskY = powerTreeY + 27 - (ship.purchasedReactorPower - 1) * 9
 
         Utils.drawStenciled(Utils.StencilMode.BLOCKING, {
@@ -616,8 +622,37 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         for (button in buttons) {
             button.draw(g)
         }
+    }
 
-        updatingButtons = false
+    private fun drawSubSystems(gc: GameContainer, g: Graphics) {
+        // The box position, not including the glow.
+        val boxX = gc.width - 252
+        val boxY = gc.height - 47
+
+        game.getImg("img/box_subsystems4.png").draw(boxX - 6, boxY - 6)
+
+        // Draw the subsystems label
+        val label = game.translator["subsystems_label"]
+        font.drawString(boxX + 7f, boxY + 23f, label, UI_TEXT_COLOUR_1)
+
+        // Add all the system buttons
+        if (!updatingButtons) {
+            return
+        }
+
+        fun addSubSys(x: Int, sys: SubSystem?) {
+            if (sys == null)
+                return
+
+            val powerPos = ConstPoint(boxX + x, boxY - 21)
+            buttons += SystemPowerButton(powerPos, sys)
+            buttons += sys.makeExtraButtons(powerPos)
+        }
+
+        addSubSys(6, ship.piloting)
+        addSubSys(42, ship.sensors)
+        addSubSys(78, ship.doorsSystem)
+        addSubSys(129, ship.backupBattery)
     }
 
     fun renderMenus(container: GameContainer, g: Graphics) {
@@ -1306,6 +1341,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
      */
     private inner class SystemPowerButton(pos: IPoint, val system: AbstractSystem) :
         Button(game, pos, ConstPoint(26, 26)) {
+
+        // Subsystems can't be clicked, so don't play their hover noise.
+        // This will also keep hovered set to false, since we don't want
+        // to activate any hovering-related stuff for something you can't click.
+        override val disabled: Boolean get() = system !is MainSystem
 
         override fun draw(g: Graphics) {
             system.drawIconAndPower(game, g, pos.x, pos.y)

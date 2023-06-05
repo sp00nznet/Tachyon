@@ -1,15 +1,89 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import org.newdawn.slick.Graphics
+import org.newdawn.slick.Input
+import xyz.znix.xftl.draw
+import xyz.znix.xftl.game.Button
+import xyz.znix.xftl.game.ButtonImageSet
+import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
 class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override val sortingType = SortingType.DOORS
 
+    override fun makeExtraButtons(powerPos: IPoint): List<Button> {
+        return listOf(
+            DoorButton(
+                powerPos,
+                ConstPoint(26, -45),
+                false,
+                ButtonImageSet.select2(ship.sys, "img/systemUI/button_door_top")
+            ),
+            DoorButton(
+                powerPos,
+                ConstPoint(26, -22),
+                true,
+                ButtonImageSet.select2(ship.sys, "img/systemUI/button_door_bottom")
+            )
+        )
+    }
+
+    override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, y: Int) {
+        super.drawIconAndPower(game, g, x, y)
+
+        val frame = game.getImg("img/systemUI/button_door_base.png")
+        frame.draw(
+            x + 22 - 6,
+            y - 49 - 6
+        )
+    }
+
     // Nothing required, as the doors are serialised individually
     override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit
+
+    private inner class DoorButton(
+        val powerPos: IPoint,
+        offset: IPoint,
+        val open: Boolean,
+        val imgSet: ButtonImageSet
+    ) :
+        Button(ship.sys, powerPos + offset, ConstPoint(20, 20)) {
+
+        override val disabled: Boolean get() = broken || isHackActive
+
+        override fun draw(g: Graphics) {
+            val img = when {
+                disabled -> imgSet.off
+                hovered -> imgSet.hover
+                else -> imgSet.normal
+            }
+
+            // Same offsets as the base image
+            img.draw(
+                powerPos.x + 22 - 6,
+                powerPos.y - 49 - 6
+            )
+        }
+
+        override fun click(button: Int) {
+            if (button != Input.MOUSE_LEFT_BUTTON)
+                return
+
+            if (disabled)
+                return
+
+            if (open) {
+                game.shipUI.openAllDoors()
+            } else {
+                game.shipUI.closeAllDoors()
+            }
+        }
+    }
 
     companion object {
         const val NAME = "doors"

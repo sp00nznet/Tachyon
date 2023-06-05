@@ -282,6 +282,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     var piloting: Piloting? = null
         private set
 
+    var sensors: Sensors? = null
+        private set
+
+    var backupBattery: BackupBattery? = null
+        private set
+
     // Can't just call this 'doors' since that's the list of all
     // the doors in the ship.
     var doorsSystem: Doors? = null
@@ -1123,6 +1129,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         hacking = systems.mapNotNull { it as? Hacking }.firstOrNull()
         mindControl = systems.mapNotNull { it as? MindControl }.firstOrNull()
         piloting = systems.mapNotNull { it as? Piloting }.firstOrNull()
+        sensors = systems.mapNotNull { it as? Sensors }.firstOrNull()
+        backupBattery = systems.mapNotNull { it as? BackupBattery }.firstOrNull()
         doorsSystem = systems.mapNotNull { it as? Doors }.firstOrNull()
         oxygen = systems.mapNotNull { it as? Oxygen }.firstOrNull()
 
