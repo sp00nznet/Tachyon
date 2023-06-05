@@ -146,7 +146,7 @@ object Buttons {
 
         private val font = game.getFont("HL2", 2f)
 
-        override val disabled: Boolean get() = !ship.isFtlReady || ship.engines!!.powerSelected == 0
+        override val disabled: Boolean get() = !ship.isFtlReady || !ship.canChargeFTL
 
         override fun draw(g: Graphics) {
             val ftlX = pos.x + 6
@@ -154,19 +154,20 @@ object Buttons {
 
             game.getImg("img/buttons/FTL/FTL_base.png").draw(pos.x - 7, pos.y - 7)
 
-            val engineOn = ship.engines!!.powerSelected > 0
+            val canCharge = ship.canChargeFTL
+
             if (ship.isFtlCharged) {
-                g.color = if (engineOn) Constants.JUMP_READY else Constants.JUMP_DISABLED
+                g.color = if (canCharge) Constants.JUMP_READY else Constants.JUMP_DISABLED
                 drawRounded(g, pos.x + 5, pos.y + 6, size.x, size.y, 3)
 
                 val textColour = when {
-                    !engineOn -> Constants.JUMP_DISABLED_TEXT
+                    !canCharge -> Constants.JUMP_DISABLED_TEXT
                     hovered -> Constants.JUMP_READY_TEXT_HOVER
                     else -> Constants.JUMP_READY_TEXT
                 }
                 font.drawStringLegacy(ftlX + 8f, ftlY + 18f, "JUMP", textColour)
             } else {
-                val suffix = if (engineOn) "" else "_off"
+                val suffix = if (canCharge) "" else "_off"
                 val width = (ship.ftlChargeProgress * 74).toInt().coerceAtMost(74)
                 game.getImg("img/buttons/FTL/FTL_loadingbars$suffix.png").drawSection(ftlX - 1, ftlY + 2, width, 29)
             }
@@ -174,7 +175,7 @@ object Buttons {
 
         override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON) return
-            if (!ship.isFtlReady) return
+            if (disabled) return
 
             callback()
         }

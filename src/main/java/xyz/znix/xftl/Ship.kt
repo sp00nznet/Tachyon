@@ -800,9 +800,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         updateCrew(dt)
 
-        ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
-        if (ftlChargeProgress > 1f)
+        if (canChargeFTL) {
+            ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
+        }
+        if (ftlChargeProgress > 1f) {
             ftlChargeProgress = 1f
+        }
 
         for (augment in augments) {
             augment.update(this, dt)
