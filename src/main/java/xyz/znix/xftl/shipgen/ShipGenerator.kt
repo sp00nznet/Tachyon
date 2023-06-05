@@ -127,9 +127,10 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
             // Add a power cost for adding this system.
             // Don't check the current power here, it's allowed to go negative.
-            val category = getSystemCategory(system.room.system!!)
+            val systemInstance = system.room.system!!
+            val category = getSystemCategory(systemInstance)
             val basePowerUse = when {
-                category == SystemCategory.OFFENSIVE /* TODO and not artillery */ -> 1
+                category == SystemCategory.OFFENSIVE && systemInstance !is Artillery -> 1
                 difficulty == Difficulty.HARD -> 1
                 else -> 2
             }
@@ -441,8 +442,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
     private fun getSystemCategory(system: AbstractSystem): SystemCategory {
         return when (system) {
             is Shields, is Engines, is Cloaking -> SystemCategory.DEFENSIVE
-            is Weapons, is Drones, is Teleporter -> SystemCategory.OFFENSIVE
-            // TODO artillery is offensive
+            is Weapons, is Drones, is Teleporter, is Artillery -> SystemCategory.OFFENSIVE
             else -> SystemCategory.GENERAL
         }
     }

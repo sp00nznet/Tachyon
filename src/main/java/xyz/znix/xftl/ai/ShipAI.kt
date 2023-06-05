@@ -255,7 +255,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 is Shields -> 0
                 is Weapons -> 1
                 is Clonebay -> 1
-                // TODO Artillery=2
+                is Artillery -> 2
                 is Oxygen -> 3
                 is Engines, is Drones, is Piloting -> 4
                 is Cloaking, is MindControl, is Hacking -> 5
@@ -332,7 +332,7 @@ class ManningTask(val room: Room) : AITask() {
             is Piloting -> 64
             is Shields -> if (isHard) 67 else 65
             is Engines -> if (isHard) 65 else 67
-            is Weapons -> 66 // TODO and artillery
+            is Weapons, is Artillery -> 66
             is Oxygen -> 68
             is Sensors -> 69
             is Doors, is Cloaking -> 70
