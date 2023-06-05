@@ -234,10 +234,19 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
         sabotageProgress = 0f
 
-        // When the system breaks, it takes a hull point
-        ship.damage(room!!, 1, 1, 0)
+        // This bar of the system is broken.
+        ship.damage(room!!, 0, 1, 0)
 
-        // TODO explosion animation
+        if (!broken) {
+            return
+        }
+
+        // When the system breaks, it does a hull point of damage.
+        ship.damage(room!!, 1, 0, 0)
+
+        // Play the explosion animation
+        val animation = ship.sys.animations["explosion1"]
+        ship.animations += Ship.FloatingAnimation.centred(animation, room!!.pixelCentre)
     }
 
     open val iconColourName: String
