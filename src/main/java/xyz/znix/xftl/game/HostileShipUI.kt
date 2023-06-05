@@ -15,6 +15,8 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
 
     private val font = game.getFont("HL2")
     private val titleFont = game.getFont("HL2", 2f)
+    private val statusFont = game.getFont("JustinFont8")
+    private val jumpWarningFont = game.getFont("HL1", 2f)
 
     private val shieldIconStandard = game.getImg("img/combatUI/box_hostiles_shield1.png")
     private val shieldIconBroken = game.getImg("img/combatUI/box_hostiles_shield2.png")
@@ -76,6 +78,15 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
 
         // Draw the title
         titleFont.drawString(textX + 1f, boxY + 25f, game.translator["target_window"], textColour)
+
+        // Draw the class and relationship text
+        val statusTextX = boxX + box.width - 20 - 11
+        val classY = boxY + 9 + 38
+        drawStatus(statusTextX, classY, isHostile)
+
+        // Draw the FTL charging warning, if relevant.
+        val centreX = boxX + box.width / 2
+        drawEscapeWarning(centreX, boxY)
 
         // Draw the hull level
         val hullY = boxY + 29 + 4
@@ -146,6 +157,63 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
 
             sys.drawIconAndPower(game, g, x, y)
         }
+    }
+
+    private fun drawStatus(x: Int, classY: Int, isHostile: Boolean) {
+        val relationY = classY + 15
+
+        if (enemy.shipClass != null) {
+            val shipClassName = game.translator[enemy.shipClass]
+            val classStr = game.translator["combat_class"].replace("\\1", shipClassName)
+
+            statusFont.drawStringLeftAligned(x.f, classY.f, classStr, Constants.SHIP_STATUS_PLAIN)
+        }
+
+        val relationText = when (isHostile) {
+            true -> game.translator["hostile"]
+            false -> game.translator["neutral"]
+        }
+        val relationColour = when (isHostile) {
+            true -> Constants.SHIP_STATUS_HOSTILE
+            false -> Constants.SHIP_STATUS_PLAIN
+        }
+        val relationStr = game.translator["combat_relationship"].replace("\\1", relationText)
+        statusFont.drawStringLeftAligned(x.f, relationY.f, relationStr, relationColour)
+    }
+
+    private fun drawEscapeWarning(centreX: Int, boxY: Int) {
+        val timeRemaining = enemy.escapeTimer ?: return
+
+        val warningKey = when {
+            !enemy.canChargeFTL -> "warning_ftl_delayed"
+            timeRemaining < 5f -> "warning_ftl_imminent"
+            else -> "warning_ftl_charging"
+        }
+
+        var alpha = 1f
+
+        // Flash the alpha if a jump is imminent.
+        if (warningKey == "warning_ftl_imminent") {
+            // Run the flashing animation while paused
+            var timeNS = System.nanoTime()
+            if (timeNS < 0) {
+                timeNS += Long.MAX_VALUE
+            }
+
+            val period = 700_000_000
+            val progress = (timeNS % period).toFloat() / period
+
+            // Fade up then down
+            alpha = progress * 2
+            if (alpha > 1) {
+                alpha = 2 - alpha
+            }
+        }
+
+        val message = game.translator[warningKey]
+
+        val leftX = centreX - jumpWarningFont.getWidth(message) / 2
+        UIUtils.drawStringWithGlow(game, jumpWarningFont, message, leftX, boxY + 1, GlowColour.RED, alpha)
     }
 
     private fun renderSmallbar(x: Int, y: Int, key: String, filter: Color, textColour: Color) {

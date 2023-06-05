@@ -276,7 +276,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         private val superShieldWarning = WarningFlasher(
             game, powerPos + ConstPoint(35, -62),
             "warning_super_shield_hacking",
-            false, colour = WarningFlasher.WarningColour.WHITE
+            false, colour = GlowColour.WHITE
         )
 
         override fun click(button: Int) {

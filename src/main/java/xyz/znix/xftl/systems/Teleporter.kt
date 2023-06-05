@@ -9,6 +9,7 @@ import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.ButtonImageSet
+import xyz.znix.xftl.game.GlowColour
 import xyz.znix.xftl.game.WarningFlasher
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -220,7 +221,7 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val superShieldWarning = WarningFlasher(
             game, powerPos + ConstPoint(17, -59),
             "warning_super_shield_teleporter",
-            false, colour = WarningFlasher.WarningColour.WHITE
+            false, colour = GlowColour.WHITE
         )
 
         override fun draw(g: Graphics) {

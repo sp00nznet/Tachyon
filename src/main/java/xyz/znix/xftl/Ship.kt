@@ -46,7 +46,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
      * The localisation key of the ship, defining the in-hangar title
      * for player ships (eg 'The Kestrel').
      */
-    val shipTitleKey: GameText? = shipNode.getGameTextChild("name")
+    val shipTitle: GameText? = shipNode.getGameTextChild("name")
+
+    /**
+     * The localisation key of this type of ship, shown on the right-hand
+     * side of the target panel for enemies.
+     */
+    val shipClass: GameText? = shipNode.getGameTextChild("class")
 
     val offset: ConstPoint
     val floorOffset: ConstPoint
@@ -134,10 +140,20 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     // How much scrap the player has
     var scrap: Int = 10 // TODO 30 on easy
 
-    // How far through charging the FTL drive, 1=fully charged
+    // How far through charging the FTL drive, 1=fully charged.
+    // These only apply to the player, enemies use a fixed timer.
     var ftlChargeProgress: Float = 0f
     val isFtlCharged get() = ftlChargeProgress >= 1f
     val isFtlReady get() = isFtlCharged && engines!!.powerSelected > 0
+
+    // This is for both the player and enemies
+    val canChargeFTL: Boolean
+        get() {
+            // For the FTL to charge, the engines and piloting must
+            // be working, and a pilot must be present.
+            val hasPilot = friendlyCrew.any { it.room == piloting!!.room }
+            return engines!!.powerSelected > 0 && piloting!!.undamagedEnergy > 0 && hasPilot
+        }
 
     val maxReactorPower: Int get() = 25
 

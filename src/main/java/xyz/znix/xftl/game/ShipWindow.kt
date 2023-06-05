@@ -134,7 +134,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
     private fun drawUpgrades(g: Graphics) {
         // Draw the ship name
-        val name = game.translator[ship.shipTitleKey!!]
+        val name = game.translator[ship.shipTitle!!]
 
         val nameWidth = shipNameFont.getWidth(name)
 

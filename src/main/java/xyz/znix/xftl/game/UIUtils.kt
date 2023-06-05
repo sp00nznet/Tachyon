@@ -1,6 +1,8 @@
 package xyz.znix.xftl.game
 
+import org.newdawn.slick.Color
 import org.newdawn.slick.Image
+import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
 
@@ -33,4 +35,85 @@ object UIUtils {
 
         return startWidth + textWidth + endWidth
     }
+
+    /**
+     * Draw a string with a glowing background, like what [WarningFlasher] does.
+     */
+    fun drawStringWithGlow(
+        game: InGameState,
+        font: SILFontLoader,
+        text: String,
+        x: Int, y: Int,
+        colour: GlowColour,
+        alpha: Float
+    ) {
+        val spaceWidth = font.getWidth(" ")
+
+        // Account for the less-glowing bits of each side of the glow
+        val glowMargin = 1
+
+        val glowImage = game.getImg("img/warnings/backglow_warning_${colour.bgName}.png")
+        glowImage.alpha = alpha
+
+        val fontColour = Color(colour.colour)
+        fontColour.a = alpha
+
+        // Draw on the text, with each word glowing separately.
+        var mutX = x
+        for (word in text.split(' ')) {
+            val wordWidth = font.getWidth(word)
+            font.drawString(mutX.f, y.f, word, fontColour)
+            drawGlow(glowImage, mutX - glowMargin, y, wordWidth + glowMargin * 2)
+            mutX += wordWidth
+
+            // The space doesn't glow
+            mutX += spaceWidth
+        }
+    }
+
+    private fun drawGlow(image: Image, x: Int, y: Int, width: Int) {
+        // The glow image is huge, we have to scale it down.
+        val scale = 1 / 9f
+
+        // How wide the ends of the glow image are, in the glow image's
+        // coordinate system.
+        val endWidthImg = 100f
+
+        val endWidthScreen = endWidthImg * scale
+
+        val glowHeight = image.height * scale
+
+        val textMiddle = y - 6
+        val glowTopY = textMiddle - glowHeight / 2
+        val glowBottomY = glowTopY + glowHeight
+
+        // Left side
+        image.draw(
+            x.f, glowTopY, x.f + endWidthScreen, glowBottomY,
+            0f, 0f, endWidthImg, image.height.f
+        )
+
+        // Middle
+        image.draw(
+            x + endWidthScreen, glowTopY, x.f + width - endWidthScreen, glowBottomY,
+            100f, 0f, 200f, image.height.f
+        )
+
+        // Right side
+        image.draw(
+            x.f + width - endWidthScreen, glowTopY, x.f + width, glowBottomY,
+            image.width.f - endWidthImg, 0f, image.width.f, image.height.f
+        )
+    }
+}
+
+/**
+ * A colour that text with a background glow can use.
+ *
+ * The glow is based of an image, so there's only a limited selection.
+ */
+enum class GlowColour(val bgName: String, val colour: Color) {
+    RED("red", Constants.WARNING_COLOUR_RED),
+    WHITE("white", Constants.WARNING_COLOUR_WHITE),
+    GREEN("green", Constants.WARNING_COLOUR_RED), // TODO set the right colour
 }

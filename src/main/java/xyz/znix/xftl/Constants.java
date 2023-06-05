@@ -145,6 +145,9 @@ public class Constants {
     public static final Color SHIP_BOX_TEXT_NEUTRAL = new Color(116, 119, 114);
     public static final Color SHIP_BOX_TEXT_HOSTILE = new Color(116, 83, 80);
 
+    public static final Color SHIP_STATUS_HOSTILE = SYS_ENERGY_BROKEN;
+    public static final Color SHIP_STATUS_PLAIN = UI_SCRAP_TEXT_COLOUR;
+
     private Constants() {
     }
 }

@@ -51,13 +51,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         val escapeTimer = ship.escapeTimer
         if (escapeTimer != null) {
-            // For the FTL to charge, the engines and piloting must
-            // be working, and a pilot must be present.
-            val engines = ship.engines!!
-            val piloting = ship.piloting!!
-            val hasPilot = ship.friendlyCrew.any { it.room == piloting.room }
-
-            if (engines.powerSelected > 0 && piloting.undamagedEnergy > 0 && hasPilot) {
+            if (ship.canChargeFTL) {
                 ship.escapeTimer = escapeTimer - dt
             }
 
