@@ -12,16 +12,17 @@ import kotlin.random.Random
  */
 class WarningFlasher(
     val game: InGameState,
-    val centre: IPoint,
+    var centre: IPoint,
     key: String,
     val warningWarning: Boolean = true,
     val linePoints: List<IPoint> = emptyList(),
+    val colour: WarningColour = WarningColour.RED,
     val animated: Boolean = true
 ) {
-    private val text: String = game.translator[key]
+    private val textLines: List<String> = game.translator[key].split("\n")
     private val warningText: String = game.translator["warning_warning"]
 
-    private val glowImage = game.getImg("img/warnings/backglow_warning_red.png")
+    private val glowImage = game.getImg("img/warnings/backglow_warning_${colour.bgName}.png")
 
     private val font = game.getFont("HL1", 2f)
 
@@ -55,10 +56,15 @@ class WarningFlasher(
             else -> 0.4f
         }
 
-        val colour = Color(Constants.WARNING_COLOUR)
+        val colour = Color(this.colour.colour)
         colour.a = alpha
 
-        drawStringWithGlow(text, centre.y, colour, alpha)
+        val lineSpacing = 18
+        val topY = centre.y - lineSpacing * (textLines.size - 1)
+
+        for ((index, line) in textLines.withIndex()) {
+            drawStringWithGlow(line, topY + lineSpacing * index, colour, alpha)
+        }
 
         if (warningWarning) {
             val spacing = if (linePoints.isEmpty()) 24 else 23
@@ -173,5 +179,11 @@ class WarningFlasher(
 
     fun stop() {
         stopTime = 0
+    }
+
+    enum class WarningColour(val bgName: String, val colour: Color) {
+        RED("red", Constants.WARNING_COLOUR_RED),
+        WHITE("white", Constants.WARNING_COLOUR_WHITE),
+        GREEN("green", Constants.WARNING_COLOUR_RED), // TODO set the right colour
     }
 }

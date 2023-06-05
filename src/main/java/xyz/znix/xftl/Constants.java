@@ -136,7 +136,8 @@ public class Constants {
     public static final Color SHIP_HEALTH_MED = new Color(255, 230, 92);
     public static final Color SHIP_HEALTH_HIGH = new Color(120, 255, 120);
 
-    public static final Color WARNING_COLOUR = new Color(253, 84, 70);
+    public static final Color WARNING_COLOUR_RED = new Color(253, 84, 70);
+    public static final Color WARNING_COLOUR_WHITE = SECTOR_CUTOUT_TEXT;
 
     private Constants() {
     }

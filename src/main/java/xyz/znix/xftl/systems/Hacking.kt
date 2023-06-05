@@ -10,10 +10,7 @@ import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
-import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.game.SoundInstance
-import xyz.znix.xftl.game.SystemPowerButton
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
@@ -74,8 +71,6 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     private val loopSound by onInit { it.sounds.getLoop("hackLoop") }
 
     private var loopSoundInstance: SoundInstance? = null
-
-    // TODO block drone launches when a super-shield is up
 
     override fun powerStateChanged() {
         super.powerStateChanged()
@@ -176,6 +171,11 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (target.system == null)
             return
 
+        // Super shields block the probe. This is for the AI, as
+        // the player will be blocked from selecting a room.
+        if (target.ship.superShield > 0)
+            return
+
         // The direction the probe flies in depends on whether this is
         // a player ship or an enemy ship, as it's supposed to go
         // forwards out of both of them.
@@ -273,6 +273,12 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 return game.shipUI.isSelectingHackingTarget
             }
 
+        private val superShieldWarning = WarningFlasher(
+            game, powerPos + ConstPoint(35, -62),
+            "warning_super_shield_hacking",
+            false, colour = WarningFlasher.WarningColour.WHITE
+        )
+
         override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
@@ -289,11 +295,23 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 // unpaused, clear it out.
                 selectedTarget = null
 
+                val enemyShip = game.getEnemyOf(ship) ?: return
+
+                if (enemyShip.superShield > 0) {
+                    superShieldWarning.startFor(3.5f)
+                    return
+                }
+
                 ship.sys.shipUI.hackSelected()
                 return
             }
 
             startHackingPulse()
+        }
+
+        override fun draw(g: Graphics) {
+            super.draw(g)
+            superShieldWarning.draw(g)
         }
     }
 

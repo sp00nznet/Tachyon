@@ -9,6 +9,7 @@ import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.ButtonImageSet
+import xyz.znix.xftl.game.WarningFlasher
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -50,8 +51,6 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     private var commandedTeleport: TeleportAction? = null
 
-    // TODO block teleporting when a super-shield is up
-
     override fun update(dt: Float) {
         super.update(dt)
 
@@ -61,6 +60,9 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         if (command.send) {
             if (!isSendAvailable)
+                return
+
+            if (command.room.ship.superShield > 0)
                 return
 
             // TODO support crew that are passing through
@@ -75,6 +77,9 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             }
         } else {
             if (!isReceiveAvailable)
+                return
+
+            if (command.room.ship.superShield > 0)
                 return
 
             // TODO limit the crew we can teleport to four (at least on
@@ -103,12 +108,15 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val top = ButtonImageSet.select2(ship.sys, "img/systemUI/button_teleport_top")
 
         val buttonBase = powerPos + ConstPoint(22, -49)
+
+        val bgButton = TeleporterButtonBackground(buttonBase, powerPos)
+
         return listOf(
             // The background comes first so it doesn't draw on top of the others
-            TeleporterButtonBackground(buttonBase),
+            bgButton,
 
-            TeleporterButton(buttonBase, ConstPoint(4, 4), true, top),
-            TeleporterButton(buttonBase, ConstPoint(4, 27), false, bottom)
+            TeleporterButton(buttonBase, ConstPoint(4, 4), true, top, bgButton.superShieldWarning),
+            TeleporterButton(buttonBase, ConstPoint(4, 27), false, bottom, bgButton.superShieldWarning)
         )
     }
 
@@ -148,7 +156,8 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val base: IPoint,
         offset: IPoint,
         val isSend: Boolean,
-        val images: ButtonImageSet
+        val images: ButtonImageSet,
+        val superShieldWarning: WarningFlasher
     ) :
         Button(ship.sys, base + offset, ConstPoint(20, 20)) {
 
@@ -180,6 +189,21 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (disabled)
                 return
 
+            var enemyShip = game.getEnemyOf(ship)
+
+            // Allow the player to teleport crew off a non-hostile ship
+            if (!isSend && ship == game.player) {
+                enemyShip = game.enemy
+            }
+
+            if (enemyShip == null)
+                return
+
+            if (enemyShip.superShield > 0) {
+                superShieldWarning.startFor(3.5f)
+                return
+            }
+
             // If there's already an order queued up, clear it out.
             commandedTeleport = null
 
@@ -187,12 +211,23 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
     }
 
-    private inner class TeleporterButtonBackground(pos: IPoint) : Button(ship.sys, pos, ConstPoint.ZERO) {
+    private inner class TeleporterButtonBackground(pos: IPoint, powerPos: IPoint) :
+        Button(ship.sys, pos, ConstPoint.ZERO) {
+
         override val makesHoverNoise: Boolean get() = false
+
+        // Put this here so there's only one copy of it.
+        val superShieldWarning = WarningFlasher(
+            game, powerPos + ConstPoint(17, -59),
+            "warning_super_shield_teleporter",
+            false, colour = WarningFlasher.WarningColour.WHITE
+        )
 
         override fun draw(g: Graphics) {
             val img = ship.sys.getImg("img/systemUI/button_teleport_base.png")
             img.draw(pos.x.f - BASE_GLOW, pos.y.f - BASE_GLOW)
+
+            superShieldWarning.draw(g)
         }
 
         override fun click(button: Int) = Unit
