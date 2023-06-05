@@ -23,7 +23,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
     override fun powerStateChanged() {
         if (powerSelected > powerAvailable)
-            simpleSelectedEnergyLevel = powerAvailable
+            simpleSelectedEnergyLevel = powerAvailable.coerceAtLeast(0)
     }
 
     open fun increasePower() {

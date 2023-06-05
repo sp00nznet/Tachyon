@@ -485,7 +485,7 @@ abstract class SystemPowerButton(
 ) :
     Button(game, powerPos + calculatePosOffset(powerHeight), calculateSize(powerHeight)) {
 
-    val base = game.getImg("img/systemUI/button_cloaking${powerHeight}_base.png")
+    open val base = game.getImg("img/systemUI/button_cloaking${powerHeight}_base.png")
     val buttonImage = ButtonImageSet.select2(game, "img/systemUI/button_cloaking${powerHeight}")
     val timerIcon = game.getImg("img/systemUI/button_cloaking${powerHeight}_charging_on.png")
 

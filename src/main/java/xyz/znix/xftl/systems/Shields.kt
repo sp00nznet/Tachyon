@@ -130,7 +130,7 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     override fun powerStateChanged() {
         if (powerAvailable < powerSelected)
-            selectedShieldBars = Math.floorDiv(powerAvailable, 2)
+            selectedShieldBars = Math.floorDiv(powerAvailable, 2).coerceAtLeast(0)
 
         if (activeShields > selectedShieldBars)
             activeShields = selectedShieldBars

@@ -138,6 +138,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
             AugmentBlueprint.RECONSTRUCTIVE_TELEPORT -> AugmentBlueprint(elem)
             AugmentBlueprint.OXYGEN_MASKS -> AugmentBlueprint(elem)
             AugmentBlueprint.BACKUP_DNA -> AugmentBlueprint(elem)
+            AugmentBlueprint.BATTERY_CHARGER -> AugmentBlueprint(elem)
 
             else -> {
                 println("WARNING: Adding unknown augment '$name'")

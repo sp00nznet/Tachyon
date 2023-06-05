@@ -197,7 +197,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     // Something - anything - happened to the system's power level.
     // Systems should generally override this rather than dealDamage, to include stuff like ionisation or
     // a Zoltan leaving the room.
-    protected open fun powerStateChanged() {
+    open fun powerStateChanged() {
     }
 
     fun repair(progress: Float) {

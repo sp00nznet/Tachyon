@@ -164,7 +164,11 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     val reactorPower: Int get() = purchasedReactorPower
 
     // The amount of unused reactor power
-    val powerAvailable: Int get() = reactorPower - powerConsumed
+    val powerAvailable: Int
+        get() {
+            val battPower = backupBattery?.contributedPower ?: 0
+            return reactorPower - powerConsumed + battPower
+        }
 
     val maxHealth = shipNode.getChild("health").getAttributeValue("amount").toInt()
     var health = maxHealth

@@ -405,6 +405,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         drawSystems(g)
         drawSubSystems(gc, g)
 
+        // Draw the buttons last, so they don't disappear for a frame
+        // when they're updated.
+        for (button in buttons) {
+            button.draw(g)
+        }
+
         updatingButtons = false
     }
 
@@ -617,10 +623,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val size = csr.second - csr.first
             g.drawRect(csr.first.x.f, csr.first.y.f, size.x.f, size.y.f)
             g.drawRect(csr.first.x + 1f, csr.first.y + 1f, size.x - 2f, size.y - 2f)
-        }
-
-        for (button in buttons) {
-            button.draw(g)
         }
     }
 

@@ -253,9 +253,15 @@ object SaveUtil {
         return getAttrIntOrNull(elem, name) ?: error("Non-nullable int attribute '$name' was null!")
     }
 
-    fun getAttrFloat(elem: Element, name: String): Float {
+    fun getAttrFloatOrNull(elem: Element, name: String): Float? {
         val value = elem.getAttributeValue(name) ?: error("Missing float attribute '$name'")
+        if (value == "null")
+            return null
         return value.toFloat()
+    }
+
+    fun getAttrFloat(elem: Element, name: String): Float {
+        return getAttrFloatOrNull(elem, name) ?: error("Non-nullable float attribute '$name' was null!")
     }
 
     fun <T : ISerialReferencable> getAttrRef(
