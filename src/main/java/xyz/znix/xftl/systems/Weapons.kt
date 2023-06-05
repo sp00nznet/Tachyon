@@ -78,8 +78,6 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
                 g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
 
-                // TODO how much are the weapons retracted by?
-
                 weapon.render(g)
             }
 

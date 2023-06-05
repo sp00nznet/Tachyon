@@ -353,7 +353,6 @@ object Buttons {
 
                 is DroneBlueprint -> {
                     // Draw the drone name
-                    // TODO deduplicate the name drawing?
                     val name = blueprint.translateShort(game)
                     val nameWindowWidth = 96
                     val nameX = (nameWindowWidth - weaponNameFont.getWidth(name)) / 2

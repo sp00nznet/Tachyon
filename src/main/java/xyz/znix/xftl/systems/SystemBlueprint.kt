@@ -40,7 +40,7 @@ class SystemBlueprint(xml: Element) : Blueprint(xml) {
             BackupBattery.NAME -> BackupBattery(this)
 
             else -> {
-                // TODO throw exception when all systems are implemented
+                // Must be a modded system.
                 println("Warning: unimplemented system $type")
                 null
             }

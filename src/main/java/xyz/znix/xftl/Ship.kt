@@ -1416,7 +1416,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         // Load the crew
         for (crewElem in rootElem.getChild("crew").getChildren("crewMember")) {
-            // TODO support drone pawns
             val crewMember = addCrewMember(crewElem.getAttributeValue("type"), false)
             crewMember.loadFromXML(crewElem, refs)
         }

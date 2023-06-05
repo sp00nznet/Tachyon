@@ -51,8 +51,6 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
                 "HOSTILE" -> SectorClass.HOSTILE
                 "NEBULA" -> SectorClass.NEBULA
 
-                // TODO use OVERRIDE_HOSTILE instead in AE
-
                 // Skip unknown sector classes
                 else -> continue@outer
             }
@@ -196,7 +194,6 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
     }
 
     private fun parseSectorType(elem: Element, namedSectorTypes: HashMap<String, List<String>>) {
-        // TODO handle the Advanced Edition overrides
         val name = elem.requireAttributeValue("name")
         check(!namedSectorTypes.containsKey(name))
         namedSectorTypes[name] = elem.mapChildrenText("sector")
