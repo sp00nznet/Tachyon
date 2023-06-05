@@ -46,7 +46,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
      * The localisation key of the ship, defining the in-hangar title
      * for player ships (eg 'The Kestrel').
      */
-    val shipTitleKey: String? = shipNode.getChild("name")?.getAttributeValue("id")
+    val shipTitleKey: GameText? = shipNode.getGameTextChild("name")
 
     val offset: ConstPoint
     val floorOffset: ConstPoint

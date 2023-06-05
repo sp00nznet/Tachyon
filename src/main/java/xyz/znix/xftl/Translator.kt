@@ -1,5 +1,7 @@
 package xyz.znix.xftl
 
+import org.jdom2.Element
+
 class Translator(df: Datafile, lang: String) {
     val translations: Map<String, String>
 
@@ -35,4 +37,41 @@ class Translator(df: Datafile, lang: String) {
     operator fun get(key: String): String {
         return translations[key] ?: throw IllegalArgumentException("Missing translation key $key")
     }
+
+    /**
+     * Convenience helper for [GameText.get].
+     */
+    operator fun get(text: GameText): String {
+        return text.get(this)
+    }
+}
+
+/**
+ * Represents a string parsed from the XML files that may or may not be localised.
+ */
+class GameText(private val literal: String?, private val key: String?) {
+
+    fun get(translator: Translator): String {
+        if (literal != null) {
+            return literal
+        }
+
+        return translator[key!!]
+    }
+
+    companion object {
+        fun parse(elem: Element): GameText {
+            val id: String? = elem.getAttributeValue("id")
+            if (id != null) {
+                return GameText(null, id)
+            }
+
+            return GameText(elem.textTrim, null)
+        }
+    }
+}
+
+fun Element.getGameTextChild(name: String): GameText? {
+    val elem = this.getChild(name) ?: return null
+    return GameText.parse(elem)
 }
