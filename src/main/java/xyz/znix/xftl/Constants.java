@@ -132,6 +132,12 @@ public class Constants {
     public static final float CREW_BOX_BG_ALPHA = 0.25f;
     public static final Color CREW_BOX_NAME_COLOUR = new Color(200, 200, 200);
 
+    public static final Color SHIP_HEALTH_LOW = new Color(255, 92, 92);
+    public static final Color SHIP_HEALTH_MED = new Color(255, 230, 92);
+    public static final Color SHIP_HEALTH_HIGH = new Color(120, 255, 120);
+
+    public static final Color WARNING_COLOUR = new Color(253, 84, 70);
+
     private Constants() {
     }
 }

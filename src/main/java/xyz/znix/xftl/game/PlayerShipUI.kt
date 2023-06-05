@@ -54,6 +54,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
      */
     private var currentWindow: Window? = null
 
+    private val hullWarningLines = listOf(
+        ConstPoint(361, 51),
+        ConstPoint(393, 82),
+        ConstPoint(482, 82)
+    )
+    private val hullWarning25 = WarningFlasher(game, ConstPoint(437, 100), "warning_hull_25", true, hullWarningLines)
+    private val hullWarning50 = WarningFlasher(game, ConstPoint(437, 100), "warning_hull_50", true, hullWarningLines)
+    private val hullWarning75 = WarningFlasher(game, ConstPoint(437, 100), "warning_hull_75", true, hullWarningLines)
+
+    private var lastHealth: Int = -1
+
     val isWindowOpen: Boolean get() = currentWindow != null
 
     private var crewSelectionRectangle: Pair<ConstPoint, Point>? = null
@@ -617,9 +628,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     private fun drawTopBar(g: Graphics) {
-        game.getImg("img/statusUI/top_hull.png").draw(0f, 0f)
+        val isHullBoxRed = hullWarning25.isFlashingHigh || hullWarning50.isFlashingHigh || hullWarning75.isFlashingHigh
+        val hullBoxImage = when {
+            isHullBoxRed -> game.getImg("img/statusUI/top_hull_red.png")
+            else -> game.getImg("img/statusUI/top_hull.png")
+        }
+        hullBoxImage.draw(0f, 0f)
 
-        val labelImg = game.getImg("img/statusUI/top_hull_label.png")
+        val labelImg = when {
+            isHullBoxRed -> game.getImg("img/statusUI/top_hull_red_label.png")
+            else -> game.getImg("img/statusUI/top_hull_label.png")
+        }
         val txt = "HULL"
         UIUtils.drawTab(font, txt, labelImg, 0f, 0f, 10f, 30f)
 
@@ -630,16 +649,44 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // TODO support ships with more or less health
         check(ship.maxHealth == 30)
 
-        // TODO use the correct colours
         val hpW = 12f * ship.health
-        val healthColour = when (ship.health.f / ship.maxHealth) {
-            in 0f..0.33f -> Color.red
-            in 0.33f..0.66f -> Color.yellow
-            else -> Color.green
+        val healthColour = when {
+            ship.health < 10 -> SHIP_HEALTH_LOW
+            ship.health < 20 -> SHIP_HEALTH_MED
+            else -> SHIP_HEALTH_HIGH
         }
         val mask = game.getImg("img/statusUI/top_hull_bar_mask.png")
         val hpH = mask.height.f
         mask.draw(11f, 0f, 11f + hpW, hpH, 0f, 0f, hpW, hpH, healthColour)
+
+        val lastFraction = lastHealth.f / ship.maxHealth
+        val newFraction = ship.health.f / ship.maxHealth
+        lastHealth = ship.health
+
+        if (newFraction < 0.25f) {
+            // Constantly trigger the hull critical warning
+            hullWarning25.startFor(5f)
+        } else if (lastFraction > 0.50f && newFraction < 0.50f) {
+            hullWarning50.startFor(9f)
+        } else if (lastFraction > 0.75f && newFraction < 0.75f) {
+            hullWarning75.startFor(9f)
+        }
+
+        // Stop animations when we're healed, or our health drops
+        // enough to trigger the next animation.
+        if (newFraction > 0.25f) {
+            hullWarning25.stop()
+        }
+        if (newFraction !in 0.25f..0.5f) {
+            hullWarning50.stop()
+        }
+        if (newFraction !in 0.5f..0.75f) {
+            hullWarning75.stop()
+        }
+
+        hullWarning25.draw(g)
+        hullWarning50.draw(g)
+        hullWarning75.draw(g)
 
         // Draw the scrap indicator
         val isScrapRed = insufficientScrapTimer != 0f &&
