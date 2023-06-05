@@ -73,7 +73,8 @@ class WarningFlasher(
             val a = linePoints[i]
             val b = linePoints[i + 1]
 
-            // TODO make the lines properly match FTL.
+            // TODO make the line thickness properly match FTL - on angles
+            //  ours doesn't look as good.
 
             g.lineWidth = 2f
             g.drawLine(a.x.f, a.y.f, b.x.f, b.y.f)

@@ -126,11 +126,11 @@ class SILFontLoader : Font {
     }
 
     override fun getHeight(str: String?): Int {
-        TODO("not implemented")
+        throw UnsupportedOperationException("not implemented")
     }
 
     override fun drawString(x: Float, y: Float, text: String?) {
-        TODO("not implemented")
+        throw UnsupportedOperationException("not implemented")
     }
 
     /**
@@ -205,7 +205,7 @@ class SILFontLoader : Font {
     }
 
     override fun drawString(x: Float, y: Float, text: String?, col: Color?, startIndex: Int, endIndex: Int) {
-        TODO("not implemented")
+        throw UnsupportedOperationException("not implemented")
     }
 
     override fun getWidth(str: String): Int {
@@ -222,7 +222,7 @@ class SILFontLoader : Font {
     }
 
     override fun getLineHeight(): Int {
-        TODO("not implemented")
+        throw UnsupportedOperationException("not implemented")
     }
 
     fun supportsCharacter(c: Char): Boolean {
