@@ -66,8 +66,10 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (command.room.ship.superShield > 0)
                 return
 
-            // TODO support crew that are passing through
-            val ourCrew = room!!.crew.filter { it.mode == AbstractCrew.SlotType.CREW && it is LivingCrew }
+            // Crew are only teleported if they're assigned a slot on the teleporter.
+            val ourCrew = room!!.crew.filter {
+                it.mode == AbstractCrew.SlotType.CREW && it is LivingCrew && room!!.isCrewAssigned(it)
+            }
 
             // Don't waste a cooldown if we're not teleporting anyone
             if (ourCrew.isEmpty())
@@ -83,11 +85,14 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (command.room.ship.superShield > 0)
                 return
 
-            // TODO limit the crew we can teleport to four (at least on
-            //  a two-person teleporter, you can't teleport more than four
-            //  crew, even if they're all inside the same room by walking
-            //  thorough).
-            val ourCrew = command.room.crew.filter { it.mode == AbstractCrew.SlotType.INTRUDER && it is LivingCrew }
+            var ourCrew = command.room.crew.filter { it.mode == AbstractCrew.SlotType.INTRUDER && it is LivingCrew }
+
+            // Limit the crew we can teleport to four (at least on a two-person
+            // teleporter, you can't teleport more than four crew, even if
+            // they're all inside the same room by walking thorough).
+            if (ourCrew.size > 4) {
+                ourCrew = ourCrew.shuffled().subList(0, 4)
+            }
 
             // Don't waste a cooldown if we're not teleporting anyone
             if (ourCrew.isEmpty())

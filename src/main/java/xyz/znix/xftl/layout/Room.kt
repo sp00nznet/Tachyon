@@ -589,6 +589,13 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         return null
     }
 
+    /**
+     * Returns true if the specified crewmember is assigned to walk to a slot in this room.
+     */
+    fun isCrewAssigned(crew: AbstractCrew): Boolean {
+        return reservedPlayerSlots.contains(crew) || reservedEnemySlots.contains(crew)
+    }
+
     private fun slotsFor(type: AbstractCrew.SlotType): Array<AbstractCrew?> = when (type) {
         AbstractCrew.SlotType.CREW -> reservedPlayerSlots
         AbstractCrew.SlotType.INTRUDER -> reservedEnemySlots
