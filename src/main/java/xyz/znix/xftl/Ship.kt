@@ -1009,10 +1009,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             system.onJump()
         }
 
-        // TODO when we implement door attacking, clear out the damage
-        //  during a jump to reduce the size of the save file. This doesn't
-        //  exactly match vanilla, but it's exceedingly unlikely to matter
-        //  as long as there aren't any boarders.
+        // Jumping resets the door health. I haven't checked that FTL does
+        // this, but the wiki says it does and it's also convenient as it
+        // reduces the size of the savefile.
+        for (door in doors) {
+            door.resetHealth()
+        }
     }
 
     /**
@@ -1470,9 +1472,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         // Deserialise the doors.
         val doorsElem = rootElem.getChild("doors")
+        val doorsWithXML = HashSet<Door>()
         for (doorElem in doorsElem.getChildren("door")) {
             val index = SaveUtil.getAttrInt(doorElem, "doorIndex")
             doors[index].loadFromXML(doorElem)
+            doorsWithXML.add(doors[index])
+        }
+        for (door in doors) {
+            if (door !in doorsWithXML) {
+                door.loadWithoutXML()
+            }
         }
         val doorStateString = doorsElem.getChildTextTrim("isOpen")
         for ((index, door) in doors.withIndex()) {

@@ -7,6 +7,7 @@ import org.newdawn.slick.Image
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.savegame.ISerialReferencable
@@ -157,6 +158,9 @@ abstract class AbstractCrew(
     private var isPunching: Boolean = false
     private var sharesHostileCell: Boolean = false
 
+    private var doorAttackPos: IPoint? = null // Where to stand when attacking the door
+    private var doorToAttack: Door? = null
+
     private var teleportingTo: Room? = null
     private var teleportTimer: Float = 0f
 
@@ -214,6 +218,7 @@ abstract class AbstractCrew(
 
         icon = portraitAnim.startLooping()
 
+        @Suppress("LeakingThis")
         updateAnimation()
     }
 
@@ -324,6 +329,22 @@ abstract class AbstractCrew(
                 return
         }
 
+        // Bash at the door until it's opened. We still have our target set
+        // while this is happening, so this must be done before the moving check.
+        if (doorAttackPos == pixelPosition && doorToAttack!!.isLockedFor(this)) {
+
+            // Just in case this didn't get reset, we don't want to punch the door.
+            isPunching = false
+
+            updateAttack(Action.ATTACKING_DOOR, dt, {
+                doorToAttack!!.attackDoor()
+            }, {
+                // Animation start, do nothing.
+            })
+
+            return
+        }
+
         val nextTargetPos = this.nextTargetPos // Avoid mutability errors
         if (nextTargetPos != null) {
             currentAction = Action.MOVING
@@ -373,10 +394,13 @@ abstract class AbstractCrew(
 
                 this.nextTargetPos = null
 
-                // TODO get stuck on locked doors
-
-                // Calculate the next movement
-                updateMovement()
+                if (doorAttackPos == pixelPosition && doorToAttack!!.isLockedFor(this)) {
+                    // Switch to attacking the door
+                    currentAction = Action.ATTACKING_DOOR
+                } else {
+                    // Calculate the next movement
+                    updateMovement()
+                }
             }
 
             // Check if a door needs to be held open for us.
@@ -393,7 +417,7 @@ abstract class AbstractCrew(
                 val distSq = pixelPositionCentre.distToSq(centreX, centreY)
 
                 if (distSq < DOOR_OPEN_DISTANCE.pow(2)) {
-                    door.crewRequestOpen()
+                    door.crewRequestOpen(this)
                     break
                 }
             }
@@ -695,6 +719,14 @@ abstract class AbstractCrew(
      * their desired target.
      */
     private fun updateMovement() {
+        // Clear these out, so they don't stick around when we're not pathing to a door.
+        // Otherwise this could result in us attacking a door in the update loop, if
+        // we're supposed to be idle.
+        val oldDoorToAttack = doorToAttack
+        val oldAttackPos = doorAttackPos
+        doorAttackPos = null
+        doorToAttack = null
+
         val currentTarget = pathingTarget ?: return
 
         // It's fine to compare floats, since we snap into position.
@@ -720,31 +752,95 @@ abstract class AbstractCrew(
         val current = pf.nodes.getValue(roomPos)
         val next = current.next!!.pos
 
-        // Figure out if we're in a doorway. We'll use this to prevent
-        // ourselves from visually walking through a wall if we were
-        // in the process of walking through a door (but our centre
-        // point hasn't crossed yet) and our target is then changed.
-        // If we didn't use this, we'd walk directly to our target
-        // even if that meant sliding through a wall.
-        val door = room.doors.firstOrNull { it.checkPlayerPos(room, pixelPosition.x, pixelPosition.y) }
-
-        // If we're walking through a door and our next position is changed
-        // to one of the cells connected to that door, we can go straight there.
-        // This is required so we can turn around while walking through
-        // a door - otherwise we'd have to finish walking through it first.
-        if (door != null && door.hasRoomPos(next)) {
-            nextTargetPos = ConstPoint(next.offsetX, next.offsetY)
+        // Walking through doorways is a bit more complicated than
+        // other cases, because doors can be locked. Thus this is split
+        // into its own method.
+        if (next.room != room) {
+            nextTargetPos = walkThroughDoor(roomPos, next, oldDoorToAttack, oldAttackPos)
             return
         }
 
-        // If we're being told to walk to another position in the same room,
-        // we can usually do that regardless of if we're grid-aligned or not. But
-        // if we're walking through a door, we have to get lined up first.
-        if ((next.room == room || roomPosition != null) && door == null) {
+        // We're being to walk somewhere in the same room. If we were walking
+        // through a doorway when our target was changed, first walk back fully
+        // inside the room before we go anywhere else.
+        // We need to do this rather than just grid-aligning ourselves, to avoid
+        // walking in odd directions if we were misaligned due to attacking a door.
+        val roomX = room.offsetX
+        val roomY = room.offsetY
+        val clampedX = pixelPosition.x.coerceIn(roomX..roomX + room.pixelWidth - ROOM_SIZE)
+        val clampedY = pixelPosition.y.coerceIn(roomY..roomY + room.pixelHeight - ROOM_SIZE)
+
+        if (clampedX == pixelPosition.x && clampedY == pixelPosition.y) {
+            // We're already within the room limits
             nextTargetPos = ConstPoint(next.offsetX, next.offsetY)
         } else {
-            nextTargetPos = ConstPoint(roomPos.offsetX, roomPos.offsetY)
+            nextTargetPos = ConstPoint(clampedX, clampedY)
         }
+    }
+
+    private fun walkThroughDoor(
+        current: RoomPoint,
+        next: RoomPoint,
+        oldDoorToAttack: Door?,
+        oldAttackPos: IPoint?
+    ): IPoint {
+        // Figure out what door we're supposed to walk through.
+        // It's fine to only check next in hasRoomPos, since we should
+        // only ever have one door in a single room that can connect
+        // to a given cell in another room.
+        val door = current.room.doors.first { it.hasRoomPos(next) }
+
+        // If we're not either grid-aligned or already walking through
+        // the door, align ourselves.
+        if (roomPosition == null && !door.checkPlayerPos(room, pixelPosition)) {
+            return ConstPoint(current.offsetX, current.offsetY)
+        }
+
+        // Unless the door is locked, we can walk right through.
+        if (!door.isLockedFor(this)) {
+            return ConstPoint(next.offsetX, next.offsetY)
+        }
+
+        // If we're already attacking this door, don't move.
+        if (oldDoorToAttack == door) {
+            oldAttackPos?.let {
+                doorToAttack = oldDoorToAttack
+                doorAttackPos = it
+                return it
+            }
+        }
+
+        // Align ourselves with some point along the face of the door, and
+        // from there we'll start shooting at it.
+
+        // How far we have to move towards the door to stand in the shooting position.
+        // There's 11 set somewhere in vanilla (CrewMember::GetNewGoal) for this, but
+        // I can't figure out how it's related, and our value was measured from
+        // a screenshot so it should be reasonable.
+        val gapOffset = 8
+
+        // The position along the face of the door to stand at
+        val faceOffset = (-8..8).random()
+
+        // This is the top-left corner of the door
+        val doorX = door.offsetX
+        val doorY = door.offsetY
+
+        val currentX = current.offsetX
+        val currentY = current.offsetY
+
+        // Line up along the face of the door, with the previously selected
+        // random offset to make multiple crew visible.
+        val pos = when {
+            door.isVertical && pixelSpaceX < doorX -> ConstPoint(currentX + gapOffset, doorY + faceOffset)
+            door.isVertical -> ConstPoint(currentX - gapOffset, doorY + faceOffset)
+
+            pixelSpaceY < doorY -> ConstPoint(doorX + faceOffset, currentY + gapOffset)
+            else -> ConstPoint(doorX + faceOffset, currentY - gapOffset)
+        }
+        doorAttackPos = pos
+        doorToAttack = door
+        return pos
     }
 
     private fun dirAsString(dir: Direction): String {
@@ -785,7 +881,7 @@ abstract class AbstractCrew(
             Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"].startLooping()
             Action.REPAIRING -> anims["${codename}_repair"].startLooping()
 
-            Action.FIGHTING, Action.SABOTAGE -> {
+            Action.FIGHTING, Action.SABOTAGE, Action.ATTACKING_DOOR -> {
                 // Figure out the direction.
                 val dir: Direction = when {
                     // When sabotaging, boarders in a two-cell room face the obvious
@@ -803,6 +899,14 @@ abstract class AbstractCrew(
                         roomPosition!!.x == 0 -> Direction.RIGHT
                         else -> Direction.UP
                     }
+
+                    // When attacking the door, face towards the middle of the door.
+                    // Since crew are distributed across the face of the door randomly,
+                    // this means a group is all facing towards the same point.
+                    currentAction == Action.ATTACKING_DOOR -> Direction.bestFit(
+                        pixelPositionCentre,
+                        doorToAttack?.pixelCentre ?: ConstPoint.ZERO // Null while deserialising
+                    )
 
                     // If two parties are in the same cell, the crewmember stands
                     // at the top and the intruder stands at the bottom.
@@ -1081,8 +1185,17 @@ abstract class AbstractCrew(
             SaveUtil.addPoint(elem, "nextTargetPos", nextTargetPos!!)
         }
 
+        if (doorToAttack != null) {
+            val doorAttackElem = Element("doorToAttack")
+            val doorId = room.ship.doors.indexOf(doorToAttack!!)
+            SaveUtil.addAttrInt(doorAttackElem, "id", doorId)
+            SaveUtil.addAttrInt(doorAttackElem, "standX", doorAttackPos!!.x)
+            SaveUtil.addAttrInt(doorAttackElem, "standY", doorAttackPos!!.y)
+            elem.addContent(doorAttackElem)
+        }
+
         // Combat stuff
-        if (currentAction == Action.FIGHTING || currentAction == Action.SABOTAGE) {
+        if (currentAction.isAttackAction) {
             val combat = Element("combat")
             SaveUtil.addAttrFloat(combat, "attackTimer", attackTimer)
             SaveUtil.addAttrFloat(combat, "attackDuration", attackDuration)
@@ -1100,6 +1213,14 @@ abstract class AbstractCrew(
             teleport.setAttribute("destShip", refs[teleportingTo!!.ship])
             teleport.setAttribute("timer", teleportTimer.toString())
             elem.addContent(teleport)
+        }
+
+        if (currentAction == Action.CLONING) {
+            SaveUtil.addTagFloat(elem, "cloneTimer", cloneAnimationTimer)
+        }
+
+        if (currentAction == Action.FIRE_FIGHTING) {
+            SaveUtil.addTagInt(elem, "fireSlot", currentFireSlot)
         }
 
         // Serialise the animation progress, so we can use it for stuff like
@@ -1143,9 +1264,23 @@ abstract class AbstractCrew(
             nextTargetPos = null
         }
 
+        val doorAttackElem = elem.getChild("doorToAttack")
+        if (doorAttackElem != null) {
+            val doorId = SaveUtil.getAttrInt(doorAttackElem, "id")
+            val standX = SaveUtil.getAttrInt(doorAttackElem, "standX")
+            val standY = SaveUtil.getAttrInt(doorAttackElem, "standY")
+
+            doorToAttack = room.ship.doors[doorId]
+            doorAttackPos = ConstPoint(standX, standY)
+        } else {
+            // Just in case this is set for the same reason as nextTargetPos.
+            doorToAttack = null
+            doorAttackPos = null
+        }
+
         // Combat stuff
         val combat = elem.getChild("combat")
-        if (currentAction == Action.FIGHTING || currentAction == Action.SABOTAGE) {
+        if (currentAction.isAttackAction) {
             attackTimer = combat.getAttributeValue("attackTimer")?.toFloatOrNull()
             attackDuration = SaveUtil.getAttrFloat(combat, "attackDuration")
             damageTime = SaveUtil.getAttrFloat(combat, "damageTimer")
@@ -1160,6 +1295,14 @@ abstract class AbstractCrew(
             val shipRef = teleport.getAttributeValue("destShip")
             refs.asyncResolve(Ship::class.java, shipRef) { teleportingTo = it!!.rooms[roomId] }
             teleportTimer = teleport.getAttributeValue("timer").toFloat()
+        }
+
+        if (currentAction == Action.CLONING) {
+            cloneAnimationTimer = SaveUtil.getTagFloat(elem, "cloneTimer")
+        }
+
+        if (currentAction == Action.FIRE_FIGHTING) {
+            currentFireSlot = SaveUtil.getTagInt(elem, "fireSlot")
         }
 
         // Load this *after* the enemy we're attacking is set, which
@@ -1187,6 +1330,7 @@ abstract class AbstractCrew(
     enum class Action {
         IDLE,
         MOVING,
+        ATTACKING_DOOR,
         MANNING, // Working at a computer
         REPAIRING,
         FIRE_FIGHTING,
@@ -1195,6 +1339,13 @@ abstract class AbstractCrew(
         TELEPORTING,
         DYING,
         CLONING, // Playing the animation after being cloned
+        ;
+
+        val isAttackAction: Boolean
+            get() = when (this) {
+                ATTACKING_DOOR, SABOTAGE, FIGHTING -> true
+                else -> false
+            }
     }
 
     companion object {

@@ -6,11 +6,15 @@ import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
+import xyz.znix.xftl.savegame.SaveUtil
+import kotlin.math.abs
 
 data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val isVertical: Boolean) {
     init {
@@ -23,11 +27,37 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     val offsetX get() = ROOM_SIZE * (position.x + ship.offset.x)
     val offsetY get() = ROOM_SIZE * (position.y + ship.offset.y)
 
+    val pixelCentre: ConstPoint by lazy {
+        if (isVertical) {
+            ConstPoint(offsetX, offsetY + ROOM_SIZE / 2)
+        } else {
+            ConstPoint(offsetX + ROOM_SIZE / 2, offsetY)
+        }
+    }
+
     val leftPos: RoomPoint? = if (left == null) null else RoomPoint(left, position - left.position + offsetFor(left))
     val rightPos: RoomPoint? =
         if (right == null) null else RoomPoint(right, position - right.position + offsetFor(right))
 
     val isAirlock: Boolean get() = left == null || right == null
+
+    val maxHealth: Int
+        get() {
+            val healths = BASE_HEALTHS.getValue(ship.sys.difficulty)
+
+            if (isHacked) {
+                return healths[1] // Level 3 equivalent
+            }
+
+            val baseLevel = ship.doorsSystem?.undamagedEnergy ?: 0
+            if (baseLevel < 2) {
+                // Low-level doors have four health for whatever reason,
+                // but don't actually stop boarders.
+                return 4
+            }
+
+            return healths[baseLevel - 2]
+        }
 
     /**
      * True if this door is considered to be open for the purposes
@@ -37,12 +67,32 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
      * through, but that won't let intruders or air through.
      */
     var open: Boolean = false
+        set(value) {
+            if (isBroken) {
+                field = true
+            } else {
+                field = value
+            }
+        }
 
     /**
      * Whether this door should appear open or not. Unlike [open], this
      * is set to true when a crewmember is walking through the door.
      */
     var visualOpen: Boolean = false
+
+    /**
+     * The amount of health this has. Boarders attack it, once it goes
+     * to zero the door is stuck open for a few seconds.
+     */
+    var health: Int = maxHealth
+        private set
+
+    // When a door is broken by intruders, it's locked open for a few seconds.
+    // This tracks how much longer that is.
+    private var brokenOpenTimer: Float? = null
+
+    val isBroken: Boolean get() = brokenOpenTimer != null
 
     // True if the player is hovering over this door
     private var hovered: Boolean = false
@@ -124,7 +174,11 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     /**
      * Called by crewmembers walking through this door to request that it opens visually.
      */
-    fun crewRequestOpen() {
+    fun crewRequestOpen(crew: AbstractCrew) {
+        // We're obviously not going to open the door for boarders
+        if (isLockedFor(crew))
+            return
+
         crewOpenDemand = true
     }
 
@@ -145,6 +199,19 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         // If the door is actually open, transfer air between the two rooms
         if (open) {
             updateOxygen(dt)
+        }
+
+        // Run the timer for doors that were broken open.
+        if (brokenOpenTimer != null) {
+            val newTime = brokenOpenTimer!! - dt
+            if (newTime <= 0f) {
+                brokenOpenTimer = null
+            } else {
+                brokenOpenTimer = newTime
+            }
+        } else if (isHacked) {
+            // Hacked doors automatically shut themselves
+            open = false
         }
 
         // The door counts as hacked if the system on either side of it is hacked
@@ -177,6 +244,12 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     }
 
     fun updateMouseHover(x: Int, y: Int) {
+        // Broken and hacked doors can't be controlled by the player.
+        if (isBroken || isHacked) {
+            hovered = false
+            return
+        }
+
         var centreX = offsetX
         var centreY = offsetY
 
@@ -263,17 +336,49 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         }
     }
 
+    fun attackDoor() {
+        health = (health - 1).coerceAtLeast(0)
+
+        // When we're broken, start a timer that keeps the doors
+        // open until it's elapsed.
+        if (health == 0) {
+            open = true
+            health = maxHealth
+            brokenOpenTimer = 7f
+        }
+    }
+
+    fun resetHealth() {
+        health = maxHealth
+    }
+
     fun saveToXML(): Element? {
         // Currently we have nothing to serialise. Returning null means there
         // isn't a blank element in the savefile.
         // Note that whether the door is open or closed is serialised separately.
-        // TODO when we can take damage from intruders, save that here.
-        // When we do create an element, it must be named 'door'.
-        return null
+
+        if (health == maxHealth && brokenOpenTimer == null) {
+            return null
+        }
+
+        val elem = Element("door")
+
+        SaveUtil.addAttrInt(elem, "health", health)
+        SaveUtil.addAttrFloat(elem, "brokenOpen", brokenOpenTimer)
+
+        return elem
     }
 
     fun loadFromXML(elem: Element) {
-        // Nothing to deserialise.
+        health = SaveUtil.getAttrInt(elem, "health")
+        brokenOpenTimer = SaveUtil.getAttrFloatOrNull(elem, "brokenOpen")
+    }
+
+    // Called if we returned null from saveToXML.
+    fun loadWithoutXML() {
+        // Note that maxHealth may have changed since we were constructed.
+        health = maxHealth
+        brokenOpenTimer = null
     }
 
     fun loadSavedOpen(open: Boolean) {
@@ -291,7 +396,10 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
      * Check if a player is walking through this door, based on their
      * top-left position.
      */
-    fun checkPlayerPos(room: Room, x: Int, y: Int): Boolean {
+    fun checkPlayerPos(room: Room, pos: IPoint): Boolean {
+        val x = pos.x
+        val y = pos.y
+
         // We define the doorway as being the 35-pixel-wide box centred
         // on the door. This means we can walk with the edge of our sprite's
         // frame overhanging the room, but it shouldn't be an issue since
@@ -302,11 +410,12 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         val ourX = posInRoom.offsetX
         val ourY = posInRoom.offsetY
 
-        // The player must be properly aligned
-        if (isVertical && y != ourY) {
+        // The player must be reasonably well aligned, noting that the players
+        // are displaced upto eight pixels when shooting at the door.
+        if (isVertical && abs(y - ourY) > 8) {
             return false
         }
-        if (!isVertical && x != ourX) {
+        if (!isVertical && abs(x - ourX) > 8) {
             return false
         }
 
@@ -328,7 +437,32 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         return point == leftPos || point == rightPos
     }
 
+    /**
+     * Check if the given crewmember is prevented from walking through the
+     * door because it's locked closed.
+     */
+    fun isLockedFor(crew: AbstractCrew): Boolean {
+        if (open) {
+            return false
+        }
+
+        if (isHacked) {
+            return crew.mode == AbstractCrew.SlotType.CREW
+        }
+
+        return crew.mode == AbstractCrew.SlotType.INTRUDER
+    }
+
     companion object {
         private const val ANIMATION_TIME: Float = 0.2f
+
+        // Door healths depend on the difficulty.
+        // These values are the number of attacks required to break
+        // a level 2/3/4 door.
+        private val BASE_HEALTHS: Map<Difficulty, List<Int>> = mapOf(
+            Pair(Difficulty.EASY, listOf(12, 16, 20)),
+            Pair(Difficulty.NORMAL, listOf(8, 12, 18)),
+            Pair(Difficulty.HARD, listOf(6, 10, 15))
+        )
     }
 }
