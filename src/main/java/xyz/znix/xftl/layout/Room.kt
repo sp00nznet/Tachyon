@@ -471,7 +471,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
 
     fun slotToPoint(slot: Int): IPoint {
-        if (slot >= width * height)
+        if (slot !in 0 until width * height)
             throw ArrayIndexOutOfBoundsException("Invalid slot $slot for $width*$height room - range is 0 to ${width * height}")
 
         return ConstPoint(slot % width, slot / width)

@@ -22,6 +22,9 @@ class FireInstance(val room: Room, val slot: Int) {
 
     // Health against fire-fighting crew.
     var health: Float = 1f
+        set(value) {
+            field = value.coerceIn(0f..1f)
+        }
 
     private var burnoutTimer: Float? = null
 
@@ -31,6 +34,12 @@ class FireInstance(val room: Room, val slot: Int) {
     fun update(dt: Float) {
         sound.continueLoopPlayerOnly(ship)
         animation.update(dt)
+
+        // If we were put out by a crewmember.
+        if (health <= 0f) {
+            extinguish()
+            return
+        }
 
         // Same damage as crew
         room.system?.attack(dt * 0.08f)

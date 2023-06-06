@@ -101,11 +101,13 @@ abstract class AbstractCrew(
 
     open val canManSystem: Boolean get() = true
     open val repairSpeed: Float get() = 1f
+    open val fireFightingSpeed: Float get() = 1f
     open val canPunch: Boolean get() = true
     open val canFight: Boolean get() = true
     open val attackDamageMult: Float get() = 1f
     open val hasDyingAnimation: Boolean get() = true
     open val suffocationMultiplier: Float get() = 1f
+    open val fireDamageMult: Float get() = 1f
     open val playerControllable: Boolean get() = true
     open val movementSpeed: Float get() = BASE_MOVEMENT_SPEED
 
@@ -160,6 +162,9 @@ abstract class AbstractCrew(
 
     private var cloneAnimationTimer: Float = 0f
 
+    // The room slot of the fire we're currently putting out, or -1.
+    private var currentFireSlot: Int = -1
+
     val screenX: Int get() = pixelPosition.x
     val screenY: Int
         get() {
@@ -184,8 +189,16 @@ abstract class AbstractCrew(
         private set(value) {
             val changed = field != value
             field = value
-            if (changed)
-                updateAnimation()
+
+            if (!changed)
+                return
+
+            updateAnimation()
+
+            // Reset stuff when we change to a different action.
+            if (value != Action.FIRE_FIGHTING) {
+                currentFireSlot = -1
+            }
         }
 
     init {
@@ -210,6 +223,9 @@ abstract class AbstractCrew(
         if (room.oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL) {
             dealDamage(6.4f * dt * suffocationMultiplier)
         }
+
+        val fires = room.fires.count { it != null }
+        dealDamage(fires * 2.128f * dt * fireDamageMult)
 
         if (health == 0f) {
             if (!hasDyingAnimation) {
@@ -450,6 +466,35 @@ abstract class AbstractCrew(
         enemyToAttack = null
         isPunching = false
 
+
+        // Check if this room is on fire, and we need to put it out.
+        var changedFire = false
+        if (currentFireSlot != -1 && room.fires[currentFireSlot] == null) {
+            // The fire we were fighting has gone out, so either pick
+            // a different one or switch to another action.
+            currentFireSlot = -1
+            changedFire = true
+        }
+        if (currentFireSlot == -1) {
+            currentFireSlot = findFirstFire()
+        }
+        if (currentFireSlot != -1) {
+            currentAction = Action.FIRE_FIGHTING
+
+            // We have to change our animation if we move on to a new fire.
+            if (changedFire) {
+                updateAnimation()
+            }
+
+            // See doc/fires. We include the 1.2x multiplier here, rather
+            // than in the fire speed multiplier.
+            val currentFire = room.fires[currentFireSlot]!!
+            currentFire.health -= 1.2f * 0.08f * fireFightingSpeed * repairSpeed * dt
+
+            // TODO draw the fire extinguisher particles.
+
+            return
+        }
 
         // Check if the system in this room is broken, and if so repair it.
         system?.let { sys ->
@@ -733,6 +778,7 @@ abstract class AbstractCrew(
 
             Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"].startLooping()
             Action.REPAIRING -> anims["${codename}_repair"].startLooping()
+
             Action.FIGHTING, Action.SABOTAGE -> {
                 // Figure out the direction.
                 val dir: Direction = when {
@@ -804,6 +850,19 @@ abstract class AbstractCrew(
             Action.CLONING -> {
                 // This just re-uses the teleport animation
                 anims["${codename}_teleport"].startSingle(1f, true)
+            }
+
+            Action.FIRE_FIGHTING -> {
+                val firePos = room.slotToPoint(currentFireSlot)
+
+                val direction: Direction = if (firePos posEq roomPosition!!) {
+                    // If it's in the same cell as us, point down.
+                    Direction.DOWN
+                } else {
+                    Direction.bestFit(roomPosition!!, firePos)
+                }
+
+                anims["${codename}_fire_${dirAsString(direction)}"].startLooping()
             }
         }
 
@@ -980,6 +1039,21 @@ abstract class AbstractCrew(
         roomPosition = RoomPoint(room, cellX, cellY)
     }
 
+    private fun findFirstFire(): Int {
+        // This order is annoyingly different to the crew slot order
+        for (x in 0 until room.width) {
+            for (y in 0 until room.height) {
+                val idx = x + y * room.width
+
+                if (room.fires[idx] != null) {
+                    return idx
+                }
+            }
+        }
+
+        return -1
+    }
+
     open fun saveToXML(elem: Element, refs: ObjectRefs) {
         SaveUtil.addObjectId(elem, refs, this)
         elem.setAttribute("type", codename)
@@ -1109,6 +1183,7 @@ abstract class AbstractCrew(
         MOVING,
         MANNING, // Working at a computer
         REPAIRING,
+        FIRE_FIGHTING,
         FIGHTING,
         SABOTAGE,
         TELEPORTING,

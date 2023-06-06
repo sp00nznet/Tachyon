@@ -55,6 +55,20 @@ level 2/3/4:       62.50   306.25
 
 Systems take 8% damage per second from fire, which is the same as a single boarder.
 
+Crew take 2.128% damage per second, per fire.
+
+== Crew putting out fires ==
+
+The fire has a health value, unsurprisingly starting at 100%. This is decreased
+at a constant rate by a crewmember fighting the fire. In percent per second:
+
+crewRepairMult * crewFireMult * repairSkillMult * 8
+
+Where crewRepairMult is the multiplier for this race's repairs (eg 1 for human,
+2 for engi), crewFireMult is 1.2 for most crew, except rocks (2.0) and crystals (1.0).
+
+The repairSkillMult is the multiplier from the crew's current repair skill.
+
 
 
 Note that TheSwiftTiger's fire timings (https://pastebin.com/iP6EnKm4) have a few
