@@ -438,9 +438,9 @@ abstract class AbstractCrew(
 
             updateAttack(Action.SABOTAGE, dt, {}, {})
 
-            // Sabotage doesn't deal damage in bursts - it's constant 16% damage/second.
+            // Sabotage doesn't deal damage in bursts - it's constant 8% damage/second.
             // Note this is the same for any crew, regardless of the attack damage multiplier.
-            system.attack(dt * 0.16f)
+            system.attack(dt * 0.08f)
 
             return
         }
