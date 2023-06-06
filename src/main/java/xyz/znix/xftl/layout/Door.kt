@@ -287,6 +287,47 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         stateAnimation = if (visualOpen) 1f else 0f
     }
 
+    /**
+     * Check if a player is walking through this door, based on their
+     * top-left position.
+     */
+    fun checkPlayerPos(room: Room, x: Int, y: Int): Boolean {
+        // We define the doorway as being the 35-pixel-wide box centred
+        // on the door. This means we can walk with the edge of our sprite's
+        // frame overhanging the room, but it shouldn't be an issue since
+        // the sprites certainly aren't drawn all the way up to their edges.
+
+        // Find the position of the cell we neighbour in the player's room.
+        val posInRoom = roomPos(room)
+        val ourX = posInRoom.offsetX
+        val ourY = posInRoom.offsetY
+
+        // The player must be properly aligned
+        if (isVertical && y != ourY) {
+            return false
+        }
+        if (!isVertical && x != ourX) {
+            return false
+        }
+
+        // Check if the player isn't within the rooms bounds, which implies
+        // they're walking through the doorway.
+        val pxInRoomX = x - room.offsetX
+        val pxInRoomY = y - room.offsetY
+
+        return when (isVertical) {
+            true -> pxInRoomX !in 0..room.pixelWidth - ROOM_SIZE
+            false -> pxInRoomY !in 0..room.pixelHeight - ROOM_SIZE
+        }
+    }
+
+    /**
+     * Check if a given position matches either of the cells we connect.
+     */
+    fun hasRoomPos(point: RoomPoint): Boolean {
+        return point == leftPos || point == rightPos
+    }
+
     companion object {
         private const val ANIMATION_TIME: Float = 0.2f
     }
