@@ -33,6 +33,7 @@ import xyz.znix.xftl.weapons.*
 import java.awt.Rectangle
 import java.util.stream.Collectors
 import kotlin.math.min
+import kotlin.random.Random
 
 class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: EnemyShipSpec?) : ISerialReferencable {
     val name: String = shipNode.getAttributeValue("name")
@@ -948,6 +949,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
         damage(target, type.damage, type.sysDamage, type.ionDamage)
 
+        if (Random.rollChance(type.fireChance * 10)) {
+            // Spawns two fires (or possibly only one, if they both roll on the same cell).
+            target.spawnFire()
+            target.spawnFire()
+        }
+
         if (!vfx) return
 
         playDamageEffect(type, target.pixelCentre)
@@ -1366,6 +1373,16 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         doorsElem.addContent(doorStateElem)
         elem.addContent(doorsElem)
 
+        // Do the same thing for rooms, they won't emit an element unless
+        // there's a fire or breach or something like that.
+        val roomsElem = Element("rooms")
+        for (room in rooms) {
+            val thisRoomElem = room.saveToXML()
+            thisRoomElem?.setAttribute("id", room.id.toString())
+            thisRoomElem?.let { roomsElem.addContent(it) }
+        }
+        elem.addContent(roomsElem)
+
         // Serialise the room oxygen levels. Since there's a lot of rooms,
         // don't serialise them all individually.
         val oxygenLevelString = StringBuilder()
@@ -1461,6 +1478,13 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         for ((index, door) in doors.withIndex()) {
             val open = doorStateString[index] == 'Y'
             door.loadSavedOpen(open)
+        }
+
+        // Deserialise rooms, without their oxygen levels which are stored separately below.
+        val roomsElem = rootElem.getChild("rooms")
+        for (elem in roomsElem.getChildren("room")) {
+            val id = elem.getAttributeValue("id").toInt()
+            rooms[id].loadFromXML(elem)
         }
 
         // Deserialise the oxygen levels, which are just numbers for each room.

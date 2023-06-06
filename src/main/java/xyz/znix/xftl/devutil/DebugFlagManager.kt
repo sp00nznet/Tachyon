@@ -16,6 +16,11 @@ class DebugFlagManager {
         "Draw the room ID of each room, which is useful for understanding debugger data"
     )
 
+    val showFireTimers = DebugFlag(
+        "sft", "Show fire timers", true,
+        "Show the timers for fire spread, extinguishing, and oxygen deprivation."
+    )
+
     val fastWeaponCharge = DebugFlag(
         "fwc", "Fast Weapon Charge", false,
         "Weapons charge at ten times their normal speed"
@@ -61,6 +66,7 @@ class DebugFlagManager {
         showProjectileHitboxes,
         showHardpoints,
         showRoomNumbers,
+        showFireTimers,
         fastWeaponCharge,
         noEnemyFire,
         noDmg,

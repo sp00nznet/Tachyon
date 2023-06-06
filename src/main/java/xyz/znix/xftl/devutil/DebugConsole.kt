@@ -418,6 +418,12 @@ class DebugConsole(var game: InGameState) {
             system.ionPowerLimit = null
         }
 
+        for (room in targetShip.rooms) {
+            for (idx in room.fires.indices) {
+                room.fires[idx] = null
+            }
+        }
+
         targetShip.health = targetShip.maxHealth
 
         addLine("The ship has been repaired, all regular and ion damage was removed.")

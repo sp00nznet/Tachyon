@@ -55,7 +55,23 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     // How open this door is. This is updated to produce the animation.
     private var stateAnimation: Float = 0f
 
-    private var isHacked = false
+    /**
+     * True if this door is controlled by a hacking system, either by hacking
+     * one of the adjacent rooms or by actively hacking the door system.
+     */
+    var isHacked = false
+        private set
+
+    /**
+     * The level of this door.
+     */
+    val level: Int
+        get() {
+            when {
+                isHacked -> return 5
+                else -> return ship.doorsSystem?.undamagedEnergy ?: 0
+            }
+        }
 
     /**
      * The other room this door connects to
@@ -200,21 +216,15 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         val doorSheet = ship.sys.getImg("img/effects/door_sheet.png")
         val highlight = ship.sys.getImg("img/effects/door_highlight.png")
 
-        val level = ship.doorsSystem?.undamagedEnergy ?: 0
-
         // Broken and level 1 doors use the same sprite, but broken doors
         // have a colour filter applied to them.
-        val sheetY = ROOM_SIZE * when {
-            isHacked -> 4
-            level == 0 -> 0
-            else -> level - 1
-        }
+        val sheetY = ROOM_SIZE * (level - 1).coerceAtLeast(0)
 
         // This is used to animate the door opening and closing, selecting the
         // correct frame for its motion.
         val sheetX = ROOM_SIZE * (stateAnimation * 4).toInt()
 
-        val filter = if (level == 0 && !isHacked) Constants.DOOR_BROKEN_FILTER else Color.white
+        val filter = if (level == 0) Constants.DOOR_BROKEN_FILTER else Color.white
 
         var x: Int = offsetX
         var y: Int = offsetY

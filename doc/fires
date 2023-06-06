@@ -1,0 +1,67 @@
+== Fire oxygen starvation ==
+
+When a fire first encounters a <10% oxygen environment, it sets a counter
+for how long it'll take to burn out. This is set between 5-14, inclusive.
+
+This is reduced each second by:
+
+(5 - <number of adjacent fires>) * 0.48
+
+So based on the number of adjacent fires, it'll burn out in:
+
+    min      max
+0:  2.08    5.83
+1:  2.60    7.29
+2:  3.47    9.72
+3:  5.21   14.58
+4: 10.42   29.17
+
+This timer only resets when the fire goes out, and continues to run down
+even if oxygen is restored. When this happens the fire continues to burn,
+but it will go out as soon as it's oxygen level drops below 10%.
+
+An adjacent fire must be either in the same room, or in a room with a door
+connecting the two positions. If there's a wall in-between, it doesn't count.
+It doesn't matter what kind of door it is.
+
+
+== Fire spread ==
+
+When there is any fire adjacent to a tile, a counter is set randomly
+between 10 to 49 (inclusive).
+
+This counter is decremented by some amount per second for every adjacent
+fire, depending on the level of the door between it and the fire:
+
+none, open, hacked:   1.6
+level 0/1:            32/35 (approx 0.9143)
+level 2/3/4:          0.16
+
+I haven't checked, but I'm pretty certain that a missing doors system
+would count as a level 0 door.
+
+If there is no longer any fire adjacent to this tile, this counter is cleared.
+
+This means that for a single fire, it takes the following amount
+of time to spread to an adjacent cell:
+
+   door level       min      max
+none,open,hacked:   6.25    30.63
+level 0/1:         10.94    53.60
+level 2/3/4:       62.50   306.25
+
+
+== Damage ==
+
+Systems take 8% damage per second from fire, which is the same as a single boarder.
+
+
+
+Note that TheSwiftTiger's fire timings (https://pastebin.com/iP6EnKm4) have a few
+minor errors. The oxygen starvation timer isn't paused when oxygen is restored,
+and he uses 15 as the upper burnout timer value instead of 14 (since the code uses
+5+rand()%10, this is an easy mistake to make).
+
+This document is not (aside from formatting and the subjects to cover) copied from
+TheSwiftTiger's document - it's from my reverse-engineering - so anything that's
+stated in both can be considered double-checked.

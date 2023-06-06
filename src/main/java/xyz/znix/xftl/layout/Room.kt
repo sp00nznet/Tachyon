@@ -1,5 +1,6 @@
 package xyz.znix.xftl.layout
 
+import org.jdom2.Element
 import org.lwjgl.BufferUtils
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
@@ -8,10 +9,9 @@ import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.Direction
-import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.game.UIUtils
+import xyz.znix.xftl.math.*
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.Oxygen
 import java.util.*
 import kotlin.math.PI
@@ -73,6 +73,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val pixelWidth = width * ROOM_SIZE
     val pixelHeight = height * ROOM_SIZE
 
+    val fires: Array<FireInstance?> = Array(width * height) { null }
+    private val fireSpreadTimers: Array<Float?> = Array(width * height) { null }
+    private val fireSpreadUpdated: Array<Boolean> = Array(width * height) { false }
+
     private val reservedPlayerSlots: Array<AbstractCrew?> = Array(width * height) { null }
     private val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
 
@@ -107,6 +111,17 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         computerHackAnimation?.update(dt)
         bigSparksHackAnimation?.update(dt)
+
+        for (idx in fires.indices) {
+            fires[idx]?.update(dt)
+
+            // Clear the spread progress if the tile is already
+            // on fire, or it wasn't updated in the last update.
+            if (!fireSpreadUpdated[idx] || fires[idx] != null) {
+                fireSpreadTimers[idx] = null
+            }
+            fireSpreadUpdated[idx] = false
+        }
     }
 
     fun updateCrewInRoom() {
@@ -176,6 +191,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             ship.sys.getImg("img/people/green_destination.png").draw(point.x.f, point.y.f)
         }
 
+        // Draw any fires
+        for (fire in fires) {
+            fire?.draw()
+        }
+
         // Draw the highlight on the room if it's being selected for weapon targeting.
         if (selected) {
             for (i in 2..5) {
@@ -209,6 +229,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         g.lineWidth = 1f
 
         drawDebugRoomNumber()
+        drawDebugFires(g)
     }
 
     private fun renderSystemStuff(g: Graphics) {
@@ -374,6 +395,28 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             id.toString(),
             Color.blue
         )
+    }
+
+    private fun drawDebugFires(g: Graphics) {
+        if (!ship.sys.debugFlags.showFireTimers.set)
+            return
+
+        for (slot in fires.indices) {
+            fires[slot]?.drawDebug(g)
+
+            // Draw the fire spread timer.
+            val spread = fireSpreadTimers[slot] ?: continue
+
+            val pos = RoomPoint(this, slotToPoint(slot))
+            val x = pos.offsetX
+            val y = pos.offsetY
+
+            // Use 50 as the max, not the random initial starting
+            // value since we'd also have to store that.
+            val progress = 1 - spread / 50f
+            val fillColour = Color(200, 200, 0) // Dark yellow
+            UIUtils.drawDebugBar(g, x + 5, y + 5, 5, 20, progress, Color.black, fillColour)
+        }
     }
 
     fun setSystem(config: SystemInstallConfiguration) {
@@ -549,5 +592,102 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     private fun slotsFor(type: AbstractCrew.SlotType): Array<AbstractCrew?> = when (type) {
         AbstractCrew.SlotType.CREW -> reservedPlayerSlots
         AbstractCrew.SlotType.INTRUDER -> reservedEnemySlots
+    }
+
+    fun spawnFire() {
+        // Pick a random slot, and spawn a fire in it (or fix the existing fire's health).
+        // This seems to be why fire bombs sometimes only spawn one fire - they're both
+        // spawned on the same tile in a 1/4 chance.
+        val slot = fires.indices.random()
+
+        val existingFire = fires[slot]
+        if (existingFire != null) {
+            existingFire.health = 1f
+        } else {
+            fires[slot] = FireInstance(this, slot)
+        }
+    }
+
+    /**
+     * Called by [FireInstance] to spread itself to adjacent tiles.
+     *
+     * If there's a door in the way, [door] is set.
+     */
+    fun spreadFire(dt: Float, slot: Int, door: Door?) {
+        fireSpreadUpdated[slot] = true
+
+        val speed = when {
+            door == null || door.open || door.isHacked -> 1.6f
+            door.level <= 1 -> 32f / 35f
+            else -> 0.16f // Blast doors
+        }
+
+        var current = fireSpreadTimers[slot]
+        if (current == null) {
+            current = (10 until 50).random().f
+        }
+
+        current -= speed * dt
+
+        if (current <= 0) {
+            fires[slot] = FireInstance(this, slot)
+            return
+        }
+
+        fireSpreadTimers[slot] = current
+    }
+
+    /**
+     * Serialise the door, or return null if there's nothing to save.
+     */
+    fun saveToXML(): Element? {
+        // The oxygen level is handled separately.
+
+        if (fires.all { it == null } && fireSpreadTimers.all { it == null }) {
+            return null
+        }
+
+        val elem = Element("room")
+
+        for (slot in fires.indices) {
+            val fire = fires[slot]
+            val spread = fireSpreadTimers[slot]
+
+            if (fire != null) {
+                val fireElem = Element("fire")
+                SaveUtil.addAttrInt(fireElem, "slot", slot)
+                fire.saveToXML(fireElem)
+                elem.addContent(fireElem)
+            }
+
+            if (spread != null) {
+                val spreadElem = Element("fireSpread")
+                SaveUtil.addAttrInt(spreadElem, "slot", slot)
+                SaveUtil.addAttrFloat(spreadElem, "timer", spread)
+
+                // fireSpreadUpdated won't be set unless spread also is, so we can
+                // safely only set this here.
+                SaveUtil.addAttrBool(spreadElem, "updated", fireSpreadUpdated[slot])
+
+                elem.addContent(spreadElem)
+            }
+        }
+
+        return elem
+    }
+
+    fun loadFromXML(elem: Element) {
+        for (fireElem in elem.getChildren("fire")) {
+            val slot = SaveUtil.getAttrInt(fireElem, "slot")
+            val fire = FireInstance(this, slot)
+            fire.loadFromXML(fireElem)
+            fires[slot] = fire
+        }
+
+        for (spreadElem in elem.getChildren("fireSpread")) {
+            val slot = SaveUtil.getAttrInt(spreadElem, "slot")
+            fireSpreadTimers[slot] = SaveUtil.getAttrFloat(spreadElem, "timer")
+            fireSpreadUpdated[slot] = SaveUtil.getAttrBool(spreadElem, "updated")
+        }
     }
 }

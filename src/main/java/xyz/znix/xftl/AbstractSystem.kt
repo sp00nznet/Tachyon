@@ -106,7 +106,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             field = if (damaged) value else 0f
         }
 
-    var sabotageProgress: Float = 0f
+    var damageProgress: Float = 0f
         private set(value) {
             field = if (broken) 0f else value
         }
@@ -115,8 +115,12 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         if (!damaged || room?.crew?.none { it.mode == AbstractCrew.SlotType.CREW } == true)
             repairProgress = 0f
 
-        if (broken || room?.crew?.none { it.mode == AbstractCrew.SlotType.INTRUDER } == true)
-            sabotageProgress = 0f
+        // Damage is shared between fires and boarders, we can undo it
+        // if there's neither of them here.
+        val hasIntruders = room?.crew?.any { it.mode == AbstractCrew.SlotType.INTRUDER } == true
+        val hasFire = room?.fires?.any { it != null } == true
+        if (broken || !(hasIntruders || hasFire))
+            damageProgress = 0f
 
         // Check both the damage and timer to avoid somehow getting stuck where
         // one of them is zero and the other isn't.
@@ -223,16 +227,16 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      */
     fun attack(damage: Float) {
         if (broken) {
-            sabotageProgress = 0f
+            damageProgress = 0f
             return
         }
 
-        sabotageProgress += damage
+        damageProgress += damage
 
-        if (sabotageProgress < 1f)
+        if (damageProgress < 1f)
             return
 
-        sabotageProgress = 0f
+        damageProgress = 0f
 
         // This bar of the system is broken.
         ship.damage(room!!, 0, 1, 0)
@@ -419,7 +423,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             // The sabotage bar
             if (i == energyLevels - damagedEnergyLevels - 1) {
                 g.color = Constants.SYS_ENERGY_SABOTAGE
-                val width = (16 * sabotageProgress).toInt()
+                val width = (16 * damageProgress).toInt()
                 g.fillRect(barX, y.f, width.f, 6f)
             }
         }
@@ -464,10 +468,19 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             lockImg.draw(barX + 1f - 9f, statusIconY - 24f)
         }
 
-        // If the system is being sabotaged, draw the fist above it
-        if (sabotageProgress != 0f) {
+        // If the system is being burnt or sabotaged, draw the fist above it
+        val hasIntruders = room!!.crew.any { it.mode == AbstractCrew.SlotType.INTRUDER }
+        val hasFires = room!!.fires.any { it != null }
+
+        if (damageProgress != 0f && hasIntruders) {
             val sabotageIcon = game.getImg("img/icons/s_sabatoge.png") // (sic)
-            sabotageIcon.draw(barX - 9, topBarY - 29)
+            sabotageIcon.draw(barX - 9, statusIconY - 26)
+            statusIconY -= 24
+        }
+
+        if (hasFires) {
+            val fireIcon = game.getImg("img/icons/s_fire2.png")
+            fireIcon.draw(barX - 9, statusIconY - 24)
         }
     }
 
@@ -513,7 +526,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         SaveUtil.addTagFloat(elem, "ionTimer", ionTimer, 0f)
         SaveUtil.addTagInt(elem, "ionPowerLimit", ionPowerLimit, null)
         SaveUtil.addTagFloat(elem, "repairProgress", repairProgress, 0f)
-        SaveUtil.addTagFloat(elem, "sabotageProgress", sabotageProgress, 0f)
+        SaveUtil.addTagFloat(elem, "damageProgress", damageProgress, 0f)
 
         // Don't save hackedBy, it'll be set by the enemy hacking system when it loads.
 
@@ -530,7 +543,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         ionTimer = SaveUtil.getOptionalTagFloat(elem, "ionTimer") ?: 0f
         ionPowerLimit = SaveUtil.getOptionalTagInt(elem, "ionPowerLimit")
         repairProgress = SaveUtil.getOptionalTagFloat(elem, "repairProgress") ?: 0f
-        sabotageProgress = SaveUtil.getOptionalTagFloat(elem, "sabotageProgress") ?: 0f
+        damageProgress = SaveUtil.getOptionalTagFloat(elem, "damageProgress") ?: 0f
 
         loadSystem(elem, refs)
 

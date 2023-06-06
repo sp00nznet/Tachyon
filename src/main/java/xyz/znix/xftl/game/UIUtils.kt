@@ -1,10 +1,12 @@
 package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
+import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
+import kotlin.math.roundToInt
 
 object UIUtils {
     /**
@@ -103,6 +105,29 @@ object UIUtils {
         image.draw(
             x.f + width - endWidthScreen, glowTopY, x.f + width, glowBottomY,
             image.width.f - endWidthImg, 0f, image.width.f, image.height.f
+        )
+    }
+
+    fun drawDebugBar(
+        g: Graphics,
+        x: Int, y: Int,
+        width: Int, height: Int,
+        progress: Float,
+        outline: Color, fill: Color
+    ) {
+        val innerHeight = height - 1 // 1px of margin
+        val fillHeight = (innerHeight * progress).roundToInt()
+
+        g.color = outline
+        g.drawRect(
+            x.f, y.f,
+            width.f, height.f
+        )
+
+        g.color = fill
+        g.fillRect(
+            x + 1f, y.f + height - fillHeight,
+            width - 1f, fillHeight.f
         )
     }
 }
