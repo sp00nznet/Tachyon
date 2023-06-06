@@ -11,7 +11,6 @@ import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.game.SoundInstance
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -63,15 +62,12 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     private val hiddenCrewFont by onInit { it.getFont("JustinFont10") }
 
-    private var currentOffSound: SoundInstance? = null
-
     override fun update(dt: Float) {
         super.update(dt)
 
         if (queue.isEmpty()) {
             cloneProgress = 0f
             dyingProgress = 0f
-            currentOffSound = null
             return
         }
 
@@ -95,13 +91,9 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             }
 
             // Play the suitably nasty crew dying sound
-            if (currentOffSound?.isStopped != false) {
-                currentOffSound = offSound.play()
-            }
-            currentOffSound?.continueLoop()
+            offSound.continueLoopPlayerOnly(ship)
         } else {
             dyingProgress = 0f
-            currentOffSound = null
         }
     }
 

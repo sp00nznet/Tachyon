@@ -70,8 +70,6 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     private val startSound by onInit { it.sounds.getSample("hackStart") }
     private val loopSound by onInit { it.sounds.getLoop("hackLoop") }
 
-    private var loopSoundInstance: SoundInstance? = null
-
     override fun powerStateChanged() {
         super.powerStateChanged()
         updateButton()
@@ -101,7 +99,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         super.update(dt)
 
         if (timeRemaining != null) {
-            loopSoundInstance?.continueLoop()
+            loopSound.continueLoopAnyShip()
 
             // If the drone was destroyed, immediately go into cooldown.
             // This generally shouldn't happen as the drone shouldn't
@@ -120,7 +118,6 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             // never limited to zero.
             if (timeRemaining!! <= 0 || powerSelected == 0) {
                 timeRemaining = null
-                loopSoundInstance = null
 
                 // Don't apply ion damage - this means we hold onto
                 // the power until the cooldown is finished (or
@@ -235,7 +232,6 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         this@Hacking.timeRemaining = duration
 
         startSound.play()
-        loopSoundInstance = loopSound.play()
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
