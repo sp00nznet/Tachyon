@@ -947,7 +947,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
         damage(target, type.damage, type.sysDamage, type.ionDamage)
 
-        if (Random.rollChance(type.fireChance * 10)) {
+        if (Random.rollChance(type.fireChance * 10) && !sys.debugFlags.noDmg.set) {
             // Spawns two fires (or possibly only one, if they both roll on the same cell).
             target.spawnFire()
             target.spawnFire()
