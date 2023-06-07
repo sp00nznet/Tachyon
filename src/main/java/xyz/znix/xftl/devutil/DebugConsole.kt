@@ -14,6 +14,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.*
@@ -467,7 +468,7 @@ class DebugConsole(var game: InGameState) {
     private fun cmdCrew(args: List<String>) {
         val race = args[1]
 
-        val races = game.blueprintManager.blueprints.values.mapNotNull { (it as? CrewBlueprint)?.name }
+        val races = game.blueprintManager.blueprints.values.mapNotNull { it as? CrewBlueprint }
 
         if (race == "races") {
             addLine("Supported crew races:")
@@ -477,14 +478,16 @@ class DebugConsole(var game: InGameState) {
             return
         }
 
-        if (!races.contains(race)) {
+        val blueprint = races.firstOrNull { it.name == race }
+        if (blueprint == null) {
             addLine("Unknown crew race '$race', try 'crew races' for a list.")
             return
         }
 
         // If it's an unknown race, this will replace it with a human.
         // This saves us from having to maintain two lists of the supported crew.
-        ship.addCrewMember(race, false)
+        val info = LivingCrewInfo.generateRandom(blueprint, game)
+        ship.addCrewMember(info, false)
     }
 
     private fun cmdKill(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -535,7 +538,7 @@ class DebugConsole(var game: InGameState) {
         }
 
         options += allCrew.map {
-            var name = "${it.blueprint.name} - ${it.selectedName}"
+            var name = "${it.blueprint.name} - ${it.info.name}"
 
             if (it.ownerShip != ship) {
                 name += " (boarder)"
@@ -543,7 +546,7 @@ class DebugConsole(var game: InGameState) {
 
             Pair(name) {
                 it.health = 0f
-                addLine("Killed crewmember ${it.selectedName} (${it.blueprint.name})")
+                addLine("Killed crewmember ${it.info.name} (${it.blueprint.name})")
                 return@Pair
             }
         }

@@ -9,9 +9,7 @@ import org.newdawn.slick.*;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
-import xyz.znix.xftl.crew.AbstractCrew;
-import xyz.znix.xftl.crew.CrewNameManager;
-import xyz.znix.xftl.crew.LivingCrew;
+import xyz.znix.xftl.crew.*;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.devutil.DebugFlagManager;
 import xyz.znix.xftl.layout.Room;
@@ -200,9 +198,11 @@ public class InGameState extends MainGame.GameState {
 
         for (Element elem : playerXml.getChildren("crewCount")) {
             int count = Integer.parseInt(elem.getAttributeValue("amount").strip());
-            String race = elem.getAttributeValue("class");
+            String raceName = elem.getAttributeValue("class");
+            CrewBlueprint race = (CrewBlueprint) blueprintManager.get(raceName);
             for (int i = 0; i < count; i++) {
-                player.addCrewMember(race, true, false);
+                LivingCrewInfo info = LivingCrewInfo.generateRandom(race, this);
+                player.addCrewMember(info, true, false);
             }
         }
     }
@@ -613,7 +613,9 @@ public class InGameState extends MainGame.GameState {
 
         // TODO handle crew being killed across fights
         for (int i = 0; i < 11; i++) {
-            LivingCrew crew = flagship.addCrewMember("human", true, false);
+            CrewBlueprint race = (CrewBlueprint) blueprintManager.get("human");
+            LivingCrewInfo info = LivingCrewInfo.generateRandom(race, this);
+            LivingCrew crew = flagship.addCrewMember(info, true, false);
 
             // Put some crew in the artillery rooms
             for (Artillery artillery : flagship.getArtillery()) {
@@ -1142,9 +1144,8 @@ public class InGameState extends MainGame.GameState {
             player.addBlueprint(item, true);
         }
 
-        for (AddCrewEval crewSpec : resources.getCrew()) {
-            LivingCrew crew = player.addCrewMember(crewSpec.getRace().getName(), false, false);
-            crew.setSelectedName(crewSpec.getName());
+        for (LivingCrewInfo info : resources.getCrew()) {
+            player.addCrewMember(info, false, false);
         }
 
         for (RemoveCrewEval removed : resources.getLostCrew()) {
@@ -1161,9 +1162,8 @@ public class InGameState extends MainGame.GameState {
         int intruderRoomId = Random.Default.nextInt(player.getRooms().size());
         Room intruderRoom = player.getRooms().get(intruderRoomId);
 
-        for (AddCrewEval spec : resources.getIntruders()) {
-            LivingCrew intruder = player.addCrewMember(spec.getRace().getName(), false, true);
-            intruder.setSelectedName(spec.getName());
+        for (LivingCrewInfo info : resources.getIntruders()) {
+            LivingCrew intruder = player.addCrewMember(info, false, true);
 
             RoomPoint slot = player.findSpaceForCrew(intruderRoom, AbstractCrew.SlotType.INTRUDER);
             intruder.jumpTo(slot);

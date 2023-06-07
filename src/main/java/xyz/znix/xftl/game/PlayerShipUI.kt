@@ -902,7 +902,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             crew.drawPortrait(crewX - 1, nextCrewY - 3)
 
             // Draw the crew name
-            weaponNameText.drawString(crewX + 33f, nextCrewY + 14f, crew.selectedName, CREW_BOX_NAME_COLOUR)
+            weaponNameText.drawString(crewX + 33f, nextCrewY + 14f, crew.info.name, CREW_BOX_NAME_COLOUR)
 
             nextCrewY += 30
         }

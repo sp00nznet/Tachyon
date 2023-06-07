@@ -12,6 +12,7 @@ import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
@@ -1031,7 +1032,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         }
     }
 
-    fun addCrewMember(race: String, initial: Boolean, isIntruder: Boolean = false): LivingCrew {
+    fun addCrewMember(info: LivingCrewInfo, initial: Boolean, isIntruder: Boolean = false): LivingCrew {
         var freeSpace: RoomPoint? = null
         val mode = if (isIntruder) AbstractCrew.SlotType.INTRUDER else AbstractCrew.SlotType.CREW
 
@@ -1061,10 +1062,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             freeSpace = findSpaceForCrew(null, mode)
         }
 
-        val raceBlueprint = sys.blueprintManager.blueprints[race] ?: error("Missing crew blueprint for race '$race'")
-        require(raceBlueprint is CrewBlueprint)
-
-        val crewMember = raceBlueprint.spawn(freeSpace.room, mode)
+        val crewMember = info.race.spawn(freeSpace.room, mode)
+        crewMember.info = info
         crew.add(crewMember)
         crewMember.jumpTo(freeSpace)
 
@@ -1466,7 +1465,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
 
         // Load the crew
         for (crewElem in rootElem.getChild("crew").getChildren("crewMember")) {
-            val crewMember = addCrewMember(crewElem.getAttributeValue("type"), false)
+            val raceName = crewElem.getAttributeValue("type")
+            val race = sys.blueprintManager[raceName] as CrewBlueprint
+            val info = LivingCrewInfo.generateRandom(race, sys)
+            val crewMember = addCrewMember(info, false)
             crewMember.loadFromXML(crewElem, refs)
         }
 

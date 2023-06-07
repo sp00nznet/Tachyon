@@ -5,6 +5,7 @@ import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -50,9 +51,9 @@ class ResourceSet() : Map<Resource, Int> {
     var droneParts: Int = 0
     var scrap: Int = 0
     val items = ArrayList<Blueprint>()
-    val crew = ArrayList<AddCrewEval>()
+    val crew = ArrayList<LivingCrewInfo>()
     val lostCrew = ArrayList<RemoveCrewEval>()
-    val intruders = ArrayList<AddCrewEval>()
+    val intruders = ArrayList<LivingCrewInfo>()
     val damage = ArrayList<EventHullDamage>()
     val upgrades = ArrayList<EventSystemUpgrade>()
 
@@ -214,14 +215,14 @@ class ResourceSet() : Map<Resource, Int> {
             val race = crewElem.getAttributeValue("race")
             val name = crewElem.getAttributeValue("humanName")
             val blueprint = content.blueprintManager[race] as CrewBlueprint
-            crew += AddCrewEval(blueprint, name)
+            crew += LivingCrewInfo.generateWithName(blueprint, name)
         }
 
         for (crewElem in elem.getChildren("intruder")) {
             val race = crewElem.getAttributeValue("race")
             val name = crewElem.getAttributeValue("humanName")
             val blueprint = content.blueprintManager[race] as CrewBlueprint
-            intruders += AddCrewEval(blueprint, name)
+            intruders += LivingCrewInfo.generateWithName(blueprint, name)
         }
 
         for (crewElem in elem.getChildren("removeCrew")) {
@@ -258,10 +259,5 @@ class ResourceSet() : Map<Resource, Int> {
         fun of(type: Resource, count: Int) = ResourceSet().apply { this[type] = count }
     }
 }
-
-/**
- * Evaluated version of [AddCrew].
- */
-class AddCrewEval(val race: CrewBlueprint, val name: String)
 
 class RemoveCrewEval(val crew: LivingCrew, val info: RemoveCrew)

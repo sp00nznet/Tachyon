@@ -2,6 +2,8 @@ package xyz.znix.xftl.shipgen
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
+import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.sector.EventManager
@@ -64,7 +66,9 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             val amount = (softMin..softMax).random(rand)
 
             for (i in 1..amount) {
-                ship.addCrewMember("human", true)
+                val crewBP = sys.blueprintManager["human"] as CrewBlueprint
+                val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)
+                ship.addCrewMember(crewInfo, true)
             }
         }
 

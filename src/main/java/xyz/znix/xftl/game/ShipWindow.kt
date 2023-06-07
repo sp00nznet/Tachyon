@@ -471,7 +471,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 dismissBox.draw(pos.x.f, pos.y + 62f)
 
                 // Draw the name
-                val name = crew.selectedName
+                val name = crew.info.name
                 val nameX = (96 - crewNameFont.getWidth(name)) / 2
                 crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, Color.white)
 

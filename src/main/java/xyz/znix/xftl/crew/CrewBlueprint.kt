@@ -25,6 +25,27 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
         ?.getChildren("layer")?.map { parseColourLayer(it) }
         ?: emptyList()
 
+    /**
+     * The images representing each of the layers tinted by [colourFilters].
+     */
+    val layerImageNames: List<String>
+
+    /**
+     * The number of colour variations this crewmember has.
+     *
+     * This is distinct from [colourFilters].size, as humans have male/female variants.
+     */
+    // TODO human male/female variants
+    val numberOfColours: Int = colourFilters.map { it.size }.max() ?: 0
+
+    init {
+        // Load all the layer images for this race
+        layerImageNames = ArrayList()
+        for (i in 1..colourFilters.size) {
+            layerImageNames += "img/people/${name}_layer$i.png"
+        }
+    }
+
     fun spawn(room: Room, mode: AbstractCrew.SlotType): LivingCrew {
         val animations = room.ship.sys.animations
 

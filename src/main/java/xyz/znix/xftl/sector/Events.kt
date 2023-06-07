@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.requireAttributeValue
 import kotlin.random.Random
@@ -273,7 +274,7 @@ class Event(
             //  in each sector, so we're not giving out crystals all the time.
             val raceName = crew.race ?: CrewBlueprint.PLAYABLE_RACE_NAMES.random()
             val race = game.blueprintManager[raceName] as CrewBlueprint
-            resourcesGained.crew.add(AddCrewEval(race, name))
+            resourcesGained.crew.add(LivingCrewInfo.generateWithName(race, name))
         }
 
         // Select crewmembers to kill
@@ -312,11 +313,7 @@ class Event(
                     else boarderRace
                 val race = game.blueprintManager[effectiveRace] as CrewBlueprint
 
-                // TODO for humans, pick a matching name and gender
-                // TODO language selection
-                val name = game.nameManager.getForGender(null, "en", Random.Default)
-
-                resourcesGained.intruders.add(AddCrewEval(race, name))
+                resourcesGained.intruders.add(LivingCrewInfo.generateRandom(race, game))
             }
         }
 

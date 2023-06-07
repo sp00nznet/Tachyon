@@ -8,6 +8,7 @@ import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -331,7 +332,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         for (crew in resourceSet.lostCrew) {
             val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
-            val message = game.translator[messageKey].replace("\\1", crew.crew.selectedName)
+            val message = game.translator[messageKey].replace("\\1", crew.crew.info.name)
 
             // There's 30 pixels for the crew member to fit on the left
             // of the 'so-and-so is gone' message.
@@ -523,12 +524,8 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
     }
 
-    private fun drawRewardCrew(crew: AddCrewEval, x: Int, y: Int, textColour: Color): Int {
-        // TODO find some way to use AbstractCrew.drawPortrait for this
-        // (This way doesn't draw the tinted layers)
-        val portrait = game.animations["${crew.race.name}_portrait"].spriteAt(0)
-
-        portrait.draw(x - 2f, y - 2f)
+    private fun drawRewardCrew(crew: LivingCrewInfo, x: Int, y: Int, textColour: Color): Int {
+        crew.drawPortrait(game, x - 2, y - 2)
 
         resourceNumFont.drawString(x + 30f, y + 21f, crew.name, textColour)
 
@@ -539,7 +536,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         crew.crew.drawPortrait(x - 2, y - 2)
 
         val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
-        val message = game.translator[messageKey].replace("\\1", crew.crew.selectedName)
+        val message = game.translator[messageKey].replace("\\1", crew.crew.info.name)
         resourceNumFont.drawString(x + 30f, y + 21f, message, Constants.SYS_ENERGY_BROKEN)
 
         return 32
