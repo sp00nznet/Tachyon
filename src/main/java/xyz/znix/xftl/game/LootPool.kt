@@ -6,6 +6,7 @@ import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.sector.SectorType
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
+import kotlin.math.min
 
 class LootPool(bpManager: BlueprintManager, sector: SectorType?) {
     val pool: List<Blueprint>
@@ -43,5 +44,10 @@ class LootPool(bpManager: BlueprintManager, sector: SectorType?) {
         val candidates = pool.asSequence().filter(filter).toList()
         if (candidates.isEmpty()) return null
         return candidates.random()
+    }
+
+    fun <T> getManyRandom(type: Class<T>, limit: Int): List<T> {
+        val matching = pool.filterIsInstance(type).shuffled()
+        return matching.subList(0, min(matching.size, limit))
     }
 }

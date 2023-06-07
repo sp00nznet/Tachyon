@@ -202,15 +202,17 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
         // Draw the two (top and bottom) main purchase sections
         val sectionOffset = if (secondBuyTab) 2 else 0
-        drawBuySection(g, store.sections[sectionOffset + 0], 59, buyButtonsUpper)
-        drawBuySection(g, store.sections[sectionOffset + 1], 268, buyButtonsLower)
+        drawBuySection(g, sectionOffset + 0, 59, buyButtonsUpper)
+        drawBuySection(g, sectionOffset + 1, 268, buyButtonsLower)
 
         // We've just drawn both buy sections, so if we're supposed to
         // re-add the buy buttons, that's now done.
         updatingBuyButtons = false
     }
 
-    private fun drawBuySection(g: Graphics, section: StoreData.Section, y: Int, buyButtons: ArrayList<BuyButton>) {
+    private fun drawBuySection(g: Graphics, sectionId: Int, y: Int, buyButtons: ArrayList<BuyButton>) {
+        val section = store.sections.getOrNull(sectionId) ?: return
+
         val pos = ConstPoint(GLOW_WIDTH + 191, GLOW_WIDTH + y)
 
         sectionFont.drawString(
@@ -258,7 +260,9 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
             game.getImg("img/storeUI/store_systems_select2.png")
         )
 
-        for ((i, system) in store.systems.withIndex()) {
+        for (i in 0 until 3) {
+            val system = store.systems.getOrNull(i)
+
             val systemSlot = ship.systemSlots.firstOrNull { it.system == system }
             val buttonPos = pos + ConstPoint(5, 17 + i * 53)
             buyButtons.add(object : BuyButton(buttonPos, images, ConstPoint(345, 27)) {
@@ -268,13 +272,14 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
                 override val customDisabled: Boolean
                     get() {
-                        // Stop the user from installing more than eight systems
-                        val numSystems = ship.mainSystems.size
-                        if (numSystems >= 8)
-                            return true
-
                         // Stop the user from buying a system their ship doesn't support
                         if (systemSlot == null)
+                            return true
+
+                        // Stop the user from installing more than eight systems, unless
+                        // this replaces an existing system (clonebay/medbay).
+                        val numSystems = ship.mainSystems.size
+                        if (numSystems >= 8 && systemSlot.room.system == null)
                             return true
 
                         // Stop the user from installing the same system twicee
@@ -298,7 +303,9 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
         val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_crew")
 
-        for ((index, crew) in store.crew.withIndex()) {
+        for (index in 0 until 3) {
+            val crew = store.crew.getOrNull(index)
+
             val buttonPos = pos + ConstPoint(19 + index * 125, 46)
             buttons += object : BuyButton(buttonPos, images, ConstPoint(33, 89)) {
                 override val blueprint: Blueprint? get() = crew?.race
@@ -351,6 +358,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         }
     }
 
+    @Suppress("DuplicatedCode") // Duplicated with BuyDrones
     private fun drawBuyWeapons(pos: ConstPoint, buyButtons: ArrayList<BuyButton>) {
         // We only need to add buy buttons, no custom drawing.
         if (!updatingBuyButtons)
@@ -358,7 +366,9 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
         val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_weapons")
 
-        for ((i, weapon) in store.weapons.withIndex()) {
+        for (i in 0 until 3) {
+            val weapon = store.weapons.getOrNull(i)
+
             val buttonPos = pos + ConstPoint(10 + i * 125, 37)
             buyButtons.add(object : BuyButton(buttonPos, images, ConstPoint(42, 98)) {
                 override val blueprint: Blueprint? get() = weapon
@@ -385,7 +395,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         }
     }
 
-    @Suppress("DuplicatedCode")
+    @Suppress("DuplicatedCode") // Duplicated with BuyWeapons
     private fun drawBuyDrones(pos: ConstPoint, buttons: ArrayList<BuyButton>) {
         // We only need to add buy buttons, no custom drawing.
         if (!updatingBuyButtons)
@@ -393,7 +403,9 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
         val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_drones")
 
-        for ((i, drone) in store.drones.withIndex()) {
+        for (i in 0 until 3) {
+            val drone = store.drones.getOrNull(i)
+
             val buttonPos = pos + ConstPoint(10 + i * 125, 37)
             buttons.add(object : BuyButton(buttonPos, images, ConstPoint(42, 98)) {
                 override val blueprint: Blueprint? get() = drone
@@ -427,7 +439,9 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
         val images = ButtonImageSet.select2(game, "img/storeUI/store_weapons")
 
-        for ((i, augment) in store.augments.withIndex()) {
+        for (i in 0 until 3) {
+            val augment = store.augments.getOrNull(i)
+
             val buttonPos = pos + ConstPoint(5, 17 + i * 53)
             buyButtons.add(object : BuyButton(buttonPos, images, ConstPoint(345, 27)) {
                 override val blueprint: Blueprint? get() = augment

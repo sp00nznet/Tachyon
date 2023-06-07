@@ -1,0 +1,63 @@
+== Section generation ==
+
+The sections are determined in Store::OnInit.
+
+The number of sections is picked randomly between 2..4 inclusive.
+
+If you have 11 systems+subsystems and aren't playing AE, system sections
+are disabled. For AE they're always enabled, due to clonebays/medbays.
+
+If you have less than 11 systems+subsystems, there's a 50% the first
+section will be a systems section.
+
+The other system slots are then picked, avoiding duplicates.
+
+The next bit is a bit weird, it's a section override system:
+
+If you don't have a drones system and the store does not contain a systems section,
+any drones section found will be replaced with - in order of preference:
+
+weapons, augments, crew, system
+
+== Filling out a section ==
+
+For weapons, drones, and crew, there's nothing particularly interesting there.
+
+It appears the same goes for augments, so it can offer non-stacking augments
+that you already own.
+
+Systems are a lot more complicated.
+
+== Selecting systems ==
+
+First, the game builds a list of all the systems to offer you. A system is
+added to this list if all the following conditions are true:
+
+* If you're not running AE, the system must be a non-AE system
+* If the system is a drones system, the store must NOT have a drones section
+* If the system is a medical system, then the player must already have a medical system
+
+This is done to avoid a forced system showing up twice.
+
+The store picks how many systems to sell. This is either the number of systems
+in the randomised list above, or three - whichever is lower.
+
+There are three possible guaranteed systems:
+* Drones, if the store sells drone blueprints and you don't already have it
+* Shields, if you don't already have them
+* Medbay (or Clonebay in AE) if you have neither
+
+The rest are randomly selected systems that you don't have, without any duplicates.
+
+Note that if you have every system except a medbay and two others, the randomised
+list will only contain those two missing systems - the medbay is a forced system
+and thus excluded from that list. Thus the store will only sell two systems.
+
+== Resources ==
+
+Randomly set in the ItemStoreBox constructor, each resource's count is randomly set:
+
+Type     min  max
+Fuel      3    7
+Missile   2    6
+Drone     2    4
