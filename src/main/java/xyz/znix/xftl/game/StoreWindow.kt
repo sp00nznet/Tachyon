@@ -18,6 +18,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
     private val buySellTabFont = game.getFont("HL2", 3f)
     private val sectionFont = game.getFont("HL2", 2f)
+    private val repairFont = game.getFont("HL1", 2f)
     private val numberFont = game.getFont("num_font")
     private val augmentNameFont = game.getFont("c&cnew", 2f)
     private val crewNameFont = game.getFont("JustinFont8")
@@ -62,6 +63,8 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     private val fuelButton = ResourceButton(ConstPoint(GLOW_WIDTH + 11, GLOW_WIDTH + 76), Resource.FUEL)
     private val missilesButton = ResourceButton(ConstPoint(GLOW_WIDTH + 11, GLOW_WIDTH + 126), Resource.MISSILES)
     private val dronesButton = ResourceButton(ConstPoint(GLOW_WIDTH + 11, GLOW_WIDTH + 175), Resource.DRONES)
+
+    private val repairButtons = ArrayList<Button>()
 
     // To avoid having separate fields for all the different things that
     // can be bought, have lists of buttons for the top and bottom buy panels.
@@ -174,12 +177,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         dronesButton.draw(g)
 
         // Draw the hull repair section
-        sectionFont.drawString(
-            position.x + GLOW_WIDTH + 11f,
-            position.y + GLOW_WIDTH + 54f + 209f,
-            game.translator["store_title_repair"],
-            Constants.JUMP_DISABLED_TEXT
-        )
+        drawRepairSection(g)
 
         // If there's more than two sections, show the tab buttons to swap between them.
         if (store.sections.size > 2) {
@@ -208,6 +206,85 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         // We've just drawn both buy sections, so if we're supposed to
         // re-add the buy buttons, that's now done.
         updatingBuyButtons = false
+    }
+
+    private fun drawRepairSection(g: Graphics) {
+        val repairSectionY = position.y + GLOW_WIDTH + 269
+        sectionFont.drawString(
+            position.x + GLOW_WIDTH + 11f,
+            repairSectionY - 6f,
+            game.translator["store_title_repair"],
+            Constants.JUMP_DISABLED_TEXT
+        )
+
+        // Draw the current hull label and number
+        val currentHullLines = game.translator["store_current_hull"].split("\n")
+        repairFont.drawStringCentred(
+            position.x + GLOW_WIDTH + 4f,
+            repairSectionY + 159f,
+            125f,
+            currentHullLines[0],
+            Constants.SECTOR_CUTOUT_TEXT
+        )
+        repairFont.drawStringCentred(
+            position.x + GLOW_WIDTH + 4f,
+            repairSectionY + 159f + 18f,
+            125f,
+            currentHullLines[1],
+            Constants.SECTOR_CUTOUT_TEXT
+        )
+
+        numberFont.drawStringLeftAligned(
+            position.x + GLOW_WIDTH + 4f + 154,
+            repairSectionY + 168f,
+            ship.health.toString(),
+            Constants.SECTOR_CUTOUT_TEXT
+        )
+
+        for (button in repairButtons) {
+            button.draw(g)
+        }
+
+        // Add the fix buttons
+        if (!updatingBuyButtons) {
+            return
+        }
+
+        repairButtons.clear()
+
+        val repairImg = ButtonImageSet.select2(game, "img/storeUI/store_repair")
+        val buttonX = GLOW_WIDTH + 11
+        val buttonBaseY = repairSectionY - position.y
+        val repairPricePos = ConstPoint(130, 28)
+
+        val repairPrice = when (game.currentBeacon.sector.sectorNumber) {
+            0, 1, 2 -> 2
+            3, 4, 5 -> 3
+            else -> 4
+        }
+
+        repairButtons += object : RepairButton(ConstPoint(buttonX, buttonBaseY + 15), repairImg, repairPricePos) {
+            override val nameKey: String get() = "repair_one_button"
+            override val price: Int get() = repairPrice
+
+            override fun buy() {
+                ship.health++
+            }
+        }
+
+        repairButtons += object : RepairButton(ConstPoint(buttonX, buttonBaseY + 70), repairImg, repairPricePos) {
+            override val nameKey: String get() = "repair_all_button"
+            override val price: Int get() = (ship.maxHealth - ship.health) * repairPrice
+
+            override fun buy() {
+                ship.health = ship.maxHealth
+            }
+        }
+
+        for (button in repairButtons) {
+            buttons += button
+            button.windowOffset = position
+        }
     }
 
     private fun drawBuySection(g: Graphics, sectionId: Int, y: Int, buyButtons: ArrayList<BuyButton>) {
@@ -644,6 +721,52 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
             store.availableResources[resource] = numAvailable - 1
 
             buySound.play()
+        }
+    }
+
+    private abstract inner class RepairButton(pos: IPoint, val repairImg: ButtonImageSet, priceOffset: IPoint) :
+        BuyButton(pos, repairImg, priceOffset) {
+
+        override val customDisabled: Boolean get() = ship.health >= ship.maxHealth
+        override val blueprint: Blueprint get() = error("Repairs don't use blueprints")
+        override val empty: Boolean get() = false
+
+        abstract val nameKey: String
+
+        override fun draw(g: Graphics) {
+            val image = when {
+                disabled -> repairImg.off
+                hovered -> repairImg.hover
+                else -> repairImg.normal
+            }
+            image.draw(this.pos)
+
+            val ourTextColour = when {
+                disabled -> Constants.JUMP_DISABLED
+                hovered -> Constants.STORE_BUY_HOVER
+                else -> Constants.SECTOR_CUTOUT_TEXT
+            }
+
+            repairFont.drawStringCentred(
+                pos.x + 2f, pos.y + 28f, 99f,
+                game.translator[nameKey],
+                ourTextColour
+            )
+
+            if (!disabled) {
+                numberFont.drawString(
+                    pos.x + priceOffset.x.f,
+                    pos.y + priceOffset.y.f,
+                    price.toString(),
+                    ourTextColour
+                )
+            } else {
+                repairFont.drawStringCentred(
+                    pos.x + 103f, pos.y + 28f, 64f,
+                    game.translator["repair_max"],
+                    ourTextColour
+                )
+            }
         }
     }
 

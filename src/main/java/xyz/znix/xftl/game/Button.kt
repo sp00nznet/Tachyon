@@ -289,7 +289,7 @@ object Buttons {
          */
         open val customDisabled: Boolean get() = false
 
-        val empty: Boolean get() = blueprint == null
+        open val empty: Boolean get() = blueprint == null
 
         override val disabled: Boolean get() = empty || customDisabled
 
