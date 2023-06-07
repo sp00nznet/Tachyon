@@ -121,8 +121,8 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         return system.damagedEnergyLevels != system.energyLevels
     }
 
-    override fun destroy() {
-        super.destroy()
+    override fun removeInstance() {
+        super.removeInstance()
 
         // If a flying drone was sent out, get rid of it.
         projectile?.destroyFlying()

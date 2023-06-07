@@ -101,12 +101,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     val intruders: List<AbstractCrew> = ArrayList()
     val friendlyCrew: List<AbstractCrew> = ArrayList()
 
-    // These are the friendly drones that exist around the ship,
-    // even though they're been removed from the drones system. They're
-    // kept here so that if you take a blueprint out of the drones system
-    // then put it back in, you won't lose the drone.
-    val orphanedDrones = ArrayList<AbstractDrone>()
-
     val cargoBlueprints = ArrayList<Blueprint?>(listOf(null, null, null, null))
     val augments = ArrayList<AugmentBlueprint>()
 

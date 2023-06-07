@@ -76,10 +76,6 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
         val drones = ownerShip.drones!!
         val info = drones.drones.firstOrNull { it?.instance == this }
         info?.instance = null
-
-        // If we're an orphaned drone (blueprint was swapped out), clear
-        // ourselves from that list too.
-        ownerShip.orphanedDrones.remove(this)
     }
 
     open fun update(dt: Float) {
@@ -151,18 +147,17 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
         SaveUtil.getAttrRef(elem, "owner", refs, Ship::class.java) {
             init(it!!)
 
-            if (slot != null) {
-                val info = it.drones!!.drones[slot]!!
-
-                // A couple of simple checks to make sure we're not ending up in the wrong slot.
-                require(info.type == type)
-                require(info.instance == null)
-
-                info.instance = this
+            if (slot == null) {
+                return@getAttrRef
             }
 
-            // TODO support orphan drones properly (or remove it and make drones blow up
-            //  when you remove their blueprint).
+            val info = it.drones!!.drones[slot]!!
+
+            // A couple of simple checks to make sure we're not ending up in the wrong slot.
+            require(info.type == type)
+            require(info.instance == null)
+
+            info.instance = this
         }
     }
 }

@@ -439,8 +439,6 @@ class DebugConsole(var game: InGameState) {
                 }
             }
 
-            target.orphanedDrones.clear()
-
             // Remove the visuals for drones that somehow got stuck.
             // This can happen if you spawn a new ship at the same
             // beacon while the old one had some drones deployed.
@@ -462,7 +460,7 @@ class DebugConsole(var game: InGameState) {
         clearFor(ship)
         game.enemy?.let { clearFor(it) }
 
-        addLine("All drones (including orphan drones) have been cleared from all ships")
+        addLine("All drones have been cleared from all ships")
     }
 
     private fun cmdCrew(args: List<String>) {

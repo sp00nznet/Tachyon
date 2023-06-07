@@ -400,26 +400,11 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
 
                 return SlotAccess(
                     { drones.drones[i]?.type },
-                    {
-                        // If the current slot contains an already-deployed drone,
-                        // power it down and add it to the orphan list so it isn't
-                        // destroyed.
-                        drones.drones[i]?.instance?.let { drone ->
-                            drone.isPowered = false
-                            ship.orphanedDrones += drone
-                        }
+                    { drone ->
+                        // If the current slot contains an already-deployed drone, get rid of it.
+                        drones.drones[i]?.instance?.removeInstance()
 
-                        if (it !is DroneBlueprint) {
-                            drones.drones[i] = null
-                            return@SlotAccess
-                        }
-
-                        // Check if there's a matching orphaned drone, to save a drone part.
-                        val orphan = ship.orphanedDrones.firstOrNull { drone -> drone.type == it }
-                        if (orphan != null)
-                            ship.orphanedDrones.remove(orphan)
-
-                        drones.drones[i] = Drones.DroneInfo(it, orphan)
+                        drones.drones[i] = drone?.let { Drones.DroneInfo(it as DroneBlueprint, null) }
                     }
                 )
             }
