@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.drones.*
+import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -55,8 +56,13 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         // For some reason, the ion intruder drone (BOARDER_ION) doesn't set
         // it's iconImage such that we can access it - likely due to it being
         // hardcoded - so leave it null to use missingImage.
-        if (iconImage != null) {
-            val portrait = "${iconImage}_portrait"
+        val indoorIcon = when (type) {
+            DroneType.REPAIR -> "repair"
+            DroneType.BATTLE, DroneType.BOARDER -> "battle"
+            else -> null
+        }
+        if (indoorIcon != null) {
+            val portrait = "${indoorIcon}_portrait"
             if (game.animations.animations.containsKey(portrait))
                 base = game.animations[portrait].spriteAt(0)
         }
@@ -76,9 +82,22 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         if (base == null)
             base = game.missingImage
 
-        base.draw(pos.x - base.width / 2f, pos.y - base.height / 2f)
+        // Be sure to pixel-align the image, to make it as sharp as possible.
+        val imgX = pos.x - base.width / 2
+        var imgY = pos.y - base.height / 2
 
-        // TODO laser for defence drones
+        if (type == DroneType.DEFENSE) {
+            // Shift everything down to account for the gun sticking out.
+            imgY += 4
+        }
+
+        base.draw(imgX.f, imgY.f)
+
+        // Draw the laser for defence drones
+        if (type == DroneType.DEFENSE) {
+            val gun = game.getImg("img/ship/drones/${droneImage}_gun_charged.png")
+            gun.draw(imgX.f, imgY.f)
+        }
     }
 
     fun makeInstance(): AbstractDrone {

@@ -5,6 +5,7 @@ import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import java.util.*
 
 /**
@@ -26,6 +27,11 @@ class StoreData(game: InGameState) {
     val weapons: MutableList<AbstractWeaponBlueprint?>
 
     /**
+     * If this store has a drones section, this contains the drones, or null if they're sold out.
+     */
+    val drones: MutableList<DroneBlueprint?>
+
+    /**
      * If this store has an augments section, this contains the augments, or null if they're sold out.
      */
     val augments: MutableList<AugmentBlueprint?>
@@ -41,13 +47,16 @@ class StoreData(game: InGameState) {
         availableResources[Resource.MISSILES] = 5
         availableResources[Resource.DRONES] = 5
 
-        sections = listOf(Section.SYSTEMS, Section.CREW, Section.AUGMENTS, Section.WEAPONS)
+        sections = listOf(Section.SYSTEMS, Section.CREW, Section.AUGMENTS, Section.DRONES)
 
         val systemNames = listOf("teleporter", "cloaking", "drones")
         systems = ArrayList(systemNames.map { game.blueprintManager[it] as SystemBlueprint })
 
         val weaponNames = listOf("BEAM_1", "BEAM_2", "BOMB_BREACH_2")
         weapons = ArrayList(weaponNames.map { game.blueprintManager[it] as AbstractWeaponBlueprint })
+
+        val droneNames = listOf("DEFENSE_1", "COMBAT_BEAM_2", "BOARDER")
+        drones = ArrayList(droneNames.map { game.blueprintManager[it] as DroneBlueprint })
 
         val augmentNames = listOf("ADV_SCANNERS", "NANO_MEDBAY", "ROCK_ARMOR")
         augments = ArrayList(augmentNames.map { game.blueprintManager[it] as AugmentBlueprint })

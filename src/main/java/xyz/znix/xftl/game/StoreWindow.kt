@@ -226,7 +226,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         when (section) {
             StoreData.Section.AUGMENTS -> drawBuyAugments(pos, buyButtons)
             StoreData.Section.CREW -> drawBuyCrew(pos, buyButtons)
-            StoreData.Section.DRONES -> TODO()
+            StoreData.Section.DRONES -> drawBuyDrones(pos, buyButtons)
             StoreData.Section.SYSTEMS -> drawBuySystems(pos, buyButtons)
             StoreData.Section.WEAPONS -> drawBuyWeapons(pos, buyButtons)
         }
@@ -379,6 +379,41 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     updateButtons() // Make this button show as sold out
 
                     if (!ship.addBlueprint(weapon!!, false))
+                        error("Couldn't find space to place purchased weapon!")
+                }
+            })
+        }
+    }
+
+    @Suppress("DuplicatedCode")
+    private fun drawBuyDrones(pos: ConstPoint, buttons: ArrayList<BuyButton>) {
+        // We only need to add buy buttons, no custom drawing.
+        if (!updatingBuyButtons)
+            return
+
+        val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_drones")
+
+        for ((i, drone) in store.drones.withIndex()) {
+            val buttonPos = pos + ConstPoint(10 + i * 125, 37)
+            buttons.add(object : BuyButton(buttonPos, images, ConstPoint(42, 98)) {
+                override val blueprint: Blueprint? get() = drone
+                override val price: Int get() = drone?.cost ?: 0
+
+                override val customDisabled: Boolean
+                    get() {
+                        for (slot in 0 until ship.weaponSlots!!) {
+                            if (ship.hardpoints[slot].weapon == null)
+                                return false
+                        }
+
+                        return ship.cargoBlueprints.all { it != null }
+                    }
+
+                override fun buy() {
+                    store.weapons[i] = null
+                    updateButtons() // Make this button show as sold out
+
+                    if (!ship.addBlueprint(drone!!, false))
                         error("Couldn't find space to place purchased weapon!")
                 }
             })
