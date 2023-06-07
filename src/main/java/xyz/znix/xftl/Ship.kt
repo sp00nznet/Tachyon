@@ -16,10 +16,7 @@ import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
-import xyz.znix.xftl.game.FTLSound
-import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.game.ResourceSet
-import xyz.znix.xftl.game.ShipGib
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
@@ -140,7 +137,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     var dronesCount: Int = 0
 
     // How much scrap the player has
-    var scrap: Int = 10 // TODO 30 on easy
+    var scrap: Int = if (sys.difficulty == Difficulty.EASY) 30 else 10
 
     // How far through charging the FTL drive, 1=fully charged.
     // These only apply to the player, enemies use a fixed timer.
