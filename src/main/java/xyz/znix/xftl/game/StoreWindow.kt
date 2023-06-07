@@ -2,10 +2,7 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
-import xyz.znix.xftl.Blueprint
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.draw
+import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
@@ -23,6 +20,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     private val sectionFont = game.getFont("HL2", 2f)
     private val numberFont = game.getFont("num_font")
     private val augmentNameFont = game.getFont("c&cnew", 2f)
+    private val crewNameFont = game.getFont("JustinFont8")
 
     private val buySound = game.sounds.getSample("buy")
 
@@ -294,7 +292,63 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     }
 
     private fun drawBuyCrew(pos: IPoint, buttons: ArrayList<BuyButton>) {
-        // TODO implement
+        // We only need to add buy buttons, no custom drawing.
+        if (!updatingBuyButtons)
+            return
+
+        val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_crew")
+
+        for ((index, crew) in store.crew.withIndex()) {
+            val buttonPos = pos + ConstPoint(19 + index * 125, 46)
+            buttons += object : BuyButton(buttonPos, images, ConstPoint(33, 89)) {
+                override val blueprint: Blueprint? get() = crew?.race
+                override val price: Int get() = crew!!.race.cost
+
+                // TODO block buying more than 8 crew
+
+                override fun buy() {
+                    store.crew[index] = null
+                    ship.addCrewMember(crew!!, false)
+                    updateButtons()
+                }
+
+                override fun draw(g: Graphics) {
+                    val image = when {
+                        disabled -> image.off
+                        hovered -> image.hover
+                        else -> image.normal
+                    }
+                    // 9px of padding
+                    image.draw(this.pos.x - 9, this.pos.y - 9)
+
+                    if (crew == null) {
+                        return
+                    }
+
+                    crewNameFont.drawStringCentred(
+                        this.pos.x + 2f, this.pos.y + 61f, 96f,
+                        crew.name,
+                        textColour
+                    )
+
+                    val yOffset = when (crew.race.name) {
+                        "rock", "mantis", "crystal" -> -10
+                        else -> -5
+                    }
+
+                    val scale = 2
+                    val portraitX = this.pos.x + (96 - 35 * scale) / 2
+                    crew.drawPortrait(game, portraitX, this.pos.y + yOffset, scale.f)
+
+                    numberFont.drawString(
+                        this.pos.x + priceOffset.x.f,
+                        this.pos.y + priceOffset.y.f,
+                        price.toString(),
+                        textColour
+                    )
+                }
+            }
+        }
     }
 
     private fun drawBuyWeapons(pos: ConstPoint, buyButtons: ArrayList<BuyButton>) {
@@ -390,8 +444,8 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     // Draw the price
                     if (!customDisabled) {
                         numberFont.drawString(
-                            this.pos.x + priceOffset.x.toFloat(),
-                            this.pos.y + priceOffset.y.toFloat(),
+                            this.pos.x + priceOffset.x.f,
+                            this.pos.y + priceOffset.y.f,
                             price.toString(),
                             textColour
                         )
@@ -455,8 +509,8 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                 return
 
             numberFont.drawString(
-                pos.x + priceOffset.x.toFloat(),
-                pos.y + priceOffset.y.toFloat(),
+                pos.x + priceOffset.x.f,
+                pos.y + priceOffset.y.f,
                 price.toString(),
                 textColour
             )

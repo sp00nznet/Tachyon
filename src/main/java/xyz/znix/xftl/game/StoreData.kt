@@ -1,6 +1,8 @@
 package xyz.znix.xftl.game
 
 import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import java.util.*
@@ -28,6 +30,11 @@ class StoreData(game: InGameState) {
      */
     val augments: MutableList<AugmentBlueprint?>
 
+    /**
+     * If this store has a crew section, this is the crew, or null if they're sold out.
+     */
+    val crew: MutableList<LivingCrewInfo?>
+
     init {
         // TODO initialise with proper values
         availableResources[Resource.FUEL] = 5
@@ -44,6 +51,10 @@ class StoreData(game: InGameState) {
 
         val augmentNames = listOf("ADV_SCANNERS", "NANO_MEDBAY", "ROCK_ARMOR")
         augments = ArrayList(augmentNames.map { game.blueprintManager[it] as AugmentBlueprint })
+
+        val raceNames = listOf("human", "mantis", "engi")
+        crew = ArrayList(raceNames.map { game.blueprintManager[it] as CrewBlueprint }
+            .map { LivingCrewInfo.generateRandom(it, game) })
     }
 
     enum class Section {

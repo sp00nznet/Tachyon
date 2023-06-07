@@ -114,7 +114,7 @@ class LivingCrewInfo(
      *
      * Useful for events and shops.
      */
-    fun drawPortrait(game: InGameState, x: Int, y: Int) {
+    fun drawPortrait(game: InGameState, x: Int, y: Int, scale: Float = 1f) {
         val animation = game.animations["${race.name}_portrait"]
         val baseImage = animation.sheet.sheet
         val portrait = animation.spriteAt(0)
@@ -122,7 +122,7 @@ class LivingCrewInfo(
         drawImage(
             game,
             x.f, y.f,
-            x.f + portrait.width, y.f + portrait.height,
+            x.f + portrait.width * scale, y.f + portrait.height * scale,
             portrait, baseImage,
             1f
         )
