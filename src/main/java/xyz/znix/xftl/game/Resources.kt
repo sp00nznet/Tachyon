@@ -9,7 +9,6 @@ import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
-import xyz.znix.xftl.sector.AddCrew
 import xyz.znix.xftl.sector.EventHullDamage
 import xyz.znix.xftl.sector.EventSystemUpgrade
 import xyz.znix.xftl.sector.RemoveCrew
@@ -139,6 +138,20 @@ class ResourceSet() : Map<Resource, Int> {
         this.intruders += other.intruders
         this.damage += other.damage
         this.modifyPursuit += other.modifyPursuit
+    }
+
+    fun clear() {
+        fuel = 0
+        missiles = 0
+        droneParts = 0
+        scrap = 0
+        items.clear()
+        crew.clear()
+        lostCrew.clear()
+        intruders.clear()
+        damage.clear()
+        upgrades.clear()
+        modifyPursuit = 0
     }
 
     fun saveToXML(elem: Element, refs: ObjectRefs) {

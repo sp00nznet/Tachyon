@@ -78,14 +78,14 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         this::escapePressed
     )
 
-    private var sellTab: Boolean = false
+    var sellTab: Boolean = false
         set(value) {
             field = value
             updateButtons()
         }
 
     // If there's two pages of stuff to buy, this is true if the second one is selected.
-    private var secondBuyTab: Boolean = false
+    var secondBuyTab: Boolean = false
         set(value) {
             field = value
             updateButtons()

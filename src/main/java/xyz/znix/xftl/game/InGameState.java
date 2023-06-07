@@ -865,6 +865,9 @@ public class InGameState extends MainGame.GameState {
         } else {
             setEnemy(currentBeacon.getShip());
         }
+
+        // We might have loaded a beacon with a store
+        shipUI.updateButtons();
     }
 
     /**

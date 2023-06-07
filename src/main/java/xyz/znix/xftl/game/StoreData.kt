@@ -1,10 +1,13 @@
 package xyz.znix.xftl.game
 
+import org.jdom2.Element
+import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.rollChance
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
@@ -15,37 +18,37 @@ import kotlin.random.Random
 /**
  * Carries persistent information about a store, like its available items and prices.
  */
-class StoreData(game: InGameState) {
+class StoreData {
     val availableResources = ResourceSet()
 
-    val sections: List<Section>
+    val sections = ArrayList<Section>()
 
     /**
      * If this store has a systems section, this contains the systems, or null if they're sold out.
      */
-    val systems: MutableList<SystemBlueprint?>
+    val systems = ArrayList<SystemBlueprint?>()
 
     /**
      * If this store has a weapons section, this contains the weapons, or null if they're sold out.
      */
-    val weapons: MutableList<AbstractWeaponBlueprint?>
+    val weapons = ArrayList<AbstractWeaponBlueprint?>()
 
     /**
      * If this store has a drones section, this contains the drones, or null if they're sold out.
      */
-    val drones: MutableList<DroneBlueprint?>
+    val drones = ArrayList<DroneBlueprint?>()
 
     /**
      * If this store has an augments section, this contains the augments, or null if they're sold out.
      */
-    val augments: MutableList<AugmentBlueprint?>
+    val augments = ArrayList<AugmentBlueprint?>()
 
     /**
      * If this store has a crew section, this is the crew, or null if they're sold out.
      */
-    val crew: MutableList<LivingCrewInfo?>
+    val crew = ArrayList<LivingCrewInfo?>()
 
-    init {
+    fun generateRandomContents(game: InGameState) {
         // See doc/stores for generation details
         availableResources[Resource.FUEL] = (3..7).random()
         availableResources[Resource.MISSILES] = (2..6).random()
@@ -53,7 +56,6 @@ class StoreData(game: InGameState) {
 
         // Generate the section types
         val numSections = (2..4).random()
-        sections = ArrayList()
 
         val ship = game.player
         val numSystems = ship.systems.size
@@ -81,30 +83,28 @@ class StoreData(game: InGameState) {
             sections += possibleSections.removeAt(possibleSections.indices.random())
         }
 
-        systems = generateSystems(game, ship)
+        systems += generateSystems(game, ship)
 
-        weapons = getForSection(game, Section.WEAPONS, AbstractWeaponBlueprint::class.java)
-        drones = getForSection(game, Section.DRONES, DroneBlueprint::class.java)
-        augments = getForSection(game, Section.AUGMENTS, AugmentBlueprint::class.java)
+        weapons += getForSection(game, Section.WEAPONS, AbstractWeaponBlueprint::class.java)
+        drones += getForSection(game, Section.DRONES, DroneBlueprint::class.java)
+        augments += getForSection(game, Section.AUGMENTS, AugmentBlueprint::class.java)
 
         if (sections.contains(Section.CREW)) {
-            crew = ArrayList(game.lootPool.getManyRandom(CrewBlueprint::class.java, 3)
-                .map { LivingCrewInfo.generateRandom(it, game) })
-        } else {
-            crew = ArrayList()
+            crew += game.lootPool.getManyRandom(CrewBlueprint::class.java, 3)
+                .map { LivingCrewInfo.generateRandom(it, game) }
         }
     }
 
-    private fun <T> getForSection(game: InGameState, section: Section, type: Class<T>): ArrayList<T?> {
+    private fun <T> getForSection(game: InGameState, section: Section, type: Class<T>): List<T?> {
         // Return an empty list to reduce the savefile size
         if (!sections.contains(section)) {
-            return ArrayList()
+            return emptyList()
         }
 
-        return ArrayList(game.lootPool.getManyRandom(type, 3))
+        return game.lootPool.getManyRandom(type, 3)
     }
 
-    private fun generateSystems(game: InGameState, ship: Ship): MutableList<SystemBlueprint?> {
+    private fun generateSystems(game: InGameState, ship: Ship): List<SystemBlueprint?> {
         val systems = ArrayList<SystemBlueprint?>()
 
         // Return an empty list to reduce the savefile size
@@ -173,6 +173,95 @@ class StoreData(game: InGameState) {
         }
 
         return systems
+    }
+
+    fun saveToXML(elem: Element) {
+        for (section in sections) {
+            val sectionElem = Element("section")
+            SaveUtil.addAttr(sectionElem, "id", section.name)
+            elem.addContent(sectionElem)
+        }
+
+        for ((name, count) in availableResources.entries) {
+            elem.setAttribute(name.name, count.toString())
+        }
+
+        saveBlueprints(elem, "drone", drones)
+        saveBlueprints(elem, "weapon", weapons)
+        saveBlueprints(elem, "system", systems)
+        saveBlueprints(elem, "augment", augments)
+
+        for ((i, crew) in crew.withIndex()) {
+            if (crew == null)
+                continue
+
+            val crewElem = Element("crew")
+            SaveUtil.addAttrInt(crewElem, "idx", i)
+            crew.saveToXML(crewElem)
+            elem.addContent(crewElem)
+        }
+    }
+
+    fun loadFromXML(game: InGameState, elem: Element) {
+        for (sectionElem in elem.getChildren("section")) {
+            val sectionName = SaveUtil.getAttr(sectionElem, "id")
+            sections += Section.valueOf(sectionName)
+        }
+
+        for (resource in Resource.values()) {
+            val value = elem.getAttributeValue(resource.name)?.toInt() ?: continue
+            availableResources[resource] = value
+        }
+
+        loadBlueprints(game, elem, "drone", drones, DroneBlueprint::class.java)
+        loadBlueprints(game, elem, "weapon", weapons, AbstractWeaponBlueprint::class.java)
+        loadBlueprints(game, elem, "system", systems, SystemBlueprint::class.java)
+        loadBlueprints(game, elem, "augment", augments, AugmentBlueprint::class.java)
+
+        for (crewElem in elem.getChildren("crew")) {
+            val idx = SaveUtil.getAttrInt(crewElem, "idx")
+            while (crew.size <= idx) {
+                crew.add(null)
+            }
+
+            crew[idx] = LivingCrewInfo.loadFromXML(crewElem, game)
+        }
+    }
+
+    private fun saveBlueprints(elem: Element, name: String, items: List<Blueprint?>) {
+        for ((i, item) in items.withIndex()) {
+            if (item == null)
+                continue
+
+            val itemElem = Element(name)
+            SaveUtil.addAttrInt(itemElem, "idx", i)
+            SaveUtil.addAttr(itemElem, "type", item.name)
+            elem.addContent(itemElem)
+        }
+    }
+
+    private fun <T> loadBlueprints(
+        game: InGameState,
+        elem: Element, name: String,
+        items: MutableList<T?>,
+        type: Class<T>
+    ) {
+        for (itemElem in elem.getChildren(name)) {
+            val idx = SaveUtil.getAttrInt(itemElem, "idx")
+            val itemName = SaveUtil.getAttr(itemElem, "type")
+
+            val item = game.blueprintManager[itemName]
+            require(type.isInstance(item))
+            @Suppress("UNCHECKED_CAST")
+            val casted: T = run { item as T } // Run block needed to suppress the warning
+
+            // Grow the items list until it can fit the item in the correct index
+            while (items.size <= idx) {
+                items.add(null)
+            }
+
+            items[idx] = casted
+        }
     }
 
     enum class Section {

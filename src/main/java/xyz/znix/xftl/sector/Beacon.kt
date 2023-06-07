@@ -149,7 +149,8 @@ class Beacon(
         if (internalStore != null)
             return internalStore
 
-        internalStore = StoreData(game)
+        internalStore = StoreData()
+        internalStore!!.generateRandomContents(game)
         return internalStore
     }
 
@@ -221,7 +222,11 @@ class Beacon(
         SaveUtil.addAttrInt(elem, "planetImg", planetImageIndex)
         SaveUtil.addAttrInt(elem, "backImg", backgroundImageIndex)
 
-        // TODO save the store data
+        if (internalStore != null) {
+            val storeElem = Element("storeData")
+            internalStore!!.saveToXML(storeElem)
+            elem.addContent(storeElem)
+        }
 
         // Save the power limits
         for ((system, limit) in powerLimitEffects) {
@@ -268,6 +273,12 @@ class Beacon(
 
             beacon.planetImageIndex = SaveUtil.getAttrInt(elem, "planetImg")
             beacon.backgroundImageIndex = SaveUtil.getAttrInt(elem, "backImg")
+
+            val storeElem = elem.getChild("storeData")
+            if (storeElem != null) {
+                beacon.internalStore = StoreData()
+                beacon.internalStore!!.loadFromXML(game, storeElem)
+            }
 
             // Deserialise the enemy ship, if present
             val shipElem = elem.getChild("enemyShip")

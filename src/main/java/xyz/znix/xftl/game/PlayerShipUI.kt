@@ -1102,6 +1102,15 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             selectedCrew += ship.crew[index]
         }
+
+        // Reloading should keep the store open, if it's run manually.
+        val oldStore = prev.currentWindow as? StoreWindow
+        if (oldStore != null) {
+            showStoreWindow()
+            val store = currentWindow as StoreWindow
+            store.sellTab = oldStore.sellTab
+            store.secondBuyTab = oldStore.secondBuyTab
+        }
     }
 
     private fun updateHoveredCrew(mouseX: Int, mouseY: Int, playerShipPosition: IPoint) {
