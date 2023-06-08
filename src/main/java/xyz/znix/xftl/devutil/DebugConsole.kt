@@ -264,7 +264,7 @@ class DebugConsole(var game: InGameState) {
         for (line in gridLines) {
             require(line.size == columns.size)
             for ((index, part) in line.withIndex()) {
-                columns[index] += part
+                columns[index].add(part)
             }
         }
 

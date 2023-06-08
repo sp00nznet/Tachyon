@@ -402,7 +402,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             // Load the information about the available system into the room.
             // This will be used when loading the system from a save, spawning
             // a new ship, or buying a system at a store.
-            room.systemSlots += SystemInstallConfiguration(node, sys, room, index)
+            room.systemSlots.add(SystemInstallConfiguration(node, sys, room, index))
         }
 
         systemSlots = rooms.flatMap { it.systemSlots }
