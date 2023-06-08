@@ -229,6 +229,50 @@ class SILFontLoader : Font {
         return chars.containsKey(c)
     }
 
+    fun wrapString(string: String, maxWidth: Int): List<String> {
+        val lines = ArrayList<String>()
+
+        // We have to round the prekern and width+postkern separately, since that's how we render it.
+        val spaceInfo = chars.getValue(' ')
+        val spaceWidth = (spaceInfo.prekern * scale).roundToInt() +
+                ((spaceInfo.w + spaceInfo.postkern) * scale).roundToInt()
+
+        var currentWidth = 0
+        val line = StringBuilder()
+
+        for (word in string.split(' ', '\t')) {
+            if (line.isNotEmpty()) {
+                line.append(' ')
+                currentWidth += spaceWidth
+            }
+
+            var nextWidth = 0
+            for (ch in word) {
+                val info = chars[ch] ?: error("Unknown char $ch")
+                nextWidth += (info.prekern * scale).roundToInt()
+
+                // Always include the postkern, since we'll be writing
+                // another word after this. And if we wrap at slightly
+                // the wrong time by the distance of a postkern, who cares.
+                val postKern = info.postkern
+                nextWidth += ((info.w + postKern) * scale).roundToInt()
+            }
+
+            if (currentWidth + nextWidth > maxWidth) {
+                lines.add(line.toString())
+                line.clear()
+                currentWidth = 0
+            }
+
+            line.append(word)
+            currentWidth += nextWidth
+        }
+
+        lines.add(line.toString())
+
+        return lines
+    }
+
     @Suppress("unused")
     private class Charinfo(
         val ch: Char, val x: Int, val y: Int, val w: Int, val h: Int, val ascent: Int,

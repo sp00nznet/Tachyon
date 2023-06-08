@@ -445,35 +445,21 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     ): Int {
         // The x coordinate where line wrapping is triggered
         val textFarX = if (maxX != -1) maxX.f else position.x + size.x - 25f
+        val maxWidth = textFarX - textX
 
-        var lineText = ""
         var textY = y
         var longestLine = 0
 
-        fun breakLine() {
-            longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
-            font.drawString(textX.f, textY.f, lineText, colour)
-            lineText = ""
-            textY += 20
-        }
-
-        for ((lineNum, line) in msg.split("\n").withIndex()) {
-            if (lineNum != 0) {
-                // Every line other than the first one needs to advance from
-                // the starting position, including empty ones.
-                breakLine()
-            }
-
-            for (word in line.split(" ")) {
-                if (font.getWidth(lineText + word) + textX > textFarX) {
-                    breakLine()
-                }
-
-                lineText += "$word "
+        for (line in msg.split("\n")) {
+            for (splitLine in font.wrapString(line, maxWidth.toInt())) {
+                longestLine = longestLine.coerceAtLeast(font.getWidth(splitLine))
+                font.drawString(textX.f, textY.f, splitLine, colour)
+                textY += 20
             }
         }
-        longestLine = longestLine.coerceAtLeast(font.getWidth(lineText))
-        font.drawString(textX.f, textY.f, lineText, colour)
+
+        // Remove the space used by the last line.
+        textY -= 20
 
         if (addOption) {
             optionBoundingBoxes += Rectangle(textX.f, y.f - 11, longestLine.f, textY - y + 14f)

@@ -75,7 +75,7 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
             Outcome.LOOSE_BASE_DESTROYED -> "gameover_fedbase"
         }
         val bodyStr = game.translator[bodyKey]
-        wrappedMessage = wrap(bodyStr)
+        wrappedMessage = bodyFont.wrapString(bodyStr, size.x - 80)
     }
 
     override fun draw(g: Graphics) {
@@ -148,35 +148,6 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
 
         val scoreText = "SCORE: 123"
         scoreFont.drawStringCentred(centreX.f, position.y + 208f, 0f, scoreText, Color.white)
-    }
-
-    private fun wrap(message: String): List<String> {
-        val lines = ArrayList<String>()
-
-        val maxWidth = size.x - 80
-
-        // Drawing wrapped text is duplicated with the dialogue window,
-        // but it's probably not a big problem as I can't see where else
-        // this would be required.
-        val line = StringBuilder()
-        for (word in message.split(' ', '\t')) {
-            if (line.isNotEmpty()) {
-                line.append(' ')
-            }
-
-            val width = bodyFont.getWidth(line.toString() + word)
-
-            if (width > maxWidth) {
-                lines.add(line.toString())
-                line.clear()
-            }
-
-            line.append(word)
-        }
-
-        lines.add(line.toString())
-
-        return lines
     }
 
     private fun restartClicked() {
