@@ -24,6 +24,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private val reactorFont = game.getFont("hl1", 2f)
     private val crewNameFont = game.getFont("JustinFont8")
     private val dismissFont = game.getFont("hl1")
+    private val maxFont = game.getFont("hl1", 2f)
 
     private val upgradeSystemSound = game.sounds.getSample("upgradeSystem")
     private val downgradeSystemSound = game.sounds.getSample("downgradeSystem")
@@ -193,7 +194,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         // TODO only go until 3 on non-AE?
         val subsystems = ship.rooms.mapNotNull { it.system as? SubSystem }.sortedBy { it.sortingType }
         for (i in 0 until 4) {
-            // TODO deduplicate with the system upgrade code
             if (!updatingButtons)
                 continue
 
@@ -230,8 +230,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             val reactorImg = game.getImg("img/upgradeUI/Equipment/equipment_reactor_on.png")
             val reactorHighlight = game.getImg("img/upgradeUI/Equipment/equipment_reactor_select2.png")
             buttons += object : Button(game, ConstPoint(298, 327), reactorImg.imageSize) {
-                override val disabled: Boolean get() = ship.purchasedReactorPower >= ship.maxReactorPower
-
                 val currentPrice: Int
                     get() {
                         // Expensive first power on the Cernkov
@@ -246,6 +244,11 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                         reactorHighlight.draw(pos)
                     } else {
                         reactorImg.draw(pos)
+                    }
+
+                    val fontColour = when (hovered) {
+                        true -> Constants.STORE_BUY_HOVER
+                        false -> Constants.SECTOR_CUTOUT_TEXT
                     }
 
                     // Figure out the power range that should show as downgrades
@@ -268,22 +271,23 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                         )
                     }
 
-                    // Draw the current price. TODO show it as maxed when the reactor power is full.
-                    numberFont.drawString(
-                        pos.x + 235f, pos.y + 105f,
-                        currentPrice.toString(), Constants.SECTOR_CUTOUT_TEXT
-                    )
+                    // Draw the current price, or two dashes if it's maxed out.
+                    val priceStr = when (ship.purchasedReactorPower < ship.maxReactorPower) {
+                        true -> currentPrice.toString()
+                        false -> "--"
+                    }
+                    numberFont.drawString(pos.x + 235f, pos.y + 105f, priceStr, fontColour)
 
                     // Draw the 'n power bars' text - this is annoyingly mixed between two fonts
                     // TODO mix them properly to work in languages where the power number doesn't
                     //  come first - is this something FTL does?
                     val text = game.translator["upgrade_reactor_power"].replace("\\1", "")
-                    reactorFont.drawStringLeftAligned(pos.x + 179f, pos.y + 105f, text, Constants.SECTOR_CUTOUT_TEXT)
+                    reactorFont.drawStringLeftAligned(pos.x + 179f, pos.y + 105f, text, fontColour)
                     numberFont.drawStringLeftAligned(
                         pos.x + 47f,
                         pos.y + 105f,
                         ship.purchasedReactorPower.toString(),
-                        Constants.SECTOR_CUTOUT_TEXT
+                        fontColour
                     )
                 }
 
@@ -299,7 +303,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                     if (button != Input.MOUSE_LEFT_BUTTON)
                         return
 
-                    if (disabled)
+                    if (ship.purchasedReactorPower >= ship.maxReactorPower)
                         return
 
                     // Store the price so undos work properly.
@@ -342,6 +346,11 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             if (system == null)
                 return
 
+            val fontColour = when (hovered) {
+                true -> Constants.STORE_BUY_HOVER
+                false -> Constants.SECTOR_CUTOUT_TEXT
+            }
+
             // Draw the system icon
             val systemIcon = game.getImg(system.blueprint.onIconPath)
             systemIcon.draw(
@@ -372,11 +381,12 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
             // Draw the scrap amount
             if (upgradePrice != null) {
-                numberFont.drawString(
-                    pos.x + 30f, pos.y + size.y - 8f,
-                    upgradePrice.toString(),
-                    Constants.SECTOR_CUTOUT_TEXT
-                )
+                numberFont.drawString(pos.x + 30f, pos.y + size.y - 8f, upgradePrice.toString(), fontColour)
+            }
+
+            if (system.energyLevels == system.blueprint.maxPower) {
+                val maxStr = game.translator["upgrade_max"]
+                maxFont.drawStringCentred(pos.x.f, pos.y + size.y - 8f, size.x.f, maxStr, fontColour)
             }
         }
 
