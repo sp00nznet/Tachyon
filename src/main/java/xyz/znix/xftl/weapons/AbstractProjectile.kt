@@ -378,7 +378,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     }
 
     private fun resolveMissed() {
-        if (missed == null)
+        if (missed != null)
             return
 
         missed = Math.random() * 100 < target.ship.evasion
