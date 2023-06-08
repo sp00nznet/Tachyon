@@ -3,6 +3,8 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
+import xyz.znix.xftl.crew.Skill
+import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -13,17 +15,36 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     private val enginesOnSound by onInit { it.sounds.getSample("enginesOn") }
     private val enginesOffSound by onInit { it.sounds.getSample("enginesOff") }
 
-    // TODO add crew evasion and charge bonus
-    val evasion: Int get() = EVASIONS[powerSelected]
-    val chargeRate: Float get() = CHARGE_RATES[powerSelected]
+    val evasion: Int
+        get() {
+            if (powerSelected == 0)
+                return 0
+
+            val base = EVASIONS[powerSelected - 1]
+            val bonus = when (getSkillLevel(Skill.ENGINES)) {
+                null -> 0
+                SkillLevel.BASE -> 5
+                SkillLevel.PARTIAL -> 7
+                SkillLevel.MAX -> 10
+            }
+
+            return base + bonus
+        }
+
+    val chargeRate: Float
+        get() {
+            if (powerSelected == 0)
+                return 0f
+
+            // TODO manning bonus
+            return CHARGE_RATES[powerSelected - 1]
+        }
 
     val evasionMultiplier: Float
         get() {
             // If engines is off or hacked, you get no evasion
             if (powerSelected == 0 || isHackActive)
                 return 0f
-
-            // TODO skills
 
             return 1f
         }
@@ -56,8 +77,8 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     companion object {
         // https://ftl.fandom.com/wiki/Engines
-        val EVASIONS: Array<Int> = arrayOf(0, 5, 10, 15, 20, 25, 28, 31, 35)
-        val CHARGE_RATES = arrayOf(0f, 1f, 1.26f, 1.58f, 1.84f, 2.11f, 2.4f, 2.68f, 2.96f)
+        val EVASIONS: Array<Int> = arrayOf(5, 10, 15, 20, 25, 28, 31, 35)
+        val CHARGE_RATES = arrayOf(1f, 1.26f, 1.58f, 1.84f, 2.11f, 2.4f, 2.68f, 2.96f)
 
         val INFO: SystemInfo = EngineInfo
     }

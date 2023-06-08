@@ -9,10 +9,7 @@ import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.crew.CrewBlueprint
-import xyz.znix.xftl.crew.LivingCrew
-import xyz.znix.xftl.crew.LivingCrewInfo
+import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.*
@@ -1247,6 +1244,20 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             val freeSpot = findSpaceForCrew(conflict.room, conflict.mode)
             require(conflict.setTargetRoom(freeSpot.room)) { "Failed to set target of empty room!" }
         }
+    }
+
+    /**
+     * Perform the projectile missed test.
+     *
+     * This credits piloting/engine skills if it succeeds.
+     */
+    fun pickMissed(): Boolean {
+        val missed = Random.rollChance(evasion)
+        if (missed) {
+            piloting?.addSkillPoint(Skill.PILOTING)
+            engines?.addSkillPoint(Skill.ENGINES)
+        }
+        return missed
     }
 
     /**

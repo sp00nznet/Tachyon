@@ -51,8 +51,8 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
         }
 
-        override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
-            super.update(dt, canCharge, isHacked)
+        override fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
+            super.update(dt, chargeTime, canCharge)
 
             val target = this.target ?: return
 
@@ -111,7 +111,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     class FiredBomb(val type: BombBlueprint, val target: Room, val animation: FTLAnimation) : IProjectile {
-        private var missed = Math.random() * 100 < target.ship.evasion
+        private var missed = target.ship.pickMissed()
         private var hitSuperShield = target.ship.superShield > 0 && !missed
 
         override var position: ConstPoint = ConstPoint.ZERO

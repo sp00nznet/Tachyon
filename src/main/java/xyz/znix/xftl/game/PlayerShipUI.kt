@@ -11,6 +11,8 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.Skill
+import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.game.InGameState.RoomClickListener
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -23,10 +25,7 @@ import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
-import kotlin.math.atan2
-import kotlin.math.ceil
-import kotlin.math.pow
-import kotlin.math.round
+import kotlin.math.*
 import kotlin.random.Random
 
 class PlayerShipUI(val ship: Ship, private val game: InGameState) {
@@ -45,6 +44,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
     private val hoveredCrew: MutableList<AbstractCrew> = ArrayList()
+    private var skillsHoveredCrew: AbstractCrew? = null
 
     private val buttons = ArrayList<Button>()
 
@@ -110,6 +110,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     // Whether or not we've previously seen a store UI at this sector.
     // This is used to auto-open the store when the dialogue is finished.
     private var storeAlreadyOpened = false
+
+    private val crewX: Int = 10
+    private var crewBaseY: Int = 0 // Set while rendering
 
     /**
      * If the user is selecting a room to teleport to/from, this is non-null.
@@ -255,6 +258,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun isCrewHovered(crew: AbstractCrew, mouseX: Int, mouseY: Int, crewPos: IPoint): Boolean {
+        // Check if the crewmember's box is being hovered
+        val index = ship.crew.indexOf(crew)
+        if (index != -1) {
+            val boxY = crewBaseY + index * CREW_BOX_SPACING
+            if (mouseX in crewX..crewX + CREW_BOX_WIDTH && mouseY in boxY..boxY + CREW_BOX_HEIGHT) {
+                skillsHoveredCrew = crew
+                return true
+            }
+        }
+
+        // Check if the physical crewmember is being hovered
         return mouseX in crewPos.x..crewPos.x + crew.icon.width &&
                 mouseY in crewPos.y..crewPos.y + crew.icon.height
     }
@@ -364,30 +378,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     // Dispatch actions from the UI - this is only called when the game is not paused, so dispatch
     // everything from here so a player can cancel their actions if they remain paused.
-    fun update(dt: Float) {
-        var fired: MutableList<SelectedTarget>? = null
-
-        // TODO move this to Weapons.update
-        val targets = ship.weapons?.selectedTargets ?: return
-
-        for (tgt in targets) {
-            if (!tgt.weapon.asWeaponInstance().isCharged)
-                continue
-
-            if (fired == null)
-                fired = ArrayList()
-
-            fired.add(tgt)
-
-            when (tgt) {
-                is SelectedTarget.BeamAim -> tgt.beamWeapon.fire(tgt)
-                is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire(tgt.room)
-            }
-        }
-
-        fired?.forEach { tgt ->
-            targets.unTarget(tgt.weaponNumber)
-        }
+    fun update() {
+        ship.weapons?.selectedTargets?.fireChargedWeapons()
     }
 
     fun updateAlways(dt: Float) {
@@ -853,58 +845,147 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // Draw all the crew boxes
         // TODO filter out boarders etc
         // TODO draw cloning crew
-        val crewX = 10
-        var nextCrewY = oxyY + 59
-        for (crew in ship.crew) {
+        // FIXME don't leave gaps for drones etc
+        crewBaseY = oxyY + 59
+        for ((index, crew) in ship.crew.withIndex()) {
             // Filter out drones
             if (crew !is LivingCrew)
                 continue
 
-            val isMindControlled = false // TODO implement when mind control is added
-            val isStunned = false // TODO implement when stunning crew is added
-            val isFlashingHealth = false // TODO
+            val crewY = crewBaseY + index * CREW_BOX_SPACING
 
-            val colour = when {
-                isMindControlled -> CREW_BOX_MIND_CONTROLLED
-                crew in selectedCrew -> CREW_BOX_SELECT
-                isStunned -> CREW_BOX_STUNNED
-                crew in hoveredCrew -> CREW_BOX_HOVER
-                isFlashingHealth -> CREW_BOX_LOW_HEALTH
-                else -> CREW_BOX_NORMAL
-            }
+            drawCrewBox(g, crew, crewX, crewY)
+        }
+    }
 
+    private fun drawCrewBox(g: Graphics, crew: LivingCrew, x: Int, y: Int) {
+        val isMindControlled = false // TODO implement when mind control is added
+        val isStunned = false // TODO implement when stunning crew is added
+        val isFlashingHealth = false // TODO
+
+        val colour = when {
+            isMindControlled -> CREW_BOX_MIND_CONTROLLED
+            crew in selectedCrew -> CREW_BOX_SELECT
+            isStunned -> CREW_BOX_STUNNED
+            crew in hoveredCrew -> CREW_BOX_HOVER
+            isFlashingHealth -> CREW_BOX_LOW_HEALTH
+            else -> CREW_BOX_NORMAL
+        }
+
+        val drawSkills = crew == skillsHoveredCrew
+
+        if (!drawSkills) {
             // Draw the semi-transparent background
             g.color = Color(colour.r, colour.g, colour.b, 0.25f)
-            g.fillRect(crewX.f, nextCrewY.f, 86f, 27f)
+            g.fillRect(x.f, y.f, CREW_BOX_WIDTH.f, CREW_BOX_HEIGHT.f)
 
             // Draw the solid outline, via two unfilled rectangles.
             g.color = colour
-            g.drawRect(crewX.f, nextCrewY.f, 86f - 1, 27f - 1)
-            g.drawRect(crewX + 1f, nextCrewY + 1f, 86f - 3, 27f - 3)
+            g.drawRect(x.f, y.f, CREW_BOX_WIDTH - 1f, CREW_BOX_HEIGHT - 1f)
+            g.drawRect(x + 1f, y + 1f, CREW_BOX_WIDTH - 3f, CREW_BOX_HEIGHT - 3f)
+        } else {
+            // Draw the semi-transparent background
+            g.color = Color(colour.r, colour.g, colour.b, 0.25f)
+            g.fillRect(x.f, y.f, 89f, CREW_BOX_HEIGHT.f)
+            g.fillRect(x + 89f, y.f, 80f, 146f)
 
-            // Draw the health bar
-            val maxHpWidth = 49
-            val hpFraction = crew.health / crew.maxHealth
-            val hpWidth = (maxHpWidth * hpFraction).toInt().coerceAtLeast(1)
+            // Draw the outline, which we do with line drawing by rectangles.
+            g.color = colour
+            g.fillRect(x.f, y.f, 2f, CREW_BOX_HEIGHT.f)
+            g.fillRect(x.f, y.f, 169f, 2f)
+            g.fillRect(x.f, y + 25f, 91f, 2f)
+            g.fillRect(x + 89f, y + 27f, 2f, 119f)
+            g.fillRect(x + 167f, y.f, 2f, 146f)
+            g.fillRect(x + 91f, y + 144f, 76f, 2f)
 
-            if (crew.health == crew.maxHealth) {
-                g.color = Color.green
-            } else {
-                g.color = Color(
-                    1f,
-                    (2f * hpFraction).coerceIn(0f..1f),
-                    0f
-                )
-            }
-            g.fillRect(crewX + 33f, nextCrewY + 19f, hpWidth.f, 4f)
+            drawSkillBar(g, x + 93, y, crew, Skill.PILOTING)
+            drawSkillBar(g, x + 93, y, crew, Skill.ENGINES)
+            drawSkillBar(g, x + 93, y, crew, Skill.SHIELDS)
+            drawSkillBar(g, x + 93, y, crew, Skill.WEAPONS)
+            drawSkillBar(g, x + 93, y, crew, Skill.REPAIRS)
+            drawSkillBar(g, x + 93, y, crew, Skill.COMBAT)
+        }
 
-            // Draw the crew portrait, mostly so you can see what race they are.
-            crew.drawPortrait(crewX - 1, nextCrewY - 3)
+        // Draw the health bar
+        val maxHpWidth = 49
+        val hpFraction = crew.health / crew.maxHealth
+        val hpWidth = (maxHpWidth * hpFraction).toInt().coerceAtLeast(1)
 
-            // Draw the crew name
-            weaponNameText.drawString(crewX + 33f, nextCrewY + 14f, crew.info.name, CREW_BOX_NAME_COLOUR)
+        if (crew.health == crew.maxHealth) {
+            g.color = Color.green
+        } else {
+            g.color = Color(
+                1f,
+                (2f * hpFraction).coerceIn(0f..1f),
+                0f
+            )
+        }
+        g.fillRect(x + 33f, y + 19f, hpWidth.f, 4f)
 
-            nextCrewY += 30
+        // Draw the crew portrait, mostly so you can see what race they are.
+        crew.drawPortrait(x - 1, y - 3)
+
+        // Draw the crew name
+        weaponNameText.drawString(x + 33f, y + 14f, crew.info.name, CREW_BOX_NAME_COLOUR)
+    }
+
+    private fun drawSkillBar(
+        g: Graphics,
+        x: Int, baseY: Int,
+        crew: LivingCrew, skill: Skill
+    ) {
+        val y = baseY + skill.ordinal * 24 // Not 26, which is the icon height
+        val rawSkillProgress = crew.info.skills.getValue(skill)
+        val skillLevel = crew.getSkillLevel(skill)
+
+        // Draw the icon
+        val icon = game.getImg(skill.iconPath)
+        val iconColour = when (skillLevel) {
+            SkillLevel.MAX -> SYS_ENERGY_REPAIR
+            SkillLevel.PARTIAL -> SYS_ENERGY_ACTIVE
+            else -> UI_BACKGROUND_GLOW_COLOUR
+        }
+        icon.draw(x, y, iconColour)
+
+        // Draw the progress bar
+        val baseColour = when (skillLevel) {
+            SkillLevel.MAX -> SYS_ENERGY_REPAIR
+            SkillLevel.PARTIAL -> SYS_ENERGY_ACTIVE
+            else -> Color.transparent
+        }
+        val barColour = when (skillLevel) {
+            // Max doesn't draw a bar
+            SkillLevel.PARTIAL -> SYS_ENERGY_REPAIR
+            else -> SYS_ENERGY_ACTIVE
+        }
+
+        // Convert the 0-1 progress amount (where the green level is 0.5)
+        // to 0-1 over the range of a single colour.
+        val progress = when (skillLevel) {
+            SkillLevel.MAX -> 0f
+            SkillLevel.PARTIAL -> (rawSkillProgress - 0.5f) * 2f
+            else -> rawSkillProgress * 2f
+        }
+
+        val barX = x + 30
+        val barY = y + 9
+
+        g.color = Color.white
+        g.drawRect(barX.f, barY.f, 39f, 7f)
+
+        val innerBarWidth = 38
+        val progressWidth = (innerBarWidth * progress).roundToInt()
+
+        g.color = baseColour
+        g.fillRect(barX + 1f, barY + 1f, 38f, 6f)
+
+        g.color = barColour
+        g.fillRect(barX + 1f, barY + 1f, progressWidth.f, 6f)
+
+        // Draw the white divider line between yellow and green sections
+        if (skillLevel == SkillLevel.PARTIAL) {
+            g.color = Color.white
+            g.fillRect(barX + 1f + progressWidth, barY + 1f, 1f, 6f)
         }
     }
 
@@ -1002,8 +1083,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     // Hack used to draw the selected crew from the ship, rather than some cleaner solution
-    fun isCrewSelected(crew: AbstractCrew): Boolean {
-        return selectedCrew.contains(crew)
+    fun isCrewHighlighted(crew: AbstractCrew): Boolean {
+        return selectedCrew.contains(crew) || hoveredCrew.contains(crew)
     }
 
     fun escapePressed() {
@@ -1115,6 +1196,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     private fun updateHoveredCrew(mouseX: Int, mouseY: Int, playerShipPosition: IPoint) {
         hoveredCrew.clear()
+        skillsHoveredCrew = null
 
         // Allow for smart-casting
         val csr = crewSelectionRectangle
@@ -1407,5 +1489,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         private const val WEAPON_BOX_GLOW = 12
 
         private const val MIN_BEAM_LENGTH = 10f
+
+        private const val CREW_BOX_WIDTH = 86
+        private const val CREW_BOX_HEIGHT = 27
+        private const val CREW_BOX_SPACING = 30
     }
 }

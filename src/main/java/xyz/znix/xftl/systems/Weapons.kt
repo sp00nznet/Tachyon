@@ -5,6 +5,8 @@ import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
+import xyz.znix.xftl.crew.Skill
+import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -28,10 +30,37 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override fun update(dt: Float) {
         super.update(dt)
 
+        var chargeMult = when (ship.sys.debugFlags.fastWeaponCharge.set) {
+            true -> 10f
+            false -> 1f
+        }
+
+        // When hacked, the weapons charge backwards at the same
+        // speed as they charge normally.
+        if (isHackActive) {
+            chargeMult *= -1
+        } else {
+            // Don't let manning speed up discharging the weapons.
+
+            val manningChargeSub = when (getSkillLevel(Skill.WEAPONS)) {
+                null -> 0f
+                SkillLevel.BASE -> 0.1f
+                SkillLevel.PARTIAL -> 0.15f
+                SkillLevel.MAX -> 0.2f
+            }
+
+            // This gets applied weirdly - 1-manningChargeSub is multiplied to the
+            // weapon charge time, which alternatively means dividing
+            // the charge multiplier by it.
+            chargeMult /= 1f - manningChargeSub
+        }
+
+        val chargeTime = dt * chargeMult
+
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
             weapon.bindToWeaponsSystem(this)
-            weapon.update(dt, !ship.opponentCloakActive, isHackActive)
+            weapon.update(dt, chargeTime, !ship.opponentCloakActive)
 
             // Update the weapon slide
             val slideSpeed = dt * 2
@@ -217,6 +246,10 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         return true
     }
 
+    private fun onWeaponFired() {
+        addSkillPoint(Skill.WEAPONS)
+    }
+
     // The weapons are all serialised individually by the ship, we only
     // have to serialise the selected targets.
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
@@ -274,6 +307,31 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         fun update() {
             // Un-target all unpowered weapons
             selectedTargets.targets.values.removeIf { !it.weapon.isPowered }
+        }
+
+        fun fireChargedWeapons() {
+            var fired: MutableList<SelectedTarget>? = null
+
+            for (tgt in this) {
+                if (!tgt.weapon.asWeaponInstance().isCharged)
+                    continue
+
+                if (fired == null)
+                    fired = ArrayList()
+
+                fired.add(tgt)
+
+                when (tgt) {
+                    is SelectedTarget.BeamAim -> tgt.beamWeapon.fire(tgt)
+                    is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire(tgt.room)
+                }
+
+                this@Weapons.onWeaponFired()
+            }
+
+            fired?.forEach { tgt ->
+                unTarget(tgt.weaponNumber)
+            }
         }
 
         private val targets = HashMap<Int, SelectedTarget>()

@@ -433,7 +433,7 @@ public class InGameState extends MainGame.GameState {
     }
 
     private void updateGameState(float dt) {
-        shipUI.update(dt);
+        shipUI.update();
         player.update(dt);
 
         if (enemy != null) {

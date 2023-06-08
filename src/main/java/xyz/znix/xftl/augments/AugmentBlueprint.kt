@@ -33,6 +33,7 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
         const val OXYGEN_MASKS: String = "O2_MASKS"
         const val BACKUP_DNA: String = "BACKUP_DNA"
         const val BATTERY_CHARGER: String = "BATTERY_BOOSTER"
+        const val SHIELD_CHARGE_BOOSTER: String = "SHIELD_RECHARGE"
     }
 }
 

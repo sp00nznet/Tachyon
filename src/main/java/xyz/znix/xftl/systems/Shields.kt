@@ -3,6 +3,9 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
+import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.Skill
+import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -70,7 +73,17 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             }
         }
 
-        rechargeTimer += dt
+        // The shield charge booster and manning multiply together, per the wiki.
+        val boosterRate = 1f + 0.15f * ship.augments.count { it.name == AugmentBlueprint.SHIELD_CHARGE_BOOSTER }
+        val manningRate = when (getSkillLevel(Skill.SHIELDS)) {
+            null -> 1f
+            SkillLevel.BASE -> 1.1f
+            SkillLevel.PARTIAL -> 1.2f
+            SkillLevel.MAX -> 1.3f
+        }
+        val chargeRate = boosterRate * manningRate
+
+        rechargeTimer += dt * chargeRate
         if (rechargeTimer < rechargeDelay)
             return
 
@@ -128,6 +141,10 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             return
 
         activeShields--
+
+        // According to the wiki (on 08/06/2023) this skill is granted when
+        // the shields are hit, not when they recharge.
+        addSkillPoint(Skill.SHIELDS)
     }
 
     override fun powerStateChanged() {

@@ -4,13 +4,25 @@ import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.Skill
+import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
 class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
-    // TODO add crew evasion
-    val evasion: Int get() = 0
+    /**
+     * Get the manned evasion bonus, in percent.
+     */
+    val evasion: Int
+        // Note that the crew member's bonus is only applied when they're
+        // actually manning the system - being in the room isn't enough.
+        get() = when (getSkillLevel(Skill.PILOTING)) {
+            null -> 0
+            SkillLevel.BASE -> 5
+            SkillLevel.PARTIAL -> 7
+            SkillLevel.MAX -> 10
+        }
 
     private val computerPoint by lazy { configuration.computerPoint ?: ConstPoint.ZERO }
 
@@ -22,11 +34,6 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
             if (undamagedEnergy == 0 || isHackActive)
                 return 0f
 
-            // It seems there's a fake crewmember in every room?
-            // https://www.reddit.com/r/ftlgame/comments/2e30zc/question_re_autoscouts/
-            // TODO make some way to query crew skill that takes that into account for everything else
-            if (ship.isAutoScout) return 1.05f
-
             val room = this.room!!
 
             // Find the pilot at the computer point, or the top-left if the computer point is not defined
@@ -36,7 +43,7 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
             // If a pilot is present (not just walking there), we get 100% of our original piloting.
             // We've filtered out anyone walking by checking standingPosition.
-            if (pilot != null)
+            if (pilot != null || ship.isAutoScout)
                 return 1f
 
             // At this point, the system is not broken and we don't have a pilot. Use the evasion

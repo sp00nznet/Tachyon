@@ -457,9 +457,15 @@ abstract class AbstractCrew(
             }
 
             updateAttack(Action.FIGHTING, dt, {
+                val enemyWasDying = enemyToAttack!!.health <= 0f
+
                 // Apply damage
                 val damage = (3f..7f).random(Random.Default) * attackDamageMult
                 enemyToAttack!!.dealDamage(damage)
+
+                if (enemyToAttack!!.health <= 0f && !enemyWasDying) {
+                    onKilledCrew(enemyToAttack!!)
+                }
             }, {
                 // If we're punching someone always attack them, otherwise pick
                 // someone in the room at random to shoot.
@@ -480,7 +486,11 @@ abstract class AbstractCrew(
 
             // Sabotage doesn't deal damage in bursts - it's constant 8% damage/second.
             // Note this is the same for any crew, regardless of the attack damage multiplier.
-            system.attack(dt * 0.08f)
+            val brokenLevel = system.attack(dt * 0.08f)
+
+            if (brokenLevel) {
+                onSabotagedSystem(system)
+            }
 
             return
         }
@@ -513,7 +523,13 @@ abstract class AbstractCrew(
             // See doc/fires. We include the 1.2x multiplier here, rather
             // than in the fire speed multiplier.
             val currentFire = room.fires[currentFireSlot]!!
-            currentFire.health -= 1.2f * 0.08f * fireFightingSpeed * repairSpeed * dt
+            if (currentFire.health > 0f) {
+                currentFire.health -= 1.2f * 0.08f * fireFightingSpeed * repairSpeed * dt
+
+                if (currentFire.health == 0f) {
+                    onFinishedExtinguishing()
+                }
+            }
 
             // TODO draw the fire extinguisher particles.
 
@@ -524,7 +540,11 @@ abstract class AbstractCrew(
         system?.let { sys ->
             if (sys.damaged && mode == SlotType.CREW) {
                 currentAction = Action.REPAIRING
-                sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
+                val didRepair = sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
+                if (didRepair) {
+                    // Builds skill in living crew
+                    onFinishedRepair(sys)
+                }
                 return
             }
         }
@@ -550,7 +570,7 @@ abstract class AbstractCrew(
 
     open fun draw(g: Graphics) {
         // Bit of a hack, since we're drawn from the ship
-        val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
+        val isSelected = room.ship.sys.shipUI.isCrewHighlighted(this)
 
         // Intruders on the player ship and crew on the enemy ship are hostile.
         // This isn't very nice to read, but it gets the job done.
@@ -655,7 +675,7 @@ abstract class AbstractCrew(
         if (currentAction == Action.DYING)
             return
 
-        val isSelected = room.ship.sys.shipUI.isCrewSelected(this)
+        val isSelected = room.ship.sys.shipUI.isCrewHighlighted(this)
 
         // Draw the health bar
         if (health < maxHealth || isSelected) {
@@ -1083,6 +1103,25 @@ abstract class AbstractCrew(
         // In any case, in vanilla crew don't run back to the place they died.
         nextTargetPos = null
         pathingTarget = null
+    }
+
+    /**
+     * Called whenever this crewmember does the final point of repair to fix
+     * a system by a level.
+     */
+    open fun onFinishedRepair(sys: AbstractSystem) {
+    }
+
+    /**
+     * Called whenever this crewmember finishes putting out a fire.
+     */
+    open fun onFinishedExtinguishing() {
+    }
+
+    open fun onKilledCrew(enemy: AbstractCrew) {
+    }
+
+    open fun onSabotagedSystem(system: AbstractSystem) {
     }
 
     /**

@@ -37,8 +37,8 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     // Doesn't need to be serialised, as it's set by the weapons or artillery system.
     protected lateinit var projectileSpawnPos: IPoint
 
-    override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
-        super.update(dt, canCharge, isHacked)
+    override fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
+        super.update(dt, chargeTime, canCharge)
 
         // We shouldn't need to check targets.isEmpty here, but do
         // so anyway just in case to avoid getting in a situation where

@@ -6,6 +6,9 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.Skill
+import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
@@ -113,6 +116,14 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             field = if (broken) 0f else value
         }
 
+    /**
+     * Get the crewmember that's currently manning this system.
+     */
+    val manningCrew: LivingCrew?
+        get() {
+            return room!!.crew.firstOrNull { it.currentAction == AbstractCrew.Action.MANNING } as? LivingCrew
+        }
+
     open fun update(dt: Float) {
         if (!damaged || room?.crew?.none { it.mode == AbstractCrew.SlotType.CREW } == true)
             repairProgress = 0f
@@ -206,7 +217,13 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     open fun powerStateChanged() {
     }
 
-    fun repair(progress: Float) {
+    /**
+     * Contributes some progress towards repairing this system.
+     *
+     * Returns true if the system was repaired by a level, and
+     * some repair experience should be awarded.
+     */
+    fun repair(progress: Float): Boolean {
         var modifiedProgress = progress
 
         // If a system is hacked, repairs run at half-speed
@@ -217,26 +234,30 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         repairProgress += modifiedProgress
 
         if (repairProgress < 1f)
-            return
+            return false
 
         repairProgress = 0f
 
         damagedEnergyLevels--
+
+        return true
     }
 
     /**
      * Attack this room with sabotage or fire damage.
+     *
+     * Returns true if this bit of damage broke the system, and experience should be awarded.
      */
-    fun attack(damage: Float) {
+    fun attack(damage: Float): Boolean {
         if (broken) {
             damageProgress = 0f
-            return
+            return false
         }
 
         damageProgress += damage
 
         if (damageProgress < 1f)
-            return
+            return false
 
         damageProgress = 0f
 
@@ -244,7 +265,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         ship.damage(room!!, 0, 1, 0)
 
         if (!broken) {
-            return
+            return true
         }
 
         // When the system breaks, it does a hull point of damage.
@@ -253,6 +274,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         // Play the explosion animation
         val animation = ship.sys.animations["explosion1"]
         ship.animations += Ship.FloatingAnimation.centred(animation, room!!.pixelCentre)
+
+        return true
     }
 
     open val iconColourName: String
@@ -493,6 +516,24 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      */
     open fun makeExtraButtons(powerPos: IPoint): List<Button> {
         return emptyList()
+    }
+
+    fun addSkillPoint(skill: Skill) {
+        manningCrew?.addSkillPoint(skill)
+    }
+
+    /**
+     * Get the level this system is manned to, or null if there's no-one manning it.
+     *
+     * This accounts for manning auto-scouts.
+     */
+    fun getSkillLevel(skill: Skill): SkillLevel? {
+        // It seems there's a fake crewmember in every room?
+        // https://www.reddit.com/r/ftlgame/comments/2e30zc/question_re_autoscouts/
+        if (ship.isAutoScout)
+            return SkillLevel.BASE
+
+        return manningCrew?.getSkillLevel(skill)
     }
 
     /**

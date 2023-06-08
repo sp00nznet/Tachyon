@@ -381,7 +381,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         if (missed != null)
             return
 
-        missed = Math.random() * 100 < target.ship.evasion
+        missed = target.ship.pickMissed()
 
         if (missed == true) {
             val missSound = type.missSounds?.get() ?: defaultMissSound

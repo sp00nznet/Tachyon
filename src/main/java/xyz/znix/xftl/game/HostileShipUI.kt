@@ -147,8 +147,6 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             }
         }
 
-        // TODO draw the 'FTL charging' warning if they're trying to escape
-
         // Draw the enemy's systems
         // TODO sorting
         for ((i, sys) in enemy.systems.withIndex()) {

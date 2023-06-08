@@ -75,7 +75,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
             // Make the beam disappear if we were shooting when we were turned off.
             weapon.forceSetPowered(false)
-            weapon.update(dt, false, false)
+            weapon.update(dt, dt, false)
 
             return
         }
@@ -96,7 +96,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         weapon.forceSetPowered(true)
-        weapon.update(dt, true, false)
+        weapon.update(dt, dt, true)
 
         // Set the weapon's time charged to match our charge progress. This is
         // so the flagship's weapons show their usual charging animation.

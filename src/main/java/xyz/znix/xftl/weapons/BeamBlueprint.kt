@@ -185,8 +185,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             contact.draw(targetPos.x - 24f, targetPos.y - 32f, beamColour ?: DEFAULT_COLOUR)
         }
 
-        override fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
-            super.update(dt, canCharge, isHacked)
+        override fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
+            super.update(dt, chargeTime, canCharge)
 
             if (firing) {
                 val targetShip = target!!.targetShip

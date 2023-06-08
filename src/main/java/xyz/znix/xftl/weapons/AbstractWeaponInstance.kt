@@ -33,24 +33,13 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
     val animation = type.getLauncher(ship.sys)
 
-    open fun update(dt: Float, canCharge: Boolean, isHacked: Boolean) {
-        var chargeMult = when (ship.sys.debugFlags.fastWeaponCharge.set) {
-            true -> 10f
-            false -> 1f
-        }
-
-        // When hacked, the weapons charge backwards at the same
-        // speed as they charge normally.
-        if (isHacked) {
-            chargeMult *= -1
-        }
-
+    open fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
         if (isPowered) {
             if (!hasEnoughMissiles)
                 isPowered = false
 
             if (canCharge)
-                timeCharged += dt * chargeMult
+                timeCharged += chargeTime
         } else {
             timeCharged -= dt * 10
         }

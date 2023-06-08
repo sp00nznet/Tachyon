@@ -2,6 +2,7 @@ package xyz.znix.xftl.crew
 
 import org.jdom2.Element
 import org.newdawn.slick.Image
+import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
@@ -11,6 +12,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import java.util.*
 import kotlin.random.Random
 
 /**
@@ -18,6 +20,20 @@ import kotlin.random.Random
  */
 abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Room, mode: SlotType) :
     AbstractCrew(blueprint, anims, room, mode) {
+
+    override val repairSpeed: Float
+        get() = when (getSkillLevel(Skill.REPAIRS)) {
+            SkillLevel.BASE -> 1f
+            SkillLevel.PARTIAL -> 1.1f
+            SkillLevel.MAX -> 1.2f
+        }
+
+    override val attackDamageMult: Float
+        get() = when (getSkillLevel(Skill.COMBAT)) {
+            SkillLevel.BASE -> 1f
+            SkillLevel.PARTIAL -> 1.1f
+            SkillLevel.MAX -> 1.2f
+        }
 
     var info: LivingCrewInfo = LivingCrewInfo.generateRandom(blueprint, room.ship.sys)
 
@@ -65,6 +81,46 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         // TODO deduct skills
     }
 
+    override fun onFinishedRepair(sys: AbstractSystem) {
+        super.onFinishedRepair(sys)
+        addSkillPoint(Skill.REPAIRS)
+    }
+
+    override fun onFinishedExtinguishing() {
+        super.onFinishedExtinguishing()
+        addSkillPoint(Skill.REPAIRS)
+    }
+
+    override fun onKilledCrew(enemy: AbstractCrew) {
+        super.onKilledCrew(enemy)
+        addSkillPoint(Skill.COMBAT)
+    }
+
+    override fun onSabotagedSystem(system: AbstractSystem) {
+        super.onSabotagedSystem(system)
+
+        // Damaging systems isn't any faster with the combat skill, but
+        // it still awards experience.
+        addSkillPoint(Skill.COMBAT)
+    }
+
+    /**
+     * A quick way for systems to credit the crewmember with performing a single action.
+     */
+    fun addSkillPoint(skill: Skill) {
+        // Divide by 2f since the skill level from 0-1 represents the range
+        // of no skills to yellow (with green being 0.5), while actionsPerLevel
+        // is the number of actions to make one colour change (or 0.5 progress).
+        val amount = 1f / (skill.actionsPerLevel * 2f)
+
+        val oldProgress = info.skills.getValue(skill)
+        val newProgress = (oldProgress + amount).coerceIn(0f..1f)
+        info.skills[skill] = newProgress
+    }
+
+    // Helper function
+    fun getSkillLevel(skill: Skill): SkillLevel = info.getSkillLevel(skill)
+
     protected fun hasAugment(name: String): Boolean {
         return ownerShip?.hasAugment(name) == true
     }
@@ -108,6 +164,13 @@ class LivingCrewInfo(
      */
     var colour: Int
 ) {
+    /**
+     * The crew's skills. 0 means no skill, 1 means fully yellow (max level).
+     *
+     * 0.5 is where the crew's skill turns from white to green, and starts showing
+     * a yellow progress bar.
+     */
+    val skills = EnumMap<Skill, Float>(Skill.values().associate { Pair(it, 0f) })
 
     /**
      * Draw this crew's portrait, without having to construct the crewmember instance.
@@ -161,12 +224,31 @@ class LivingCrewInfo(
         }
     }
 
+    fun getSkillLevel(skill: Skill): SkillLevel {
+        val progress = skills.getValue(skill)
+        return when {
+            progress == 1f -> SkillLevel.MAX
+            progress >= 0.5f -> SkillLevel.PARTIAL
+            else -> SkillLevel.BASE
+        }
+    }
+
     fun saveToXML(elem: Element, includeRace: Boolean = true) {
         if (includeRace) {
             SaveUtil.addAttr(elem, "race", race.name)
         }
         SaveUtil.addAttr(elem, "selectedName", name)
         SaveUtil.addAttrInt(elem, "colour", colour)
+
+        for ((skill, value) in skills) {
+            if (value == 0f)
+                continue
+
+            val skillElem = Element("skill")
+            SaveUtil.addAttr(skillElem, "id", skill.name)
+            SaveUtil.addAttrFloat(skillElem, "value", value)
+            elem.addContent(skillElem)
+        }
     }
 
     companion object {
@@ -194,7 +276,45 @@ class LivingCrewInfo(
         fun loadFromXMLWithRace(elem: Element, race: CrewBlueprint): LivingCrewInfo {
             val name = SaveUtil.getAttr(elem, "selectedName")
             val colour = SaveUtil.getAttrInt(elem, "colour")
-            return LivingCrewInfo(race, name, colour)
+            val info = LivingCrewInfo(race, name, colour)
+
+            // Skills are omitted if they're set to zero, which is what the default is anyway.
+            for (skillElem in elem.getChildren("skill")) {
+                val skillName = SaveUtil.getAttr(skillElem, "id")
+                val value = SaveUtil.getAttrFloat(skillElem, "value")
+
+                val skill = Skill.valueOf(skillName)
+                info.skills[skill] = value
+            }
+
+            return info
         }
     }
+}
+
+enum class Skill(
+    iconName: String,
+
+    /**
+     * The number of actions a non-human (no 10% boost) has to perform
+     * to increase their skill level from 0->50% or 50->100% (a single
+     * colour change).
+     */
+    val actionsPerLevel: Int
+) {
+    PILOTING("pilot", 15),
+    ENGINES("engines", 15),
+    SHIELDS("shields", 55),
+    WEAPONS("weapons", 65),
+    REPAIRS("repair", 18),
+    COMBAT("combat", 8),
+    ;
+
+    val iconPath: String = "img/people/skill_${iconName}_white.png"
+}
+
+enum class SkillLevel {
+    BASE, // No advantage
+    PARTIAL, // Medium advantage
+    MAX; // Skill maxed
 }
