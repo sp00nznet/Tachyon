@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
@@ -34,6 +35,12 @@ class Oxygen(blueprint: SystemBlueprint) : MainSystem(blueprint) {
          */
         const val OXYGEN_CRITICAL_LEVEL = 0.05f
 
-        const val NAME = "oxygen"
+        val INFO: SystemInfo = OxygenInfo
     }
+}
+
+private object OxygenInfo : SystemInfo("oxygen") {
+    override val canBeManned: Boolean get() = false
+
+    override fun create(blueprint: SystemBlueprint) = Oxygen(blueprint)
 }

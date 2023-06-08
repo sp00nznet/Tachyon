@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -53,6 +54,12 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
-        const val NAME = "pilot"
+        val INFO: SystemInfo = PilotingInfo
     }
+}
+
+private object PilotingInfo : SystemInfo("pilot") {
+    override val canBeManned: Boolean get() = true
+
+    override fun create(blueprint: SystemBlueprint) = Piloting(blueprint)
 }

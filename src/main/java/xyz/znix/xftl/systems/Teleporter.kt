@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
@@ -244,6 +245,12 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     companion object {
         private const val BASE_GLOW: Int = 6
 
-        const val NAME = "teleporter"
+        val INFO: SystemInfo = TeleporterInfo
     }
+}
+
+private object TeleporterInfo : SystemInfo("teleporter") {
+    override val canBeManned: Boolean get() = false
+
+    override fun create(blueprint: SystemBlueprint) = Teleporter(blueprint)
 }

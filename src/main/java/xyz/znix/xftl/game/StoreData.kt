@@ -113,10 +113,10 @@ class StoreData {
         }
 
         val possibleSystems = ArrayList(game.blueprintManager.blueprints.values.filterIsInstance<SystemBlueprint>())
-        val dronesSystem = possibleSystems.first { it.type == Drones.NAME }
-        val shieldsSystem = possibleSystems.first { it.type == Shields.NAME }
-        val medbaySystem = possibleSystems.first { it.type == Medbay.NAME }
-        val clonebaySystem = possibleSystems.firstOrNull { it.type == Clonebay.NAME } // Null on non-AE
+        val dronesSystem = possibleSystems.first { it.info == Drones.INFO }
+        val shieldsSystem = possibleSystems.first { it.info == Shields.INFO }
+        val medbaySystem = possibleSystems.first { it.info == Medbay.INFO }
+        val clonebaySystem = possibleSystems.firstOrNull { it.info == Clonebay.INFO } // Null on non-AE
 
         val playerHasDrones = ship.systems.any { it is Drones }
         val playerHasShields = ship.systems.any { it is Shields }

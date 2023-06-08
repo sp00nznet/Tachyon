@@ -2,6 +2,8 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Input
+import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SystemPowerButton
@@ -95,8 +97,14 @@ class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     }
 
     companion object {
-        const val NAME = "battery"
+        val INFO: SystemInfo = BatteryInfo
 
         const val DURATION: Float = 30f
     }
+}
+
+private object BatteryInfo : SystemInfo("battery") {
+    override val canBeManned: Boolean get() = false
+
+    override fun create(blueprint: SystemBlueprint): AbstractSystem = BackupBattery(blueprint)
 }

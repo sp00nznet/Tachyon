@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
@@ -56,6 +57,12 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         private val evasions: Array<Int> = arrayOf(0, 5, 10, 15, 20, 25, 28, 31, 35)
         private val chargeRates = arrayOf(0f, 1f, 1.26f, 1.58f, 1.84f, 2.11f, 2.4f, 2.68f, 2.96f)
 
-        const val NAME = "engines"
+        val INFO: SystemInfo = EngineInfo
     }
+}
+
+private object EngineInfo : SystemInfo("engines") {
+    override val canBeManned: Boolean get() = true
+
+    override fun create(blueprint: SystemBlueprint) = Engines(blueprint)
 }

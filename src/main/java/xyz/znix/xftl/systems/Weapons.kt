@@ -3,6 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -282,8 +283,14 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     companion object {
-        const val NAME = "weapons"
+        val INFO: SystemInfo = WeaponsInfo
     }
+}
+
+private object WeaponsInfo : SystemInfo("weapons") {
+    override val canBeManned: Boolean get() = true
+
+    override fun create(blueprint: SystemBlueprint) = Weapons(blueprint)
 }
 
 sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber: Int) {

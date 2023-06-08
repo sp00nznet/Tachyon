@@ -35,6 +35,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
     private val onInitValues = ArrayList<OnInitWrapper<*>>()
 
+    val info: SystemInfo = blueprint.info ?: error("System $codename doesn't have system info set!")
+
     /**
      * The power limit applied by a <status/> effect at the current beacon,
      * or null if no limit is imposed.
@@ -635,18 +637,18 @@ class SystemInstallConfiguration(
 
         // Load defaults
         // TODO what is this for? Kestrel seems to work fine, and I wrote this ages ago and forgot
-        when (system.name) {
-            Weapons.NAME -> {
+        when (system.info) {
+            Weapons.INFO -> {
                 compPoint = ConstPoint(1, 0)
                 compDir = Direction.UP
             }
 
-            Engines.NAME -> {
+            Engines.INFO -> {
                 compPoint = ConstPoint(0, 1)
                 compDir = Direction.DOWN
             }
 
-            Shields.NAME -> {
+            Shields.INFO -> {
                 compPoint = ConstPoint(0, 0)
                 compDir = Direction.LEFT
             }
@@ -678,9 +680,8 @@ class SystemInstallConfiguration(
 
         // Pick a room with the invalid computer position if it's a mannable system
         // and the computer is not set.
-        compPoint = compPoint ?: when (system.type) {
-            Piloting.NAME, Engines.NAME, Shields.NAME, Weapons.NAME, Doors.NAME, Sensors.NAME -> ConstPoint(999, 999)
-            else -> null
+        if (compPoint == null && system.info?.canBeManned == true) {
+            compPoint = ConstPoint(999, 999)
         }
 
         // If the computer position is invalid (outside the room), just find a point
@@ -709,13 +710,8 @@ class SystemInstallConfiguration(
             compDir = place.second
         }
 
-        // The medbay at least (and maybe other systems, TODO check) use the
-        // computer to represent a cell that is obstructed.
-        val computerIsObstruction = when (system.type) {
-            Medbay.NAME, Clonebay.NAME -> true
-            else -> false
-        }
-        if (computerIsObstruction && compPoint != null) {
+        // The medbay/clonebay uses the computer to represent a cell that is obstructed.
+        if (system.info?.isComputerObstruction == true && compPoint != null) {
             obstructionPoint = compPoint
             compPoint = null
         } else {
@@ -736,4 +732,19 @@ class SystemInstallConfiguration(
         computerPoint = compPoint
         computerDirection = compDir
     }
+}
+
+/**
+ * Describes this type of system, in a way that can be attached to the blueprint.
+ *
+ * This contains information that's coupled to the blueprint, but we don't want
+ * to actually put into the [SystemBlueprint] class since it varies between systems.
+ */
+abstract class SystemInfo(
+    val name: String
+) {
+    abstract val canBeManned: Boolean
+    open val isComputerObstruction: Boolean get() = false
+
+    abstract fun create(blueprint: SystemBlueprint): AbstractSystem
 }

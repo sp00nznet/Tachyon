@@ -5,11 +5,8 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import org.newdawn.slick.Renderable
-import xyz.znix.xftl.AbstractSystem
+import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.ROOM_SIZE
-import xyz.znix.xftl.FTLAnimation
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -626,7 +623,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     companion object {
-        const val NAME = "hacking"
+        val INFO: SystemInfo = HackingInfo
 
         const val PROBE_SERIALISATION_TYPE = "hackingProbe"
 
@@ -638,4 +635,10 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             }
         }
     }
+}
+
+private object HackingInfo : SystemInfo("hacking") {
+    override val canBeManned: Boolean get() = false
+
+    override fun create(blueprint: SystemBlueprint) = Hacking(blueprint)
 }

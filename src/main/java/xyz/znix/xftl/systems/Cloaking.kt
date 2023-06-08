@@ -2,6 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Input
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.math.IPoint
@@ -159,6 +160,12 @@ class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         const val TIME_PER_POWER = 5f
         const val FADE_TIMER = 0.5f
 
-        const val NAME = "cloaking"
+        val INFO: SystemInfo = CloakingInfo
     }
+}
+
+private object CloakingInfo : SystemInfo("cloaking") {
+    override val canBeManned: Boolean get() = false
+
+    override fun create(blueprint: SystemBlueprint) = Cloaking(blueprint)
 }

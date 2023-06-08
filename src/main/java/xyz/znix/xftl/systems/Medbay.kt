@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -49,6 +50,13 @@ class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
-        const val NAME = "medbay"
+        val INFO: SystemInfo = MedbayInfo
     }
+}
+
+private object MedbayInfo : SystemInfo("medbay") {
+    override val canBeManned: Boolean get() = false
+    override val isComputerObstruction: Boolean get() = true
+
+    override fun create(blueprint: SystemBlueprint) = Medbay(blueprint)
 }

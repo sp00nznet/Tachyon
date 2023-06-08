@@ -5,6 +5,7 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
@@ -48,7 +49,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // purchased, in which case the index in the purchased systems might
         // not match that in the XML.
         val allSystemSlots = ship.rooms.flatMap { it.systemSlots }
-        val artillerySlots = allSystemSlots.filter { it.system.type == NAME }.sortedBy { it.systemIndex }
+        val artillerySlots = allSystemSlots.filter { it.system.type == INFO.name }.sortedBy { it.systemIndex }
         val index = artillerySlots.indexOf(configuration)
         require(index != -1) { "Artillery system is not in ship systems list!" }
 
@@ -202,8 +203,14 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     companion object {
-        const val NAME = "artillery"
-
         private const val DISCHARGE_TIME = 10f
+
+        val INFO: SystemInfo = ArtilleryInfo
     }
+}
+
+private object ArtilleryInfo : SystemInfo("artillery") {
+    override val canBeManned: Boolean get() = false
+
+    override fun create(blueprint: SystemBlueprint) = Artillery(blueprint)
 }

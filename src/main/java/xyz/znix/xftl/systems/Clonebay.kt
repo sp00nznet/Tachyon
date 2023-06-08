@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
@@ -298,9 +299,17 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     companion object {
-        const val NAME = "clonebay"
+        val INFO: SystemInfo = ClonebayInfo
 
         private val CLONE_DURATIONS = listOf(12f, 9f, 7f)
         private val PASSIVE_HEALING = listOf(8, 16, 25)
     }
+}
+
+private object ClonebayInfo : SystemInfo("clonebay") {
+    override val canBeManned: Boolean get() = false
+
+    override val isComputerObstruction: Boolean get() = true
+
+    override fun create(blueprint: SystemBlueprint) = Clonebay(blueprint)
 }

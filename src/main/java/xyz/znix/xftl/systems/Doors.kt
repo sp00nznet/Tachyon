@@ -3,6 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.ButtonImageSet
@@ -86,6 +87,12 @@ class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     }
 
     companion object {
-        const val NAME = "doors"
+        val INFO: SystemInfo = DoorInfo
     }
+}
+
+private object DoorInfo : SystemInfo("doors") {
+    override val canBeManned: Boolean get() = true
+
+    override fun create(blueprint: SystemBlueprint) = Doors(blueprint)
 }

@@ -1,6 +1,7 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -169,6 +170,12 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     companion object {
-        const val NAME = "shields"
+        val INFO: SystemInfo = ShieldsInfo
     }
+}
+
+private object ShieldsInfo : SystemInfo("shields") {
+    override val canBeManned: Boolean get() = true
+
+    override fun create(blueprint: SystemBlueprint) = Shields(blueprint)
 }
