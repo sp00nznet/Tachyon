@@ -15,6 +15,12 @@ abstract class Window {
             positionUpdated()
         }
 
+    /**
+     * This is added to the window's position, after it's position
+     * to make it centred was calculated.
+     */
+    open val windowCentreOffset: IPoint get() = ConstPoint.ZERO
+
     abstract val size: IPoint
 
     val buttons = ArrayList<Button>()

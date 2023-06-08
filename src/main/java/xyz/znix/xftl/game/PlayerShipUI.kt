@@ -665,7 +665,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         g.fillRect(0f, 0f, container.width.f, container.height.f)
 
         // Centre the window.
-        window.position = ConstPoint(
+        window.position = window.windowCentreOffset + ConstPoint(
             (container.width - window.size.x) / 2,
             (container.height - window.size.y) / 2
         )

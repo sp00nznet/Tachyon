@@ -2,6 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
@@ -14,7 +15,6 @@ class Sensors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
     companion object {
         val INFO: SystemInfo = SensorInfo
-
     }
 }
 
@@ -22,4 +22,14 @@ private object SensorInfo : SystemInfo("sensors") {
     override val canBeManned: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Sensors(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        return when (level) {
+            0 -> translator["sensor_1"]
+            1 -> translator["sensor_2"]
+            2 -> translator["sensor_3"]
+            3 -> translator["sensor_4"]
+            else -> "INVALID LEVEL ${level + 1}"
+        }
+    }
 }

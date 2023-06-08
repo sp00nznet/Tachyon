@@ -3,14 +3,11 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
-import xyz.znix.xftl.draw
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -301,8 +298,8 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     companion object {
         val INFO: SystemInfo = ClonebayInfo
 
-        private val CLONE_DURATIONS = listOf(12f, 9f, 7f)
-        private val PASSIVE_HEALING = listOf(8, 16, 25)
+        val CLONE_DURATIONS = listOf(12f, 9f, 7f)
+        val PASSIVE_HEALING = listOf(8, 16, 25)
     }
 }
 
@@ -312,4 +309,10 @@ private object ClonebayInfo : SystemInfo("clonebay") {
     override val isComputerObstruction: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Clonebay(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        val time = Clonebay.CLONE_DURATIONS[level].toInt()
+        val heal = Clonebay.PASSIVE_HEALING[level]
+        return translator["clone_full"].replace("\\1", time.toString()).replace("\\2", heal.toString())
+    }
 }

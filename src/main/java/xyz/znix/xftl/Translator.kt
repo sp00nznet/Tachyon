@@ -49,7 +49,7 @@ class Translator(df: Datafile, lang: String) {
 /**
  * Represents a string parsed from the XML files that may or may not be localised.
  */
-class GameText(private val literal: String?, private val key: String?) {
+class GameText private constructor(private val literal: String?, private val key: String?) {
 
     fun get(translator: Translator): String {
         if (literal != null) {
@@ -67,6 +67,10 @@ class GameText(private val literal: String?, private val key: String?) {
             }
 
             return GameText(elem.textTrim, null)
+        }
+
+        fun localised(key: String): GameText {
+            return GameText(null, key)
         }
     }
 }

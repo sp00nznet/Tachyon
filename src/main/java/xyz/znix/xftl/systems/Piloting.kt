@@ -2,6 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -62,4 +63,13 @@ private object PilotingInfo : SystemInfo("pilot") {
     override val canBeManned: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Piloting(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        return when (level) {
+            0 -> translator["pilot_1"]
+            1 -> translator["pilot_2"]
+            2 -> translator["pilot_3"]
+            else -> "INVALID LEVEL ${level + 1}"
+        }
+    }
 }

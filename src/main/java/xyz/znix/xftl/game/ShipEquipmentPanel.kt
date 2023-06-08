@@ -369,6 +369,18 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
             dropBlueprint()
     }
 
+    fun getHoveredBlueprint(): Blueprint? {
+        // Don't show anything while a blueprint is being dragged.
+        if (draggingBlueprint != null)
+            return null
+
+        val hoveredButton = buttons.firstOrNull { it.hovered }
+        if (hoveredButton !is Buttons.DragDropBlueprintButton)
+            return null
+
+        return hoveredButton.blueprint
+    }
+
     private fun dropBlueprint() {
         val drag = draggingBlueprint!!
         drag.dragPosition = null

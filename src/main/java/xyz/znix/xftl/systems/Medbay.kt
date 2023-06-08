@@ -2,11 +2,14 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.MEDBAY
@@ -15,10 +18,8 @@ class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         super.update(dt)
 
         var healthPerSec = when (powerSelected) {
-            1 -> 6.4f
-            2 -> 9.6f
-            3 -> 19.2f
-            else -> 0f
+            0 -> 0f
+            else -> 6.4f * SPEEDS[powerSelected - 1]
         }
 
         // Hacking hurts the friendly crew, and rather quickly.
@@ -50,6 +51,8 @@ class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
+        val SPEEDS = listOf(1f, 1.5f, 3f)
+
         val INFO: SystemInfo = MedbayInfo
     }
 }
@@ -59,4 +62,10 @@ private object MedbayInfo : SystemInfo("medbay") {
     override val isComputerObstruction: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Medbay(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        val fixedPoint = (Medbay.SPEEDS[level] * 100).roundToInt()
+        val speedStr = UIUtils.formatStringFTL(fixedPoint)
+        return translator["medbay_healing"].replace("\\1", speedStr)
+    }
 }

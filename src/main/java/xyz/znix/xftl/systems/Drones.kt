@@ -3,6 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -204,4 +205,8 @@ private object DronesInfo : SystemInfo("drones") {
     override val canBeManned: Boolean get() = false
 
     override fun create(blueprint: SystemBlueprint) = Drones(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        return translator["system_power"]
+    }
 }

@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -291,6 +292,10 @@ private object WeaponsInfo : SystemInfo("weapons") {
     override val canBeManned: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Weapons(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        return translator["system_power"]
+    }
 }
 
 sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber: Int) {

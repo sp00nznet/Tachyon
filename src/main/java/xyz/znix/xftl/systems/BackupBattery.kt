@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Input
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SystemPowerButton
@@ -107,4 +108,9 @@ private object BatteryInfo : SystemInfo("battery") {
     override val canBeManned: Boolean get() = false
 
     override fun create(blueprint: SystemBlueprint): AbstractSystem = BackupBattery(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        val power = 2 * (level + 1)
+        return translator["battery_power"].replace("\\1", power.toString())
+    }
 }

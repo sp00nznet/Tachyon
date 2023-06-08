@@ -16,6 +16,9 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     Window() {
     override val size = ConstPoint(587, 464)
 
+    // Make the system power stuff visible
+    override val windowCentreOffset = ConstPoint(-100, 0)
+
     private val acceptButtonImage = game.getImg("img/upgradeUI/buttons_accept_base.png")
     private val undoButtonImage = game.getImg("img/upgradeUI/buttons_undo_base.png")
 
@@ -32,6 +35,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private var tab: Tab = Tab.UPGRADES
 
     private val equipmentPanel = ShipEquipmentPanel(game, ship)
+
+    private val infoPanel = InfoPanel(game)
 
     // These store functions that each undo the last
     // upgrade of a system or the reactor.
@@ -110,7 +115,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         when (tab) {
             Tab.UPGRADES -> drawUpgrades(g)
             Tab.CREW -> drawCrew(g)
-            Tab.EQUIPMENT -> equipmentPanel.draw(g)
+            Tab.EQUIPMENT -> drawEquipment(g)
         }
 
         if (updatingButtons) {
@@ -155,6 +160,16 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 // Grey the button out when there's nothing to undo
                 override val disabled: Boolean get() = systemUpgradeUndos.all { it.value.isEmpty() } && reactorUpgradeUndo.isEmpty()
             }
+        }
+
+        // Draw the system power info.
+        // Note the reactor button draws this itself.
+        val hoveredButton = buttons.filterIsInstance(UpgradeButton::class.java).firstOrNull { it.hovered }
+        val hoveredSystem = hoveredButton?.system
+        if (hoveredSystem != null) {
+            val undoablePower = systemUpgradeUndos[hoveredSystem]?.size ?: 0
+            infoPanel.drawDescriptionBox(hoveredSystem.blueprint)
+            infoPanel.drawPowerBox(g, hoveredSystem.blueprint, hoveredSystem.energyLevels, undoablePower)
         }
 
         // Draw the systems
@@ -242,6 +257,11 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 override fun draw(g: Graphics) {
                     if (hovered) {
                         reactorHighlight.draw(pos)
+
+                        infoPanel.drawDescriptionBox(
+                            GameText.localised("upgrade_reactor"),
+                            GameText.localised("reactor_desc")
+                        )
                     } else {
                         reactorImg.draw(pos)
                     }
@@ -333,7 +353,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         pos: ConstPoint, size: ConstPoint,
         private val selectImage: Image,
         private val baseImage: Image,
-        private val system: AbstractSystem?,
+        val system: AbstractSystem?,
         private val upgradePrice: Int?
     ) : Button(game, pos, size) {
         override val disabled: Boolean get() = system == null
@@ -491,6 +511,12 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                     pos.y + 2 + (45 - portrait.height * 2) / 2,
                     2f
                 )
+
+                // Draw the information about this crewmember while hovering over them
+                if (hovered) {
+                    // TODO draw skills
+                    infoPanel.drawDescriptionBox(crew.blueprint)
+                }
             }
 
             override fun click(button: Int) {
@@ -504,6 +530,16 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             2, dismissFont, 9
         ) {
             // TODO show the crewmember dismiss warning box
+        }
+    }
+
+    private fun drawEquipment(g: Graphics) {
+        equipmentPanel.draw(g)
+
+        // Draw the information for the currently-hovered blueprint.
+        val hoveredBlueprint = equipmentPanel.getHoveredBlueprint()
+        if (hoveredBlueprint != null) {
+            infoPanel.drawDescriptionBox(hoveredBlueprint)
         }
     }
 
@@ -530,6 +566,12 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
     override fun escapePressed() {
         close()
+    }
+
+    override fun positionUpdated() {
+        super.positionUpdated()
+
+        infoPanel.position = position + ConstPoint(size.x + 13, 74)
     }
 
     private fun undoAllSystems() {

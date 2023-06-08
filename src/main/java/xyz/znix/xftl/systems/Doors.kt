@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.ButtonImageSet
@@ -95,4 +96,14 @@ private object DoorInfo : SystemInfo("doors") {
     override val canBeManned: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Doors(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        return when (level) {
+            0 -> translator["door_1"]
+            1 -> translator["door_2"]
+            2 -> translator["door_3"]
+            3 -> translator["door_4"]
+            else -> "INVALID LEVEL ${level + 1}"
+        }
+    }
 }

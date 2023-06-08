@@ -11,6 +11,9 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
     override val size = ConstPoint(587, 423)
 
+    // Make the description box visible
+    override val windowCentreOffset = ConstPoint(-50, 0)
+
     private val buyImage = game.getImg("img/storeUI/store_buy_main.png")
     private val sellImage = game.getImg("img/storeUI/store_sell_main.png")
     private val closeButtonOutline = game.getImg("img/storeUI/store_close_base.png")
@@ -25,6 +28,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     private val buySound = game.sounds.getSample("buy")
 
     private val sellPanel = ShipEquipmentPanel(game, ship).apply { sellUI = true }
+    private val infoPanel = InfoPanel(game)
 
     private val buyTabButton = SimpleButton(
         game, ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
@@ -154,6 +158,10 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
             game.translator["store_tab_sell"],
             Constants.JUMP_DISABLED_TEXT
         )
+
+        // Draw the info for whatever the player is hovering
+        val hoveredBuyButton = buttons.filterIsInstance<BuyButton>().firstOrNull { it.hovered }
+        hoveredBuyButton?.drawInfoPanel(g)
 
         sellPanel.drawDrag(g)
     }
@@ -368,6 +376,14 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
                     systemSlot!!.room.setSystem(systemSlot)
                 }
+
+                override fun drawInfoPanel(g: Graphics) {
+                    if (system == null)
+                        return
+
+                    infoPanel.drawDescriptionBox(system)
+                    infoPanel.drawPowerBox(g, system, system.startPower, 0)
+                }
             })
         }
     }
@@ -430,6 +446,14 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                         textColour
                     )
                 }
+
+                override fun drawInfoPanel(g: Graphics) {
+                    if (crew == null)
+                        return
+
+                    // TODO draw skills box
+                    infoPanel.drawDescriptionBox(crew.race)
+                }
             }
         }
     }
@@ -467,6 +491,14 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     if (!ship.addBlueprint(weapon!!, false))
                         error("Couldn't find space to place purchased weapon!")
                 }
+
+                override fun drawInfoPanel(g: Graphics) {
+                    if (weapon == null)
+                        return
+
+                    // TODO draw weapon stats
+                    infoPanel.drawDescriptionBox(weapon)
+                }
             })
         }
     }
@@ -503,6 +535,14 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
                     if (!ship.addBlueprint(drone!!, false))
                         error("Couldn't find space to place purchased weapon!")
+                }
+
+                override fun drawInfoPanel(g: Graphics) {
+                    if (drone == null)
+                        return
+
+                    // TODO what should this draw?
+                    infoPanel.drawDescriptionBox(drone)
                 }
             })
         }
@@ -576,6 +616,14 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                         )
                     }
                 }
+
+                override fun drawInfoPanel(g: Graphics) {
+                    if (augment == null)
+                        return
+
+                    // TODO what should this draw?
+                    infoPanel.drawDescriptionBox(augment)
+                }
             })
         }
     }
@@ -586,6 +634,12 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         buyTabButton.draw(g)
 
         sellPanel.draw(g)
+
+        // Draw the information for the currently-hovered blueprint.
+        val hoveredBlueprint = sellPanel.getHoveredBlueprint()
+        if (hoveredBlueprint != null) {
+            infoPanel.drawDescriptionBox(hoveredBlueprint)
+        }
     }
 
     override fun escapePressed() {
@@ -616,6 +670,11 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     override fun shipModified() {
         super.shipModified()
         sellPanel.shipModified()
+    }
+
+    override fun positionUpdated() {
+        super.positionUpdated()
+        infoPanel.position = position + ConstPoint(size.x + 13, 32)
     }
 
     abstract inner class BuyButton(pos: IPoint, images: ButtonImageSet, val priceOffset: IPoint) :
@@ -658,33 +717,30 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
             buy()
         }
+
+        abstract fun drawInfoPanel(g: Graphics)
     }
 
-    inner class ResourceButton(pos: IPoint, val resource: Resource) : Button(game, pos, ConstPoint(169, 40)) {
-        private val nameBase = "img/storeUI/store_items_${resourceTextureName(resource)}"
-        private val normal = game.getImg(nameBase + "_on.png")
-        private val soldOut = game.getImg(nameBase + "_off.png")
-        private val hover = game.getImg(nameBase + "_select2.png")
+    inner class ResourceButton(pos: IPoint, val resource: Resource) : BuyButton(
+        pos,
+        ButtonImageSet.select2(game, "img/storeUI/store_items_${resourceTextureName(resource)}"),
+        ConstPoint(169, 40)
+    ) {
+        override val blueprint = resource.getBlueprint(game)!!
 
         val numAvailable: Int get() = store.availableResources[resource] ?: 0
 
         override val disabled: Boolean get() = numAvailable == 0
 
-        val price: Int
-            get() = when (resource) {
-                Resource.FUEL -> 3
-                Resource.MISSILES -> 6
-                Resource.DRONES -> 8
-                Resource.SCRAP -> error("Can't sell scrap in a store!")
-            }
+        override val price: Int get() = blueprint.cost
 
         override fun draw(g: Graphics) {
-            val image = when {
-                numAvailable == 0 -> soldOut
-                hovered -> hover
-                else -> normal
+            val img = when {
+                numAvailable == 0 -> image.off
+                hovered -> image.hover
+                else -> image.normal
             }
-            image.draw(pos)
+            img.draw(pos)
 
             // Don't draw the available quantity if we've sold out.
             if (numAvailable == 0)
@@ -700,16 +756,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
             numberFont.drawString(pos.x + 70f, pos.y + 26f, numAvailable.toString(), textColour)
         }
 
-        override fun click(button: Int) {
-            if (button != Input.MOUSE_LEFT_BUTTON)
-                return
-
-            if (ship.scrap < price) {
-                game.shipUI.playInsufficientScrapAnimation()
-                return
-            }
-            ship.scrap -= price
-
+        override fun buy() {
             if (numAvailable == 0)
                 return
 
@@ -718,8 +765,13 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
             game.givePlayerResources(resourceSet)
 
             store.availableResources[resource] = numAvailable - 1
+        }
 
-            buySound.play()
+        override fun drawInfoPanel(g: Graphics) {
+            if (numAvailable == 0)
+                return
+
+            infoPanel.drawDescriptionBox(blueprint)
         }
     }
 
@@ -766,6 +818,10 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     ourTextColour
                 )
             }
+        }
+
+        override fun drawInfoPanel(g: Graphics) {
+            // No message
         }
     }
 

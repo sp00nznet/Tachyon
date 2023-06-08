@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import org.jdom2.Element
 import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.ItemBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
@@ -12,6 +13,7 @@ import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.EventHullDamage
 import xyz.znix.xftl.sector.EventSystemUpgrade
 import xyz.znix.xftl.sector.RemoveCrew
+import java.util.*
 
 enum class Resource {
     FUEL,
@@ -24,13 +26,20 @@ enum class Resource {
     fun getIcon(game: InGameState): Image {
         image?.let { return it }
 
-        val img = game.getImg("img/ui_icons/icon_${name.toLowerCase()}.png")
+        val img = game.getImg("img/ui_icons/icon_${name.toLowerCase(Locale.UK)}.png")
         image = img
         return img
     }
 
+    fun getBlueprint(game: InGameState): ItemBlueprint? {
+        if (this == SCRAP)
+            return null
+
+        return game.blueprintManager.itemBlueprints.getValue(name.toLowerCase(Locale.UK))
+    }
+
     companion object {
-        fun byName(name: String): Resource = when (name.toLowerCase()) {
+        fun byName(name: String): Resource = when (name.toLowerCase(Locale.UK)) {
             "fuel" -> FUEL
             "missiles" -> MISSILES
             "drones" -> DRONES

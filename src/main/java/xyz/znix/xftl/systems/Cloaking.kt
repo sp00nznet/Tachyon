@@ -3,6 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import org.newdawn.slick.Input
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.math.IPoint
@@ -168,4 +169,9 @@ private object CloakingInfo : SystemInfo("cloaking") {
     override val canBeManned: Boolean get() = false
 
     override fun create(blueprint: SystemBlueprint) = Cloaking(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        val time = Cloaking.TIME_PER_POWER * (level + 1)
+        return translator["cloak"].replace("\\1", time.toInt().toString())
+    }
 }

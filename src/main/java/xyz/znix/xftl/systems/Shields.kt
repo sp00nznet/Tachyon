@@ -2,6 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -178,4 +179,15 @@ private object ShieldsInfo : SystemInfo("shields") {
     override val canBeManned: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Shields(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        return when (level) {
+            0, 2, 4, 6 -> ""
+            1 -> translator["shields_0"]
+            3 -> translator["shields_1"]
+            5 -> translator["shields_2"]
+            7 -> translator["shields_3"]
+            else -> "INVALID LEVEL ${level + 1}"
+        }
+    }
 }

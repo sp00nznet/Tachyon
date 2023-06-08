@@ -5,6 +5,7 @@ import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
@@ -107,7 +108,7 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         teleportSound.play()
 
         // Ion-stun for 20s at 1 power, 15s at 2, and 10s at 3.
-        ionTimer += 5f * (5 - powerSelected)
+        ionTimer += cooldownTime(powerSelected).f
     }
 
     override fun makeExtraButtons(powerPos: IPoint): List<Button> {
@@ -246,6 +247,10 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         private const val BASE_GLOW: Int = 6
 
         val INFO: SystemInfo = TeleporterInfo
+
+        fun cooldownTime(power: Int): Int {
+            return 5 * (5 - power)
+        }
     }
 }
 
@@ -253,4 +258,9 @@ private object TeleporterInfo : SystemInfo("teleporter") {
     override val canBeManned: Boolean get() = false
 
     override fun create(blueprint: SystemBlueprint) = Teleporter(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        val time = Teleporter.cooldownTime(level + 1)
+        return translator["teleporter_on"].replace("\\1", time.toString())
+    }
 }

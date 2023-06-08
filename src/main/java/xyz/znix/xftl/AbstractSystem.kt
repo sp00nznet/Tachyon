@@ -747,4 +747,6 @@ abstract class SystemInfo(
     open val isComputerObstruction: Boolean get() = false
 
     abstract fun create(blueprint: SystemBlueprint): AbstractSystem
+
+    abstract fun getLevelName(level: Int, translator: Translator): String
 }

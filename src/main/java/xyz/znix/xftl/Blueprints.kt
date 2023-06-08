@@ -13,9 +13,11 @@ import kotlin.random.Random
 
 class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
     val blueprints: Map<String, IBlueprint>
+    val itemBlueprints: Map<String, ItemBlueprint>
 
     init {
         blueprints = HashMap()
+        itemBlueprints = HashMap()
 
         loadFile(df, "blueprints.xml")
         loadFile(df, "autoBlueprints.xml")
@@ -71,6 +73,14 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
         val mutableBlueprints = blueprints as HashMap<String, IBlueprint>
         val parseXML = df.parseXML(file)
         for (elem in parseXML.rootElement.children) {
+            // The name 'drones' conflicts with the drones system, and it's the only such name
+            // conflict. Since we only need them for stores, put them in a separate list.
+            if (elem.name == "itemBlueprint") {
+                val item = ItemBlueprint(elem)
+                (itemBlueprints as HashMap)[item.name] = item
+                continue
+            }
+
             val bp = when (elem.name) {
                 "blueprintList" -> buildList(elem)
                 "weaponBlueprint" -> buildWeaponBlueprint(elem)
@@ -79,12 +89,6 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
                 "crewBlueprint" -> buildCrewBlueprint(elem)
                 "augBlueprint" -> buildAugmentBlueprint(elem)
                 "shipBlueprint" -> ShipBlueprint(elem, file)
-
-                // Intentionally ignore itemBlueprint - this contains fuel, drones, and missiles.
-                // The name 'drones' conflicts with the drones system, and it's the only such name
-                // conflict. Since there's very little of value in those blueprints, we can just
-                // ignore them.
-                "itemBlueprint" -> null
 
                 // Ignore unknown blueprints
                 else -> null
@@ -223,4 +227,11 @@ class ShipBlueprint(elem: Element, val file: FTLFile) : Blueprint(elem) {
 
         error("Could not find blueprint!")
     }
+}
+
+/**
+ * This is for fuel/drones/missiles, and serves to make their descriptions available.
+ */
+class ItemBlueprint(elem: Element) : Blueprint(elem) {
+    override val cost: Int = elem.getChildTextTrim("cost")!!.toInt()
 }

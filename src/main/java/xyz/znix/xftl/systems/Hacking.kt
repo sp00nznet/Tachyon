@@ -641,4 +641,9 @@ private object HackingInfo : SystemInfo("hacking") {
     override val canBeManned: Boolean get() = false
 
     override fun create(blueprint: SystemBlueprint) = Hacking(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        val time = 4 + level * 3
+        return translator["hacking_duration"].replace("\\1", time.toString())
+    }
 }

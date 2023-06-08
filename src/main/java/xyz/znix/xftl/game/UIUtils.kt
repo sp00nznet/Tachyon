@@ -130,6 +130,37 @@ object UIUtils {
             width - 1f, fillHeight.f
         )
     }
+
+    /**
+     * Convert a fixed-point number (in multiples of 0.01) to a string,
+     * removing any unnecessary trailing point or zeros.
+     *
+     * This matches the formatting used in the system level text.
+     */
+    fun formatStringFTL(hundredths: Int): String {
+        val builder = StringBuilder()
+
+        // Deal with the integer portion
+        builder.append(hundredths / 100)
+
+        var remaining = hundredths % 100
+
+        if (remaining == 0) {
+            return builder.toString()
+        }
+
+        // The 10ths
+        builder.append('.')
+        builder.append(remaining / 10)
+        remaining %= 10
+        if (remaining == 0) {
+            return builder.toString()
+        }
+
+        // The 100ths
+        builder.append(remaining)
+        return builder.toString()
+    }
 }
 
 /**

@@ -4,10 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.SystemInfo
-import xyz.znix.xftl.draw
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -213,4 +210,14 @@ private object ArtilleryInfo : SystemInfo("artillery") {
     override val canBeManned: Boolean get() = false
 
     override fun create(blueprint: SystemBlueprint) = Artillery(blueprint)
+
+    override fun getLevelName(level: Int, translator: Translator): String {
+        return when (level) {
+            0 -> translator["artillery_1"]
+            1 -> translator["artillery_2"]
+            2 -> translator["artillery_3"]
+            3 -> translator["artillery_4"]
+            else -> "INVALID LEVEL ${level + 1}"
+        }
+    }
 }
