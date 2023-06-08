@@ -530,7 +530,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     }
 
                 override fun buy() {
-                    store.weapons[i] = null
+                    store.drones[i] = null
                     updateButtons() // Make this button show as sold out
 
                     if (!ship.addBlueprint(drone!!, false))
