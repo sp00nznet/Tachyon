@@ -2,7 +2,6 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
@@ -14,7 +13,6 @@ import xyz.znix.xftl.math.ConstPoint
 class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Window() {
     override lateinit var size: ConstPoint
         private set
-    override val outlineImage: Image get() = error("The game over window doesn't use outlines")
 
     private val buttonFont = game.getFont("HL2", 2f)
     private val titleFont = game.getFont("HL2", 4f)

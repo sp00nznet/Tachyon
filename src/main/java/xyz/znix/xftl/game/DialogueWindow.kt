@@ -10,7 +10,6 @@ import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -27,11 +26,7 @@ import kotlin.math.min
 class DialogueWindow private constructor(val game: InGameState, val playerShip: Ship, val close: () -> Unit) :
     Window() {
 
-    // We have to include the margin from the glow
-    // around the window, which is 7 pixels per side.
-    override val size: IPoint get() = ConstPoint(602 + 7 * 2, 377 + 7 * 2)
-
-    override val outlineImage = game.getImg("img/window_base.png")
+    override val size: IPoint get() = ConstPoint(602, 377)
 
     private val resourceNumFont = game.getFont("JustinFont10")
     private val font = game.getFont("JustinFont11Bold")
@@ -44,7 +39,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     private val optionBoundingBoxes = ArrayList<Rectangle>()
     private var hoveredOption: Int? = null
 
-    private val textX get() = position.x + 25
+    private val textX get() = position.x + 18
 
     private var extraText = ""
 
@@ -141,24 +136,9 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
     override fun draw(g: Graphics) {
         // Draw the frame
-        // TODO fix up the stretched bits
-        for (dir in Direction.values()) {
-            if (dir.isDiagonal) {
-                drawCorner(dir)
-            } else {
-                drawSide(dir)
-            }
-        }
+        game.windowRenderer.render(position.x, position.y, size.x, size.y)
 
-        outlineImage.draw(
-            position.x + 33f, position.y + 36f, position.x + size.x - 33f, position.y + size.y - 36f,
-            33f, 36f, 34f, 37f
-        )
-
-        // Event text
-        //val ev = "The space station here has a traveling merchant who shows you his wares."
-
-        var textY = position.y + 42
+        var textY = position.y + 35
         textY = drawText(textY, currentEvent.text!! + extraText)
 
         val resourcesGained = currentEvent.resources
@@ -231,7 +211,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
                 // likely to be a big problem.
 
                 // Find the maximum box position
-                val maxBoxRHS = position.x + size.x - 34 - 7
+                val maxBoxRHS = position.x + size.x - 34
                 val maxBoxX = maxBoxRHS - boxSize.x
                 val maxTextX = maxBoxX - textResourceMargin
 

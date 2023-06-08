@@ -13,7 +13,6 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
-import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.*

@@ -22,7 +22,6 @@ import kotlin.math.*
 // for us atm.
 class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Beacon?) -> Unit) : Window() {
     override val size = ConstPoint(766, 548)
-    override val outlineImage = game.getImg("img/window_outline.png")
 
     private val sectorInfoTab = game.getImg("img/map/side_sector.png")
     private val titleTab = game.getImg("img/map/side_beaconmap.png")
@@ -31,6 +30,8 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     private val cancelButtonOutline = game.getImg("img/main_menus/button_cancel_base.png")
     private val sectorInfoFont = game.getFont("c&cnew", 2f)
     private val beaconLabelFont = game.getFont("HL1")
+
+    private val outlineImage = game.getImg("img/window_outline.png")
 
     private val lineImg = game.getImg("img/map/dotted_line.png")
     private val targetBox = game.getImg("img/map/map_targetbox.png")
@@ -514,6 +515,64 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         labelWhite[2].draw(pos.x + 26 + strWidth, pos.y - 17)
 
         beaconLabelFont.drawStringLegacy(pos.x + 30f, pos.y - 4f, text, Constants.SECTOR_CUTOUT_TEXT)
+    }
+
+    private fun drawCorner(edge: Direction) {
+        val x = position.x + edge.x.coerceAtLeast(0) * (size.x - 33)
+        val y = position.y + edge.y.coerceAtLeast(0) * (size.y - 36)
+        val tx = edge.x.coerceAtLeast(0) * outlineImage.width / 2
+        val ty = edge.y.coerceAtLeast(0) * outlineImage.height / 2
+
+        outlineImage.drawSection(x, y, 33, 36, tx, ty)
+    }
+
+    private fun drawSide(edge: Direction, start: Int? = null, stop: Int? = null) {
+        val xb = position.x + edge.x.coerceAtLeast(0) * (size.x - 33)
+        val yb = position.y + edge.y.coerceAtLeast(0) * (size.y - 36)
+
+        val texPos = when (edge) {
+            Direction.UP -> ConstPoint(33, 0)
+            Direction.LEFT -> ConstPoint(0, 36)
+            Direction.DOWN, Direction.RIGHT -> ConstPoint(33, 36)
+            else -> error("Invalid side edge $edge")
+        }
+
+        val texSize = when (edge) {
+            Direction.UP, Direction.DOWN -> ConstPoint(1, 36)
+            Direction.LEFT, Direction.RIGHT -> ConstPoint(33, 1)
+            else -> error("Invalid side edge $edge")
+        }
+
+        val x: Int
+        val y: Int
+
+        val drawSize: ConstPoint
+        when (edge) {
+            Direction.UP, Direction.DOWN -> {
+                x = xb + (start ?: 33)
+                y = yb
+                drawSize = ConstPoint((stop ?: size.x - 33) - (start ?: 33), 36)
+            }
+
+            Direction.LEFT, Direction.RIGHT -> {
+                x = xb
+                y = yb + (start ?: 36)
+                drawSize = ConstPoint(33, (stop ?: size.y - 36) - (start ?: 36))
+            }
+
+            else -> error("Invalid edge $edge")
+        }
+
+        outlineImage.draw(
+            x.f,
+            y.f,
+            x.f + drawSize.x,
+            y.f + drawSize.y,
+            texPos.x.f,
+            texPos.y.f,
+            texPos.x.f + texSize.x,
+            texPos.y.f + texSize.y
+        )
     }
 
     private fun cancelClicked() {

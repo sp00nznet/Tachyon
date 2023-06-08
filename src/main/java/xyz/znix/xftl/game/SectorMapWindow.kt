@@ -17,7 +17,6 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
     Window() {
 
     override val size = ConstPoint(567, 327)
-    override val outlineImage get() = error("The sector map has it's own full image")
 
     private val titleFont = game.getFont("HL2", 3f)
     private val sectorColourFont = game.getFont("HL1", 2f)

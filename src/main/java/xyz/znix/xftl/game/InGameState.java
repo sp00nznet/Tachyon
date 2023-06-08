@@ -17,6 +17,7 @@ import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
+import xyz.znix.xftl.rendering.WindowRenderer;
 import xyz.znix.xftl.savegame.ObjectRefs;
 import xyz.znix.xftl.savegame.RefLoader;
 import xyz.znix.xftl.savegame.SaveUtil;
@@ -1137,6 +1138,18 @@ public class InGameState extends MainGame.GameState {
         return missingImage;
     }
 
+    public WindowRenderer getWindowRenderer() {
+        if (content.windowRenderer != null)
+            return content.windowRenderer;
+
+        Image background = getImg("img/window_base.png");
+        Image outline = getImg("img/window_outline.png");
+        Image mask = getImg("img/window_mask.png");
+        content.windowRenderer = new WindowRenderer(background, outline, mask);
+
+        return content.windowRenderer;
+    }
+
     public void givePlayerResources(@NotNull ResourceSet resources) {
         player.setFuelCount(player.getFuelCount() + resources.getFuel());
         player.setDronesCount(player.getDronesCount() + resources.getDroneParts());
@@ -1377,6 +1390,9 @@ public class InGameState extends MainGame.GameState {
         // These are loaded on-demand
         private final Map<String, Image> images = new HashMap<>();
         private final Map<String, SILFontLoader> fonts = new HashMap<>();
+
+        // This is only here to avoid wasting heaps of resources in cont-save-load mode.
+        private WindowRenderer windowRenderer;
 
         public GameContent(Datafile datafile, boolean enableAdvancedEdition) {
             this.datafile = datafile;

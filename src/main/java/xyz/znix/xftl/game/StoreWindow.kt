@@ -10,7 +10,6 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     Window() {
 
     override val size = ConstPoint(587, 423)
-    override val outlineImage get() = error("Store uses a pre-made background image")
 
     private val buyImage = game.getImg("img/storeUI/store_buy_main.png")
     private val sellImage = game.getImg("img/storeUI/store_sell_main.png")

@@ -181,17 +181,17 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
 
         transformMatData.clear()
 
-        transformMatData.put(1f / image.width)
+        transformMatData.put(image.textureWidth / image.width)
         transformMatData.put(0f)
         transformMatData.put(0f)
 
         transformMatData.put(0f)
-        transformMatData.put(1f / image.height)
+        transformMatData.put(image.textureHeight / image.height)
         transformMatData.put(0f)
 
         // Transform column, 1 is multiplied into this in the shader.
-        transformMatData.put(0f)
-        transformMatData.put(0f)
+        transformMatData.put(image.textureOffsetX)
+        transformMatData.put(image.textureOffsetY)
         transformMatData.put(0f)
 
         transformMatData.flip()

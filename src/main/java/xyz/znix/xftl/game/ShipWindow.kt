@@ -16,8 +16,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     Window() {
     override val size = ConstPoint(587, 464)
 
-    override val outlineImage get() = error("Ship UI uses a pre-made background image")
-
     private val acceptButtonImage = game.getImg("img/upgradeUI/buttons_accept_base.png")
     private val undoButtonImage = game.getImg("img/upgradeUI/buttons_undo_base.png")
 
