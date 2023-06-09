@@ -11,7 +11,6 @@ import xyz.znix.xftl.math.IPoint
 
 class DroneBlueprint(xml: Element) : Blueprint(xml) {
     val type: DroneType = DroneType.valueOf(xml.getChildTextTrim("type"))
-    val tip: String? = xml.getChildTextTrim("tip") // Tooltip
     override val cost: Int? = xml.getChildTextTrim("cost")?.toInt()
     val power: Int = xml.getChildTextTrim("power").toInt()
     val speed: Int? = xml.getChildTextTrim("speed")?.toInt()

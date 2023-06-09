@@ -381,6 +381,16 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
         return hoveredButton.blueprint
     }
 
+    fun drawInfoPanel(infoPanel: InfoPanel) {
+        val blueprint = getHoveredBlueprint() ?: return
+        return when (blueprint) {
+            is DroneBlueprint -> infoPanel.drawDrone(blueprint)
+            is AugmentBlueprint -> infoPanel.drawAugment(blueprint)
+            is AbstractWeaponBlueprint -> infoPanel.drawWeapon(blueprint)
+            else -> error("Cannot draw info panel for $blueprint")
+        }
+    }
+
     private fun dropBlueprint() {
         val drag = draggingBlueprint!!
         drag.dragPosition = null

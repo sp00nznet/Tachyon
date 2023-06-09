@@ -192,6 +192,9 @@ open class Blueprint(elem: Element) : IBlueprint {
     val short = elem.getGameTextChild("short")
     val desc = elem.getGameTextChild("desc")
 
+    // Note the tip is always localised
+    val tip = elem.getChildTextTrim("tip")?.let { GameText.localised(it) }
+
     /**
      * Get this item's purchase price (the price you can buy it at, not the
      * price you sell it at) in scrap. Returns null if the item doesn't

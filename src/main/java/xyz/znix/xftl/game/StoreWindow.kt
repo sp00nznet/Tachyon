@@ -381,7 +381,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     if (system == null)
                         return
 
-                    infoPanel.drawDescriptionBox(system)
+                    infoPanel.drawDescriptionBoxSystem(system)
                     infoPanel.drawPowerBox(g, system, system.startPower, 0)
                 }
             })
@@ -452,7 +452,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                         return
 
                     // TODO draw skills box
-                    infoPanel.drawDescriptionBox(crew.race)
+                    infoPanel.drawDescriptionBoxCrew(crew.race)
                 }
             }
         }
@@ -497,7 +497,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                         return
 
                     // TODO draw weapon stats
-                    infoPanel.drawDescriptionBox(weapon)
+                    infoPanel.drawWeapon(weapon)
                 }
             })
         }
@@ -541,8 +541,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     if (drone == null)
                         return
 
-                    // TODO what should this draw?
-                    infoPanel.drawDescriptionBox(drone)
+                    infoPanel.drawDrone(drone)
                 }
             })
         }
@@ -621,8 +620,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     if (augment == null)
                         return
 
-                    // TODO what should this draw?
-                    infoPanel.drawDescriptionBox(augment)
+                    infoPanel.drawAugment(augment)
                 }
             })
         }
@@ -636,10 +634,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         sellPanel.draw(g)
 
         // Draw the information for the currently-hovered blueprint.
-        val hoveredBlueprint = sellPanel.getHoveredBlueprint()
-        if (hoveredBlueprint != null) {
-            infoPanel.drawDescriptionBox(hoveredBlueprint)
-        }
+        sellPanel.drawInfoPanel(infoPanel)
     }
 
     override fun escapePressed() {
@@ -771,7 +766,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
             if (numAvailable == 0)
                 return
 
-            infoPanel.drawDescriptionBox(blueprint)
+            infoPanel.drawItem(blueprint)
         }
     }
 

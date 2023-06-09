@@ -168,7 +168,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         val hoveredSystem = hoveredButton?.system
         if (hoveredSystem != null) {
             val undoablePower = systemUpgradeUndos[hoveredSystem]?.size ?: 0
-            infoPanel.drawDescriptionBox(hoveredSystem.blueprint)
+            infoPanel.drawDescriptionBoxSystem(hoveredSystem.blueprint)
             infoPanel.drawPowerBox(g, hoveredSystem.blueprint, hoveredSystem.energyLevels, undoablePower)
         }
 
@@ -260,7 +260,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
                         infoPanel.drawDescriptionBox(
                             GameText.localised("upgrade_reactor"),
-                            GameText.localised("reactor_desc")
+                            GameText.localised("reactor_desc"),
+                            null, InfoPanel.INFO_HEIGHT_SYSTEM
                         )
                     } else {
                         reactorImg.draw(pos)
@@ -515,7 +516,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 // Draw the information about this crewmember while hovering over them
                 if (hovered) {
                     // TODO draw skills
-                    infoPanel.drawDescriptionBox(crew.blueprint)
+                    infoPanel.drawDescriptionBoxCrew(crew.blueprint)
                 }
             }
 
@@ -537,10 +538,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         equipmentPanel.draw(g)
 
         // Draw the information for the currently-hovered blueprint.
-        val hoveredBlueprint = equipmentPanel.getHoveredBlueprint()
-        if (hoveredBlueprint != null) {
-            infoPanel.drawDescriptionBox(hoveredBlueprint)
-        }
+        equipmentPanel.drawInfoPanel(infoPanel)
     }
 
     override fun mouseClick(button: Int, x: Int, y: Int) {

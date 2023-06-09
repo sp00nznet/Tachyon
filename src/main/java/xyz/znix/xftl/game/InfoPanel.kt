@@ -3,24 +3,60 @@ package xyz.znix.xftl.game
 import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.*
+import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 
 class InfoPanel(private val game: InGameState) {
     private val systemLevelFont = game.getFont("JustinFont10")
     private val numberFont = game.getFont("num_font")
     private val titleFont = game.getFont("c&cnew", 2f)
     private val descriptionFont = game.getFont("JustinFont10")
+    private val tipFont = game.getFont("JustinFont8")
 
     var position: IPoint = ConstPoint.ZERO
 
-    fun drawDescriptionBox(blueprint: Blueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc)
+    fun drawAugment(blueprint: AugmentBlueprint) {
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_AUGMENT)
     }
 
-    fun drawDescriptionBox(title: GameText?, description: GameText?) {
-        game.windowRenderer.render(position.x, position.y, 333, 121)
+    fun drawItem(blueprint: ItemBlueprint) {
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_ITEM)
+    }
+
+    fun drawDrone(blueprint: DroneBlueprint) {
+        drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, INFO_HEIGHT_DRONE)
+    }
+
+    fun drawWeapon(blueprint: AbstractWeaponBlueprint) {
+        drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, INFO_HEIGHT_WEAPON)
+    }
+
+    /**
+     * Note: this does not render the system power bars!
+     */
+    fun drawDescriptionBoxSystem(blueprint: SystemBlueprint) {
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_SYSTEM)
+    }
+
+    /**
+     * Note: this does not render the crew skills area!
+     */
+    fun drawDescriptionBoxCrew(blueprint: CrewBlueprint) {
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_CREW)
+    }
+
+    fun drawDescriptionBox(
+        title: GameText?,
+        description: GameText?,
+        tip: GameText?,
+        height: Int
+    ) {
+        game.windowRenderer.render(position.x, position.y, 333, height)
 
         val titleStr = title?.get(game.translator)
         if (titleStr != null) {
@@ -39,6 +75,22 @@ class InfoPanel(private val game: InGameState) {
             for (line in lines) {
                 descriptionFont.drawString(position.x + 11f, y.f, line, Color.white)
                 y += 17
+            }
+        }
+
+        if (tip != null) {
+            val tipStr = game.translator[tip]
+            val tipLines = tipFont.wrapString(tipStr, 303)
+
+            val tipY = position.y + height + 17
+            val tipHeight = 31 + tipLines.size * 15
+
+            game.windowRenderer.render(position.x, tipY, 333, tipHeight)
+
+            var lineY = tipY + 27
+            for (line in tipLines) {
+                tipFont.drawString(position.x + 13f, lineY.f, line, Color.white)
+                lineY += 15
             }
         }
     }
@@ -113,5 +165,14 @@ class InfoPanel(private val game: InGameState) {
             }
             g.fillRect(x + 20f, y.f + 195 - i * 26, 28f, 18f)
         }
+    }
+
+    companion object {
+        const val INFO_HEIGHT_SYSTEM = 121
+        const val INFO_HEIGHT_AUGMENT = 136
+        const val INFO_HEIGHT_CREW = 168
+        const val INFO_HEIGHT_ITEM = 121
+        const val INFO_HEIGHT_DRONE = 162
+        const val INFO_HEIGHT_WEAPON = 252
     }
 }
