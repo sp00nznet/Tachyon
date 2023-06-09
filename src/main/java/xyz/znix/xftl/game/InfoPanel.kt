@@ -9,7 +9,9 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
+import xyz.znix.xftl.weapons.LaserBlueprint
 
 class InfoPanel(private val game: InGameState) {
     private val systemLevelFont = game.getFont("JustinFont10")
@@ -21,39 +23,79 @@ class InfoPanel(private val game: InGameState) {
     var position: IPoint = ConstPoint.ZERO
 
     fun drawAugment(blueprint: AugmentBlueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_AUGMENT)
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, emptyList(), INFO_HEIGHT_AUGMENT)
     }
 
     fun drawItem(blueprint: ItemBlueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_ITEM)
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, emptyList(), INFO_HEIGHT_ITEM)
     }
 
     fun drawDrone(blueprint: DroneBlueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, INFO_HEIGHT_DRONE)
+        val lines = ArrayList<String>()
+        lines += game.translator["required_power"].replace("\\1", blueprint.power.toString())
+        lines += game.translator["drone_required"]
+        drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, lines, INFO_HEIGHT_DRONE)
     }
 
     fun drawWeapon(blueprint: AbstractWeaponBlueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, INFO_HEIGHT_WEAPON)
+        val lines = ArrayList<String>()
+
+        // Build all the weapon attributes that appear when hovering over it
+        // TODO support chain weapons and hull missiles
+
+        lines += game.translator["required_power"].replace("\\1", blueprint.power.toString())
+        lines += game.translator["charge_time"].replace("\\1", UIUtils.formatFloat(blueprint.chargeTime))
+        if (blueprint.missilesUsed > 0) {
+            lines += game.translator["requires_missiles"]
+        }
+        if (blueprint.shots != 1 || blueprint is LaserBlueprint) {
+            lines += game.translator["shots"].replace("\\1", blueprint.shots.toString())
+        }
+        if (blueprint is BeamBlueprint) {
+            lines += game.translator["damage_room"].replace("\\1", blueprint.damage.toString())
+        } else {
+            lines += game.translator["damage_shot"].replace("\\1", blueprint.damage.toString())
+        }
+        if (blueprint.shieldPiercing != 0) {
+            lines += game.translator["shield_piercing"].replace("\\1", blueprint.shieldPiercing.toString())
+        }
+        addChanceString(lines, "fire_chance", blueprint.fireChance)
+        addChanceString(lines, "breach_chance", blueprint.breachChance)
+        addChanceString(lines, "stun_chance", blueprint.stunChance)
+        if (blueprint.ionDamage != 0) {
+            lines += game.translator["ion_damage"].replace("\\1", blueprint.ionDamage.toString())
+        }
+        if (blueprint.personnelDamage != null) {
+            // Damage is specified in multiples of 15
+            val hpDamage = blueprint.personnelDamage * 15
+            lines += game.translator["personnel_damage"].replace("\\1", hpDamage.toString())
+        }
+        if (blueprint.sysDamage != blueprint.damage) {
+            lines += game.translator["system_damage"].replace("\\1", blueprint.sysDamage.toString())
+        }
+
+        drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, lines, INFO_HEIGHT_WEAPON)
     }
 
     /**
      * Note: this does not render the system power bars!
      */
     fun drawDescriptionBoxSystem(blueprint: SystemBlueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_SYSTEM)
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, emptyList(), INFO_HEIGHT_SYSTEM)
     }
 
     /**
      * Note: this does not render the crew skills area!
      */
     fun drawDescriptionBoxCrew(blueprint: CrewBlueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc, null, INFO_HEIGHT_CREW)
+        drawDescriptionBox(blueprint.title, blueprint.desc, null, emptyList(), INFO_HEIGHT_CREW)
     }
 
     fun drawDescriptionBox(
         title: GameText?,
         description: GameText?,
         tip: GameText?,
+        extraLines: List<String>,
         height: Int
     ) {
         game.windowRenderer.render(position.x, position.y, 333, height)
@@ -73,6 +115,13 @@ class InfoPanel(private val game: InGameState) {
 
             var y = position.y + 53
             for (line in lines) {
+                descriptionFont.drawString(position.x + 11f, y.f, line, Color.white)
+                y += 17
+            }
+
+            // Draw the extra lines, which are for stuff like weapon attributes.
+            y += 17
+            for (line in extraLines) {
                 descriptionFont.drawString(position.x + 11f, y.f, line, Color.white)
                 y += 17
             }
@@ -165,6 +214,24 @@ class InfoPanel(private val game: InGameState) {
             }
             g.fillRect(x + 20f, y.f + 195 - i * 26, 28f, 18f)
         }
+    }
+
+    private fun addChanceString(lines: ArrayList<String>, baseKey: String, chance: Int) {
+        // Always look this up to quickly catch invalid keys
+        val baseStr = game.translator[baseKey]
+
+        if (chance == 0) {
+            return
+        }
+
+        val chanceKey = when (chance) {
+            in 1..3 -> "chance_low"
+            in 4..6 -> "chance_medium"
+            else -> "chance_high"
+        }
+
+        val chanceStr = game.translator[chanceKey]
+        lines += baseStr.replace("\\1", chanceStr)
     }
 
     companion object {

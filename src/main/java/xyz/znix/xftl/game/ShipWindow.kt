@@ -261,7 +261,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                         infoPanel.drawDescriptionBox(
                             GameText.localised("upgrade_reactor"),
                             GameText.localised("reactor_desc"),
-                            null, InfoPanel.INFO_HEIGHT_SYSTEM
+                            null, emptyList(),
+                            InfoPanel.INFO_HEIGHT_SYSTEM
                         )
                     } else {
                         reactorImg.draw(pos)

@@ -161,6 +161,10 @@ object UIUtils {
         builder.append(remaining)
         return builder.toString()
     }
+
+    fun formatFloat(value: Float): String {
+        return formatStringFTL((value * 100).roundToInt())
+    }
 }
 
 /**
