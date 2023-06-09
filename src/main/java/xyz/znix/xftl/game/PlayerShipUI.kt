@@ -1220,11 +1220,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             val crewPos = crewScreenPos(crew, playerShipPosition)
 
-            // TODO also check if the player is selecting the crew name box
-
             @Suppress("IfThenToElvis")
             val hovered = if (rect != null) {
                 // If we're in rectangle mode, check that it intersects the centre of the player's body
+                // TODO also check if the player is selecting the crew name box
                 rect.contains(crewPos.x.f, crewPos.y.f)
             } else {
                 // Otherwise check the point overlaps the player

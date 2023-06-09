@@ -266,7 +266,6 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         var height = 0
 
-        // TODO check this on an image with both scrap and resources
         if (resourceSet.isNotEmpty())
             height += 32
 
@@ -295,7 +294,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
                     10 + augmentStringWidth + 8 + nameWidth + 11
                 }
 
-                else -> TODO("Can't draw non-ship/drone/augment blueprint: $bp")
+                else -> error("Can't draw non-weapon/drone/augment blueprint: $bp")
             }
 
             width = max(width, bpWidth)
@@ -486,7 +485,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
                 return 32
             }
 
-            else -> TODO("Can't draw non-ship/drone/augment blueprint: $bp")
+            else -> error("Can't draw non-weapon/drone/augment blueprint: $bp")
         }
     }
 

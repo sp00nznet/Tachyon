@@ -68,7 +68,6 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             g.translate(shipPos.x.f, shipPos.y.f)
             enemy.render(g, interiorVisible, hoveredRoom)
 
-            // FIXME this is pretty horrible accessing the player ship like this
             enemy.renderTargeting(g, game.shipUI.ship.weapons!!.selectedTargets)
 
             g.resetTransform()
