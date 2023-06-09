@@ -7,7 +7,6 @@ import org.newdawn.slick.Input
 import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -547,10 +546,6 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         if (playerShip.crew.any { it.codename == req }) {
             return true
         }
-
-        // FIXME until we've implemented all the crew, allow any crew-gated option.
-        if (CrewBlueprint.PLAYABLE_RACE_NAMES.contains(req))
-            return true
 
         // Check for matching weapons, drones and augments. We search through all
         // the places a blueprint could be, but none of these checks are specific
