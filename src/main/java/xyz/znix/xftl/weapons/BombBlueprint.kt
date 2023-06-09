@@ -26,9 +26,9 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         return BombInstance(ship)
     }
 
-    private fun makeBomb(target: Room): FiredBomb {
+    private fun makeBomb(target: Room, missed: Boolean, hitSuperShield: Boolean): FiredBomb {
         val animation = target.ship.sys.animations[projectile!!].startSingle(0.5f, true)
-        return FiredBomb(this@BombBlueprint, target, animation)
+        return FiredBomb(this@BombBlueprint, target, animation, missed, hitSuperShield)
     }
 
     inner class BombInstance(ship: Ship) : AbstractWeaponInstance(this, ship), IRoomTargetingWeapon {
@@ -71,7 +71,13 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         private fun doBombFire(target: Room) {
-            target.ship.projectiles += makeBomb(target)
+            val firedAtSelf: Boolean = target.ship == ship
+
+            // Bombs we fire at ourselves can't miss or hit the super-shield.
+            val missed = !firedAtSelf && target.ship.pickMissed()
+            val hitSuperShield = !firedAtSelf && target.ship.superShield > 0 && !missed
+
+            target.ship.projectiles += makeBomb(target, missed, hitSuperShield)
         }
 
         override fun fire(target: Room) {
@@ -110,9 +116,13 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
     }
 
-    class FiredBomb(val type: BombBlueprint, val target: Room, val animation: FTLAnimation) : IProjectile {
-        private var missed = target.ship.pickMissed()
-        private var hitSuperShield = target.ship.superShield > 0 && !missed
+    class FiredBomb(
+        val type: BombBlueprint,
+        val target: Room,
+        val animation: FTLAnimation,
+        val missed: Boolean,
+        val hitSuperShield: Boolean
+    ) : IProjectile {
 
         override var position: ConstPoint = ConstPoint.ZERO
             private set
@@ -192,9 +202,6 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         fun loadFromXML(elem: Element) {
-            missed = SaveUtil.getOptionalTagBool(elem, "missed") ?: false
-            hitSuperShield = SaveUtil.getOptionalTagBool(elem, "hitSuperShield") ?: false
-
             position = SaveUtil.getPoint(elem, "position")
 
             animation.timer = SaveUtil.getAttrFloat(elem, "animationTimer")
@@ -213,9 +220,12 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             val targetShip = SaveUtil.getAttr(elem, "targetShip")
             val targetRoomId = SaveUtil.getAttrInt(elem, "targetRoomId")
 
+            val missed = SaveUtil.getOptionalTagBool(elem, "missed") ?: false
+            val hitSuperShield = SaveUtil.getOptionalTagBool(elem, "hitSuperShield") ?: false
+
             refs.asyncResolve(Ship::class.java, targetShip) {
                 val room = it!!.rooms[targetRoomId]
-                val bomb = type.makeBomb(room)
+                val bomb = type.makeBomb(room, missed, hitSuperShield)
                 bomb.loadFromXML(elem)
                 callback(bomb)
             }

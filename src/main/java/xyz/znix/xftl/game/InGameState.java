@@ -371,6 +371,7 @@ public class InGameState extends MainGame.GameState {
         // Get the player's ship away from the top UI
         g.translate(PLAYER_SHIP_POSITION.getX(), PLAYER_SHIP_POSITION.getY());
         player.render(g, true, hoveredRoom);
+        player.renderTargeting(g, Objects.requireNonNull(player.getWeapons()).getSelectedTargets());
         g.resetTransform();
 
         shipUI.render(container, g);

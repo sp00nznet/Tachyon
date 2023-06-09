@@ -668,6 +668,9 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
      */
     fun renderTargeting(g: Graphics, targets: Weapons.TargetList) {
         for (target in targets) {
+            if (target.targetShip != this)
+                continue
+
             if (target is SelectedTarget.BeamAim)
                 renderTargetingBeam(g, target)
             if (target !is SelectedTarget.RoomAim)
