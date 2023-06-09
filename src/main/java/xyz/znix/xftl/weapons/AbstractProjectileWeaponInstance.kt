@@ -6,6 +6,7 @@ import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -21,21 +22,39 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
     // This isn't derived from the targets list, since after we fire our last
     // shot we have to keep running the firing animation until that ends.
-    private var isFiring: Boolean = false
+    override var isFiring: Boolean = false
+
+    // The number of shots we've fired on this firing cycle (from when the
+    // user or AI selected the weapon to be fired until it stops shooting).
+    // This is for charge weapon animations, NOT for chain weapons.
+    private var shotsFired: Int = 0
 
     private var firingAnimationTimer: Float = 0f
     protected var waitingToFireAt: Room? = null
 
+    // To support weapons that fire multiple shots per charge (assuming
+    // a mod adds one), we have to divide out the number of shots to get
+    // the index of the charge we're currently on.
+    private val chargeIndex: Int get() = shotsFired / type.shots
+
     private val fireAnimationFrame: Int
         get() {
             require(isFiring)
-            return animation.fireIndex(firingAnimationTimer, Animations.PROJECTILE_WEAPON_FIRE_TIME)
+
+            // firingAnimationTimer resets for each shot, so we have to add
+            // an extra offset to get the time in the sequence for charger weapons.
+            val time = firingAnimationTimer + chargeIndex * Animations.PROJECTILE_WEAPON_FIRE_TIME
+
+            return animation.fireIndex(time, totalAnimationTime)
         }
+
+    private val totalAnimationTime: Float get() = Animations.PROJECTILE_WEAPON_FIRE_TIME * maxTotalCharges
 
     protected var entryAngle: Float = 0f
 
     // Doesn't need to be serialised, as it's set by the weapons or artillery system.
     protected lateinit var projectileSpawnPos: IPoint
+    protected lateinit var projectileSpawnChargeOffset: IPoint
 
     override fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
         super.update(dt, chargeTime, canCharge)
@@ -49,9 +68,13 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
         firingAnimationTimer += dt
 
-        // Surprisingly, weapons charge while firing
+        // Surprisingly, weapons charge while firing.
 
-        if (waitingToFireAt != null && fireAnimationFrame >= animation.fireFrame) {
+        // Calculate the current frame, without taking into account multiple charges.
+        // Otherwise all but the first shot would fire instantly.
+        val singleChargeFrame = animation.fireIndex(firingAnimationTimer, totalAnimationTime)
+
+        if (waitingToFireAt != null && singleChargeFrame >= animation.fireFrame) {
             fireFrameHit()
             waitingToFireAt = null
         }
@@ -63,7 +86,9 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
                 // Save space in the savefile, as these aren't written if they're zero.
                 entryAngle = 0f
                 firingAnimationTimer = 0f
+                shotsFired = 0
             } else {
+                shotsFired++
                 primeShot()
             }
         }
@@ -75,6 +100,12 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
             frame.draw(0f, 0f)
         } else {
             super.render(g)
+
+            // For charge weapons, draw on the indicator lights
+            if (animation.boostAnim != null && maxTotalCharges > 1 && totalReadyCharges > 0) {
+                // 0 indicates one extra charge, so we have to -1.
+                animation.boostAnim.spriteAt(totalReadyCharges - 1).draw()
+            }
         }
     }
 
@@ -82,7 +113,13 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         super.bindToWeaponsSystem(weapons)
 
         if (!this::projectileSpawnPos.isInitialized) {
-            this.projectileSpawnPos = weapons.getProjectileSpawnPos(this)
+            val firePos = animation.firePoint
+            projectileSpawnPos = weapons.getProjectileSpawnPos(this, firePos)
+
+            // Find the change in position for each subsequent shot in a charge weapon.
+            val offsetFirePos = firePos + ConstPoint(-animation.chargeOffset, 0)
+            val offsetSpawn = weapons.getProjectileSpawnPos(this, offsetFirePos)
+            projectileSpawnChargeOffset = offsetSpawn - projectileSpawnPos
         }
     }
 
@@ -95,11 +132,14 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     }
 
     protected fun launchProjectile(projectile: AbstractProjectile) {
+        // Charge weapons shift a bit on each launch.
+        val spawnPos = projectileSpawnPos + projectileSpawnChargeOffset * chargeIndex
+
         // Depending on whether we're the player or enemy ship, we need
         // to fly in different directions as they're angled differently.
-        val endPos = projectileSpawnPos + ship.weaponFireDirection * 5000
+        val endPos = spawnPos + ship.weaponFireDirection * 5000
 
-        projectile.setInitialPath(projectileSpawnPos, endPos)
+        projectile.setInitialPath(spawnPos, endPos)
 
         ship.projectiles += projectile
     }
@@ -107,7 +147,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     override fun fire(target: Room) {
         check(!isFiring) { "Cannot file while already firing!" }
 
-        for (i in 0 until type.shots) {
+        for (i in 0 until totalReadyCharges * type.shots) {
             targets.add(target)
         }
 
@@ -139,7 +179,8 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     }
 
     open fun fireFromArtillery(possibleTargets: List<Room>, origin: IPoint) {
-        this.projectileSpawnPos = origin
+        projectileSpawnPos = origin
+        projectileSpawnChargeOffset = ConstPoint.ZERO
 
         val remaining = ArrayList(possibleTargets)
 
@@ -170,6 +211,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         SaveUtil.addTagFloat(elem, "entryAngle", entryAngle, 0f)
         SaveUtil.addTagBoolIfTrue(elem, "isFiring", isFiring)
         SaveUtil.addTagFloat(elem, "fireAnimationTimer", firingAnimationTimer, 0f)
+        SaveUtil.addTagInt(elem, "shotsFired", shotsFired, 0)
 
         for (target in targets) {
             val targetElem = Element("target")
@@ -185,6 +227,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         entryAngle = SaveUtil.getOptionalTagFloat(elem, "entryAngle") ?: 0f
         firingAnimationTimer = SaveUtil.getOptionalTagFloat(elem, "fireAnimationTimer") ?: 0f
         isFiring = SaveUtil.getOptionalTagBool(elem, "isFiring") ?: false
+        shotsFired = SaveUtil.getOptionalTagInt(elem, "shotsFired") ?: 0
 
         val waitingToFireAtElem = elem.getChild("waitingToFireAt")
         if (waitingToFireAtElem != null) {

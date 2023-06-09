@@ -14,5 +14,6 @@ class UknWeaponBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class UknInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
+        override val isFiring: Boolean get() = false
     }
 }

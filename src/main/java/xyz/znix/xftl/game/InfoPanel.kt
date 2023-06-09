@@ -51,6 +51,9 @@ class InfoPanel(private val game: InGameState) {
         if (blueprint.shots != 1 || blueprint is LaserBlueprint) {
             lines += game.translator["shots"].replace("\\1", blueprint.shots.toString())
         }
+        if (blueprint.chargeLevels != null) {
+            lines += game.translator["charge"].replace("\\1", blueprint.chargeLevels.toString())
+        }
         if (blueprint is BeamBlueprint) {
             lines += game.translator["damage_room"].replace("\\1", blueprint.damage.toString())
         } else {

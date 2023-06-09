@@ -540,7 +540,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 override val isBeingHacked: Boolean get() = ship.weapons!!.isHackActive
 
                 override fun click(button: Int) {
-                    val weapon = ship.hardpoints[i].weapon
                     if (button == MOUSE_LEFT_BUTTON) {
                         weaponHotkeyPressed(i)
                     }
@@ -548,6 +547,36 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                         if (ship.weapons!!.setWeaponPower(weapon, false)) {
                             powerDownSound.play()
                         }
+                    }
+                }
+
+                override fun draw(g: Graphics) {
+                    super.draw(g)
+
+                    if (weapon != null && weapon.type.chargeLevels != null) {
+                        drawChargedShots()
+                    }
+                }
+
+                private fun drawChargedShots() {
+                    requireNotNull(weapon)
+
+                    val filter = mainColour
+                    val max = weapon.maxTotalCharges
+                    val ready = weapon.totalReadyCharges
+                    val width = 11
+                    val baseX = pos.x + (size.x - max * 11) / 2
+                    val y = pos.y + 25
+
+                    for (charge in 0 until max) {
+                        val suffix = when {
+                            charge < ready -> "use"
+                            else -> "on"
+                        }
+
+                        val img = game.getImg("img/combatUI/icon_chain_$suffix.png")
+                        val x = baseX + charge * width
+                        img.draw(x, y, filter)
                     }
                 }
             }
@@ -1273,6 +1302,16 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         override val disabled: Boolean get() = empty
 
+        protected val mainColour: Color
+            get() = when {
+                empty -> WEAPONS_ITEM_DESELECTED
+                isBeingHacked -> SYSTEM_HACKED
+                !isPowered -> WEAPONS_ITEM_DESELECTED
+                isSelectingTarget -> WEAPONS_ITEM_TARGETING
+                isCharged -> WEAPONS_ITEM_CHARGED
+                else -> WEAPONS_ITEM_SELECTED
+            }
+
         private var hackingSparks: FTLAnimation? = null
         private var hackingOffsetX: Int = 0
         private var hackingMaskY: Int = 0
@@ -1285,14 +1324,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         private val weaponNumberString = (slotNumber + 1).toString()
 
         override fun draw(g: Graphics) {
-            val mainColour = when {
-                empty -> WEAPONS_ITEM_DESELECTED
-                isBeingHacked -> SYSTEM_HACKED
-                !isPowered -> WEAPONS_ITEM_DESELECTED
-                isSelectingTarget -> WEAPONS_ITEM_TARGETING
-                isCharged -> WEAPONS_ITEM_CHARGED
-                else -> WEAPONS_ITEM_SELECTED
-            }
             g.color = mainColour
 
             // Draw the outline box
@@ -1380,10 +1411,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 g.fillRect((pos.x + 4).f, y.f, 16f, 7f)
             }
 
-            drawHackingSparks(g)
+            drawHackingSparks()
         }
 
-        private fun drawHackingSparks(g: Graphics) {
+        private fun drawHackingSparks() {
             if (!isBeingHacked) {
                 hackingSparks = null
                 return

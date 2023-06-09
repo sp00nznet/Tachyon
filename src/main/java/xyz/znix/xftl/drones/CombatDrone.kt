@@ -98,7 +98,7 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         var firingBeam = false
         if (weapon is BeamBlueprint.BeamInstance) {
             weapon.update(dt, dt, true)
-            firingBeam = weapon.firing
+            firingBeam = weapon.isFiring
 
             // Match our rotation to that of the beam
             if (firingBeam) {

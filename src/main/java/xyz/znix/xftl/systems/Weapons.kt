@@ -126,7 +126,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
 
-    fun getProjectileSpawnPos(weapon: AbstractWeaponInstance): IPoint {
+    fun getProjectileSpawnPos(weapon: AbstractWeaponInstance, firePoint: IPoint): IPoint {
         val hp = findHardpoint(weapon)
         val anim = weapon.animation
 
@@ -137,7 +137,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // on the animation. The latter, when converted into ship-space,
         // is equal to hp.position.
         val startPos = Point(0, 0)
-        startPos += anim.firePoint
+        startPos += firePoint
         startPos -= anim.mountPoint
 
         // Convert from hardpoint-space to ship-space.
@@ -313,7 +313,11 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             var fired: MutableList<SelectedTarget>? = null
 
             for (tgt in this) {
-                if (!tgt.weapon.asWeaponInstance().isCharged)
+                // There's some weapons (eg the charge laser) that will be ready
+                // before they've finished firing when the fast weapon charge
+                // debug flag is set. Thus block them here to avoid crashing.
+                val weapon = tgt.weapon.asWeaponInstance()
+                if (!weapon.isCharged || weapon.isFiring)
                     continue
 
                 if (fired == null)

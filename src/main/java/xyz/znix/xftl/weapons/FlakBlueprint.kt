@@ -57,13 +57,13 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // TODO implement firing from drones, as some mods do this (notably IIRC Multiverse)
 
         override fun fireFrameHit() {
-            // Make sure all the projectiles come in from the same angle
-            val angle: Float = (Math.random() * Math.PI * 2).toFloat()
-
             for (spec in projectileSpecs) {
                 for (i in 0 until spec.count) {
                     val projectile = FlakProjectile(waitingToFireAt!!, spec)
-                    projectile.entryAngle = angle
+
+                    // For the swarm missile this function will be called multiple
+                    // times, so we can't pick our own angle in this function.
+                    projectile.entryAngle = entryAngle
 
                     launchProjectile(projectile)
                 }

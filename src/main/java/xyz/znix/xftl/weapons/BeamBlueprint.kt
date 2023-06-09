@@ -46,7 +46,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class BeamInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
-        val firing: Boolean get() = target != null
+        override val isFiring: Boolean get() = target != null
         private var firingTime: Float = 0f
         private var target: SelectedTarget.BeamAim? = null
         private val originPos = Point(0, 0)
@@ -77,7 +77,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         override fun render(g: Graphics) {
-            if (firing) {
+            if (isFiring) {
                 // Draw the beam line
                 // Note that since we're in image space, forwards is up so forwards
                 // is negative Y. Use some 'long enough' arbitrary length.
@@ -107,7 +107,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         fun drawDroneBeam(drone: CombatDrone) {
-            if (!firing)
+            if (!isFiring)
                 return
 
             val fc = drone.flightController
@@ -188,7 +188,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
             super.update(dt, chargeTime, canCharge)
 
-            if (firing) {
+            if (isFiring) {
                 val targetShip = target!!.targetShip
 
                 // Don't block charging while firing - it does appear
@@ -357,7 +357,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         // For use by drones, so they can angle themselves correctly.
         fun getCurrentTargetPoint(): IPoint {
-            if (!firing)
+            if (!isFiring)
                 return ConstPoint.ZERO
 
             return pointAtTime(firingTime)

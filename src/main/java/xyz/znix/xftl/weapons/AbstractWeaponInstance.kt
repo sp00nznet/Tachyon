@@ -16,10 +16,19 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     // The time spent charging thus far
     var timeCharged: Float = 0f
 
+    // For charger weapons, this is how many shots are stored up, in
+    // addition to the one represented by timeCharged.
+    var extraCharges: Int = 0
+
+    // The number of charges this weapon is ready to fire.
+    val totalReadyCharges: Int get() = extraCharges + if (isCurrentCharged) 1 else 0
+
     // Is this weapon selected as powered
     // To set this, use forceSetPowered and read it's JavaDoc.
     var isPowered: Boolean = false
         private set
+
+    abstract val isFiring: Boolean
 
     // Turn missile weapons off once their ship runs out of missiles
     val hasEnoughMissiles: Boolean get() = ship.missilesCount >= type.missilesUsed
@@ -28,8 +37,22 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     // powered up and down.
     var slide: Float = 0f
 
-    val isCharged: Boolean get() = timeCharged >= type.chargeTime
+    /**
+     * True if the weapon is ready to fire. For charge weapons this is true
+     * even when [isCurrentCharged] is false, as long as they've stored away an extra shot.
+     */
+    val isCharged: Boolean get() = isCurrentCharged || extraCharges > 0
+
+    /**
+     * True if the weapon's current charge has finished charging. This is different
+     * to [isCharged] for charge weapons, as this is only true when the currently
+     * charging charge is done.
+     */
+    val isCurrentCharged: Boolean get() = timeCharged >= type.chargeTime
     val chargeProgress: Float get() = timeCharged / type.chargeTime
+
+    val maxTotalCharges get() = type.chargeLevels ?: 1
+    val maxExtraCharges get() = maxTotalCharges - 1
 
     val animation = type.getLauncher(ship.sys)
 
@@ -42,16 +65,26 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
                 timeCharged += chargeTime
         } else {
             timeCharged -= dt * 10
+
+            if (timeCharged <= 0) {
+                extraCharges = 0
+            }
         }
 
         if (timeCharged > type.chargeTime)
             timeCharged = type.chargeTime
         if (timeCharged < 0f)
             timeCharged = 0f
+
+        if (isCurrentCharged && extraCharges < maxExtraCharges) {
+            timeCharged = 0f
+            extraCharges++
+        }
     }
 
     protected fun fire() {
         timeCharged = 0f
+        extraCharges = 0
 
         // Deduct a missile (or multiple), if this weapon uses them
         // This really shouldn't be going negative here, but guard
@@ -66,7 +99,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         launcher.draw(0f, 0f)
 
         // Draw the charging glow, if present
-        if (isCharged)
+        if (isCurrentCharged)
             return
         val glow = animation.chargeImage ?: return
 
@@ -97,6 +130,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         SaveUtil.addAttr(elem, "type", type.name)
         SaveUtil.addAttrBool(elem, "powered", isPowered)
         SaveUtil.addAttrFloat(elem, "chargeTime", timeCharged)
+        SaveUtil.addTagInt(elem, "extraCharges", extraCharges, 0)
 
         val expectedSlide = if (isPowered) 1f else 0f
         SaveUtil.addTagFloat(elem, "slideAnimation", slide, expectedSlide)
@@ -107,6 +141,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
         isPowered = SaveUtil.getAttrBool(elem, "powered")
         timeCharged = SaveUtil.getAttrFloat(elem, "chargeTime")
+        extraCharges = SaveUtil.getOptionalTagInt(elem, "extraCharges") ?: 0
 
         val expectedSlide = if (isPowered) 1f else 0f
         slide = SaveUtil.getOptionalTagFloat(elem, "slideAnimation") ?: expectedSlide

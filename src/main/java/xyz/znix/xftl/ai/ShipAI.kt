@@ -69,6 +69,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
 
+            // TODO use the correct logic for when to fire charge weapons
             if (!weapon.isCharged)
                 continue
 
