@@ -28,7 +28,7 @@ object FontPalette {
 
     val DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog"
     val HELP_MSG = "Press F1 to clear the string, F2 for sample, F3 and arrow keys to view rawfonts, F4 for" +
-            " baseline, F5 for legacy mode, type to edit, and up/down to scale the font"
+            " baseline, type to edit, and up/down to scale the font"
 
     val BASELINE_COLOUR = Color(255, 0, 0, 128)
 
@@ -45,7 +45,6 @@ object FontPalette {
         private var fontSize: Int = 1
 
         private var baseline = false
-        private var legacyMode = false
 
         override fun update(container: GameContainer, delta: Int) {}
 
@@ -64,8 +63,6 @@ object FontPalette {
                 return
             }
 
-            utilFont.drawString(50f, 35f, "Legacy: $legacyMode", Color.black)
-
             val drawStr = when {
                 text.endsWith(' ') || text.startsWith(' ') -> "'$text'"
                 else -> text
@@ -78,9 +75,7 @@ object FontPalette {
 
                 fnt.scale = fontSize.toFloat()
 
-                @Suppress("DEPRECATION")
-                val drawFunc = if (legacyMode) fnt::drawStringLegacy else fnt::drawString
-                drawFunc(150f, y, drawStr, Color.black)
+                fnt.drawString(150f, y, drawStr, Color.black)
 
                 if (baseline) {
                     g.color = BASELINE_COLOUR
@@ -123,7 +118,6 @@ object FontPalette {
 
                 Input.KEY_F3 -> rawFontMode = !rawFontMode
                 Input.KEY_F4 -> baseline = !baseline
-                Input.KEY_F5 -> legacyMode = !legacyMode
                 Input.KEY_UP -> fontSize = min(fontSize + 1, 5)
                 Input.KEY_DOWN -> fontSize = max(fontSize - 1, 1)
                 else -> handled = false

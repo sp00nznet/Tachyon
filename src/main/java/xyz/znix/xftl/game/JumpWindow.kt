@@ -343,9 +343,9 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         })
 
         // Draw the top-left map label tab
-        val tab = "BEACON MAP"
+        val tab = game.translator["map_title"]
         val tabWidth = UIUtils.drawTab(font, tab, titleTab, position.x.f, position.y.f, 20f, 38f)
-        font.drawStringLegacy(position.x + 21f, position.y + 26f, tab, Constants.JUMP_DISABLED_TEXT)
+        font.drawString(position.x + GLOW + 14f, position.y + GLOW + 25f, tab, Constants.JUMP_DISABLED_TEXT)
 
         // Draw the rest of the top, going clockwise to the right side
         drawSide(Direction.UP, tabWidth.toInt())
@@ -392,7 +392,9 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             txtFont.drawString(x + tx.f, y + 20f, text, Constants.SECTOR_CUTOUT_TEXT)
         }
 
-        font.drawStringLegacy(position.x + 13f, position.y + size.y + 8f, "SECTOR", Constants.JUMP_DISABLED_TEXT)
+        val sectorText = game.translator["map_sector"]
+        val sectorTextY = position.y + size.y - GLOW + 22f
+        font.drawString(position.x + 13f, sectorTextY, sectorText, Constants.JUMP_DISABLED_TEXT)
 
         val sectorName = game.translator["sectorname_" + sector.type.name]
         drawCutout(position.x + 141, position.y + size.y - 8, 38, (sector.sectorNumber + 1).toString())
@@ -510,11 +512,14 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         val strWidth = beaconLabelFont.getWidth(text)
 
-        labelWhite[0].draw(pos.x + 15, pos.y - 17)
-        labelWhite[1].draw(pos.x + 34f, pos.y - 17f, strWidth - 8f, 32f)
-        labelWhite[2].draw(pos.x + 26 + strWidth, pos.y - 17)
+        val boxTop = pos.y - 11
+        val boxTopWithGlow = boxTop - 6
 
-        beaconLabelFont.drawStringLegacy(pos.x + 30f, pos.y - 4f, text, Constants.SECTOR_CUTOUT_TEXT)
+        labelWhite[0].draw(pos.x + 15, boxTopWithGlow)
+        labelWhite[1].draw(pos.x + 34f, boxTopWithGlow.f, strWidth - 8f, 32f)
+        labelWhite[2].draw(pos.x + 26 + strWidth, boxTopWithGlow)
+
+        beaconLabelFont.drawString(pos.x + 30f, boxTop + 10f, text, Constants.SECTOR_CUTOUT_TEXT)
     }
 
     private fun drawCorner(edge: Direction) {

@@ -165,7 +165,8 @@ object Buttons {
                     hovered -> Constants.JUMP_READY_TEXT_HOVER
                     else -> Constants.JUMP_READY_TEXT
                 }
-                font.drawStringLegacy(ftlX + 8f, ftlY + 18f, "JUMP", textColour)
+                val jumpText = game.translator["button_jump"]
+                font.drawStringCentred(pos.x.f, pos.y + 26f, 84f, jumpText, textColour)
             } else {
                 val suffix = if (canCharge) "" else "_off"
                 val width = (ship.ftlChargeProgress * 74).toInt().coerceAtMost(74)

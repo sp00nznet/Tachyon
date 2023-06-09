@@ -133,31 +133,6 @@ class SILFontLoader : Font {
         throw UnsupportedOperationException("not implemented")
     }
 
-    /**
-     * Draw a string using the legacy (incorrect) positioning, which made 'P' elevated well above
-     * where they should be.
-     *
-     * The new [drawString] function always draws at a font's baseline, which should make working
-     * with it much nicer too.
-     */
-    @Deprecated(message = "Use the regular drawString instead")
-    fun drawStringLegacy(x: Float, y: Float, text: String, col: Color) {
-        var next = x
-        for (ch in text) {
-            val info = chars[ch] ?: error("Unknown char $ch")
-            val cy = y + (scale * (height - info.h - baseline)).roundToInt()
-            next += (info.prekern * scale).roundToInt()
-            val cx = next.roundToInt()
-            picture.draw(
-                cx.f, cy,
-                cx.f + info.w * scale, cy + info.h * scale,
-                info.x.f, info.y.f,
-                (info.x + info.w).f, (info.y + info.h).f, col
-            )
-            next += ((info.w + info.postkern) * scale).roundToInt()
-        }
-    }
-
     override fun drawString(x: Float, y: Float, text: String, col: Color) {
         drawStringTruncated(x, y, Float.MAX_VALUE, text, col)
     }
@@ -193,11 +168,6 @@ class SILFontLoader : Font {
     fun drawStringCentred(x: Float, y: Float, width: Float, text: String, col: Color) {
         val textX = x + (width - getWidth(text)) / 2
         drawString(textX, y, text, col)
-    }
-
-    @Deprecated(message = "Uses the legacy baseline drawing function")
-    fun drawStringLeftAlignedLegacy(x: Float, y: Float, text: String, colour: Color) {
-        drawStringLegacy(x - getWidth(text), y, text, colour)
     }
 
     fun drawStringLeftAligned(x: Float, y: Float, text: String, colour: Color) {

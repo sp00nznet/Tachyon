@@ -503,8 +503,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             selectWeaponClickEvent = null
         }
 
-        g.font = weaponNameText
-
         // Find the longest charge time of all equipped weapons
         maxWeaponChargeTime = ship.hardpoints.stream()
             .map { it.weapon }
@@ -673,14 +671,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
         hullBoxImage.draw(0f, 0f)
 
-        val labelImg = when {
+        val hullLabelImg = when {
             isHullBoxRed -> game.getImg("img/statusUI/top_hull_red_label.png")
             else -> game.getImg("img/statusUI/top_hull_label.png")
         }
-        val txt = "HULL"
-        UIUtils.drawTab(font, txt, labelImg, 0f, 0f, 10f, 30f)
-
-        font.drawStringLegacy(9f, 21f, "HULL", UI_TEXT_COLOUR_1)
+        val hullText = game.translator["status_hull"]
+        UIUtils.drawTab(font, hullText, hullLabelImg, 0f, 0f, 10f, 30f)
+        font.drawString(9f, 25f, hullText, UI_TEXT_COLOUR_1)
 
         // Draw the hull bar
 
@@ -815,7 +812,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val textWidth = numberFont.getWidth(count.toString())
             val textInternalX = ceil((areaWidth - textWidth) / 2f).toInt()
 
-            numberFont.drawStringLegacy(areaStart + textInternalX, shieldY + 23f, count.toString(), Color.white)
+            numberFont.drawString(areaStart + textInternalX, shieldY + 27f, count.toString(), Color.white)
         }
 
         val shieldsEndX = 122
@@ -833,14 +830,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val oxyY = 96
         game.getImg("img/statusUI/top_evade_oxygen.png").draw(1f, oxyY - 7f)
 
-        val evadeBoxLeft = 92f
+        val evadeTextRight = 92f
 
         // Evade
-        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8f, "${ship.evasion}%", Color.white)
+        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 15f, "${ship.evasion}%", Color.white)
 
         // Oxygen
         val avgOxygen = round(ship.averageOxygen * 100).toInt()
-        oxygenEvadeFont.drawStringLeftAlignedLegacy(evadeBoxLeft, oxyY + 8f + 22, "$avgOxygen%", Color.white)
+        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 37f, "$avgOxygen%", Color.white)
 
         // Draw all the crew boxes
         // TODO filter out boarders etc
@@ -1258,7 +1255,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         currentWindow = GameOverWindow(game, outcome)
     }
 
-    private abstract inner class WeaponDroneButton(pos: IPoint, val slotNumber: Int, size: ConstPoint) :
+    private abstract inner class WeaponDroneButton(pos: IPoint, slotNumber: Int, size: ConstPoint) :
         Button(game, pos, size) {
 
         abstract val empty: Boolean
@@ -1284,12 +1281,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         // Move these out to save a few allocations
         // (it's probably well into paranoid territory, but why not)
-        private val nameLines by lazy {
-            name
-                .replaceFirst(" ".toRegex(), "\n")
-                .split("\n".toRegex())
-                .dropLastWhile { it.isEmpty() }
-        }
+        private val nameLines by lazy { weaponNameText.wrapString(name, 58) }
         private val weaponNumberString = (slotNumber + 1).toString()
 
         override fun draw(g: Graphics) {
@@ -1361,10 +1353,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             // Draw the item name, which is split across
             // multiple lines to fit in the box.
-            var lineY = pos.y + 8
+            var lineY = pos.y + 15
             for (line in nameLines) {
-                val font = g.font as SILFontLoader
-                font.drawStringLegacy(pos.x + 26f, lineY.f, line, mainColour)
+                weaponNameText.drawString(pos.x + 26f, lineY.f, line, mainColour)
                 lineY += 15
             }
 
