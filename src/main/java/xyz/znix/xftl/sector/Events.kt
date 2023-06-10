@@ -7,7 +7,6 @@ import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.requireAttributeValue
-import kotlin.random.Random
 
 // Many of the comments in this file came from ftlwiki.com (now unfortunately
 // offline, but accessable via the wayback machine):
@@ -258,23 +257,21 @@ class Event(
 
         // Pick names for the new crewmembers
         for (crew in addedCrew) {
-            val name: String
-
-            if (crew.nameId != null) {
-                // Specifically named by the event (eg Slocknog)
-                name = game.translator[crew.nameId]
-            } else {
-                // TODO for humans, pick a matching name and gender
-                // TODO language selection
-                name = game.nameManager.getForGender(null, "en", Random.Default)
-            }
-
             // TODO filter out anaerobic when AE is off
             // TODO use the proper way of figuring out what crew are given as rewards
             //  in each sector, so we're not giving out crystals all the time.
             val raceName = crew.race ?: CrewBlueprint.PLAYABLE_RACE_NAMES.random()
             val race = game.blueprintManager[raceName] as CrewBlueprint
-            resourcesGained.crew.add(LivingCrewInfo.generateWithName(race, name))
+
+            val info = if (crew.nameId != null) {
+                // Specifically named by the event (eg Slocknog)
+                val name = game.translator[crew.nameId]
+                LivingCrewInfo.generateWithName(race, name)
+            } else {
+                LivingCrewInfo.generateRandom(race, game)
+            }
+
+            resourcesGained.crew.add(info)
         }
 
         // Select crewmembers to kill

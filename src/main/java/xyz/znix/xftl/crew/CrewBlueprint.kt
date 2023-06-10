@@ -31,18 +31,41 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
     val layerImageNames: List<String>
 
     /**
+     * In the case of humans, this is the female version of [layerImageNames].
+     *
+     * For all other races, this is empty.
+     */
+    val femaleLayerImageNames: List<String>
+
+    /**
+     * The number of colour variations this crewmember has, not including
+     * gender for humans.
+     */
+    val baseNumberOfColours: Int = colourFilters.map { it.size }.max() ?: 0
+
+    /**
      * The number of colour variations this crewmember has.
      *
      * This is distinct from [colourFilters].size, as humans have male/female variants.
      */
-    // TODO human male/female variants
-    val numberOfColours: Int = colourFilters.map { it.size }.max() ?: 0
+    val numberOfColours: Int = run {
+        return@run when (name) {
+            "human" -> baseNumberOfColours * 2
+            else -> baseNumberOfColours
+        }
+    }
 
     init {
         // Load all the layer images for this race
         layerImageNames = ArrayList()
         for (i in 1..colourFilters.size) {
             layerImageNames += "img/people/${name}_layer$i.png"
+        }
+
+        if (name == "human") {
+            femaleLayerImageNames = layerImageNames.map { it.replace("human", "female") }
+        } else {
+            femaleLayerImageNames = emptyList()
         }
     }
 

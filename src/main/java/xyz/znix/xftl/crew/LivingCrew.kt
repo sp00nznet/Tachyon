@@ -46,9 +46,7 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         }
 
     override fun drawImage(x0: Float, y0: Float, x1: Float, y1: Float, baseFrame: Image, alpha: Float) {
-        val baseImage = icon.spec.sheet.sheet
-
-        info.drawImage(room.ship.sys, x0, y0, x1, y1, baseFrame, baseImage, alpha)
+        info.drawImage(room.ship.sys, x0, y0, x1, y1, baseFrame, alpha)
     }
 
     override fun onMidTeleport() {
@@ -172,20 +170,24 @@ class LivingCrewInfo(
     val skills = EnumMap<Skill, Float>(Skill.values().associate { Pair(it, 0f) })
 
     /**
+     * For humans, this determines whether they're male or female.
+     */
+    val isFemale: Boolean get() = colour >= race.baseNumberOfColours
+
+    /**
      * Draw this crew's portrait, without having to construct the crewmember instance.
      *
      * Useful for events and shops.
      */
     fun drawPortrait(game: InGameState, x: Int, y: Int, scale: Float = 1f) {
         val animation = game.animations["${race.name}_portrait"]
-        val baseImage = animation.sheet.sheet
         val portrait = animation.spriteAt(0)
 
         drawImage(
             game,
             x.f, y.f,
             x.f + portrait.width * scale, y.f + portrait.height * scale,
-            portrait, baseImage,
+            portrait,
             1f
         )
     }
@@ -195,13 +197,25 @@ class LivingCrewInfo(
         game: InGameState,
         x0: Float, y0: Float,
         x1: Float, y1: Float,
-        baseFrame: Image, fullBaseImage: Image,
+        baseFrame: Image,
         alpha: Float
     ) {
         val texX0 = (baseFrame.textureOffsetX * baseFrame.texture.textureWidth).toInt()
         val texY0 = (baseFrame.textureOffsetY * baseFrame.texture.textureHeight).toInt()
         val texX1 = texX0 + baseFrame.width
         val texY1 = texY0 + baseFrame.height
+
+        // Find the sprite sheet for this race. In the case of humans, there's
+        // separate male/female sprite sheets, with the unfortunate naming
+        // of 'human' for the male version and 'female' for the female version.
+        val effectiveColour = if (isFemale) colour - race.baseNumberOfColours else colour
+        val baseAnimationName = if (isFemale) "female" else race.name
+        val imageNames = if (isFemale) race.femaleLayerImageNames else race.layerImageNames
+
+        val fullBaseImage = when {
+            isFemale -> game.getImg("img/people/female_base.png")
+            else -> game.animations["${baseAnimationName}_portrait"].sheet.sheet
+        }
 
         // Draw the base image, without any tinting
         fullBaseImage.filter = Image.FILTER_NEAREST
@@ -210,11 +224,11 @@ class LivingCrewInfo(
         fullBaseImage.alpha = 1f
 
         // Draw all the layers
-        for ((index, path) in race.layerImageNames.withIndex()) {
+        for ((index, path) in imageNames.withIndex()) {
             val layer = game.getImg(path)
 
             val colours = race.colourFilters[index]
-            val filter = colours[colour % colours.size]
+            val filter = colours[effectiveColour % colours.size]
 
             layer.filter = Image.FILTER_NEAREST
             layer.alpha = alpha
@@ -320,9 +334,22 @@ class LivingCrewInfo(
     companion object {
         @JvmStatic
         fun generateRandom(race: CrewBlueprint, game: InGameState): LivingCrewInfo {
-            // TODO language and gender
-            val name = game.nameManager.getForGender(null, "en", Random.Default)
-            return generateWithName(race, name)
+            val isMale = when {
+                race.name != "human" -> null // Aliens are genderless
+                else -> Random.nextBoolean()
+            }
+            val colour: Int = when {
+                race.numberOfColours == 0 -> 0
+
+                // For humans, make sure we set the crew's visual gender to match their name.
+                isMale == true -> Random.nextInt(race.baseNumberOfColours)
+                isMale == false -> Random.nextInt(race.baseNumberOfColours) + race.baseNumberOfColours
+
+                else -> Random.nextInt(race.numberOfColours) // Aliens
+            }
+            // TODO pick names with the correct language
+            val name = game.nameManager.getForGender(isMale, "en", Random.Default)
+            return LivingCrewInfo(race, name, colour)
         }
 
         fun generateWithName(race: CrewBlueprint, name: String): LivingCrewInfo {
