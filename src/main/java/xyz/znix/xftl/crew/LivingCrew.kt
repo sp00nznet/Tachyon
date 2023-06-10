@@ -1,18 +1,18 @@
 package xyz.znix.xftl.crew
 
 import org.jdom2.Element
+import org.newdawn.slick.Color
+import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
-import xyz.znix.xftl.AbstractSystem
-import xyz.znix.xftl.Animations
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import java.util.*
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
@@ -230,6 +230,51 @@ class LivingCrewInfo(
             progress == 1f -> SkillLevel.MAX
             progress >= 0.5f -> SkillLevel.PARTIAL
             else -> SkillLevel.BASE
+        }
+    }
+
+    fun drawSkillProgressBar(g: Graphics, x: Int, y: Int, width: Int, height: Int, skill: Skill) {
+        val level = getSkillLevel(skill)
+
+        val baseColour = when (level) {
+            SkillLevel.MAX -> Constants.SYS_ENERGY_REPAIR
+            SkillLevel.PARTIAL -> Constants.SYS_ENERGY_ACTIVE
+            else -> Color.transparent
+        }
+        val barColour = when (level) {
+            // Max doesn't draw a bar
+            SkillLevel.PARTIAL -> Constants.SYS_ENERGY_REPAIR
+            else -> Constants.SYS_ENERGY_ACTIVE
+        }
+
+        // Convert the 0-1 progress amount (where the green level is 0.5)
+        // to 0-1 over the range of a single colour.
+        val rawSkillProgress = skills.getValue(skill)
+        val progress = when (level) {
+            SkillLevel.MAX -> 0f
+            SkillLevel.PARTIAL -> (rawSkillProgress - 0.5f) * 2f
+            else -> rawSkillProgress * 2f
+        }
+
+        // Draw the outer box around the bar.
+        // Note that drawRect draws its lower and right lines outside
+        // the specified region, so -1 from width and height.
+        g.color = Color.white
+        g.drawRect(x.f, y.f, width - 1f, height - 1f)
+
+        val innerBarWidth = width - 2
+        val progressWidth = (innerBarWidth * progress).roundToInt()
+
+        g.color = baseColour
+        g.fillRect(x + 1f, y + 1f, innerBarWidth.f, height - 2f)
+
+        g.color = barColour
+        g.fillRect(x + 1f, y + 1f, progressWidth.f, height - 2f)
+
+        // Draw the white divider line between yellow and green sections
+        if (level == SkillLevel.PARTIAL) {
+            g.color = Color.white
+            g.fillRect(x + 1f + progressWidth, y + 1f, 1f, height - 2f)
         }
     }
 

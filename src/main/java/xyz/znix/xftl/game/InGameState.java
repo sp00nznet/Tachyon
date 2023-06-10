@@ -189,6 +189,24 @@ public class InGameState extends MainGame.GameState {
 
                 getDebugConsole().mouseWheelMoved(change);
             }
+
+            @Override
+            public void mousePressed(int button, int x, int y) {
+                if (debugConsoleVisible)
+                    debugConsole.mousePressed(button, x, y);
+            }
+
+            @Override
+            public void mouseReleased(int button, int x, int y) {
+                if (debugConsoleVisible)
+                    debugConsole.mouseReleased(button, x, y);
+            }
+
+            @Override
+            public void mouseDragged(int oldX, int oldY, int newX, int newY) {
+                if (debugConsoleVisible)
+                    debugConsole.mouseDragged(oldX, oldY, newX, newY);
+            }
         });
     }
 

@@ -8,15 +8,10 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
-import xyz.znix.xftl.Blueprint
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.crew.CrewBlueprint
-import xyz.znix.xftl.crew.LivingCrew
-import xyz.znix.xftl.crew.LivingCrewInfo
+import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.sector.*
@@ -76,6 +71,7 @@ class DebugConsole(var game: InGameState) {
         Cmd("fix", null, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
         Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
         Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
+        Cmd("skills", 0, this::cmdSkills, "Edit the crew's skills"),
         Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
         Cmd("killcrew", 0, this::cmdKillCrew, "Kill one all of your crewmembers"),
         Cmd("sectors", 0, this::cmdSectors, "Open the sector map, regardless of the current beacon"),
@@ -218,6 +214,18 @@ class DebugConsole(var game: InGameState) {
                 input += c
             }
         }
+    }
+
+    fun mousePressed(button: Int, x: Int, y: Int) {
+        continued?.mousePressed(button, x, y)
+    }
+
+    fun mouseReleased(button: Int, x: Int, y: Int) {
+        continued?.mouseReleased(button, x, y)
+    }
+
+    fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) {
+        continued?.mouseDragged(oldX, oldY, newX, newY)
     }
 
     fun mouseWheelMoved(amount: Int) {
@@ -486,6 +494,121 @@ class DebugConsole(var game: InGameState) {
         // This saves us from having to maintain two lists of the supported crew.
         val info = LivingCrewInfo.generateRandom(blueprint, game)
         ship.addCrewMember(info, false)
+    }
+
+    private fun cmdSkills(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        class SkillBox(val x: Int, val y: Int, val width: Int, val height: Int, val crew: LivingCrew, val skill: Skill)
+
+        continued = object : ContinuedCommand() {
+            val boxes = ArrayList<SkillBox>()
+            var dragging: SkillBox? = null
+
+            override val prompt: String get() = "ENTER TO EXIT> "
+
+            override fun run(line: String) {
+                // Do nothing, the skill customisation is graphical
+            }
+
+            override fun render(gc: GameContainer, g: Graphics, height: Float) {
+                super.render(gc, g, height)
+
+                boxes.clear()
+
+                val x = 20
+                var y = height.roundToInt() + 5
+
+                val nameIconWidth = 90
+
+                val boxHeight = 30
+                val boxWidth = gc.width - x * 2
+
+                val skillWidth = (boxWidth - nameIconWidth) / 6
+
+                // Draw the info text
+                g.color = Color(55, 55, 55, 180)
+                g.fillRect(x.f, y.f, boxWidth.f, 20f)
+                font.drawString(x + 20f, y + 15f, "Drag to adjust skills, right-click to toggle level", Color.white)
+                y += 25
+
+                for (crew in ship.crew) {
+                    if (crew !is LivingCrew)
+                        continue
+
+                    g.color = Color(55, 55, 55, 180)
+                    g.fillRect(x.f, y.f, boxWidth.f, boxHeight.f)
+
+                    crew.drawPortrait(x, y, 1f)
+
+                    font.drawString(x + 30f, y + 20f, crew.info.name, Color.white)
+
+                    for ((skillId, skill) in Skill.values().withIndex()) {
+                        val skillX = x + nameIconWidth + skillWidth * skillId
+
+                        val icon = game.getImg(skill.iconPath)
+                        icon.draw(skillX, y)
+
+                        // We'll re-use this as a slider
+                        val barX = skillX + icon.width + 5
+                        val barY = y + 10
+                        val barWidth = skillWidth - icon.width - 10
+                        val barHeight = 8
+
+                        crew.info.drawSkillProgressBar(g, barX, barY, barWidth, barHeight, skill)
+
+                        boxes += SkillBox(barX, y, barWidth, boxHeight, crew, skill)
+                    }
+
+                    y += boxHeight + 5
+                }
+            }
+
+            override fun mouseReleased(button: Int, x: Int, y: Int) {
+                dragging = null
+            }
+
+            override fun mousePressed(button: Int, x: Int, y: Int) {
+                dragging = null
+                val box = boxes.firstOrNull { x in it.x..it.x + it.width && y in it.y..it.y + it.height }
+
+                // Right-click toggles between the upper/lower levels
+                if (box != null && button == Input.MOUSE_RIGHT_BUTTON) {
+                    val newLevel = when (box.crew.getSkillLevel(box.skill)) {
+                        SkillLevel.BASE -> 0.5f
+                        else -> 0f
+                    }
+                    box.crew.info.skills[box.skill] = newLevel
+                }
+
+                if (button == Input.MOUSE_LEFT_BUTTON) {
+                    dragging = box
+
+                    // Make a single click change the value
+                    mouseDragged(x, y, x, y)
+                }
+            }
+
+            override fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) {
+                val box = dragging ?: return
+
+                val dragProgress = ((newX - box.x) / box.width.f).coerceIn(0f..1f)
+
+                // Dragging doesn't switch between the green/nothing and green/yellow modes
+                val oldValue = box.crew.info.skills.getValue(box.skill)
+                val newValue = when {
+                    oldValue < 0.5f -> (dragProgress / 2f).coerceIn(0f..0.4999f)
+                    else -> 0.5f + dragProgress / 2f
+                }
+                box.crew.info.skills[box.skill] = newValue
+            }
+
+            override fun keyPressed(key: Int, c: Char): Boolean {
+                // Handle all input to block typing, except for enter to let the user close this.
+                if (key == Input.KEY_ENTER) {
+                    return false
+                }
+                return true
+            }
+        }
     }
 
     private fun cmdKill(@Suppress("UNUSED_PARAMETER") args: List<String>) {
@@ -1725,6 +1848,9 @@ class DebugConsole(var game: InGameState) {
         abstract val prompt: String
         open fun render(gc: GameContainer, g: Graphics, height: Float) {}
         open fun keyPressed(key: Int, c: Char): Boolean = false
+        open fun mousePressed(button: Int, x: Int, y: Int) = Unit
+        open fun mouseReleased(button: Int, x: Int, y: Int) = Unit
+        open fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) = Unit
         abstract fun run(line: String)
     }
 

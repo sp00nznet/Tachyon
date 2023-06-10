@@ -26,7 +26,10 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
-import kotlin.math.*
+import kotlin.math.atan2
+import kotlin.math.ceil
+import kotlin.math.pow
+import kotlin.math.round
 import kotlin.random.Random
 
 class PlayerShipUI(val ship: Ship, private val game: InGameState) {
@@ -1001,7 +1004,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         crew: LivingCrew, skill: Skill
     ) {
         val y = baseY + skill.ordinal * 24 // Not 26, which is the icon height
-        val rawSkillProgress = crew.info.skills.getValue(skill)
         val skillLevel = crew.getSkillLevel(skill)
 
         // Draw the icon
@@ -1014,45 +1016,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         icon.draw(x, y, iconColour)
 
         // Draw the progress bar
-        val baseColour = when (skillLevel) {
-            SkillLevel.MAX -> SYS_ENERGY_REPAIR
-            SkillLevel.PARTIAL -> SYS_ENERGY_ACTIVE
-            else -> Color.transparent
-        }
-        val barColour = when (skillLevel) {
-            // Max doesn't draw a bar
-            SkillLevel.PARTIAL -> SYS_ENERGY_REPAIR
-            else -> SYS_ENERGY_ACTIVE
-        }
-
-        // Convert the 0-1 progress amount (where the green level is 0.5)
-        // to 0-1 over the range of a single colour.
-        val progress = when (skillLevel) {
-            SkillLevel.MAX -> 0f
-            SkillLevel.PARTIAL -> (rawSkillProgress - 0.5f) * 2f
-            else -> rawSkillProgress * 2f
-        }
-
-        val barX = x + 30
-        val barY = y + 9
-
-        g.color = Color.white
-        g.drawRect(barX.f, barY.f, 39f, 7f)
-
-        val innerBarWidth = 38
-        val progressWidth = (innerBarWidth * progress).roundToInt()
-
-        g.color = baseColour
-        g.fillRect(barX + 1f, barY + 1f, 38f, 6f)
-
-        g.color = barColour
-        g.fillRect(barX + 1f, barY + 1f, progressWidth.f, 6f)
-
-        // Draw the white divider line between yellow and green sections
-        if (skillLevel == SkillLevel.PARTIAL) {
-            g.color = Color.white
-            g.fillRect(barX + 1f + progressWidth, barY + 1f, 1f, 6f)
-        }
+        crew.info.drawSkillProgressBar(g, x + 30, y + 9, 40, 8, skill)
     }
 
     // Draw the box containing the weapon or drone selection buttons
