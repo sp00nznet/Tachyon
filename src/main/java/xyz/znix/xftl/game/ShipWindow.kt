@@ -169,7 +169,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         if (hoveredSystem != null) {
             val undoablePower = systemUpgradeUndos[hoveredSystem]?.size ?: 0
             infoPanel.drawDescriptionBoxSystem(hoveredSystem.blueprint)
-            infoPanel.drawPowerBox(g, hoveredSystem.blueprint, hoveredSystem.energyLevels, undoablePower)
+            infoPanel.drawSystemPowerBox(g, hoveredSystem.blueprint, hoveredSystem.energyLevels, undoablePower)
         }
 
         // Draw the systems
@@ -516,8 +516,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
                 // Draw the information about this crewmember while hovering over them
                 if (hovered) {
-                    // TODO draw skills
-                    infoPanel.drawDescriptionBoxCrew(crew.blueprint)
+                    infoPanel.drawCrew(g, crew.info)
                 }
             }
 

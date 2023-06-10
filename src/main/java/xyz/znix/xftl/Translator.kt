@@ -72,6 +72,10 @@ class GameText private constructor(private val literal: String?, private val key
         fun localised(key: String): GameText {
             return GameText(null, key)
         }
+
+        fun literal(string: String): GameText {
+            return GameText(string, null)
+        }
     }
 }
 

@@ -382,7 +382,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                         return
 
                     infoPanel.drawDescriptionBoxSystem(system)
-                    infoPanel.drawPowerBox(g, system, system.startPower, 0)
+                    infoPanel.drawSystemPowerBox(g, system, system.startPower, 0)
                 }
             })
         }
@@ -451,8 +451,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     if (crew == null)
                         return
 
-                    // TODO draw skills box
-                    infoPanel.drawDescriptionBoxCrew(crew.race)
+                    infoPanel.drawCrew(g, crew)
                 }
             }
         }

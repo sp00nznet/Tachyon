@@ -5,7 +5,6 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.Skill
-import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -17,12 +16,7 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     val evasion: Int
         // Note that the crew member's bonus is only applied when they're
         // actually manning the system - being in the room isn't enough.
-        get() = when (getSkillLevel(Skill.PILOTING)) {
-            null -> 0
-            SkillLevel.BASE -> 5
-            SkillLevel.PARTIAL -> 7
-            SkillLevel.MAX -> 10
-        }
+        get() = getSkillLevel(Skill.PILOTING)?.let { SKILL_BONUSES[it.ordinal] } ?: 0
 
     private val computerPoint by lazy { configuration.computerPoint ?: ConstPoint.ZERO }
 
@@ -63,6 +57,8 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
     companion object {
         val INFO: SystemInfo = PilotingInfo
+
+        val SKILL_BONUSES = listOf(5, 7, 10)
     }
 }
 

@@ -6,7 +6,6 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.Skill
-import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -42,12 +41,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         } else {
             // Don't let manning speed up discharging the weapons.
 
-            val manningChargeSub = when (getSkillLevel(Skill.WEAPONS)) {
-                null -> 0f
-                SkillLevel.BASE -> 0.1f
-                SkillLevel.PARTIAL -> 0.15f
-                SkillLevel.MAX -> 0.2f
-            }
+            val manningChargeSub = getSkillLevel(Skill.WEAPONS)?.let { SKILL_BONUSES[it.ordinal] / 100f } ?: 0f
 
             // This gets applied weirdly - 1-manningChargeSub is multiplied to the
             // weapon charge time, which alternatively means dividing
@@ -347,6 +341,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     companion object {
         val INFO: SystemInfo = WeaponsInfo
+        val SKILL_BONUSES = listOf(10, 15, 20)
     }
 }
 

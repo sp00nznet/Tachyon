@@ -4,7 +4,6 @@ import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.Skill
-import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -21,12 +20,7 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 return 0
 
             val base = EVASIONS[powerSelected - 1]
-            val bonus = when (getSkillLevel(Skill.ENGINES)) {
-                null -> 0
-                SkillLevel.BASE -> 5
-                SkillLevel.PARTIAL -> 7
-                SkillLevel.MAX -> 10
-            }
+            val bonus = getSkillLevel(Skill.ENGINES)?.let { SKILL_BONUSES[it.ordinal] } ?: 0
 
             return base + bonus
         }
@@ -79,6 +73,7 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // https://ftl.fandom.com/wiki/Engines
         val EVASIONS: Array<Int> = arrayOf(5, 10, 15, 20, 25, 28, 31, 35)
         val CHARGE_RATES = arrayOf(1f, 1.26f, 1.58f, 1.84f, 2.11f, 2.4f, 2.68f, 2.96f)
+        val SKILL_BONUSES = listOf(5, 7, 10)
 
         val INFO: SystemInfo = EngineInfo
     }

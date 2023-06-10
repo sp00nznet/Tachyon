@@ -3,6 +3,7 @@ package xyz.znix.xftl
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.*
+import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import java.io.File
@@ -73,6 +74,18 @@ fun Color.lerp(other: Color, proportion: Float): Color {
 
 fun ClosedFloatingPointRange<Float>.random(rand: Random): Float {
     return start + rand.nextFloat() * (endInclusive - start)
+}
+
+fun String.replaceArg(value: Float, index: Int = 1): String {
+    return replace("\\$index", UIUtils.formatFloat(value))
+}
+
+fun String.replaceArg(value: Int, index: Int = 1): String {
+    return replace("\\$index", value.toString())
+}
+
+fun String.replaceArg(value: String, index: Int = 1): String {
+    return replace("\\$index", value)
 }
 
 object Utils {

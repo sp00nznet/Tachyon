@@ -5,7 +5,6 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.Skill
-import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -75,12 +74,8 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // The shield charge booster and manning multiply together, per the wiki.
         val boosterRate = 1f + 0.15f * ship.augments.count { it.name == AugmentBlueprint.SHIELD_CHARGE_BOOSTER }
-        val manningRate = when (getSkillLevel(Skill.SHIELDS)) {
-            null -> 1f
-            SkillLevel.BASE -> 1.1f
-            SkillLevel.PARTIAL -> 1.2f
-            SkillLevel.MAX -> 1.3f
-        }
+        val manningBonus = getSkillLevel(Skill.SHIELDS)?.let { SKILL_BONUSES[it.ordinal] } ?: 0
+        val manningRate = 1f + manningBonus / 100f
         val chargeRate = boosterRate * manningRate
 
         rechargeTimer += dt * chargeRate
@@ -189,6 +184,7 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     companion object {
         val INFO: SystemInfo = ShieldsInfo
+        val SKILL_BONUSES = listOf(10, 20, 30)
     }
 }
 

@@ -11,6 +11,10 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.systems.Engines
+import xyz.znix.xftl.systems.Piloting
+import xyz.znix.xftl.systems.Shields
+import xyz.znix.xftl.systems.Weapons
 import java.util.*
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -21,19 +25,9 @@ import kotlin.random.Random
 abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Room, mode: SlotType) :
     AbstractCrew(blueprint, anims, room, mode) {
 
-    override val repairSpeed: Float
-        get() = when (getSkillLevel(Skill.REPAIRS)) {
-            SkillLevel.BASE -> 1f
-            SkillLevel.PARTIAL -> 1.1f
-            SkillLevel.MAX -> 1.2f
-        }
+    override val repairSpeed: Float get() = 1f + REPAIR_SKILL_BONUS[getSkillLevel(Skill.REPAIRS).ordinal] / 100f
 
-    override val attackDamageMult: Float
-        get() = when (getSkillLevel(Skill.COMBAT)) {
-            SkillLevel.BASE -> 1f
-            SkillLevel.PARTIAL -> 1.1f
-            SkillLevel.MAX -> 1.2f
-        }
+    override val attackDamageMult: Float get() = 1f + COMBAT_SKILL_BONUS[getSkillLevel(Skill.COMBAT).ordinal] / 100f
 
     var info: LivingCrewInfo = LivingCrewInfo.generateRandom(blueprint, room.ship.sys)
 
@@ -138,6 +132,11 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         SaveUtil.getAttrRef(elem, "ownerShip", refs, Ship::class.java) { ownerShip = it }
         info = LivingCrewInfo.loadFromXMLWithRace(elem, blueprint)
     }
+
+    companion object {
+        val REPAIR_SKILL_BONUS = listOf(0, 10, 20)
+        val COMBAT_SKILL_BONUS = listOf(0, 10, 20)
+    }
 }
 
 /**
@@ -230,6 +229,28 @@ class LivingCrewInfo(
             progress == 1f -> SkillLevel.MAX
             progress >= 0.5f -> SkillLevel.PARTIAL
             else -> SkillLevel.BASE
+        }
+    }
+
+    fun getSkillDescription(game: InGameState, skill: Skill): String {
+        val level = getSkillLevel(skill)
+        val levelNum = level.ordinal
+
+        return when (skill) {
+            Skill.PILOTING -> game.translator["pilot_skill"].replaceArg(Piloting.SKILL_BONUSES[levelNum])
+            Skill.ENGINES -> game.translator["engine_skill"].replaceArg(Engines.SKILL_BONUSES[levelNum])
+            Skill.SHIELDS -> game.translator["shield_skill"].replaceArg(Shields.SKILL_BONUSES[levelNum])
+            Skill.WEAPONS -> game.translator["weapon_skill"].replaceArg(Weapons.SKILL_BONUSES[levelNum])
+
+            Skill.REPAIRS -> when (level) {
+                SkillLevel.BASE -> game.translator["repair_0"]
+                else -> game.translator["repair_skilled"].replaceArg(LivingCrew.REPAIR_SKILL_BONUS[levelNum])
+            }
+
+            Skill.COMBAT -> when (level) {
+                SkillLevel.BASE -> game.translator["combat_0"]
+                else -> game.translator["combat_skilled"].replaceArg(LivingCrew.COMBAT_SKILL_BONUS[levelNum])
+            }
         }
     }
 

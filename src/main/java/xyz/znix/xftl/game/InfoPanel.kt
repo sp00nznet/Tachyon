@@ -4,7 +4,9 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Graphics
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.crew.LivingCrewInfo
+import xyz.znix.xftl.crew.Skill
+import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.systems.SystemBlueprint
@@ -13,6 +15,8 @@ import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.LaserBlueprint
 import kotlin.math.max
+
+// TODO vertically offset all the non-system boxes correctly
 
 class InfoPanel(private val game: InGameState) {
     private val systemLevelFont = game.getFont("JustinFont10")
@@ -94,18 +98,63 @@ class InfoPanel(private val game: InGameState) {
         drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, lines, INFO_HEIGHT_WEAPON)
     }
 
+    fun drawCrew(g: Graphics, info: LivingCrewInfo) {
+        val raceName = game.translator[info.race.title!!]
+        val title = GameText.literal("${info.name} ($raceName)")
+        val powers = info.race.powerStringIds.map { "-" + game.translator[it] }
+        drawDescriptionBox(title, info.race.desc, null, powers, INFO_HEIGHT_CREW)
+
+        // Draw the skills box
+        val skillsY = position.y + INFO_HEIGHT_CREW + 24
+        game.windowRenderer.render(position.x, skillsY, 323, 242)
+
+        val leftIconX = position.x + 9
+        val rightIconX = position.x + 164
+
+        titleFont.drawString(position.x + 28f, skillsY + 32f, game.translator["crew_skills"], Color.white)
+
+        for ((index, skill) in Skill.values().withIndex()) {
+            val row = index / 2
+            val iconX = if (index % 2 == 0) leftIconX else rightIconX
+            val iconY = skillsY + 46 + row * 66
+
+            val iconColour = when (info.getSkillLevel(skill)) {
+                SkillLevel.MAX -> Constants.SYS_ENERGY_REPAIR
+                SkillLevel.PARTIAL -> Constants.SYS_ENERGY_ACTIVE
+                else -> Constants.UI_BACKGROUND_GLOW_COLOUR
+            }
+            val icon = game.getImg(skill.iconPath)
+            icon.draw(iconX, iconY, iconColour)
+
+            // Draw the skill bar
+            info.drawSkillProgressBar(g, iconX + 30, iconY + 8, 110, 9, skill)
+
+            // Draw the description text
+            val baseDescription = info.getSkillDescription(game, skill)
+            val skillLocName = when (skill) {
+                Skill.PILOTING -> "pilot"
+                Skill.ENGINES -> "engines"
+                Skill.SHIELDS -> "shields"
+                Skill.WEAPONS -> "weapons"
+                Skill.REPAIRS -> "repair"
+                Skill.COMBAT -> "combat"
+            }
+            val description = game.translator[skillLocName + "_skill_infobox"].replaceArg(baseDescription)
+            val lines = tipFont.wrapString(description, 140)
+            val textCentreX = iconX + 85
+
+            for ((i, line) in lines.withIndex()) {
+                val lineY = iconY + 32 + i * 15
+                tipFont.drawStringCentred(textCentreX.f, lineY.f, 0f, line, Color.white)
+            }
+        }
+    }
+
     /**
      * Note: this does not render the system power bars!
      */
     fun drawDescriptionBoxSystem(blueprint: SystemBlueprint) {
         drawDescriptionBox(blueprint.title, blueprint.desc, null, emptyList(), INFO_HEIGHT_SYSTEM)
-    }
-
-    /**
-     * Note: this does not render the crew skills area!
-     */
-    fun drawDescriptionBoxCrew(blueprint: CrewBlueprint) {
-        drawDescriptionBox(blueprint.title, blueprint.desc, null, emptyList(), INFO_HEIGHT_CREW)
     }
 
     fun drawDescriptionBox(
@@ -161,7 +210,7 @@ class InfoPanel(private val game: InGameState) {
         }
     }
 
-    fun drawPowerBox(g: Graphics, system: SystemBlueprint, energyLevels: Int, undoablePower: Int) {
+    fun drawSystemPowerBox(g: Graphics, system: SystemBlueprint, energyLevels: Int, undoablePower: Int) {
         val x = position.x
         val y = position.y + 133
         val totalWidth = 333 // Maybe this comes from localisation?
