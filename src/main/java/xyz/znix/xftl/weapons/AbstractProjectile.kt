@@ -311,6 +311,9 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     // Used by defence drones.
     var firedByDrone: Boolean = false
 
+    // Used by the chain ion
+    var chainDamage: Int = 0
+
     val ship: Ship get() = target.ship
 
     override fun reachedTarget() {
@@ -359,8 +362,13 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     }
 
     protected open fun hitShields() {
-        if (type.ionDamage > 0 && ship.superShield == 0) {
-            ship.shields!!.dealDamage(0, type.ionDamage)
+        var ionDamage = type.ionDamage
+        if (type.ionDamage != 0) {
+            ionDamage += chainDamage
+        }
+
+        if (ionDamage > 0 && ship.superShield == 0) {
+            ship.shields!!.dealDamage(0, ionDamage)
         } else {
             ship.shields!!.popShieldLayer(type)
         }
@@ -375,6 +383,14 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
 
     protected open fun hitHull() {
         ship.damage(target, type)
+
+        if (chainDamage != 0) {
+            // I'm guessing this is how vanilla determines the damage to be done?
+            val ionDamage = if (type.ionDamage != 0) chainDamage else 0
+            val hullDamage = if (type.damage != 0) chainDamage else 0
+
+            ship.damage(target, hullDamage, hullDamage, ionDamage)
+        }
     }
 
     private fun resolveMissed() {
@@ -399,6 +415,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
 
         SaveUtil.addTagBoolIfTrue(elem, "drawUnderShip", drawUnderShip)
         SaveUtil.addTagBoolIfTrue(elem, "firedByDrone", firedByDrone)
+        SaveUtil.addTagInt(elem, "chainDamage", chainDamage, 0)
 
         if (missed != null) {
             SaveUtil.addTagBool(elem, "missed", missed!!)
@@ -410,6 +427,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
 
         drawUnderShip = SaveUtil.getOptionalTagBool(elem, "drawUnderShip") ?: false
         firedByDrone = SaveUtil.getOptionalTagBool(elem, "firedByDrone") ?: false
+        chainDamage = SaveUtil.getOptionalTagInt(elem, "chainDamage") ?: 0
 
         missed = SaveUtil.getOptionalTagBool(elem, "missed")
     }

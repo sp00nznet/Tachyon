@@ -22,6 +22,7 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.systems.*
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
@@ -507,7 +508,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         maxWeaponChargeTime = ship.hardpoints.stream()
             .map { it.weapon }
             .filter { Objects.nonNull(it) }
-            .map { it!!.type.chargeTime }
+            .map { it!!.chargeTime }
             .reduce { a, b -> Math.max(a, b) }
             .orElse(1f)
 
@@ -529,7 +530,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 override val empty: Boolean get() = weapon == null
                 override val name: String get() = weapon!!.type.translateShort(game)
                 override val requiredPower: Int get() = weapon!!.type.power
-                override val chargeTime: Float get() = weapon!!.type.chargeTime
+                override val chargeTime: Float get() = weapon!!.chargeTime
                 override val chargeProgress: Float get() = weapon!!.chargeProgress
                 override val zoltanPower: Int get() = 0 // TODO
                 override val isPowered: Boolean get() = weapon!!.isPowered
@@ -556,6 +557,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                     if (weapon != null && weapon.type.chargeLevels != null) {
                         drawChargedShots()
                     }
+
+                    if (weapon != null && weapon.type.boost != null) {
+                        drawChainIcon()
+                    }
                 }
 
                 private fun drawChargedShots() {
@@ -577,6 +582,39 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                         val img = game.getImg("img/combatUI/icon_chain_$suffix.png")
                         val x = baseX + charge * width
                         img.draw(x, y, filter)
+                    }
+                }
+
+                private fun drawChainIcon() {
+                    requireNotNull(weapon)
+                    val boost = weapon.type.boost
+                    requireNotNull(boost)
+
+                    val clockOn = when {
+                        weapon.chainCount == 0 -> false
+                        !isPowered -> false
+                        else -> true
+                    }
+
+                    val mode = when (clockOn) {
+                        true -> "on"
+                        false -> "off"
+                    }
+                    val iconName = when (boost.type) {
+                        AbstractWeaponBlueprint.BoostType.COOLDOWN -> "img/combatUI/icon_clock_$mode.png"
+                        AbstractWeaponBlueprint.BoostType.DAMAGE -> "img/combatUI/icon_arrow_$mode.png"
+                    }
+                    val icon = game.getImg(iconName)
+
+                    val filter = when (clockOn) {
+                        true -> mainColour
+                        false -> Color.white // Don't filter the already-greyed image
+                    }
+                    icon.draw(pos.x + 32, pos.y + 20, filter)
+
+                    if (clockOn) {
+                        val text = "+" + weapon.chainCount
+                        weaponNameText.drawString(pos.x + 50f, pos.y + 31f, text, filter)
                     }
                 }
             }
@@ -909,6 +947,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             g.color = colour
             g.drawRect(x.f, y.f, CREW_BOX_WIDTH - 1f, CREW_BOX_HEIGHT - 1f)
             g.drawRect(x + 1f, y + 1f, CREW_BOX_WIDTH - 3f, CREW_BOX_HEIGHT - 3f)
+
+            // TODO show the animation when the crewmember gets a skill point.
         } else {
             // Draw the semi-transparent background
             g.color = Color(colour.r, colour.g, colour.b, 0.25f)

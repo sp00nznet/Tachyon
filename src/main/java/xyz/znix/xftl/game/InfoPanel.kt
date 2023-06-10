@@ -12,6 +12,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.LaserBlueprint
+import kotlin.math.max
 
 class InfoPanel(private val game: InGameState) {
     private val systemLevelFont = game.getFont("JustinFont10")
@@ -41,10 +42,23 @@ class InfoPanel(private val game: InGameState) {
         val lines = ArrayList<String>()
 
         // Build all the weapon attributes that appear when hovering over it
-        // TODO support chain weapons and hull missiles
+        // TODO support hull missiles
 
         lines += game.translator["required_power"].replace("\\1", blueprint.power.toString())
         lines += game.translator["charge_time"].replace("\\1", UIUtils.formatFloat(blueprint.chargeTime))
+        if (blueprint.boost?.type == AbstractWeaponBlueprint.BoostType.COOLDOWN) {
+            val maxBoost = blueprint.boost.maxCount * blueprint.boost.perShot
+            lines += game.translator["boost_power_speed"]
+            lines += game.translator["speed_cap"].replace("\\1", maxBoost.toString())
+        }
+        if (blueprint.boost?.type == AbstractWeaponBlueprint.BoostType.DAMAGE) {
+            // We have to include the initial damage in the max value shown.
+            // How does vanilla FTL do this?
+            val baseDamage = max(blueprint.damage, blueprint.ionDamage)
+            val maxDamage = blueprint.boost.maxCount * blueprint.boost.perShot + baseDamage
+            lines += game.translator["boost_power_damage"]
+            lines += game.translator["damage_cap"].replace("\\1", maxDamage.toString())
+        }
         if (blueprint.missilesUsed > 0) {
             lines += game.translator["requires_missiles"]
         }

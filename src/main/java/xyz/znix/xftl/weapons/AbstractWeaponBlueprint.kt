@@ -10,6 +10,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.savegame.RefLoader
+import java.util.*
 
 abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val launcher: String = xml.getChildTextTrim("weaponArt")
@@ -38,6 +39,21 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val hitShipSounds = xml.getChild("hitShipSounds")?.let { SoundList(it) }
     val hitShieldSounds = xml.getChild("hitShieldSounds")?.let { SoundList(it) }
     val missSounds = xml.getChild("missSounds")?.let { SoundList(it) }
+
+    val boost: ChainBoost?
+
+    init {
+        val boostElem = xml.getChild("boost")
+        if (boostElem == null) {
+            boost = null
+        } else {
+            val typeName = boostElem.getChildTextTrim("type")
+            val type = BoostType.valueOf(typeName.toUpperCase(Locale.UK))
+            val amount = boostElem.getChildTextTrim("amount").toInt()
+            val count = boostElem.getChildTextTrim("count").toInt()
+            boost = ChainBoost(type, amount, count)
+        }
+    }
 
     fun getLauncher(game: InGameState): Animations.WeaponAnimationSpec {
         game.animations.weaponAnimations[launcher]?.let { return it }
@@ -109,4 +125,8 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
             return sounds.random()
         }
     }
+
+    // This is for the charge lasers (including the Vulkan) and the chain ion
+    class ChainBoost(val type: BoostType, val perShot: Int, val maxCount: Int)
+    enum class BoostType { COOLDOWN, DAMAGE }
 }

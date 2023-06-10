@@ -30,7 +30,7 @@ class LaserBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class LaserInstance(ship: Ship) : AbstractProjectileWeaponInstance(this, ship) {
-        override fun buildProjectile(target: Room): AbstractProjectile = LaserProjectile(target)
+        override fun buildProjectile(target: Room) = LaserProjectile(target)
     }
 
     inner class LaserProjectile(room: Room) : AbstractWeaponProjectile(this@LaserBlueprint, room) {

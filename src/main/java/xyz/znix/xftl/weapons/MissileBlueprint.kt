@@ -30,7 +30,7 @@ class MissileBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class MissileInstance(ship: Ship) : AbstractProjectileWeaponInstance(this, ship) {
-        override fun buildProjectile(target: Room): AbstractProjectile = MissileProjectile(target)
+        override fun buildProjectile(target: Room) = MissileProjectile(target)
     }
 
     inner class MissileProjectile(room: Room) : AbstractWeaponProjectile(this@MissileBlueprint, room) {

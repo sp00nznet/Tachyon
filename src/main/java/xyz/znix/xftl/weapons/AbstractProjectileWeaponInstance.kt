@@ -29,6 +29,10 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     // This is for charge weapon animations, NOT for chain weapons.
     private var shotsFired: Int = 0
 
+    // This is the value of chainCount before it was incremented as
+    // weapon started firing.
+    private var firingChainCount: Int = 0
+
     private var firingAnimationTimer: Float = 0f
     protected var waitingToFireAt: Room? = null
 
@@ -87,6 +91,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
                 entryAngle = 0f
                 firingAnimationTimer = 0f
                 shotsFired = 0
+                firingChainCount = 0
             } else {
                 shotsFired++
                 primeShot()
@@ -98,14 +103,11 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         if (isFiring) {
             val frame = animation.spriteAt(fireAnimationFrame)
             frame.draw(0f, 0f)
+
+            // Keep rendering the chain lights even when firing
+            renderChainChargeLights()
         } else {
             super.render(g)
-
-            // For charge weapons, draw on the indicator lights
-            if (animation.boostAnim != null && maxTotalCharges > 1 && totalReadyCharges > 0) {
-                // 0 indicates one extra charge, so we have to -1.
-                animation.boostAnim.spriteAt(totalReadyCharges - 1).draw()
-            }
         }
     }
 
@@ -127,6 +129,11 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         val projectile = buildProjectile(waitingToFireAt!!)
         projectile.entryAngle = entryAngle
         launchProjectile(projectile)
+
+        // For the chain ion, mark the projectile as doing more damage
+        if (type.boost?.type == AbstractWeaponBlueprint.BoostType.DAMAGE) {
+            projectile.chainDamage = type.boost.perShot * firingChainCount
+        }
 
         type.launchSounds?.get()?.play()
     }
@@ -151,6 +158,10 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
             targets.add(target)
         }
 
+        // Store the current chain count, in case we need it for the ion charger.
+        // (we need the pre-firing value, as it determines the projectile damage)
+        firingChainCount = chainCount
+
         entryAngle = (Math.random() * Math.PI * 2).toFloat()
         fire()
         primeShot()
@@ -163,15 +174,13 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         val projectile = buildProjectile(target)
         target.ship.projectiles += projectile
 
-        if (projectile is AbstractWeaponProjectile) {
-            // Draw the projectile on top of the ship. By default it's
-            // set to draw under the ship, as it expects to be launched
-            // from one ship area to another, at which point it switches this.
-            projectile.drawUnderShip = false
+        // Draw the projectile on top of the ship. By default it's
+        // set to draw under the ship, as it expects to be launched
+        // from one ship area to another, at which point it switches this.
+        projectile.drawUnderShip = false
 
-            // Prevent defence drones from firing on this shot.
-            projectile.firedByDrone = true
-        }
+        // Prevent defence drones from firing on this shot.
+        projectile.firedByDrone = true
 
         projectile.setInitialPath(drone.flightController.position, projectile.calculateTargetPosition())
 
@@ -212,6 +221,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         SaveUtil.addTagBoolIfTrue(elem, "isFiring", isFiring)
         SaveUtil.addTagFloat(elem, "fireAnimationTimer", firingAnimationTimer, 0f)
         SaveUtil.addTagInt(elem, "shotsFired", shotsFired, 0)
+        SaveUtil.addTagInt(elem, "firingChainCount", firingChainCount, 0)
 
         for (target in targets) {
             val targetElem = Element("target")
@@ -228,6 +238,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         firingAnimationTimer = SaveUtil.getOptionalTagFloat(elem, "fireAnimationTimer") ?: 0f
         isFiring = SaveUtil.getOptionalTagBool(elem, "isFiring") ?: false
         shotsFired = SaveUtil.getOptionalTagInt(elem, "shotsFired") ?: 0
+        firingChainCount = SaveUtil.getOptionalTagInt(elem, "firingChainCount") ?: 0
 
         val waitingToFireAtElem = elem.getChild("waitingToFireAt")
         if (waitingToFireAtElem != null) {
@@ -249,5 +260,5 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         firingAnimationTimer = 0f
     }
 
-    protected abstract fun buildProjectile(target: Room): AbstractProjectile
+    protected abstract fun buildProjectile(target: Room): AbstractWeaponProjectile
 }

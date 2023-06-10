@@ -986,6 +986,10 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         // Reset the weapon charge times
         for (hp in hardpoints) {
             hp.weapon?.timeCharged = 0f
+
+            // Reset the chain/charge count
+            hp.weapon?.chainCount = 0
+            hp.weapon?.extraCharges = 0
         }
 
         // Clear any previously-set scripted power limits, and re-apply

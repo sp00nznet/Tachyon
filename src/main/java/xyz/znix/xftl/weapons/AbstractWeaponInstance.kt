@@ -20,6 +20,11 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     // addition to the one represented by timeCharged.
     var extraCharges: Int = 0
 
+    // For chain weapons, this is the number of shots we've fired since
+    // the weapon was powered off. This is limited to the maximum number
+    // of shots that have an effect.
+    var chainCount: Int = 0
+
     // The number of charges this weapon is ready to fire.
     val totalReadyCharges: Int get() = extraCharges + if (isCurrentCharged) 1 else 0
 
@@ -48,13 +53,21 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
      * to [isCharged] for charge weapons, as this is only true when the currently
      * charging charge is done.
      */
-    val isCurrentCharged: Boolean get() = timeCharged >= type.chargeTime
-    val chargeProgress: Float get() = timeCharged / type.chargeTime
+    val isCurrentCharged: Boolean get() = timeCharged >= chargeTime
+    val chargeProgress: Float get() = timeCharged / chargeTime
 
     val maxTotalCharges get() = type.chargeLevels ?: 1
     val maxExtraCharges get() = maxTotalCharges - 1
 
     val animation = type.getLauncher(ship.sys)
+
+    val chargeTime: Float
+        get() {
+            if (type.boost?.type != AbstractWeaponBlueprint.BoostType.COOLDOWN)
+                return type.chargeTime
+
+            return type.chargeTime - chainCount * type.boost.perShot
+        }
 
     open fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
         if (isPowered) {
@@ -68,11 +81,12 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
             if (timeCharged <= 0) {
                 extraCharges = 0
+                chainCount = 0
             }
         }
 
-        if (timeCharged > type.chargeTime)
-            timeCharged = type.chargeTime
+        if (timeCharged > this.chargeTime)
+            timeCharged = this.chargeTime
         if (timeCharged < 0f)
             timeCharged = 0f
 
@@ -86,6 +100,11 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         timeCharged = 0f
         extraCharges = 0
 
+        // Count up
+        if (type.boost != null) {
+            chainCount = (chainCount + 1).coerceIn(0..type.boost.maxCount)
+        }
+
         // Deduct a missile (or multiple), if this weapon uses them
         // This really shouldn't be going negative here, but guard
         // it just in case.
@@ -98,6 +117,8 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         val launcher = animation.spriteAt((animation.chargedFrame * chargeProgress).toInt())
         launcher.draw(0f, 0f)
 
+        renderChainChargeLights()
+
         // Draw the charging glow, if present
         if (isCurrentCharged)
             return
@@ -105,6 +126,20 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
         glow.alpha = chargeProgress
         glow.draw(0f, 0f)
+    }
+
+    fun renderChainChargeLights() {
+        // For charge weapons, draw on the indicator lights
+        if (animation.boostAnim != null && maxTotalCharges > 1 && totalReadyCharges > 0) {
+            // 0 indicates one extra charge, so we have to -1.
+            animation.boostAnim.spriteAt(totalReadyCharges - 1).draw()
+        }
+
+        // For chain weapons, draw the progress
+        if (animation.boostAnim != null && type.boost != null && chainCount > 0) {
+            // 0 indicates one shot already fired, so -1.
+            animation.boostAnim.spriteAt(chainCount - 1).draw()
+        }
     }
 
     fun asWeaponInstance(): AbstractWeaponInstance = this
@@ -131,6 +166,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         SaveUtil.addAttrBool(elem, "powered", isPowered)
         SaveUtil.addAttrFloat(elem, "chargeTime", timeCharged)
         SaveUtil.addTagInt(elem, "extraCharges", extraCharges, 0)
+        SaveUtil.addTagInt(elem, "chainCount", chainCount, 0)
 
         val expectedSlide = if (isPowered) 1f else 0f
         SaveUtil.addTagFloat(elem, "slideAnimation", slide, expectedSlide)
@@ -142,6 +178,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         isPowered = SaveUtil.getAttrBool(elem, "powered")
         timeCharged = SaveUtil.getAttrFloat(elem, "chargeTime")
         extraCharges = SaveUtil.getOptionalTagInt(elem, "extraCharges") ?: 0
+        chainCount = SaveUtil.getOptionalTagInt(elem, "chainCount") ?: 0
 
         val expectedSlide = if (isPowered) 1f else 0f
         slide = SaveUtil.getOptionalTagFloat(elem, "slideAnimation") ?: expectedSlide
