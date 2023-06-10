@@ -24,41 +24,32 @@ import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.*
-import java.awt.Rectangle
 import java.util.stream.Collectors
 import kotlin.math.min
 import kotlin.random.Random
 
-class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: EnemyShipSpec?) : ISerialReferencable {
-    val name: String = shipNode.getAttributeValue("name")
+class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpec?) :
+    ISerialReferencable {
+
+    // Helper methods, providing quick access to important stuff from the blueprint
+    val name: String get() = type.name
+    val maxHealth: Int get() = type.maxHealth
+    val isPlayerShip: Boolean get() = type.isPlayerShip
+    val isFlagship: Boolean get() = type.isFlagship
+    val isAutoScout: Boolean get() = type.isAutoScout
+    val weaponSlots: Int? get() = type.weaponSlots
+    val droneSlots: Int? get() = type.droneSlots
+
+    @Suppress("JoinDeclarationAndAssignment")
     val rooms: List<Room>
-    val doors: MutableList<Door> = ArrayList()
+    val doors: List<Door>
 
-    // TODO do this properly, to avoid potentially breaking mods
-    val isFlagship: Boolean = name.startsWith("BOSS_")
-
-    /**
-     * The localisation key of the ship, defining the in-hangar title
-     * for player ships (eg 'The Kestrel').
-     */
-    val shipTitle: GameText? = shipNode.getGameTextChild("name")
-
-    /**
-     * The localisation key of this type of ship, shown on the right-hand
-     * side of the target panel for enemies.
-     */
-    val shipClass: GameText? = shipNode.getGameTextChild("class")
-
-    val offset: ConstPoint
-    val floorOffset: ConstPoint
-    val cloakOffset: ConstPoint
+    val offset: ConstPoint = type.roomOffset
+    val floorOffset: ConstPoint = type.floorOffset
+    val cloakOffset: ConstPoint = type.cloakOffset
     val hullOffset: ConstPoint
 
-    val imageName: String = shipNode.getAttributeValue("img")
-
-    val isPlayerShip: Boolean = name.startsWith("PLAYER_SHIP_")
-
-    val weaponFireDirection: Direction = when (isPlayerShip) {
+    val weaponFireDirection: Direction = when (type.isPlayerShip) {
         true -> Direction.RIGHT // Weapons fly right
         false -> Direction.UP // Weapons fly upwards
     }
@@ -66,17 +57,12 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     // Played when any two projectiles collide.
     private val projectileCollisionSound: FTLSound = sys.sounds.getSample("hitHull1")
 
-    val floorImage: Image? = sys.getImgIfExists("img/ship/${imageName}_floor.png")
-    val hullImage: Image = sys.getImg("img/${if (isPlayerShip) "ship" else "ships_glow"}/${imageName}_base.png")
-    val cloakImage: Image?
-    val gibs: List<ShipGib>
+    val floorImage: Image? = type.floorImage?.let { sys.getImg(it) }
+    val hullImage: Image = sys.getImg(type.hullImage)
+    val cloakImage: Image? = type.cloakImage?.let { sys.getImg(it) }
+    val gibs: List<ShipGib.Instance>
 
-    val shieldImage: Image = sys.getImg(
-        if (isPlayerShip) "img/ship/${
-            shipNode.getChildTextTrim("shieldImage")
-                ?: imageName
-        }_shields1.png" else "img/ship/enemy_shields.png"
-    )
+    val shieldImage: Image = sys.getImg(type.shieldImage)
 
     val shieldOffset: ConstPoint
 
@@ -84,11 +70,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
     val shieldHalfSize: ConstPoint
 
     val shieldOrigin: ConstPoint
-
-    val weaponSlots: Int? = shipNode.getChildTextTrim("weaponSlots")?.toInt()
-    val droneSlots: Int? = shipNode.getChildTextTrim("droneSlots")?.toInt()
-
-    val isAutoScout = shipNode.getChild("crewCount")?.getAttributeValue("amount")?.trim() == "0"
 
     // All the crew currently standing on this ship. This includes drone pawns.
     val crew: MutableList<AbstractCrew> = ArrayList()
@@ -159,7 +140,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             return reactorPower - powerConsumed + battPower
         }
 
-    val maxHealth = shipNode.getChild("health").getAttributeValue("amount").toInt()
     var health = maxHealth
         set(value) {
             field = value.coerceAtLeast(0).coerceAtMost(maxHealth)
@@ -313,64 +293,14 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         private set
 
     init {
-        // Load the cloak image - if one is set by name use that, otherwise
-        // guess based on the ship name (this is required on the Kestrel, for example).
-        val customCloakName = shipNode.getChildTextTrim("cloakImage")
-        val customCloakImage = customCloakName?.let { sys.getImg("img/ship/${it}_cloak.png") }
-        val autoCloakImage = sys.getImgIfExists("img/ship/${imageName}_cloak.png")
-        cloakImage = customCloakImage ?: autoCloakImage
-
-        val layout = base.readString(base["data/${shipNode.getAttributeValue("layout")}.txt"])
-
-        val l = layout.replace("\r\n", "\n").split('\n')
-        var i = 0
-
-        rooms = ArrayList()
-
-        var found_offset_x = 0
-        var found_offset_y = 0
-        var found_vertical = 0
-        var found_horizontal = 0
-
-        // TODO use our own class, not AWT's!
-        var found_ellipse: Rectangle? = null
-
-        while (i < l.size) {
-            val line = l[i++]
-            when (line) {
-                "X_OFFSET" -> found_offset_x = l[i++].toInt()
-                "Y_OFFSET" -> found_offset_y = l[i++].toInt()
-                "HORIZONTAL" -> found_horizontal = l[i++].toInt()
-                "VERTICAL" -> found_vertical = l[i++].toInt()
-                "ELLIPSE" -> {
-                    found_ellipse = Rectangle()
-                    found_ellipse.width = l[i++].toInt()
-                    found_ellipse.height = l[i++].toInt()
-                    found_ellipse.x = l[i++].toInt()
-                    found_ellipse.y = l[i++].toInt()
-                }
-
-                "ROOM" -> {
-                    val id = l[i++].toInt()
-                    check(id == rooms.size)
-                    rooms += Room(this, id, l[i++].toInt(), l[i++].toInt(), l[i++].toInt(), l[i++].toInt())
-                    check(rooms[id].id == id)
-                }
-
-                "DOOR" -> {
-                    val x = l[i++].toInt()
-                    val y = l[i++].toInt()
-                    val left = roomByIdOrNull(l[i++].toInt())
-                    val right = roomByIdOrNull(l[i++].toInt())
-                    val vertical = l[i++].toInt() == 1
-                    doors += Door(ConstPoint(x, y), left, right, vertical)
-                }
-
-                "" -> {
-                }
-
-                else -> error("Unknown line '$line'")
-            }
+        rooms = type.rooms.map { Room(this, it.id, it.pos.x, it.pos.y, it.size.x, it.size.y) }
+        doors = type.doors.map { it ->
+            Door(
+                it.pos,
+                it.left?.let { rooms[it.id] },
+                it.right?.let { rooms[it.id] },
+                it.isVertical
+            )
         }
 
         for (room in rooms) {
@@ -379,12 +309,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             room.initialise(roomDoors)
         }
 
-        offset = ConstPoint(found_offset_x, found_offset_y)
-
-        checkNotNull(found_ellipse) { "Shield ellipse not specified!" }
-
-        shieldOffset = ConstPoint(found_ellipse.x, found_ellipse.y)
-        selectedShieldHalfSize = ConstPoint(found_ellipse.width, found_ellipse.height)
+        shieldOffset = type.shieldEllipse.pos.const
+        selectedShieldHalfSize = type.shieldEllipse.size.const
 
         // The player ship uses the exact size of the shield image,
         // while enemies scale it to fit a custom size.
@@ -393,26 +319,18 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             else -> selectedShieldHalfSize
         }
 
-        for ((index, node) in shipNode.getChild("systemList").children.withIndex()) {
-            val room = rooms[node.getAttributeValue("room").toInt()]
+        for (node in type.systems) {
+            val room = rooms[node.room.id]
 
             // Load the information about the available system into the room.
             // This will be used when loading the system from a save, spawning
             // a new ship, or buying a system at a store.
-            room.systemSlots.add(SystemInstallConfiguration(node, sys, room, index))
+            room.systemSlots.add(SystemInstallConfiguration(node, sys, room))
         }
 
         systemSlots = rooms.flatMap { it.systemSlots }
 
-        val visualsXML = base.parseXML(base["data/${shipNode.getAttributeValue("layout")}.xml"]).rootElement
-
-        // The stage-2 and stage-3 boss layouts don't have an offsets tag, but everything else does
-        val offsets = visualsXML.getChild("offsets")
-        floorOffset = offsets?.getChild("floor")?.let { Utils.parsePosElem(it) } ?: ConstPoint.ZERO
-        cloakOffset = offsets?.getChild("cloak")?.let { Utils.parsePosElem(it) } ?: ConstPoint.ZERO
-
-        val imgTag = visualsXML.getChild("img")
-        hullOffset = Utils.parsePosElem(imgTag) + ConstPoint(ROOM_SIZE * offset.x, ROOM_SIZE * offset.y)
+        hullOffset = type.hullOffset + offset * ROOM_SIZE
 
         // We can only calculate the shield origin after we've got the hull offset
         val origin = Point(hullImage.width, hullImage.height)
@@ -422,29 +340,8 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             origin += shieldOffset
         shieldOrigin = origin.const
 
-        // Load the hardpoints
-        hardpoints = ArrayList()
-
-        for (node in visualsXML.getChild("weaponMounts").children) {
-            // In rebel_long.xml the hardpoint direction is missing for some testing stuff.
-            // Artillery (used in the boss and federation cruiser) has slide set to 'no'
-            val dirName = node.getAttributeValue("slide")?.toUpperCase() ?: continue
-            val pos = Utils.parsePosElem(node) + hullOffset
-            val dir = if (dirName == "NO") null else dirName.let(Direction::valueOf)
-            val hardpoint = Hardpoint(
-                pos,
-                node.getAttributeValue("rotate")!!.toBoolean(),
-                node.getAttributeValue("mirror")!!.toBoolean(),
-                node.getAttributeValue("gib").toInt(),
-                dir
-            )
-            hardpoints += hardpoint
-        }
-
-        gibs = ArrayList()
-        for (node in visualsXML.getChild("explosion").children) {
-            gibs += ShipGib(sys, this, node)
-        }
+        hardpoints = type.hardpoints.map { Hardpoint(it) }
+        gibs = type.gibs.map { it.createInstance(sys) }
 
         // Set up the pathfinder after the layout is loaded
         pathFinder = PathFinder(this)
@@ -454,61 +351,49 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
      * Loads the default version of the ship's stuff (system, blueprints, etc) - this
      * is all stuff that the player can upgrade and needs to be saved.
      */
-    fun loadDefaultContents(shipNode: Element) {
+    fun loadDefaultContents() {
         // Load the starting reactor power
-        purchasedReactorPower = shipNode.getChild("maxPower").getAttributeValue("amount").toInt()
+        purchasedReactorPower = type.startingReactorPower
 
         // Load the starting systems
         for (config in systemSlots) {
-            if (!config.availableByDefault)
+            if (!config.spec.availableByDefault)
                 continue
 
             config.room.setSystem(config)
         }
 
+        // Load the starting resources
+        missilesCount = type.initialMissiles
+        dronesCount = type.initialDroneParts
+
         // Load all the weapon blueprints
-        val weaponsList = shipNode.getChild("weaponList")
-        if (weaponsList != null) {
-            for ((nextHardpoint, node) in weaponsList.children.withIndex()) {
-                val name = node.getAttributeValue("name")
-                val weapon = sys.blueprintManager[name] as AbstractWeaponBlueprint
-
-                hardpoints[nextHardpoint].weapon = weapon.buildInstance(this)
-            }
-
-            // Load the starting number of missiles
-            missilesCount = weaponsList.getAttributeValue("missiles")?.toInt() ?: 0
+        for ((index, name) in type.initialWeapons.withIndex()) {
+            val weapon = sys.blueprintManager[name] as AbstractWeaponBlueprint
+            hardpoints[index].weapon = weapon.buildInstance(this)
         }
 
         // Load all the drone blueprints
-        shipNode.getChild("droneList")?.let { droneList ->
-            for ((idx, node) in droneList.children.withIndex()) {
-                val name = node.getAttributeValue("name")
-                val drone = sys.blueprintManager[name] as DroneBlueprint
+        for ((idx, name) in type.initialDrones.withIndex()) {
+            val drone = sys.blueprintManager[name] as DroneBlueprint
 
-                // If the ship doesn't have enough drone slots, just give it some more.
-                // This is required for the flagship at least, but it makes sense
-                // that if there is some fixed list of included drones then there ought
-                // to be enough space for them.
-                if (drones!!.drones.size <= idx) {
-                    drones!!.drones.add(null)
-                }
-
-                drones!!.drones[idx] = Drones.DroneInfo(drone, null)
+            // If the ship doesn't have enough drone slots, just give it some more.
+            // This is required for the flagship at least, but it makes sense
+            // that if there is some fixed list of included drones then there ought
+            // to be enough space for them.
+            if (drones!!.drones.size <= idx) {
+                drones!!.drones.add(null)
             }
 
-            // Load the starting number of drones
-            dronesCount = droneList.getAttributeValue("drones")?.toInt() ?: 0
+            drones!!.drones[idx] = Drones.DroneInfo(drone, null)
         }
 
         // Load any augments
-        for (augNode in shipNode.getChildren("aug")) {
-            val name = augNode.getAttributeValue("name")
+        for (name in type.initialAugments) {
             val augment = sys.blueprintManager[name] as AugmentBlueprint
             augment.onShipSpawn(this)
             augments.add(augment)
         }
-        require(augments.size <= MAX_AUGMENTS) { "Ship $name has too many augments - ${augments.size}!" }
 
         // If we don't have an oxygen system, the rooms start with no oxygen by default
         if (oxygen == null) {
@@ -574,7 +459,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
             val translateY = buffer[13]
 
             for ((index, hp) in hardpoints.withIndex()) {
-                val pos = hp.position
+                val pos = hp.spec.position
                 g.color = Color.red
                 g.drawLine(pos.x - 5f, pos.y - 5f, pos.x + 5f, pos.y + 5f)
                 g.drawLine(pos.x + 5f, pos.y - 5f, pos.x - 5f, pos.y + 5f)
@@ -766,8 +651,6 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         point.y = Math.floorDiv(point.y, ROOM_SIZE)
         point.sub(offset.x, offset.y)
     }
-
-    private fun roomByIdOrNull(id: Int): Room? = if (id == -1) null else rooms[id]
 
     fun shipToRoomPos(pos: IPoint): RoomPoint? {
         if (pos is RoomPoint)
@@ -1144,7 +1027,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         // they appear in the XML. This probably isn't necessary, but if
         // we're using this order to display them in the UI or anything
         // like that it's nice to have this order.
-        artillery = systems.mapNotNull { it as? Artillery }.sortedBy { it.configuration.systemIndex }
+        artillery = systems.mapNotNull { it as? Artillery }.sortedBy { it.configuration.spec.systemIndex }
 
         // The UI will need to change to reflect this
         // Note that this function is called very early on, before shipUI
@@ -1181,7 +1064,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         }
 
         if (item is AbstractWeaponBlueprint) {
-            val weaponSlotCount = weaponSlots ?: hardpoints.size
+            val weaponSlotCount = type.weaponSlots ?: hardpoints.size
 
             for (slot in 0 until weaponSlotCount) {
                 if (hardpoints[slot].weapon != null)
@@ -1554,13 +1437,7 @@ class Ship(base: Datafile, shipNode: Element, val sys: InGameState, val spec: En
         const val MAX_AUGMENTS: Int = 3
     }
 
-    data class Hardpoint(
-        val position: IPoint,
-        val rotate: Boolean,
-        val mirror: Boolean,
-        val gib: Int,
-        val slide: Direction?
-    ) {
+    class Hardpoint(val spec: ShipBlueprint.ParsedHardpoint) {
         var weapon: AbstractWeaponInstance? = null
     }
 

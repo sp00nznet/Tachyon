@@ -399,7 +399,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         drawTopBar(g)
         drawSystems(g)
-        drawSubSystems(gc, g)
+        drawSubSystems(gc)
 
         // Draw the buttons last, so they don't disappear for a frame
         // when they're updated.
@@ -519,7 +519,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val weaponBoxX = weaponPowerX!! + 1
         drawWeaponBox(weaponBoxX, "weapons_label", ship.weaponSlots!!)
 
-        for (i in 0 until ship.weaponSlots) {
+        for (i in 0 until ship.weaponSlots!!) {
             if (!updatingButtons)
                 continue
 
@@ -686,7 +686,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
-    private fun drawSubSystems(gc: GameContainer, g: Graphics) {
+    private fun drawSubSystems(gc: GameContainer) {
         // The box position, not including the glow.
         val boxX = gc.width - 252
         val boxY = gc.height - 47

@@ -7,6 +7,7 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -80,8 +81,9 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
     override fun drawBackground(g: Graphics) {
-        for (hp in ship.hardpoints) {
-            val weapon = hp.weapon ?: continue
+        for (shipHardpoint in ship.hardpoints) {
+            val weapon = shipHardpoint.weapon ?: continue
+            val hp = shipHardpoint.spec
 
             g.pushTransform()
 
@@ -121,7 +123,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
 
     fun getProjectileSpawnPos(weapon: AbstractWeaponInstance, firePoint: IPoint): IPoint {
-        val hp = findHardpoint(weapon)
+        val hp = findHardpoint(weapon).spec
         val anim = weapon.animation
 
         // Fly off-screen, so it jumps over to the target ship.
@@ -154,7 +156,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         return startPos
     }
 
-    private fun translateHardpoint(g: Graphics, hp: Ship.Hardpoint) {
+    private fun translateHardpoint(g: Graphics, hp: ShipBlueprint.ParsedHardpoint) {
         g.translate(hp.position.x.f, hp.position.y.f)
 
         // We are now in hardpoint-xy space - x and y are relative to the hardpoint's xy,

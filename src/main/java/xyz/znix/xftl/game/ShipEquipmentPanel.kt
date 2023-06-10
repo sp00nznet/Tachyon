@@ -115,10 +115,10 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
 
             val images = ButtonImageSet.selected(game, "img/upgradeUI/Equipment/box_weapons", true)
             val padding = 8
-            val baseX = (579 - (images.normal.width + padding) * ship.weaponSlots) / 2
+            val baseX = (579 - (images.normal.width + padding) * ship.weaponSlots!!) / 2
             val buttonPos = ConstPoint(baseX + i * (images.normal.width + padding), 70)
 
-            // Use a separate variable so we can use the button in it's callback.
+            // Use a separate variable so we can use the button in its callback.
             lateinit var button: Buttons.DragDropBlueprintButton
             button = Buttons.DragDropBlueprintButton(
                 buttonPos, game, images,

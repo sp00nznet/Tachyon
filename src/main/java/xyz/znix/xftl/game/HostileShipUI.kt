@@ -159,8 +159,8 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     private fun drawStatus(x: Int, classY: Int, isHostile: Boolean) {
         val relationY = classY + 15
 
-        if (enemy.shipClass != null) {
-            val shipClassName = game.translator[enemy.shipClass]
+        if (enemy.type.shipClass != null) {
+            val shipClassName = game.translator[enemy.type.shipClass]
             val classStr = game.translator["combat_class"].replace("\\1", shipClassName)
 
             statusFont.drawStringLeftAligned(x.f, classY.f, classStr, Constants.SHIP_STATUS_PLAIN)

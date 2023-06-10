@@ -5,7 +5,10 @@ import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Graphics
 import org.newdawn.slick.Image
 import org.newdawn.slick.opengl.TextureImpl
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Datafile
+import xyz.znix.xftl.FTLFile
+import xyz.znix.xftl.SILFontLoader
+import xyz.znix.xftl.f
 import xyz.znix.xftl.game.MainGame.GameState
 import xyz.znix.xftl.math.Point
 
@@ -58,7 +61,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
             if (!foundMatch)
                 continue
 
-            val ship = ShipBlueprint(node, file)
+            val ship = ShipBlueprint(node, vanillaDF, file)
             ships.add(ship)
 
             hullImages[ship] = vanillaDF.readImage("img/ship/${ship.img}_base.png")

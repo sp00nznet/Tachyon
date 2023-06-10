@@ -7,6 +7,7 @@ import xyz.znix.xftl.augments.AugZoltanShield
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
 import kotlin.random.Random
@@ -88,7 +89,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
                 "systemBlueprint" -> buildSystemBlueprint(elem)
                 "crewBlueprint" -> buildCrewBlueprint(elem)
                 "augBlueprint" -> buildAugmentBlueprint(elem)
-                "shipBlueprint" -> ShipBlueprint(elem, file)
+                "shipBlueprint" -> ShipBlueprint(elem, df, file)
 
                 // Ignore unknown blueprints
                 else -> null
@@ -213,23 +214,6 @@ open class Blueprint(elem: Element) : IBlueprint {
      * required resources (eg, sounds).
      */
     open fun finishSetup(content: InGameState.GameContent) {
-    }
-}
-
-class ShipBlueprint(elem: Element, val file: FTLFile) : Blueprint(elem) {
-    val layout: String = elem.getAttributeValue("layout")
-    val img: String = elem.getAttributeValue("img")
-
-    fun loadElem(df: Datafile): Element {
-        val rootXml = df.parseXML(file)
-
-        for (item in rootXml.rootElement.children) {
-            if (item.requireAttributeValue("name") == name) {
-                return item
-            }
-        }
-
-        error("Could not find blueprint!")
     }
 }
 

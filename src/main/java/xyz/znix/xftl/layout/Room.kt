@@ -239,9 +239,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val x = offsetX
         val y = offsetY
 
-        if (config.interiorImage != null) {
+        if (config.spec.interiorImage != null) {
             // Render the interior decals
-            val bg = ship.sys.getImg(config.interiorImage)
+            val bg = ship.sys.getImg(config.spec.interiorImage)
             g.drawImage(bg, x.f, y.f)
         } else if (config.computerPoint != null) {
             // AI ships rarely (never?) use proper room textures. For systems like
@@ -423,7 +423,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         system = config.system.createInstance()
 
         system?.configuration = config
-        system?.energyLevels = config.startingPower
+        system?.energyLevels = config.spec.startingPower
         system?.room = this
         system?.initialise(ship)
 

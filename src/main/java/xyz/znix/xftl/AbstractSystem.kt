@@ -11,6 +11,7 @@ import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
@@ -19,7 +20,6 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.*
-import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.*
 import kotlin.reflect.KProperty
 
@@ -628,39 +628,16 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
  * Information about how a system is installed into a room - this is both
  * the system and the location of its computer, along with any XML data
  * that's specified in the ship blueprint.
+ *
+ * This is based on [ShipBlueprint.ParsedSystem], but with information like
+ * the computer position calculated based on the loaded ship.
  */
 class SystemInstallConfiguration(
-    systemNode: Element,
+    val spec: ShipBlueprint.ParsedSystem,
     game: InGameState,
-    val room: Room,
-
-    /**
-     * The index of this configuration within the ship's list of systems.
-     *
-     * This is for figuring out the order the artillery systems are specified
-     * in, as that determines what hardpoint they fire from.
-     */
-    val systemIndex: Int
+    val room: Room
 ) {
-    val system: SystemBlueprint = game.blueprintManager[systemNode.name] as SystemBlueprint
-
-    val startingPower = systemNode.getAttributeValue("power").toInt()
-
-    // Note that if not specified, the system is included by default. This
-    // is commonly found with enemy ships.
-    val availableByDefault = systemNode.getAttributeValue("start")?.toBoolean() != false
-
-    // Used for calculations by the ship generator.
-    // The flagship notably doesn't have it's maximum power set, so
-    // use the maximum specified in the system blueprint in that case.
-    val aiMaxPower: Int = systemNode.getAttributeValue("max")?.toInt() ?: system.maxPower
-
-    // The room interior image
-    val interiorImage: String? = systemNode.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
-
-    // For artillery weapons, this is the weapon they're using internally.
-    val weapon: AbstractWeaponBlueprint? =
-        systemNode.getAttributeValue("weapon")?.let { game.blueprintManager[it] as AbstractWeaponBlueprint }
+    val system: SystemBlueprint = game.blueprintManager[spec.systemName] as SystemBlueprint
 
     val computerPoint: ConstPoint?
     val computerDirection: Direction?
@@ -670,53 +647,44 @@ class SystemInstallConfiguration(
 
     // Parse out the computer point and direction
     init {
-        val slotElems = systemNode.getChildren("slot")
-        check(slotElems.size < 2)
-
-        var compDir: Direction? = null
-        var compPoint: ConstPoint? = null
+        val defaultCompDir: Direction?
+        val defaultCompPoint: ConstPoint?
 
         // Load defaults
         // TODO what is this for? Kestrel seems to work fine, and I wrote this ages ago and forgot
         when (system.info) {
             Weapons.INFO -> {
-                compPoint = ConstPoint(1, 0)
-                compDir = Direction.UP
+                defaultCompPoint = ConstPoint(1, 0)
+                defaultCompDir = Direction.UP
             }
 
             Engines.INFO -> {
-                compPoint = ConstPoint(0, 1)
-                compDir = Direction.DOWN
+                defaultCompPoint = ConstPoint(0, 1)
+                defaultCompDir = Direction.DOWN
             }
 
             Shields.INFO -> {
-                compPoint = ConstPoint(0, 0)
-                compDir = Direction.LEFT
+                defaultCompPoint = ConstPoint(0, 0)
+                defaultCompDir = Direction.LEFT
+            }
+
+            else -> {
+                defaultCompDir = null
+                defaultCompPoint = null
             }
         }
 
-        if (slotElems.size == 1) {
-            val elem: Element = slotElems[0]
+        var compDir = spec.slotDirection ?: defaultCompDir
 
-            val dir = elem.getChildren("direction")
-            if (dir.size == 1)
-                compDir = Direction.valueOf(dir[0].textTrim.toUpperCase())
-
-            val idx = elem.getChildren("number")
-
-            if (idx.size == 1)
-                compPoint = when (idx[0].textTrim) {
-                    "0" -> ConstPoint(0, 0)
-                    "1" -> ConstPoint(1, 0)
-                    "2" -> ConstPoint(0, 1)
-                    "3" -> ConstPoint(1, 1)
-                    // -2 appears to be used for the medbay to indicate no obstruction in 2-cell medbays
-                    "-2" -> null
-                    else -> error("Invalid point value '${idx[0].textTrim}'")
-                }
-
-            check(dir.size <= 1)
-            check(idx.size <= 1)
+        var compPoint = when (spec.slotNumber) {
+            null -> defaultCompPoint
+            0 -> ConstPoint(0, 0)
+            1 -> ConstPoint(1, 0)
+            2 -> ConstPoint(0, 1)
+            3 -> ConstPoint(1, 1)
+            // -2 appears to be used for the medbay to indicate no obstruction in 2-cell medbays
+            -2 -> null
+            else -> error("Invalid point value ${spec.slotNumber}")
         }
 
         // Pick a room with the invalid computer position if it's a mannable system

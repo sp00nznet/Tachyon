@@ -211,9 +211,10 @@ public class InGameState extends MainGame.GameState {
     }
 
     private void createNewPlayerShip(String shipName) {
-        Element playerXml = ((ShipBlueprint) blueprintManager.get(shipName)).loadElem(df);
-        player = new Ship(df, playerXml, this, null);
-        player.loadDefaultContents(playerXml);
+        ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipName);
+        Element playerXml = blueprint.loadElem(df);
+        player = new Ship(blueprint, this, null);
+        player.loadDefaultContents();
 
         for (Element elem : playerXml.getChildren("crewCount")) {
             int count = Integer.parseInt(elem.getAttributeValue("amount").strip());
@@ -627,9 +628,9 @@ public class InGameState extends MainGame.GameState {
             shipName += "_DLC";
         }
 
-        Element flagshipXML = ((ShipBlueprint) blueprintManager.get(shipName)).loadElem(df);
-        Ship flagship = new Ship(df, flagshipXML, this, null);
-        flagship.loadDefaultContents(flagshipXML);
+        ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipName);
+        Ship flagship = new Ship(blueprint, this, null);
+        flagship.loadDefaultContents();
 
         // TODO handle crew being killed across fights
         for (int i = 0; i < 11; i++) {
@@ -909,10 +910,10 @@ public class InGameState extends MainGame.GameState {
             spec = content.eventManager.getShip(specId);
         }
 
-        Element playerXml = ((ShipBlueprint) blueprintManager.get(shipId)).loadElem(df);
+        ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipId);
 
         // And use that to build and deserialise the ship
-        Ship ship = new Ship(df, playerXml, this, spec);
+        Ship ship = new Ship(blueprint, this, spec);
         ship.loadFromXml(shipElement, refs);
 
         return ship;

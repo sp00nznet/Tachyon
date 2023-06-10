@@ -10,6 +10,7 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import kotlin.math.atan2
@@ -46,24 +47,20 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // purchased, in which case the index in the purchased systems might
         // not match that in the XML.
         val allSystemSlots = ship.rooms.flatMap { it.systemSlots }
-        val artillerySlots = allSystemSlots.filter { it.system.type == INFO.name }.sortedBy { it.systemIndex }
+        val artillerySlots = allSystemSlots.filter { it.system.type == INFO.name }.sortedBy { it.spec.systemIndex }
         val index = artillerySlots.indexOf(configuration)
         require(index != -1) { "Artillery system is not in ship systems list!" }
 
         // Hardpoints 4 and up (zero-indexed) are used for artillery.
         // I've confirmed this is how FTL does it.
-        ship.hardpoints[4 + index]
-    }
-
-    private val beamDestPos by lazy {
-        // Players fire to the right, enemies fire upwards.
-        hardpoint.position + ship.weaponFireDirection * 1000
+        ship.hardpoints[4 + index].spec
     }
 
     override fun initialise(ship: Ship) {
         super.initialise(ship)
 
-        weapon = configuration.weapon!!.buildInstance(ship)
+        val weaponBlueprint = ship.sys.blueprintManager[configuration.spec.weapon!!] as AbstractWeaponBlueprint
+        weapon = weaponBlueprint.buildInstance(ship)
         weapon.bindToArtillery(this)
     }
 
