@@ -8,6 +8,7 @@ import org.newdawn.slick.Graphics;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
+import xyz.znix.xftl.hangar.SelectShipState;
 import xyz.znix.xftl.rendering.ShaderProgramme;
 
 public class MainGame implements Game {
