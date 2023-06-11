@@ -1,8 +1,8 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 
 abstract class Window {
     var position: IPoint = ConstPoint.ZERO

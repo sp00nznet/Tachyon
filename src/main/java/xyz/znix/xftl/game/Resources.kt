@@ -1,13 +1,13 @@
 package xyz.znix.xftl.game
 
 import org.jdom2.Element
-import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.ItemBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.InGameState.GameContent
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.EventHullDamage

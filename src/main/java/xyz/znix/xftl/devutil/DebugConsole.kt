@@ -6,7 +6,6 @@ import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
@@ -14,6 +13,7 @@ import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.shipgen.ShipGenerator

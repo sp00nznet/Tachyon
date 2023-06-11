@@ -1,13 +1,13 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.newdawn.slick.Image
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.drones.*
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Image
 
 class DroneBlueprint(xml: Element) : Blueprint(xml) {
     val type: DroneType = DroneType.valueOf(xml.getChildTextTrim("type"))

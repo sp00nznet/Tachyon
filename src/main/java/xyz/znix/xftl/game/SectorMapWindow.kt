@@ -1,13 +1,13 @@
 package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.GameMap
 import java.awt.Rectangle
 import kotlin.math.roundToInt

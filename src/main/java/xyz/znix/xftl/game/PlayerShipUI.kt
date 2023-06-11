@@ -3,7 +3,6 @@ package xyz.znix.xftl.game
 import org.jdom2.Element
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
 import org.newdawn.slick.Input.MOUSE_RIGHT_BUTTON
 import org.newdawn.slick.geom.Rectangle
@@ -18,6 +17,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.Event

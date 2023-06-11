@@ -1,9 +1,9 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
-import org.newdawn.slick.Image
 import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.rendering.Image
 import java.util.regex.Pattern
 
 class Animations(df: Datafile) {

@@ -1,8 +1,8 @@
 package xyz.znix.xftl
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Image
 import org.newdawn.slick.Renderable
+import xyz.znix.xftl.rendering.Image
 
 class FTLAnimation(val spec: AnimationSpec, var loop: Boolean, val speed: Float, val backwards: Boolean) : Renderable {
     val width: Int = spec.spriteAt(0).width

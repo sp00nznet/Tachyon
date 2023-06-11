@@ -1,11 +1,11 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.DefenceDrone
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.systems.Hacking

@@ -1,6 +1,6 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Graphics
+import xyz.znix.xftl.rendering.Graphics
 
 /**
  * This represents something on-screen in the editor, which can optionally be selected.

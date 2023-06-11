@@ -3,8 +3,6 @@ package xyz.znix.xftl
 import org.jdom2.Element
 import org.lwjgl.BufferUtils
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.Constants.*
@@ -17,6 +15,8 @@ import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ISerialReferencable
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -434,14 +434,13 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
             val cloakFade = cloaking?.cloakFade ?: 0f
 
             val hullOpacity = 1f - cloakFade * 0.2f
-            g.drawImage(hullImage, hullOffset.x.f, hullOffset.y.f, Color(1f, 1f, 1f, hullOpacity))
+            hullImage.draw(hullOffset.x, hullOffset.y, Color(1f, 1f, 1f, hullOpacity))
 
             if (cloakFade != 0f) {
                 requireNotNull(cloakImage) { "Ship '$name' cloaked, but it doesn't have a cloak image!" }
 
-                g.drawImage(
-                    cloakImage,
-                    hullOffset.x.f + cloakOffset.x.f, hullOffset.y.f + cloakOffset.y.f,
+                cloakImage.draw(
+                    hullOffset.x + cloakOffset.x, hullOffset.y + cloakOffset.y,
                     Color(1f, 1f, 1f, cloakFade)
                 )
             }
@@ -609,7 +608,7 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
 
     private fun drawInterior(g: Graphics, selected: Room?) {
         if (floorImage != null) {
-            g.drawImage(floorImage, floorOffset.x.f + hullOffset.x.f, floorOffset.y.f + hullOffset.y.f)
+            floorImage.draw(floorOffset.x + hullOffset.x, floorOffset.y + hullOffset.y)
         }
 
         // Draw the rooms

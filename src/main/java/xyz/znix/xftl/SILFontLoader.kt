@@ -2,9 +2,9 @@ package xyz.znix.xftl
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Font
-import org.newdawn.slick.Image
 import org.newdawn.slick.opengl.ImageData
 import xyz.znix.xftl.rendering.BulkImageRenderer
+import xyz.znix.xftl.rendering.Image
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer

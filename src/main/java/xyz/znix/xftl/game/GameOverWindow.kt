@@ -1,10 +1,10 @@
 package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.rendering.Graphics
 
 /**
  * This is the window that is displayed when the game ends, either

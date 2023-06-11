@@ -2,7 +2,6 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.crew.AbstractCrew
@@ -16,6 +15,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -178,8 +178,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             else -> Constants.SYSTEM_NORMAL
         }
 
-        g.drawImage(
-            img,
+        img.draw(
             (room.offsetX + (room.pixelWidth / 2f - img.width / 2f).toInt()).f,
             (room.offsetY + (room.pixelHeight / 2f - img.height / 2f).toInt()).f,
             colour

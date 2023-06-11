@@ -2,7 +2,6 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
@@ -10,6 +9,7 @@ import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.RoomPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil

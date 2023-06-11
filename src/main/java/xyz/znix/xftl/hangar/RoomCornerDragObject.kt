@@ -1,9 +1,9 @@
 package xyz.znix.xftl.hangar
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
+import xyz.znix.xftl.rendering.Graphics
 
 class RoomCornerDragObject(
     val editor: ShipEditor,

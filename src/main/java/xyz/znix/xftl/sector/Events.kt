@@ -1,11 +1,11 @@
 package xyz.znix.xftl.sector
 
 import org.jdom2.Element
-import org.newdawn.slick.Image
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.*
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.requireAttributeValue
 
 // Many of the comments in this file came from ftlwiki.com (now unfortunately

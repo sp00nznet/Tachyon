@@ -2,12 +2,12 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import xyz.znix.xftl.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 
 class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     private val mutableShipPos = Point(0, 0)

@@ -4,7 +4,6 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15.*
 import org.lwjgl.opengl.GL20
 import org.newdawn.slick.Color
-import org.newdawn.slick.Image
 import xyz.znix.xftl.f
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

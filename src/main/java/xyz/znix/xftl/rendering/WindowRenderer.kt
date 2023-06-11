@@ -1,7 +1,6 @@
 package xyz.znix.xftl.rendering
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Image
 import xyz.znix.xftl.Utils
 import xyz.znix.xftl.f
 

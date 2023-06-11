@@ -1,10 +1,10 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 
 class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, private val close: () -> Unit) :
     Window() {

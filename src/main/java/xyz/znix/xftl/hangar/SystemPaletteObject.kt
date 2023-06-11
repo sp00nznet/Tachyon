@@ -1,6 +1,6 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Graphics
+import xyz.znix.xftl.rendering.Graphics
 
 /**
  * This is a palette containing all the systems not present on the ship.

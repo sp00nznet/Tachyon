@@ -2,7 +2,7 @@ package xyz.znix.xftl
 
 import org.jdom2.Document
 import org.jdom2.input.SAXBuilder
-import org.newdawn.slick.Image
+import xyz.znix.xftl.rendering.Image
 import java.io.*
 
 const val HEADER_SIZE = 16

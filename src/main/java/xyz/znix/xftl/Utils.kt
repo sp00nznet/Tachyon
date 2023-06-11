@@ -2,10 +2,14 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.*
+import org.newdawn.slick.AppGameContainer
+import org.newdawn.slick.Color
+import org.newdawn.slick.Game
+import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Image
 import java.io.File
 import java.util.*
 import kotlin.random.Random

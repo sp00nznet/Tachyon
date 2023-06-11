@@ -1,13 +1,13 @@
 package xyz.znix.xftl.hangar
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.Rectangle
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.SystemBlueprint
 import kotlin.math.*
 

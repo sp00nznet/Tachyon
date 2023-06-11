@@ -2,7 +2,6 @@ package xyz.znix.xftl.layout
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
@@ -11,6 +10,7 @@ import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 
 /**

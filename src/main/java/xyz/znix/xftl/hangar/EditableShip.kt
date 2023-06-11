@@ -1,7 +1,5 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.draw
@@ -9,6 +7,8 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.systems.SystemBlueprint
 
 /**

@@ -1,12 +1,12 @@
 package xyz.znix.xftl.game
 
 import org.jdom2.Element
-import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import kotlin.math.cos
 import kotlin.math.sin
 

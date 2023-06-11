@@ -2,12 +2,12 @@ package xyz.znix.xftl.hangar
 
 import org.lwjgl.BufferUtils
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
 import org.newdawn.slick.opengl.renderer.Renderer
 import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 
 interface EditorMenu {
     fun keyReleased(key: Int, c: Char) {}

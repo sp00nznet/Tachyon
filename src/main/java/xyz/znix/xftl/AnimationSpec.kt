@@ -1,6 +1,6 @@
 package xyz.znix.xftl
 
-import org.newdawn.slick.Image
+import xyz.znix.xftl.rendering.Image
 
 class AnimationSpec(
     val sheet: Animations.SpriteSheetSpec,

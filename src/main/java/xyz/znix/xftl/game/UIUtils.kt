@@ -1,11 +1,11 @@
 package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import kotlin.math.roundToInt
 
 object UIUtils {

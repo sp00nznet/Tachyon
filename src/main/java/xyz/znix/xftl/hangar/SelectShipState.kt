@@ -2,8 +2,6 @@ package xyz.znix.xftl.hangar
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import org.newdawn.slick.Graphics
-import org.newdawn.slick.Image
 import org.newdawn.slick.opengl.TextureImpl
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
@@ -12,6 +10,8 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.WindowRenderer
 
 class SelectShipState(private val vanillaDF: Datafile, private val main: MainGame) : MainGame.GameState() {
