@@ -35,9 +35,6 @@ object TextureLoader {
 
         val srcPixelFormat = if (hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
 
-        // The magnifying filter is set in Texture.
-        GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-
         // Load the texture data into a byte array
         val textureBuffer = imageData.imageBufferData
 

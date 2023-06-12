@@ -30,6 +30,9 @@ class Texture(
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, glName)
 
         if (currentFiltering != filtering) {
+            // Note we have to set both min and mag, since we use this when drawing
+            // rotated (but not scaled) drones.
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, filtering)
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, filtering)
         }
     }

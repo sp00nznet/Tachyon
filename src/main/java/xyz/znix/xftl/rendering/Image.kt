@@ -54,6 +54,10 @@ class Image(
         )
     }
 
+    fun drawNearest(x: Float, y: Float, filter: Color = Color.white) {
+        drawNearest(x, y, x + width, y + height, 0f, 0f, width.f, height.f, filter)
+    }
+
     override fun draw(x: Float, y: Float, width: Float, height: Float) {
         draw(x, y, width, height, Color.white)
     }
