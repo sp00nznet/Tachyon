@@ -1,13 +1,12 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
-import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Image
-import java.util.regex.Pattern
+import xyz.znix.xftl.rendering.SpriteSheet
 
 class Animations(df: Datafile) {
-    private val sheets: Map<String, SpriteSheetSpec>
+    private val sheets: Map<String, SpriteSheet>
     val animations: Map<String, AnimationSpec>
     val weaponAnimations: Map<String, WeaponAnimationSpec>
 
@@ -60,20 +59,7 @@ class Animations(df: Datafile) {
             val frameWidth = elem.getAttributeValue("fw").toInt()
             val frameHeight = elem.getAttributeValue("fh").toInt().coerceAtMost(img.height)
 
-            val sheet = SpriteSheet(img, frameWidth, frameHeight)
-
-            // The background images for crewmembers. I couldn't find any references to them in the XML
-            // though so I suspect they're hard-coded.
-            val match = PLAYER_BASE_REGEX.matcher(path)
-            val alt: SpriteSheet? = if (match.matches()) {
-                val backName = match.group(1) + "_color.png"
-                val backImg = df.getOrNull(backName)?.let(df::readImage)
-                backImg?.let { SpriteSheet(it, frameWidth, frameHeight) }
-            } else {
-                null
-            }
-
-            sheets[name] = SpriteSheetSpec(sheet, alt)
+            sheets[name] = SpriteSheet(img, frameWidth, frameHeight)
         }
 
         for (xml in doc.rootElement.getChildren("anim")) {
@@ -102,7 +88,7 @@ class Animations(df: Datafile) {
             val boostAnim = xml.getChildTextTrim("boost")?.let { animations.getValue(it) }
 
             weaponAnimations[name] = WeaponAnimationSpec(
-                anim.sheet.sheet,
+                anim.sheet,
                 anim.x,
                 anim.y,
                 anim.length,
@@ -130,7 +116,7 @@ class Animations(df: Datafile) {
 
         val length = desc.getAttributeValue("length").toInt()
         val x = desc.getAttributeValue("x").toInt()
-        val y = sheet.sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
+        val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
 
         // Convert from per-cycle to per-frame
         val time = xml.getChild("time").textTrim.toFloat() / length
@@ -188,10 +174,7 @@ class Animations(df: Datafile) {
         }
     }
 
-    class SpriteSheetSpec(val sheet: SpriteSheet, val secondary: SpriteSheet?)
-
     companion object {
-        val PLAYER_BASE_REGEX = Pattern.compile("(img/people/.*)_base.png")
         val TMP_BROKEN_IMAGES = setOf("artillery_fed", "explosion_big1", "room_touch2x2", "room_touch2x1")
 
         // How long it takes a weapon animation to play from the charged frame to the end.

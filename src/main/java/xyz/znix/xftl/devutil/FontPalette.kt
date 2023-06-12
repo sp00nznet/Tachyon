@@ -1,12 +1,18 @@
 package xyz.znix.xftl.devutil
 
-import org.newdawn.slick.*
+import org.newdawn.slick.BasicGame
+import org.newdawn.slick.Color
+import org.newdawn.slick.GameContainer
+import org.newdawn.slick.Input
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.ShaderProgramme
 import kotlin.math.max
 import kotlin.math.min
+import org.newdawn.slick.Graphics as SlickGraphics
 
 object FontPalette {
     @JvmStatic
@@ -46,9 +52,11 @@ object FontPalette {
 
         private var baseline = false
 
+        private lateinit var g: Graphics
+
         override fun update(container: GameContainer, delta: Int) {}
 
-        override fun render(container: GameContainer, g: Graphics) {
+        override fun render(container: GameContainer, g: SlickGraphics) {
             ShaderProgramme.SHADER_SCREEN_SIZE.set(container.width, container.height)
 
             g.background = Color.white
@@ -85,6 +93,9 @@ object FontPalette {
         }
 
         override fun init(container: GameContainer) {
+            g = Graphics()
+            g.markCurrentImageTransformSource()
+
             // Hack here so we don't have to make it public, won't be used anywhere else
             val field = SILFontLoader::class.java.getDeclaredField("picture")
             field.isAccessible = true

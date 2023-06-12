@@ -354,7 +354,7 @@ object Buttons {
                     val iconX = (iconWindowWidth - icon.height) / 2
                     val iconY = (iconWindowHeight - icon.width) / 2
 
-                    blueprint.drawLauncherUI(game, pos.x + iconX + 11f, pos.y + iconY + 11f)
+                    blueprint.drawLauncherUI(game, g, pos.x + iconX + 11f, pos.y + iconY + 11f)
                 }
 
                 is DroneBlueprint -> {
@@ -457,7 +457,7 @@ object Buttons {
                     val iconX = -icon.height / 2
                     val iconY = -icon.width / 2
 
-                    blueprint.drawLauncherUI(game, dragPosition.x + iconX.f, dragPosition.y + iconY.f)
+                    blueprint.drawLauncherUI(game, g, dragPosition.x + iconX.f, dragPosition.y + iconY.f)
                 }
 
                 is DroneBlueprint -> {

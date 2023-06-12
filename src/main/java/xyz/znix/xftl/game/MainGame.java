@@ -4,16 +4,19 @@ import org.jdom2.Document;
 import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.Game;
 import org.newdawn.slick.GameContainer;
-import org.newdawn.slick.Graphics;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.hangar.SelectShipState;
+import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
 
 public class MainGame implements Game {
     private final Datafile vanillaDatafile;
     private final CommandLineArgs commandLineArgs;
+
+    private Graphics graphics;
+
     private GameContainer gameContainer;
 
     private GameState currentState;
@@ -28,6 +31,9 @@ public class MainGame implements Game {
     @Override
     public void init(GameContainer gc) throws SlickException {
         this.gameContainer = gc;
+
+        graphics = new Graphics();
+        graphics.markCurrentImageTransformSource();
 
         // Load the game content immediately - this will work until
         // we support mods or turning Advanced Edition on or off.
@@ -65,12 +71,19 @@ public class MainGame implements Game {
     }
 
     @Override
-    public void render(GameContainer gc, Graphics g) throws SlickException {
+    public void render(GameContainer gc, org.newdawn.slick.Graphics slickG) throws SlickException {
         // When we use shaders, we have to transform from pixels to NDC
         // If this is set wrong, all the text etc will be transformed wrong.
         ShaderProgramme.getSHADER_SCREEN_SIZE().set(gc.getWidth(), gc.getHeight());
 
-        currentState.render(gc, g);
+        // Reset the transform from last frame, in case there was a transform
+        // call that wasn't inside a pushTransform block.
+        graphics.loadIdentityMatrix();
+
+        currentState.render(gc, graphics);
+
+        // Check there aren't any mismatched pushTransform/popTransform calls.
+        graphics.checkNoPushedTransforms();
     }
 
     @Override

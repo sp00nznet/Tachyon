@@ -1,10 +1,8 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
-import org.newdawn.slick.opengl.TextureImpl
-import org.newdawn.slick.opengl.renderer.Renderer
-import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
@@ -13,6 +11,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Texture
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -457,7 +456,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         dstA: FPos, dstB: FPos,
         colour: Color
     ) {
-        TextureImpl.bindNone()
+        Texture.unbind()
 
         // Find the middle points where the colour should be strongest
         val srcMidX = (srcA.x + srcB.x) / 2
@@ -470,27 +469,25 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val edge = Color(colour)
         edge.a = 0f
 
-        val gl: SGL = Renderer.get()
-
-        gl.glBegin(SGL.GL_QUADS)
+        GL11.glBegin(GL11.GL_QUADS)
 
         // Draw the A-side - srcA,srcMid,dstA,dstMid
         edge.bind()
-        gl.glVertex2f(srcA.x, srcA.y)
-        gl.glVertex2f(dstA.x, dstA.y)
+        Graphics.glVertexTransformed(srcA.x, srcA.y)
+        Graphics.glVertexTransformed(dstA.x, dstA.y)
         colour.bind()
-        gl.glVertex2f(dstMidX, dstMidY)
-        gl.glVertex2f(srcMidX, srcMidY)
+        Graphics.glVertexTransformed(dstMidX, dstMidY)
+        Graphics.glVertexTransformed(srcMidX, srcMidY)
 
         // Draw the B-side - srcB,srcMid,dstB,dstMid
         colour.bind()
-        gl.glVertex2f(dstMidX, dstMidY)
-        gl.glVertex2f(srcMidX, srcMidY)
+        Graphics.glVertexTransformed(dstMidX, dstMidY)
+        Graphics.glVertexTransformed(srcMidX, srcMidY)
         edge.bind()
-        gl.glVertex2f(srcB.x, srcB.y)
-        gl.glVertex2f(dstB.x, dstB.y)
+        Graphics.glVertexTransformed(srcB.x, srcB.y)
+        Graphics.glVertexTransformed(dstB.x, dstB.y)
 
-        gl.glEnd()
+        GL11.glEnd()
     }
 
     private fun findIntersections(src: IPoint, dst: IPoint, ellipse: IPoint, centre: IPoint): Pair<IPoint?, IPoint?> {

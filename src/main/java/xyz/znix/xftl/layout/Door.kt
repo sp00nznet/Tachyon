@@ -299,41 +299,32 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
 
         val filter = if (level == 0) Constants.DOOR_BROKEN_FILTER else Color.white
 
-        var x: Int = offsetX
-        var y: Int = offsetY
-
         // Note that isVertical refers to whether the door is vertical
         // or not, NOT whether the two rooms it joins are placed one
         // above the other.
+        g.pushTransform()
         if (isVertical) {
-            x -= ROOM_SIZE / 2
+            g.translate(offsetX.f - ROOM_SIZE / 2, offsetY.f)
         } else {
-            x += ROOM_SIZE
-            y -= ROOM_SIZE / 2
-
-            g.rotate(x.f, y.f, 90f)
+            g.translate(offsetX.f + ROOM_SIZE, offsetY.f - ROOM_SIZE / 2)
+            g.rotate(0f, 0f, 90f)
         }
 
         // Draw the mouse hover highlight
         if (hovered) {
             val highlightFilter = Color(1f, 1f, 1f, 0.75f)
-            highlight.draw(x.f, y.f, highlightFilter)
+            highlight.draw(0f, 0f, highlightFilter)
         }
 
         doorSheet.draw(
-            x.f, y.f, x.f + ROOM_SIZE, y.f + ROOM_SIZE,
+            0f, 0f, ROOM_SIZE.f, ROOM_SIZE.f,
 
             sheetX.f, sheetY.f,
             sheetX.f + ROOM_SIZE, sheetY.f + ROOM_SIZE,
             filter
         )
 
-        // We're avoiding pushTransform/popTransform since it reads
-        // values from the GPU, which is slow for something like doors
-        // that we render a lot of.
-        if (!isVertical) {
-            g.rotate(x.f, y.f, -90f)
-        }
+        g.popTransform()
     }
 
     fun attackDoor() {

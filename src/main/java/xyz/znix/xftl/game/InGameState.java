@@ -5,7 +5,10 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.newdawn.slick.*;
+import org.newdawn.slick.GameContainer;
+import org.newdawn.slick.ImageBuffer;
+import org.newdawn.slick.Input;
+import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
@@ -17,6 +20,9 @@ import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
+import xyz.znix.xftl.rendering.Graphics;
+import xyz.znix.xftl.rendering.Image;
+import xyz.znix.xftl.rendering.TextureLoader;
 import xyz.znix.xftl.rendering.WindowRenderer;
 import xyz.znix.xftl.savegame.ObjectRefs;
 import xyz.znix.xftl.savegame.RefLoader;
@@ -388,10 +394,11 @@ public class InGameState extends MainGame.GameState {
         renderBackground(container, g);
 
         // Get the player's ship away from the top UI
+        g.pushTransform();
         g.translate(PLAYER_SHIP_POSITION.getX(), PLAYER_SHIP_POSITION.getY());
         player.render(g, true, hoveredRoom);
         player.renderTargeting(g, Objects.requireNonNull(player.getWeapons()).getSelectedTargets());
-        g.resetTransform();
+        g.popTransform();
 
         shipUI.render(container, g);
 
@@ -1154,7 +1161,7 @@ public class InGameState extends MainGame.GameState {
                 buffer.setRGBA(x, y, rg, rg, 0, 255);
             }
         }
-        missingImage = new Image(buffer);
+        missingImage = TextureLoader.INSTANCE.loadImage(buffer);
         return missingImage;
     }
 

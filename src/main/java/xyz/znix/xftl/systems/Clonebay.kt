@@ -2,11 +2,14 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Constants
+import xyz.znix.xftl.SystemInfo
+import xyz.znix.xftl.Translator
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.rendering.Graphics

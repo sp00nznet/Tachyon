@@ -65,14 +65,14 @@ class FTLAnimation(val spec: AnimationSpec, var loop: Boolean, val speed: Float,
     }
 
     override fun draw(x: Float, y: Float, filter: Color) {
-        draw(x, y, width.f, height.f, filter)
+        currentFrame.draw(x, y, filter)
     }
 
     override fun draw(x: Float, y: Float, width: Float, height: Float) {
-        draw(x, y, width, height, Color.white)
+        currentFrame.draw(x, y, width, height)
     }
 
-    override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Color) {
-        currentFrame.draw(x, y, width, height, filter)
+    override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Color?) {
+        currentFrame.draw(x, y, width, height, filter ?: Color.white)
     }
 }

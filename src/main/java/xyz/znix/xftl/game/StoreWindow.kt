@@ -1,7 +1,10 @@
 package xyz.znix.xftl.game
 
 import org.newdawn.slick.Input
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.Constants
+import xyz.znix.xftl.Ship
+import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics

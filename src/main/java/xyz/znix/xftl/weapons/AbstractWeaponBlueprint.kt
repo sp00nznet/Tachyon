@@ -1,7 +1,6 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Ship
@@ -9,6 +8,8 @@ import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.SpriteSheet
 import xyz.znix.xftl.savegame.RefLoader
 import java.util.*
 
@@ -71,18 +72,25 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
      * Draw the weapon's launcher image as it should be shown in UIs, for example
      * quest rewards or in a store.
      */
-    fun drawLauncherUI(game: InGameState, x: Float, y: Float) {
+    fun drawLauncherUI(game: InGameState, g: Graphics, x: Float, y: Float) {
         val anim = getLauncher(game)
+        val spr = anim.chargedImage
+
+        g.pushTransform()
 
         // Flip and rotate the sprite appropriately to make it loop like it's mounted above
         // a horizontal surface.
-        val spr = anim.chargedImage.getFlippedCopy(true, false)
-        spr.setCenterOfRotation(0f, 0f)
-        spr.rotate(90f)
 
-        // Note we have to add the width (height, but we've rotated it 90°) to fix
-        // up the offset caused by the rotation
-        spr.draw(x + spr.height, y)
+        // Note we have to add the width (height, but we've rotated it 90°) and height
+        // to fix the offset caused by the rotation and mirroring.
+        g.translate(x + spr.height, y + spr.width)
+
+        g.scale(1f, -1f)
+        g.rotate(0f, 0f, 90f)
+
+        spr.draw(0, 0)
+
+        g.popTransform()
     }
 
     override fun finishSetup(content: GameContent) {

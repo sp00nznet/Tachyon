@@ -1,9 +1,8 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
-import org.newdawn.slick.opengl.renderer.Renderer
-import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.Skill
@@ -316,11 +315,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             g.pushTransform()
             g.translate(iconX.f, iconY.f)
 
-            val gl = Renderer.get()
-
             timerImg.bind()
             Color.white.bind()
-            gl.glBegin(SGL.GL_TRIANGLES)
+            GL11.glBegin(GL11.GL_TRIANGLES)
 
             // Figure out the angle around this image we need to cut it at
             val numSegments = 12 // The ring is split up into 12 segments
@@ -341,11 +338,11 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             val half = size / 2
 
             fun point(x: Float, y: Float) {
-                gl.glTexCoord2f(
-                    x / timerImg.width * timerImg.textureWidth,
-                    y / timerImg.height * timerImg.textureHeight
+                GL11.glTexCoord2f(
+                    x / timerImg.texture.rawTextureWidth,
+                    y / timerImg.texture.rawTextureHeight
                 )
-                gl.glVertex3f(x, y, 0f)
+                Graphics.glVertexTransformed(x, y)
             }
 
             // Draw a bunch of triangles covering different parts of the image,
@@ -380,7 +377,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             drawTriangle(225, 270)
             drawTriangle(270, 360)
 
-            gl.glEnd()
+            GL11.glEnd()
 
             g.popTransform()
         }

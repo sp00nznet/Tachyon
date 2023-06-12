@@ -200,8 +200,8 @@ class LivingCrewInfo(
         baseFrame: Image,
         alpha: Float
     ) {
-        val texX0 = (baseFrame.textureOffsetX * baseFrame.texture.textureWidth).toInt()
-        val texY0 = (baseFrame.textureOffsetY * baseFrame.texture.textureHeight).toInt()
+        val texX0 = baseFrame.textureOffsetX
+        val texY0 = baseFrame.textureOffsetY
         val texX1 = texX0 + baseFrame.width
         val texY1 = texY0 + baseFrame.height
 
@@ -214,13 +214,12 @@ class LivingCrewInfo(
 
         val fullBaseImage = when {
             isFemale -> game.getImg("img/people/female_base.png")
-            else -> game.animations["${baseAnimationName}_portrait"].sheet.sheet
+            else -> game.animations["${baseAnimationName}_portrait"].sheet.sheetImage
         }
 
         // Draw the base image, without any tinting
-        fullBaseImage.filter = Image.FILTER_NEAREST
         fullBaseImage.alpha = alpha
-        fullBaseImage.draw(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f)
+        fullBaseImage.drawNearest(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f)
         fullBaseImage.alpha = 1f
 
         // Draw all the layers
@@ -230,9 +229,8 @@ class LivingCrewInfo(
             val colours = race.colourFilters[index]
             val filter = colours[effectiveColour % colours.size]
 
-            layer.filter = Image.FILTER_NEAREST
             layer.alpha = alpha
-            layer.draw(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f, filter)
+            layer.drawNearest(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f, filter)
             layer.alpha = 1f
         }
     }

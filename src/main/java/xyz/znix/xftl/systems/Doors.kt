@@ -4,7 +4,6 @@ import org.jdom2.Element
 import org.newdawn.slick.Input
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
-import xyz.znix.xftl.draw
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.InGameState

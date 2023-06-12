@@ -1,9 +1,6 @@
 package xyz.znix.xftl.hangar
 
-import org.lwjgl.BufferUtils
 import org.newdawn.slick.Color
-import org.newdawn.slick.opengl.renderer.Renderer
-import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -111,13 +108,6 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
         var hovered: Boolean = false
 
         fun draw(g: Graphics) {
-            // Get our translation
-            // TODO handle this properly
-            val buffer = BufferUtils.createFloatBuffer(16)
-            Renderer.get().glGetFloat(SGL.GL_MODELVIEW_MATRIX, buffer)
-            val translationX = buffer[12]
-            val translationY = buffer[13]
-
             g.color = Color.darkGray
             g.fillRect(pos.x.f, pos.y.f, width.f, height.f)
             g.color = Color.white
@@ -133,8 +123,8 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
                 }
 
                 editor.font.drawString(
-                    translationX + pos.x.f + MARGIN,
-                    translationY + y + 11f, entry.text,
+                    pos.x.f + MARGIN,
+                    y + 11f, entry.text,
                     Color.white
                 )
 

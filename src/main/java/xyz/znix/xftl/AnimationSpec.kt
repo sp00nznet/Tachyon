@@ -1,9 +1,10 @@
 package xyz.znix.xftl
 
 import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.rendering.SpriteSheet
 
 class AnimationSpec(
-    val sheet: Animations.SpriteSheetSpec,
+    val sheet: SpriteSheet,
     val name: String,
     val x: Int, val y: Int,
     val length: Int,
@@ -21,6 +22,6 @@ class AnimationSpec(
 
     fun spriteAt(i: Int): Image {
         if (i >= length) throw IndexOutOfBoundsException(i)
-        return sheet.sheet.getSprite(x + i, y)
+        return sheet.getSprite(x + i, y)
     }
 }

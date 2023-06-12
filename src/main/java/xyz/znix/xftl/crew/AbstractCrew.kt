@@ -2,7 +2,6 @@ package xyz.znix.xftl.crew
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import org.newdawn.slick.SpriteSheet
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.layout.Door
@@ -28,7 +27,7 @@ abstract class AbstractCrew(
     val codename: String get() = blueprint.name
 
     var icon: FTLAnimation
-    val backImg: SpriteSheet? = anims["${codename}_portrait"].sheet.secondary
+    val backImg: Image? = initialRoom.ship.sys.getImgIfExists("img/people/${codename}_color.png")
     val portraitAnim: AnimationSpec
 
     // This is used to avoid restarting the walking animation unless necessary.
@@ -622,8 +621,8 @@ abstract class AbstractCrew(
         // select them.
         if (backImg != null) {
             val backSubImg = backImg.getSubImage(
-                (cf.textureOffsetX * cf.texture.textureWidth).toInt(),
-                (cf.textureOffsetY * cf.texture.textureHeight).toInt(),
+                cf.textureOffsetX,
+                cf.textureOffsetY,
                 cf.width,
                 cf.height
             )
@@ -664,9 +663,8 @@ abstract class AbstractCrew(
     ) {
         // Use nearest filtering so the image looks good when scaled up
         // in the crew management screen.
-        baseFrame.filter = Image.FILTER_NEAREST
         baseFrame.alpha = alpha
-        baseFrame.draw(x0, y0, x1, y1, 0f, 0f, baseFrame.width.f, baseFrame.height.f)
+        baseFrame.drawNearest(x0, y0, x1, y1, 0f, 0f, baseFrame.width.f, baseFrame.height.f)
         baseFrame.alpha = 1f
     }
 

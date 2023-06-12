@@ -1,10 +1,12 @@
 package xyz.znix.xftl
 
+import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
 import org.newdawn.slick.Font
 import org.newdawn.slick.opengl.ImageData
 import xyz.znix.xftl.rendering.BulkImageRenderer
 import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.rendering.TextureLoader
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer
@@ -108,8 +110,11 @@ class SILFontLoader : Font {
 
         val img = MonochromeImage(texWidth, texHeight, data)
 
-        picture = Image(img, Image.FILTER_NEAREST)
+        picture = TextureLoader.loadImage(img)
         renderer = BulkImageRenderer(picture)
+
+        // Enlarged fonts are supposed to be pixelated.
+        renderer.imageFiltering = GL11.GL_NEAREST
     }
 
     /**

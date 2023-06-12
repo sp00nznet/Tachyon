@@ -2,7 +2,6 @@ package xyz.znix.xftl.hangar
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import org.newdawn.slick.opengl.TextureImpl
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.SILFontLoader
@@ -66,10 +65,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     }
 
     override fun render(container: GameContainer, g: Graphics) {
-        g.background = Color.darkGray
-        g.clear()
-
-        TextureImpl.unbind()
+        g.clear(Color.darkGray)
 
         hovered = null
 

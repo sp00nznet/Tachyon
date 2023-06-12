@@ -1,10 +1,7 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
-import org.lwjgl.BufferUtils
 import org.newdawn.slick.Color
-import org.newdawn.slick.opengl.renderer.Renderer
-import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.*
@@ -451,12 +448,6 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
 
         // Draw the debug hardpoint visuals
         if (sys.debugFlags.showHardpoints.set) {
-            // Get our translation
-            val buffer = BufferUtils.createFloatBuffer(16)
-            Renderer.get().glGetFloat(SGL.GL_MODELVIEW_MATRIX, buffer)
-            val translateX = buffer[12]
-            val translateY = buffer[13]
-
             for ((index, hp) in hardpoints.withIndex()) {
                 val pos = hp.spec.position
                 g.color = Color.red
@@ -464,8 +455,8 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
                 g.drawLine(pos.x + 5f, pos.y - 5f, pos.x - 5f, pos.y + 5f)
 
                 sys.getFont("JustinFont8").drawString(
-                    translateX + pos.x.f + 5f,
-                    translateY + pos.y + 8f,
+                    pos.x.f + 5f,
+                    pos.y + 8f,
                     index.toString(), Color.red
                 )
             }
@@ -573,8 +564,12 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
             img.draw(pos)
         }
 
-        inboundBeamAim = targets.beamAiming
-        targets.beamAiming?.let { renderTargetingBeam(g, it) }
+        if (targets.beamAiming?.targetShip == this) {
+            inboundBeamAim = targets.beamAiming
+            targets.beamAiming?.let { renderTargetingBeam(g, it) }
+        } else {
+            inboundBeamAim = null
+        }
     }
 
     fun renderTargetingBeam(g: Graphics, beam: SelectedTarget.BeamAim) {

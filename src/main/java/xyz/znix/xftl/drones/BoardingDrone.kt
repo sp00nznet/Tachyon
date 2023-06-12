@@ -3,7 +3,6 @@ package xyz.znix.xftl.drones
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.layout.Room

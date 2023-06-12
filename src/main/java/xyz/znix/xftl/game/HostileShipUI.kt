@@ -2,12 +2,14 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Constants
+import xyz.znix.xftl.Ship
+import xyz.znix.xftl.Utils
+import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.rendering.Image
 
 class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     private val mutableShipPos = Point(0, 0)
@@ -65,12 +67,13 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
             mask.draw(boxX, boxY)
         }) {
+            g.pushTransform()
             g.translate(shipPos.x.f, shipPos.y.f)
             enemy.render(g, interiorVisible, hoveredRoom)
 
             enemy.renderTargeting(g, game.shipUI.ship.weapons!!.selectedTargets)
 
-            g.resetTransform()
+            g.popTransform()
         }
 
         val textX = boxX + 12
@@ -222,9 +225,13 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         val left = game.getImg("img/combatUI/box_hostiles_smallbar_left.png")
         left.draw(x, y, filter)
         val middle = game.getImg("img/combatUI/box_hostiles_smallbar_middle.png")
-        middle.filter = Image.FILTER_NEAREST
         val midWidth = textWidth + textX - left.width
-        middle.draw(x.f + left.width, y.f, midWidth.f, middle.height.f, filter)
+        middle.drawNearest(
+            x.f + left.width, y.f,
+            x.f + left.width + midWidth, y.f + middle.height,
+            0f, 0f, middle.width.f, middle.height.f,
+            filter
+        )
 
         val rightImg = game.getImg("img/combatUI/box_hostiles_smallbar_right.png")
         rightImg.draw(x + left.width + midWidth, y, filter)

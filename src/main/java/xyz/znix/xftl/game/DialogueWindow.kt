@@ -389,7 +389,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
 
         for (bp in resourceSet.items) {
-            y += drawRewardBlueprint(bp, pos.x, y, textColour)
+            y += drawRewardBlueprint(g, bp, pos.x, y, textColour)
         }
 
         if (resourceSet.intruders.isNotEmpty()) {
@@ -446,12 +446,12 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         return textY
     }
 
-    private fun drawRewardBlueprint(bp: Blueprint, boxX: Int, textY: Int, textColour: Color): Int {
+    private fun drawRewardBlueprint(g: Graphics, bp: Blueprint, boxX: Int, textY: Int, textColour: Color): Int {
         when (bp) {
             is AbstractWeaponBlueprint -> {
                 val anim = bp.getLauncher(game)
 
-                bp.drawLauncherUI(game, boxX + 10f, textY + 2f)
+                bp.drawLauncherUI(game, g, boxX + 10f, textY + 2f)
 
                 // Draw the name
                 val name = game.translator[bp.title!!]

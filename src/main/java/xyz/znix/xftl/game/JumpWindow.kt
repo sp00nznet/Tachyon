@@ -1,18 +1,20 @@
 package xyz.znix.xftl.game
 
+import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
 import org.newdawn.slick.Input
-import org.newdawn.slick.opengl.TextureImpl
-import org.newdawn.slick.opengl.renderer.Renderer
-import org.newdawn.slick.opengl.renderer.SGL
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Constants
+import xyz.znix.xftl.Utils
 import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.drawSection
+import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.rendering.Texture
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Sector
 import kotlin.math.*
@@ -67,11 +69,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     // is used to figure out which beacons to display information about.
     private val neighbourVisSet = sector.beacons.filter { it.visited }.flatMap { it.neighbours }.toSet()
 
-    private val labelWhite = (1..3).map { "img/map/map_box_white_$it.png" }.map {
-        game.getImg(it).copy().apply {
-            filter = Image.FILTER_NEAREST
-        }
-    }
+    private val labelWhite = (1..3).map { game.getImg("img/map/map_box_white_$it.png") }
 
     val cancelButton = Buttons.BasicButton(
         game, size + ConstPoint(10 - cancelButtonOutline.width, 1),
@@ -114,13 +112,13 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         }
 
         // Draw the connections to the adjacent beacons.
-        drawBeaconLinesTo(game.currentBeacon, Constants.BEACON_LINE_PLAYER) { true }
+        drawBeaconLinesTo(g, game.currentBeacon, Constants.BEACON_LINE_PLAYER) { true }
 
         // Draw the line showing where the flagship will next jump
         if (sector.flagshipNextBeacon != null) {
             if (!sector.flagshipJumping) {
                 // Draw a dotted line if the flagship isn't jumping this turn
-                drawBeaconLine(sector.flagshipBeacon!!, sector.flagshipNextBeacon!!, Constants.BEACON_LINE_FLAGSHIP)
+                drawBeaconLine(g, sector.flagshipBeacon!!, sector.flagshipNextBeacon!!, Constants.BEACON_LINE_FLAGSHIP)
             } else {
                 // Draw a wide, continuous line if the flagship is jumping this turn.
                 val a = mapBase + sector.flagshipBeacon!!.pos
@@ -131,15 +129,14 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
                 val tangentX = cos(angle + PI.toFloat() / 2f) * width / 2
                 val tangentY = sin(angle + PI.toFloat() / 2f) * width / 2
 
-                val gl: SGL = Renderer.get()
-                TextureImpl.bindNone()
+                Texture.unbind()
                 Constants.BEACON_LINE_FLAGSHIP.bind()
-                gl.glBegin(SGL.GL_QUADS)
-                gl.glVertex2f(a.x + tangentX, a.y + tangentY)
-                gl.glVertex2f(a.x - tangentX, a.y - tangentY)
-                gl.glVertex2f(b.x - tangentX, b.y - tangentY)
-                gl.glVertex2f(b.x + tangentX, b.y + tangentY)
-                gl.glEnd()
+                GL11.glBegin(GL11.GL_QUADS)
+                Graphics.glVertexTransformed(a.x + tangentX, a.y + tangentY)
+                Graphics.glVertexTransformed(a.x - tangentX, a.y - tangentY)
+                Graphics.glVertexTransformed(b.x - tangentX, b.y - tangentY)
+                Graphics.glVertexTransformed(b.x + tangentX, b.y + tangentY)
+                GL11.glEnd()
 
                 // Draw the animated flagship on top of it.
                 // Note these numbers are approximate.
@@ -160,7 +157,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         if (hovered != null && hovered != game.currentBeacon) {
             // Draw the lines between the hovered beacon and it's neighbours
-            drawBeaconLinesTo(hovered, Constants.BEACON_LINE_HOVER) { it != game.currentBeacon }
+            drawBeaconLinesTo(g, hovered, Constants.BEACON_LINE_HOVER) { it != game.currentBeacon }
         }
 
         val nextFleetPos = Point(sector.dangerZoneCentre)
@@ -231,7 +228,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
                 drawBeaconLabel(pos, game.translator["map_icon_base"])
 
             if (beacon == hovered && beacon != game.currentBeacon && game.currentBeacon.neighbours.contains(hovered)) {
-                drawTargetBox(pos)
+                drawTargetBox(g, pos)
             }
 
             // Draw the player ship rotating around the beacon.
@@ -450,61 +447,44 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         cancelClicked()
     }
 
-    private fun drawTargetBox(pos: IPoint) {
-        val secs = System.nanoTime() / 1_000_000_000f
-        val timePoint = 6 * secs
-        val distFactor = (1 + sin(timePoint % (Math.PI * 2))) / 2
-        val spacing = (distFactor * 4).roundToInt()
-
-        targetBox.rotation = 0f
-        targetBox.draw(pos.x - spacing, pos.y - spacing)
-        targetBox.rotation = 90f
-        targetBox.draw(pos.x + spacing, pos.y - spacing)
-        targetBox.rotation = 180f
-        targetBox.draw(pos.x + spacing, pos.y + spacing)
-        targetBox.rotation = 270f
-        targetBox.draw(pos.x - spacing, pos.y + spacing)
+    private fun drawTargetBox(g: Graphics, pos: IPoint) {
+        drawTargetMarkers(g, targetBox, pos.x + targetBox.width / 2, pos.y + targetBox.height / 2)
     }
 
-    private fun drawBeaconLinesTo(beacon: Beacon, colour: Color, predicate: (Beacon) -> Boolean) {
+    private fun drawBeaconLinesTo(g: Graphics, beacon: Beacon, colour: Color, predicate: (Beacon) -> Boolean) {
         for (neighbour in beacon.neighbours) {
             if (!predicate(neighbour))
                 continue
 
-            drawBeaconLine(beacon, neighbour, colour)
+            drawBeaconLine(g, beacon, neighbour, colour)
         }
     }
 
-    private fun drawBeaconLine(from: Beacon, to: Beacon, colour: Color) {
+    private fun drawBeaconLine(g: Graphics, from: Beacon, to: Beacon, colour: Color) {
+        g.pushTransform()
+
         val fromPos = from.pos + mapBase + beaconOffset
         val toPos = to.pos + mapBase + beaconOffset
 
         // Find the delta vector between the two points we're drawing between, and the length of said vector
         val delta = toPos - fromPos
         val dist = sqrt(delta.distToSq(ConstPoint.ZERO).f).toInt()
+        val angle = atan2(delta.y.f, delta.x.f) * 180 / Math.PI.toFloat()
 
-        // Setup the rotation settings of the line segment, so it runs along the delta vector
-        lineImg.setCenterOfRotation(0f, 1.5f)
-        lineImg.rotation = atan2(delta.y.f, delta.x.f) * 180 / Math.PI.toFloat()
+        // Translate to the start position, and rotate so that positive x runs along our line.
+        // The beacons are drawn at their image origins, and they're 32px² - so +16 for x,y.
+        g.translate(fromPos.x + 16f, fromPos.y + 16f)
+        g.rotate(0f, 1.5f, angle)
 
         val segmentWidth = 10
 
         // Step along the path of the vector, drawing images in each place
         for (i in 6..(dist - 5) step segmentWidth) {
-            // Find the proportion of how far along we are
-            val factor = 1f * i / dist
-
-            // ... and use that to find the position along the lien
-            val lPos = Point(fromPos)
-            lPos.x += (delta.x * factor).toInt()
-            lPos.y += (delta.y * factor).toInt()
-
-            // The beacons are drawn at their image origins, and they're 32px²
-            lPos += ConstPoint(16, 16)
-
             // Draw the line itself
-            lineImg.drawSection(lPos.x, lPos.y, segmentWidth, 4, 1, 0, colour)
+            lineImg.drawSection(i, 0, segmentWidth, 4, 1, 0, colour)
         }
+
+        g.popTransform()
     }
 
     private fun drawBeaconLabel(pos: IPoint, text: String) {
@@ -516,7 +496,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         val boxTopWithGlow = boxTop - 6
 
         labelWhite[0].draw(pos.x + 15, boxTopWithGlow)
-        labelWhite[1].draw(pos.x + 34f, boxTopWithGlow.f, strWidth - 8f, 32f)
+        labelWhite[1].drawNearest(pos.x + 34f, boxTopWithGlow.f, strWidth - 8f, 32f)
         labelWhite[2].draw(pos.x + 26 + strWidth, boxTopWithGlow)
 
         beaconLabelFont.drawString(pos.x + 30f, boxTop + 10f, text, Constants.SECTOR_CUTOUT_TEXT)
@@ -587,5 +567,32 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     companion object {
         // The width of the glow around the edge of the window
         private const val GLOW = 7
+
+        /**
+         * This draws the little rounded corners that move in and out, which is used
+         * both on the beacon and sector map.
+         */
+        fun drawTargetMarkers(g: Graphics, targetBox: Image, centreX: Int, centreY: Int) {
+            val period = 1_000_000_000
+            val timePoint = (System.nanoTime() % period) / period.toFloat()
+            val distFactor = (1 + sin(timePoint * (Math.PI * 2))) / 2
+            val spacing = (distFactor * 4).roundToInt()
+
+            g.pushTransform()
+            g.translate(centreX.f, centreY.f)
+
+            val boxX = -spacing - targetBox.width / 2
+            val boxY = -spacing - targetBox.height / 2
+
+            targetBox.draw(boxX, boxY)
+            g.rotate(0f, 0f, 90f)
+            targetBox.draw(boxX, boxY)
+            g.rotate(0f, 0f, 90f)
+            targetBox.draw(boxX, boxY)
+            g.rotate(0f, 0f, 90f)
+            targetBox.draw(boxX, boxY)
+
+            g.popTransform()
+        }
     }
 }

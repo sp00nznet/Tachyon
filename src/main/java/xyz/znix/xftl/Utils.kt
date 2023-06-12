@@ -17,9 +17,6 @@ import kotlin.random.Random
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
 
-fun Image.draw(x: Int, y: Int) = draw(x.f, y.f)
-fun Image.draw(x: Int, y: Int, filter: Color) = draw(x.f, y.f, filter)
-fun Image.draw(pos: IPoint) = draw(pos.x.f, pos.y.f)
 val Image.imageSize: IPoint get() = ConstPoint(width, height)
 
 fun Image.drawSection(

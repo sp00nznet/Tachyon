@@ -1,7 +1,6 @@
 package xyz.znix.xftl.hangar
 
 import xyz.znix.xftl.Constants
-import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.SystemBlueprint

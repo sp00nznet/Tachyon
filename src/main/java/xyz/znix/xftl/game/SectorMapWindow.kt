@@ -2,7 +2,6 @@ package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants
-import xyz.znix.xftl.draw
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -10,8 +9,6 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.GameMap
 import java.awt.Rectangle
-import kotlin.math.roundToInt
-import kotlin.math.sin
 
 class SectorMapWindow(private val game: InGameState, private val selectedCallback: (GameMap.SectorInfo?) -> Unit) :
     Window() {
@@ -206,8 +203,8 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
             pos.y += SECTOR_RADIUS
 
             when (hoveredSector) {
-                info -> drawTargetBox(pos, true)
-                null -> drawTargetBox(pos, false)
+                info -> drawTargetBox(g, pos, true)
+                null -> drawTargetBox(g, pos, false)
                 else -> Unit // Don't draw the box if the other beacon is hovered
             }
         }
@@ -349,32 +346,11 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         }
     }
 
-    private fun drawTargetBox(pos: IPoint, hover: Boolean) {
-        // TODO deduplicate with JumpWindow
-        // Subtract out the time the window was opened, so a very high
-        // nanoTime value doesn't cause floating-point accuracy problems
-        // and thus a jittery animation.
-        val nanos = System.nanoTime() - startingNanos
-        val secs = nanos / 1_000_000_000f
-        val timePoint = 6 * secs
-        val distFactor = (1 + sin(timePoint % (Math.PI * 2))) / 2
-        val spacing = (distFactor * 4).roundToInt()
-
+    private fun drawTargetBox(g: Graphics, pos: IPoint, hover: Boolean) {
         val targetBox = if (hover) targetBoxHover else targetBoxOption
 
-        // Subtract out the size of the target box - we always specify
-        // the top-left corner as though there was no rotation.
-        val x = pos.x - targetBox.width / 2
-        val y = pos.y - targetBox.height / 2
-
-        targetBox.rotation = 0f
-        targetBox.draw(x - spacing, y - spacing)
-        targetBox.rotation = 90f
-        targetBox.draw(x + spacing, y - spacing)
-        targetBox.rotation = 180f
-        targetBox.draw(x + spacing, y + spacing)
-        targetBox.rotation = 270f
-        targetBox.draw(x - spacing, y + spacing)
+        // We can re-use JumpWindow's implementation
+        JumpWindow.drawTargetMarkers(g, targetBox, pos.x, pos.y)
     }
 
     // Draw one of the cutouts for the description of a beacon type

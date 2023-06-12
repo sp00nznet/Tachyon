@@ -1,0 +1,42 @@
+package xyz.znix.xftl.rendering
+
+import org.lwjgl.opengl.GL11
+
+/**
+ * A representation of the underlying texture data that an image represents a view of.
+ */
+class Texture(
+    // The size of the texture, as uploaded to the GPU.
+    val rawTextureWidth: Int,
+    val rawTextureHeight: Int,
+
+    // The size of the portion of the image that contains something useful.
+    // This is larger, as Slick rounds images up to power-of-two sizes.
+    // TODO can we save some VRAM by not doing this? Is it an old compatibility issue?
+    val imageWidth: Int,
+    val imageHeight: Int,
+
+    // The OpenGL resource reference ('name') of this image.
+    val glName: Int
+) {
+    private var currentFiltering = -1
+
+    /**
+     * Bind the texture, with a given filtering setting - either [GL11.GL_LINEAR]
+     * or [GL11.GL_NEAREST] - the latter should be used when scaling up the image.
+     */
+    fun bind(filtering: Int) {
+        GL11.glEnable(GL11.GL_TEXTURE_2D)
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, glName)
+
+        if (currentFiltering != filtering) {
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, filtering)
+        }
+    }
+
+    companion object {
+        fun unbind() {
+            GL11.glDisable(GL11.GL_TEXTURE_2D)
+        }
+    }
+}

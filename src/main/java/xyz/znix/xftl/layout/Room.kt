@@ -1,10 +1,7 @@
 package xyz.znix.xftl.layout
 
 import org.jdom2.Element
-import org.lwjgl.BufferUtils
 import org.newdawn.slick.Color
-import org.newdawn.slick.opengl.renderer.Renderer
-import org.newdawn.slick.opengl.renderer.SGL
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
@@ -242,17 +239,17 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         if (config.spec.interiorImage != null) {
             // Render the interior decals
             val bg = ship.sys.getImg(config.spec.interiorImage)
-            g.drawImage(bg, x.f, y.f)
+            bg.draw(x, y)
         } else if (config.computerPoint != null) {
             // AI ships rarely (never?) use proper room textures. For systems like
             // engines and piloting that can be manned, draw a standard computer image
             // on instead.
             val comp = ship.sys.getImg("img/ship/interior/computer1.png")
-            val imgX = x.f + config.computerPoint.x * ROOM_SIZE
-            val imgY = y.f + config.computerPoint.y * ROOM_SIZE
+            val imgX = x + config.computerPoint.x * ROOM_SIZE
+            val imgY = y + config.computerPoint.y * ROOM_SIZE
             g.pushTransform()
-            g.rotate(imgX + ROOM_SIZE / 2, imgY + ROOM_SIZE / 2, config.computerDirection!!.angle.f)
-            g.drawImage(comp, imgX, imgY)
+            g.rotate(imgX.f + ROOM_SIZE / 2, imgY.f + ROOM_SIZE / 2, config.computerDirection!!.angle.f)
+            comp.draw(imgX, imgY)
             g.popTransform()
         }
 
@@ -385,13 +382,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         if (!ship.sys.debugFlags.showRoomNumbers.set)
             return
 
-        // Get our translation
-        val buffer = BufferUtils.createFloatBuffer(16)
-        Renderer.get().glGetFloat(SGL.GL_MODELVIEW_MATRIX, buffer)
-        val translateX = buffer[12]
-        val translateY = buffer[13]
         ship.sys.getFont("JustinFont8").drawString(
-            translateX + offsetX + 4f, translateY + offsetY + 12f,
+            offsetX + 4f, offsetY + 12f,
             id.toString(),
             Color.blue
         )

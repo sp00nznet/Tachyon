@@ -18,6 +18,8 @@ import kotlin.math.max
  * of draw calls.
  */
 class BulkImageRenderer(var image: Image) : AutoCloseable {
+    var imageFiltering: Int = GL11.GL_LINEAR
+
     private var vbo: Int = 0
     private var data: ByteBuffer = generateBuffer(128)
     private var numVerts = 0
@@ -72,8 +74,15 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
     ) {
         checkSize(4 * 4) // 4 32-bit ints
 
-        data.putFloat(x)
-        data.putFloat(y)
+        // Transform our position to reflect the Graphics translate calls.
+        // 3x3 matrix multiply, with (baseX,baseY,1)
+        val m = Graphics.getTextureTransformMatrix()
+        val transformedX = x * m.m00 + y * m.m01 + m.m02
+        val transformedY = x * m.m10 + y * m.m11 + m.m12
+        // Don't need to calculate a W value
+
+        data.putFloat(transformedX)
+        data.putFloat(transformedY)
         data.putFloat(u)
         data.putFloat(v)
 
@@ -112,7 +121,7 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
             vbo = glGenBuffers()
         }
 
-        image.bind() // Binds to GL_TEXTURE_2D
+        image.texture.bind(imageFiltering) // Binds to GL_TEXTURE_2D
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo)
         data.flip()
@@ -180,17 +189,17 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
 
         transformMatData.clear()
 
-        transformMatData.put(image.textureWidth / image.width)
+        transformMatData.put(1f / image.texture.rawTextureWidth)
         transformMatData.put(0f)
         transformMatData.put(0f)
 
         transformMatData.put(0f)
-        transformMatData.put(image.textureHeight / image.height)
+        transformMatData.put(1f / image.texture.rawTextureHeight)
         transformMatData.put(0f)
 
         // Transform column, 1 is multiplied into this in the shader.
-        transformMatData.put(image.textureOffsetX)
-        transformMatData.put(image.textureOffsetY)
+        transformMatData.put(image.textureOffsetX.f / image.texture.rawTextureWidth)
+        transformMatData.put(image.textureOffsetY.f / image.texture.rawTextureHeight)
         transformMatData.put(0f)
 
         transformMatData.flip()
