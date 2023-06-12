@@ -60,7 +60,7 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         // that's called with transforms added so we draw
         // stuff relative to the drone.
         val beam = this.weapon as? BeamBlueprint.BeamInstance
-        beam?.drawDroneBeam(this)
+        beam?.drawDroneBeam(g, this)
 
         super.renderExternal(g)
     }

@@ -21,6 +21,11 @@ class DebugFlagManager {
         "Show the timers for fire spread, extinguishing, and oxygen deprivation."
     )
 
+    val showBeamVectors = DebugFlag(
+        "sbv", "Show beam/shield vectors", true,
+        "Show the vectors representing the beam/shield contact"
+    )
+
     val fastWeaponCharge = DebugFlag(
         "fwc", "Fast Weapon Charge", false,
         "Weapons charge at ten times their normal speed"
@@ -67,6 +72,7 @@ class DebugFlagManager {
         showHardpoints,
         showRoomNumbers,
         showFireTimers,
+        showBeamVectors,
         fastWeaponCharge,
         noEnemyFire,
         noDmg,

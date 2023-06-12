@@ -471,7 +471,7 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
         }
 
         for (beam in inboundBeams) {
-            beam.renderInbound()
+            beam.renderInbound(g)
         }
 
         // Draw any drones flying around the ship

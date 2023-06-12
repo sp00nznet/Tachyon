@@ -7,6 +7,7 @@ import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
@@ -84,7 +85,12 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // to fix the flagship beam.
                 val offset = animation.firePoint
                 val visibleStrength = max(1, damage)
-                drawBeam(visibleStrength, offset + ConstPoint(0, 10), offset + ConstPoint(0, -5000))
+                drawBeam(
+                    g, ship.sys, visibleStrength,
+                    offset + ConstPoint(0, 10),
+                    offset + ConstPoint(0, -5000),
+                    1.5f // Close enough to pi/2 since we won't see it
+                )
 
                 // Manually compute the frames rather than using an animation, since
                 // we're controlling the laser progress on the same timer.
@@ -101,11 +107,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
         }
 
-        fun renderInbound() {
-            renderInbound(originPos)
+        fun renderInbound(g: Graphics) {
+            renderInbound(g, originPos)
         }
 
-        fun drawDroneBeam(drone: CombatDrone) {
+        fun drawDroneBeam(g: Graphics, drone: CombatDrone) {
             if (!isFiring)
                 return
 
@@ -121,10 +127,10 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             droneCentre.x += cos(fc.rotation).roundToInt()
             droneCentre.y += sin(fc.rotation).roundToInt()
 
-            renderInbound(droneCentre)
+            renderInbound(g, droneCentre)
         }
 
-        private fun renderInbound(from: IPoint) {
+        private fun renderInbound(g: Graphics, from: IPoint) {
             // Draw the beam on the enemy ship, including the little contact burning animation
 
             // This means we don't have to put !! on every usage of target
@@ -168,15 +174,25 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             shieldLayers = max(0, shieldLayers - type.shieldPiercing)
             val piercing = max(0, visualPower - shieldLayers)
 
-            // TODO make the transition around the shield line a bit cleaner - it's a clear
-            //  square cutoff, and doesn't match the tangent line of the shields bubble.
-            drawBeam(visualPower, from, shieldPoint)
+            // Find the shield bubble's tangent, and use that to set the angle
+            // of the end of the beam, so it cleanly lines up with the shield.
+            // This can be tested on long but thin Zoltan ships, where if this
+            // is wrong the angle of the end of the beam and the shields
+            // will be easily visible.
+            // Tangent equation from https://math.stackexchange.com/a/990013.
+            val shieldNormal = atan2(
+                (shieldPoint.y - shieldOrigin.y) * shieldSize.x.f.pow(2),
+                (shieldPoint.x.f - shieldOrigin.x) * shieldSize.y.f.pow(2)
+            )
+            drawBeam(g, ship.sys, visualPower, from, shieldPoint, shieldNormal)
 
             // Draw the inside-the-shield-bubble part
             if (piercing == 0 || target.targetShip.superShield > 0)
                 return
 
-            drawBeam(piercing, shieldPoint, targetPos)
+            // Draw the beam from the target pos to the shield, so we can re-use
+            // the line end angle stuff.
+            drawBeam(g, ship.sys, piercing, targetPos, shieldPoint, shieldNormal)
 
             // Draw the contact animation
             // FIXME hardcode the offset of the contact point relative
@@ -426,7 +442,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
     }
 
-    private fun drawBeam(power: Int, src: IPoint, dst: IPoint) {
+    private fun drawBeam(g: Graphics, game: InGameState, power: Int, src: IPoint, dst: IPoint, dstAngle: Float) {
         // The beam is drawn as a transparent-red-transparent gradient line
         // Find the tangent line of src-dst, and use that to find the edges of the beam
         val tangent = FPos(-(src.y - dst.y).f, (src.x - dst.x).f)
@@ -442,10 +458,30 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val srcA = FPos(src.x + tangent.x, src.y + tangent.y)
         val srcB = FPos(src.x - tangent.x, src.y - tangent.y)
 
-        val dstA = FPos(dst.x + tangent.x, dst.y + tangent.y)
-        val dstB = FPos(dst.x - tangent.x, dst.y - tangent.y)
+        // The destination point has an angle, which determines the angle the
+        // end of the beam is 'cut' at - this is so that it aligns cleanly with
+        // the shield. Without this, when firing at a Zoltan ship (for example)
+        // there's obviously a difference in angle between the end of the beam
+        // and the shield, which looks rather ugly.
+        // Thus dstAngle gives us the angle between the beam's tangent and
+        // the shield's tangent, which we can then use to build a second tangent
+        // line along the shield.
+        val beamAngle = atan2(dst.y.f - src.y, dst.x.f - src.x)
+        val angleDifference = dstAngle - beamAngle
+        val dstWidth = width / cos(angleDifference)
+        val dstTangentAngle = beamAngle - PI.toFloat() / 2 + angleDifference
+        val dstTangentX = cos(dstTangentAngle) * dstWidth
+        val dstTangentY = sin(dstTangentAngle) * dstWidth
+
+        val dstA = FPos(dst.x + dstTangentX, dst.y + dstTangentY)
+        val dstB = FPos(dst.x - dstTangentX, dst.y - dstTangentY)
 
         drawGradient(srcA, srcB, dstA, dstB, transparentColour)
+
+        if (game.debugFlags.showBeamVectors.set) {
+            // This lets us check if our normal calculation is correct
+            drawDebugVectorAngle(g, dst, dstAngle, 20f, Color.yellow)
+        }
     }
 
     /**
@@ -488,6 +524,18 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         Graphics.glVertexTransformed(dstB.x, dstB.y)
 
         GL11.glEnd()
+    }
+
+    private fun drawDebugVectorAngle(g: Graphics, origin: IPoint, angle: Float, length: Float, colour: Color) {
+        drawDebugVector(g, origin, cos(angle) * length, sin(angle) * length, colour)
+    }
+
+    private fun drawDebugVector(g: Graphics, origin: IPoint, x: Float, y: Float, colour: Color) {
+        g.colour = colour
+        g.drawLine(
+            origin.x.f, origin.y.f,
+            origin.x + x, origin.y + y
+        )
     }
 
     private fun findIntersections(src: IPoint, dst: IPoint, ellipse: IPoint, centre: IPoint): Pair<IPoint?, IPoint?> {
