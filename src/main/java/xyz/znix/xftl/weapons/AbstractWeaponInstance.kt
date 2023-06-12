@@ -61,6 +61,8 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
     val animation = type.getLauncher(ship.sys)
 
+    private val boostAnim = animation.boostAnim?.startSingle(ship.sys)
+
     val chargeTime: Float
         get() {
             if (type.boost?.type != AbstractWeaponBlueprint.BoostType.COOLDOWN)
@@ -114,7 +116,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     }
 
     open fun render(g: Graphics) {
-        val launcher = animation.spriteAt((animation.chargedFrame * chargeProgress).toInt())
+        val launcher = animation.spriteAt(ship.sys, (animation.chargedFrame * chargeProgress).toInt())
         launcher.draw(0f, 0f)
 
         renderChainChargeLights()
@@ -130,15 +132,15 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
     fun renderChainChargeLights() {
         // For charge weapons, draw on the indicator lights
-        if (animation.boostAnim != null && maxTotalCharges > 1 && totalReadyCharges > 0) {
+        if (boostAnim != null && maxTotalCharges > 1 && totalReadyCharges > 0) {
             // 0 indicates one extra charge, so we have to -1.
-            animation.boostAnim.spriteAt(totalReadyCharges - 1).draw()
+            boostAnim.spriteAt(totalReadyCharges - 1).draw()
         }
 
         // For chain weapons, draw the progress
-        if (animation.boostAnim != null && type.boost != null && chainCount > 0) {
+        if (boostAnim != null && type.boost != null && chainCount > 0) {
             // 0 indicates one shot already fired, so -1.
-            animation.boostAnim.spriteAt(chainCount - 1).draw()
+            boostAnim.spriteAt(chainCount - 1).draw()
         }
     }
 

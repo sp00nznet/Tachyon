@@ -1,12 +1,12 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Image
-import xyz.znix.xftl.rendering.SpriteSheet
 
 class Animations(df: Datafile) {
-    private val sheets: Map<String, SpriteSheet>
+    private val sheets: Map<String, SpriteSheetSpec>
     val animations: Map<String, AnimationSpec>
     val weaponAnimations: Map<String, WeaponAnimationSpec>
 
@@ -31,7 +31,7 @@ class Animations(df: Datafile) {
             val name = elem.getAttributeValue("name")
 
             if (this.sheets.containsKey(name)) {
-                System.out.println("Warning: duplicate spritesheet $name, using first one")
+                println("Warning: duplicate spritesheet $name, using first one")
                 continue
             }
 
@@ -41,25 +41,14 @@ class Animations(df: Datafile) {
 
             // The filename is the text inside the element
             val path = "img/${elem.textTrim}"
-            val img = df.readImage(path)
 
-            run {
-                // Don't verify the small bomb, since it's image is two pixels short
-                if (name == "bomb_1" || name == "bomb_stun")
-                    return@run
+            val imgWidth = elem.requireAttributeValueInt("w")
+            val imgHeight = elem.requireAttributeValueInt("h")
 
-                // Make sure the texture size is correct
-                check(elem.getAttributeValue("w").toInt() == img.width)
-                check(elem.getAttributeValue("h").toInt() == img.height)
-            }
-
-            // Some images, most notably some bombs, have frame heights in the XML set that are greater than
-            // the image height. This was causing all sorts of trouble, most notably that bombs were shifted
-            // down a bit and the bottom part of their images were cut off.
             val frameWidth = elem.getAttributeValue("fw").toInt()
-            val frameHeight = elem.getAttributeValue("fh").toInt().coerceAtMost(img.height)
+            val frameHeight = elem.getAttributeValue("fh").toInt()
 
-            sheets[name] = SpriteSheet(img, frameWidth, frameHeight)
+            sheets[name] = SpriteSheetSpec(path, frameWidth, frameHeight, imgWidth, imgHeight)
         }
 
         for (xml in doc.rootElement.getChildren("anim")) {
@@ -134,7 +123,7 @@ class Animations(df: Datafile) {
     }
 
     class WeaponAnimationSpec(
-        val sheet: SpriteSheet, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
+        val sheet: SpriteSheetSpec, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
         val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint,
         val chargeImage: Image?,
 
@@ -150,11 +139,18 @@ class Animations(df: Datafile) {
         val boostAnim: AnimationSpec?
     ) {
 
-        val chargedImage: Image get() = spriteAt(chargedFrame)
-
-        fun spriteAt(i: Int): Image {
+        fun spriteAt(spriteSheet: Image, i: Int): Image {
             if (i >= length) throw IndexOutOfBoundsException(i)
-            return sheet.getSprite(x + i, y)
+            return sheet.getSprite(spriteSheet, x + i, y)
+        }
+
+        fun spriteAt(game: InGameState, i: Int): Image {
+            val img = game.getImg(sheet.sheetPath)
+            return spriteAt(img, i)
+        }
+
+        fun getChargedImage(game: InGameState): Image {
+            return spriteAt(game, chargedFrame)
         }
 
         /**
@@ -171,6 +167,30 @@ class Animations(df: Datafile) {
             val fireLength = length - startFrame
 
             return (progress * fireLength).toInt().coerceIn(0 until fireLength) + startFrame
+        }
+    }
+
+    class SpriteSheetSpec(
+        val sheetPath: String,
+        val frameWidth: Int, val frameHeight: Int,
+        val sheetWidth: Int, val sheetHeight: Int
+    ) {
+        val verticalCount: Int get() = sheetHeight / frameHeight
+        val horizontalCount: Int get() = sheetWidth / frameWidth
+
+        fun getSprite(sheetImage: Image, x: Int, y: Int): Image {
+            require(x in 0 until horizontalCount)
+            require(y in 0 until verticalCount)
+
+            // Some images, most notably some bombs, have frame heights in the XML set that are greater than
+            // the image height. This was causing all sorts of trouble, most notably that bombs were shifted
+            // down a bit and the bottom part of their images were cut off.
+            val effectiveFrameHeight = frameHeight.coerceAtMost(sheetImage.height)
+
+            return sheetImage.getSubImage(
+                x * frameWidth, y * frameHeight,
+                frameWidth, effectiveFrameHeight
+            )
         }
     }
 

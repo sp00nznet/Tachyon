@@ -169,7 +169,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
         // The portrait frame of the robot, which is shown on top
         // of the thruster sprite
-        val portrait = game.animations["battle_portrait"].spriteAt(0)
+        val portrait = game.animations["battle_portrait"].spriteAt(ship.sys, 0)
 
         val thruster = game.getImg("img/ship/drones/boarder_engine.png")
 
@@ -246,7 +246,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) {
-            currentSpace.animations += Ship.FloatingAnimation.centred(explodeAnimation, position)
+            currentSpace.playCentredAnimation(explodeAnimation, position)
         }
 
         override fun crossedShieldLine() {
@@ -255,7 +255,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
             // Hitting a super shield doesn't damage it, but does destroy the drone.
             if (target.ship.superShield > 0) {
                 destroy()
-                target.ship.animations += Ship.FloatingAnimation.centred(explodeAnimation, position)
+                target.ship.playCentredAnimation(explodeAnimation, position)
             }
         }
 

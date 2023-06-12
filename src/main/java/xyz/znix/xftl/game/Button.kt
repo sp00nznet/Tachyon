@@ -348,7 +348,7 @@ object Buttons {
                     // Draw the weapon icon
                     val iconWindowWidth = 96
                     val iconWindowHeight = 45
-                    val icon = blueprint.getLauncher(game).chargedImage
+                    val icon = blueprint.getLauncher(game).getChargedImage(game)
 
                     // The sprite is rotated 90°, so swap the width and height.
                     val iconX = (iconWindowWidth - icon.height) / 2
@@ -451,7 +451,7 @@ object Buttons {
             // Draw only the item itself being dragged, without the whole card.
             when (val blueprint = blueprint) {
                 is AbstractWeaponBlueprint -> {
-                    val icon = blueprint.getLauncher(game).chargedImage
+                    val icon = blueprint.getLauncher(game).getChargedImage(game)
 
                     // The sprite is rotated 90°, so swap the width and height.
                     val iconX = -icon.height / 2

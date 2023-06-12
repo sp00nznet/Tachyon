@@ -932,6 +932,11 @@ public class InGameState extends MainGame.GameState {
         if (img != null)
             return img;
 
+        // This is just a way to access the image by a path, since we need
+        // that for the missing animation.
+        if (name.equals(Constants.MISSING_FILE_PATH))
+            return getMissingImage();
+
         img = df.readImage(name);
         content.images.put(name, img);
         return img;

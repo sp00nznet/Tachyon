@@ -266,7 +266,7 @@ class Event(
             val info = if (crew.nameId != null) {
                 // Specifically named by the event (eg Slocknog)
                 val name = game.translator[crew.nameId]
-                LivingCrewInfo.generateWithName(race, name)
+                LivingCrewInfo.generateWithName(race, game, name)
             } else {
                 LivingCrewInfo.generateRandom(race, game)
             }

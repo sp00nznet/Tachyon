@@ -319,9 +319,9 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val onImage = game.getImg("img/ship/drones/drone_hack_on.png")
         val lightOverlay = game.getImg("img/ship/drones/drone_hack_light1.png")
 
-        val flyAnimation = game.animations["drone_hack_fly"].startLooping()
-        val landAnimation = game.animations["drone_hack_land"].startSingle()
-        val extendAnimation = game.animations["drone_hack_extend"].startSingle()
+        val flyAnimation = game.animations["drone_hack_fly"].startLooping(game)
+        val landAnimation = game.animations["drone_hack_land"].startSingle(game)
+        val extendAnimation = game.animations["drone_hack_extend"].startSingle(game)
 
         // Pick the direction the drone is coming from - for example,
         // a drone flying up from the bottom of the screen would be DOWN.
@@ -443,7 +443,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         override fun hitOtherProjectile(currentSpace: Ship) {
             val explodeAnimation = currentSpace.sys.animations["explosion_random"]
-            currentSpace.animations += Ship.FloatingAnimation.centred(explodeAnimation, position)
+            currentSpace.playCentredAnimation(explodeAnimation, position)
         }
 
         override fun onSwitchedToTarget() {

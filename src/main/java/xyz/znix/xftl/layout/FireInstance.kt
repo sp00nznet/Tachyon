@@ -28,7 +28,7 @@ class FireInstance(val room: Room, val slot: Int) {
 
     private var burnoutTimer: Float? = null
 
-    private val animation: FTLAnimation = ship.sys.animations["fire_large"].startLooping()
+    private val animation: FTLAnimation = ship.sys.animations["fire_large"].startLooping(ship.sys)
     private val sound: LoopHandle = ship.sys.sounds.getLoop("fire")
 
     fun update(dt: Float) {

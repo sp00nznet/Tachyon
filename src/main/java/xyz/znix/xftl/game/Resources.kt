@@ -6,7 +6,6 @@ import xyz.znix.xftl.ItemBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
-import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -222,7 +221,7 @@ class ResourceSet() : Map<Resource, Int> {
     /**
      * Deserialise a saved ResourceSet.
      */
-    constructor(elem: Element, refs: RefLoader, content: GameContent) : this() {
+    constructor(elem: Element, refs: RefLoader, game: InGameState) : this() {
         for (res in Resource.values()) {
             val count = elem.getAttributeValue(res.name)?.toInt() ?: 0
             this[res] = count
@@ -230,21 +229,21 @@ class ResourceSet() : Map<Resource, Int> {
 
         for (itemElem in elem.getChildren("item")) {
             val name = itemElem.getAttributeValue("name")
-            items += content.blueprintManager[name] as Blueprint
+            items += game.blueprintManager[name] as Blueprint
         }
 
         for (crewElem in elem.getChildren("addCrew")) {
             val race = crewElem.getAttributeValue("race")
             val name = crewElem.getAttributeValue("humanName")
-            val blueprint = content.blueprintManager[race] as CrewBlueprint
-            crew += LivingCrewInfo.generateWithName(blueprint, name)
+            val blueprint = game.blueprintManager[race] as CrewBlueprint
+            crew += LivingCrewInfo.generateWithName(blueprint, game, name)
         }
 
         for (crewElem in elem.getChildren("intruder")) {
             val race = crewElem.getAttributeValue("race")
             val name = crewElem.getAttributeValue("humanName")
-            val blueprint = content.blueprintManager[race] as CrewBlueprint
-            intruders += LivingCrewInfo.generateWithName(blueprint, name)
+            val blueprint = game.blueprintManager[race] as CrewBlueprint
+            intruders += LivingCrewInfo.generateWithName(blueprint, game, name)
         }
 
         for (crewElem in elem.getChildren("removeCrew")) {
@@ -254,7 +253,7 @@ class ResourceSet() : Map<Resource, Int> {
             val eventId = crewElem.getAttributeValue("event")
             val index = crewElem.getAttributeValue("index")!!.toInt()
 
-            val event = content.eventManager.getByDeserialisationId(eventId)
+            val event = game.eventManager.getByDeserialisationId(eventId)
             val info = event.removedCrew[index]
 
             refs.asyncResolve(LivingCrew::class.java, objectId) {

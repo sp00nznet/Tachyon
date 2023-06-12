@@ -264,7 +264,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             // unless the hacking system is powered down.
             if (system.hackedBy?.isPoweredUp == true) {
                 if (computerHackAnimation == null)
-                    computerHackAnimation = ship.sys.animations["hacked_console"].startLooping()
+                    computerHackAnimation = ship.sys.animations["hacked_console"].startLooping(ship.sys)
 
                 // This can't be merged with drawing the computer above, as
                 // some decals have computers drawn into them.
@@ -281,7 +281,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         if (system.isHackActive) {
             if (bigSparksHackAnimation == null || bigSparksHackAnimation?.isStopped == true) {
-                bigSparksHackAnimation = ship.sys.animations["stun_spark_big"].startSingle()
+                bigSparksHackAnimation = ship.sys.animations["stun_spark_big"].startSingle(ship.sys)
 
                 // See doc/hacking for details about this
                 if (width == 1 || height == 1) {

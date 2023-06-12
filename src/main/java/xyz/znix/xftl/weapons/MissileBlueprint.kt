@@ -34,15 +34,14 @@ class MissileBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class MissileProjectile(room: Room) : AbstractWeaponProjectile(this@MissileBlueprint, room) {
+        private val spr = target.ship.sys.animations[projectile!!].spriteAt(ship.sys, 0)
+
         override val defaultSpeed: Int get() = 35
 
         override val isMissileForDD: Boolean get() = true
 
         override fun renderPreTranslated(g: Graphics) {
             g.rotate(0f, 0f, 90f)
-
-            val img = target.ship.sys.animations[projectile!!]
-            val spr = img.spriteAt(0)
 
             // TODO is the quarter length translation the same as vanilla FTL?
             spr.draw(-spr.width.f / 2, -spr.height.f / 4)

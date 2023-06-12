@@ -73,7 +73,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         init {
             // Turns out this is a one-frame animation, leave it looping in case
             // a mod replaces it or something.
-            contact = ship.sys.animations[projectile!!].startLooping()
+            contact = ship.sys.animations[projectile!!].startLooping(ship.sys)
         }
 
         override fun render(g: Graphics) {
@@ -101,7 +101,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                 // Use coerceIn to ensure we don't access an invalid frame if the progress
                 // is somehow exactly fireDuration.
-                animation.spriteAt(frameNum.coerceIn(0 until animation.length)).draw()
+                animation.spriteAt(ship.sys, frameNum.coerceIn(0 until animation.length)).draw()
             } else {
                 super.render(g)
             }

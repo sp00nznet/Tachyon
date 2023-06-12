@@ -271,7 +271,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
         // Play the explosion animation
         val animation = ship.sys.animations["explosion1"]
-        ship.animations += Ship.FloatingAnimation.centred(animation, room!!.pixelCentre)
+        ship.playCentredAnimation(animation, room!!.pixelCentre)
 
         return true
     }

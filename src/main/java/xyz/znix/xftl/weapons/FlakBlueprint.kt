@@ -100,7 +100,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     private inner class FlakProjectile(room: Room, val spec: ProjectileSpec) :
         AbstractWeaponProjectile(this@FlakBlueprint, room) {
 
-        private val animation = room.ship.sys.animations[spec.animation].startLooping()
+        private val animation = room.ship.sys.animations[spec.animation].startLooping(ship.sys)
 
         private var destinationOffset: IPoint
 
@@ -169,15 +169,15 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 val scaling = 0.2f
 
                 // Find the position to place the image at to centre it on our position
-                val firstFrame = baseAnimation.spriteAt(0)
+                val firstFrame = baseAnimation.spriteAt(ship.sys, 0)
                 val offsetPos = ConstPoint(
                     position.x - (firstFrame.width / 2 * scaling).roundToInt(),
                     position.y - (firstFrame.height / 2 * scaling).roundToInt()
                 )
 
-                target.ship.animations += Ship.FloatingAnimation(baseAnimation, offsetPos, scaling)
+                target.ship.animations += Ship.FloatingAnimation(ship.sys, baseAnimation, offsetPos, scaling)
             } else {
-                target.ship.animations += Ship.FloatingAnimation.centred(baseAnimation, position)
+                target.ship.playCentredAnimation(baseAnimation, position)
             }
         }
 

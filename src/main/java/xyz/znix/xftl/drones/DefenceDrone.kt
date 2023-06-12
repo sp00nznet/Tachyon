@@ -371,7 +371,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         val weapon: LaserBlueprint
     ) : AbstractProjectile(null) {
 
-        private val animation = ownerShip.sys.animations[weapon.projectile!!]
+        private val sprite = ownerShip.sys.animations[weapon.projectile!!].spriteAt(ownerShip.sys, 0)
 
         private val hitAnimation = ownerShip.sys.animations[weapon.explosion]
 
@@ -383,9 +383,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         override val serialisationType: String get() = LASER_SERIALISATION_TYPE
 
         override fun renderPreTranslated(g: Graphics) {
-            val spr = animation.spriteAt(0)
-
-            spr.draw(-spr.width.f, -spr.height.f / 2)
+            sprite.draw(-sprite.width.f, -sprite.height.f / 2)
         }
 
         override fun reachedTarget() {
@@ -395,7 +393,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         // Since we don't override crossedShieldLine, we completely ignore shields.
 
         override fun hitOtherProjectile(currentSpace: Ship) {
-            currentSpace.animations += Ship.FloatingAnimation.centred(hitAnimation, position)
+            currentSpace.playCentredAnimation(hitAnimation, position)
         }
 
         override fun saveToXML(elem: Element, refs: ObjectRefs) {

@@ -440,7 +440,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
 
                     val scale = 2
                     val portraitX = this.pos.x + (96 - 35 * scale) / 2
-                    crew.drawPortrait(game, portraitX, this.pos.y + yOffset, scale.f)
+                    crew.drawPortrait(portraitX, this.pos.y + yOffset, scale.f)
 
                     numberFont.drawString(
                         this.pos.x + priceOffset.x.f,

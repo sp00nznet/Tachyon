@@ -832,7 +832,7 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
 
     fun playDamageEffect(type: AbstractWeaponBlueprint, position: IPoint) {
         val animation = sys.animations[type.explosion ?: error("Default explosion not set")]
-        animations += FloatingAnimation.centred(animation, position)
+        playCentredAnimation(animation, position)
     }
 
     fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
@@ -1144,6 +1144,13 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
         return missed
     }
 
+    fun playCentredAnimation(animation: AnimationSpec, centre: IPoint) {
+        val firstFrame = animation.spriteAt(sys, 0)
+        val offsetPos = ConstPoint(centre.x - firstFrame.width / 2, centre.y - firstFrame.height / 2)
+        animations += FloatingAnimation(sys, animation, offsetPos)
+    }
+
+
     /**
      * Serialise this ship and everything related to it (projectiles,
      * crew, etc) into an XML element.
@@ -1309,7 +1316,7 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
     fun loadFromXml(rootElem: Element, refs: RefLoader) {
         SaveUtil.registerObjectId(rootElem, refs, this)
 
-        val resources = ResourceSet(rootElem.getChild("resources"), refs, sys.content)
+        val resources = ResourceSet(rootElem.getChild("resources"), refs, sys)
         fuelCount = resources.fuel
         missilesCount = resources.missiles
         dronesCount = resources.droneParts
@@ -1435,13 +1442,13 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
         var weapon: AbstractWeaponInstance? = null
     }
 
-    class FloatingAnimation(val spec: AnimationSpec, val pos: ConstPoint, val scaling: Float = 1f) {
-        private var timer: Float = 0f
-        val isFinished get() = timer >= spec.totalTime
+    class FloatingAnimation(game: InGameState, val spec: AnimationSpec, val pos: ConstPoint, val scaling: Float = 1f) {
+        private val animation = spec.startSingle(game)
+
+        val isFinished get() = animation.isStopped
 
         fun render(g: Graphics) {
-            val frameId = (timer / spec.time).toInt().coerceIn(0 until spec.length)
-            val frame = spec.spriteAt(frameId)
+            val frame = animation.currentFrame
 
             if (scaling == 1f) {
                 frame.draw(pos.x.f, pos.y.f)
@@ -1457,24 +1464,18 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
         }
 
         fun update(dt: Float) {
-            timer += dt
+            animation.update(dt)
         }
 
         fun saveToXML(elem: Element) {
             SaveUtil.addAttr(elem, "name", spec.name)
             SaveUtil.addAttrInt(elem, "x", pos.x)
             SaveUtil.addAttrInt(elem, "y", pos.y)
-            SaveUtil.addAttrFloat(elem, "timer", timer)
+            SaveUtil.addAttrFloat(elem, "timer", animation.timer)
             SaveUtil.addAttrFloat(elem, "scaling", scaling)
         }
 
         companion object {
-            fun centred(animation: AnimationSpec, centre: IPoint): FloatingAnimation {
-                val firstFrame = animation.spriteAt(0)
-                val offsetPos = ConstPoint(centre.x - firstFrame.width / 2, centre.y - firstFrame.height / 2)
-                return FloatingAnimation(animation, offsetPos)
-            }
-
             fun loadFromXML(elem: Element, game: InGameState): FloatingAnimation {
                 val name = SaveUtil.getAttr(elem, "name")
                 val spec = game.animations[name]
@@ -1483,8 +1484,8 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
                 val y = SaveUtil.getAttrInt(elem, "y")
                 val scaling = SaveUtil.getAttrFloat(elem, "scaling")
 
-                val anim = FloatingAnimation(spec, ConstPoint(x, y), scaling)
-                anim.timer = SaveUtil.getAttrFloat(elem, "timer")
+                val anim = FloatingAnimation(game, spec, ConstPoint(x, y), scaling)
+                anim.animation.timer = SaveUtil.getAttrFloat(elem, "timer")
 
                 return anim
             }

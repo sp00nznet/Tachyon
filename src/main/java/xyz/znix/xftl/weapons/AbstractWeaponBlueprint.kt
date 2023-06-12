@@ -3,13 +3,13 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.rendering.SpriteSheet
 import xyz.znix.xftl.savegame.RefLoader
 import java.util.*
 
@@ -60,8 +60,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
         game.animations.weaponAnimations[launcher]?.let { return it }
 
         // Missing animation?
-        val missing = game.missingImage
-        val sheet = SpriteSheet(missing, missing.width, missing.height)
+        val sheet = Animations.SpriteSheetSpec(Constants.MISSING_FILE_PATH, 20, 20, 20, 20)
         return Animations.WeaponAnimationSpec(
             sheet, 0, 0, 1, 0, 0,
             ConstPoint.ZERO, ConstPoint.ZERO, null, 0, null
@@ -74,7 +73,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
      */
     fun drawLauncherUI(game: InGameState, g: Graphics, x: Float, y: Float) {
         val anim = getLauncher(game)
-        val spr = anim.chargedImage
+        val spr = anim.getChargedImage(game)
 
         g.pushTransform()
 

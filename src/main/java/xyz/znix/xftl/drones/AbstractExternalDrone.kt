@@ -126,7 +126,7 @@ abstract class AbstractExternalDrone(
     override fun destroy() {
         super.destroy()
 
-        targetShip.animations += Ship.FloatingAnimation.centred(explodeAnimation, flightController.position)
+        targetShip.playCentredAnimation(explodeAnimation, flightController.position)
         explodeSound.play()
     }
 
@@ -187,7 +187,7 @@ abstract class AbstractExternalDrone(
         }
 
         if (stunSparksAnimation == null || stunSparksAnimation?.isStopped == true) {
-            stunSparksAnimation = game.animations["stun_spark_big"].startSingle()
+            stunSparksAnimation = game.animations["stun_spark_big"].startSingle(game)
 
             // See doc/hacking for details about this
             stunSparksMirror = Random.nextBoolean()

@@ -63,7 +63,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
         if (indoorIcon != null) {
             val portrait = "${indoorIcon}_portrait"
             if (game.animations.animations.containsKey(portrait))
-                base = game.animations[portrait].spriteAt(0)
+                base = game.animations[portrait].spriteAt(game, 0)
         }
 
         // Special-case the hacking drone, though obviously it's probably

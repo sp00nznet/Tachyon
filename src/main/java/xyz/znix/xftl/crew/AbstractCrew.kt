@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Color
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
@@ -24,11 +25,14 @@ abstract class AbstractCrew(
     mode: SlotType
 ) : ISerialReferencable {
 
+    protected val game: InGameState get() = room.ship.sys
+
     val codename: String get() = blueprint.name
 
     var icon: FTLAnimation
     val backImg: Image? = initialRoom.ship.sys.getImgIfExists("img/people/${codename}_color.png")
     val portraitAnim: AnimationSpec
+    val portraitImage: Image
 
     // This is used to avoid restarting the walking animation unless necessary.
     private var walkDirection: Direction? = null
@@ -215,7 +219,8 @@ abstract class AbstractCrew(
             AnimationSpec(portrait.sheet, name, 0, 0, 1, 1f)
         }
 
-        icon = portraitAnim.startLooping()
+        icon = portraitAnim.startLooping(game)
+        portraitImage = portraitAnim.spriteAt(game, 0)
 
         @Suppress("LeakingThis")
         updateAnimation()
@@ -569,11 +574,11 @@ abstract class AbstractCrew(
 
     open fun draw(g: Graphics) {
         // Bit of a hack, since we're drawn from the ship
-        val isSelected = room.ship.sys.shipUI.isCrewHighlighted(this)
+        val isSelected = game.shipUI.isCrewHighlighted(this)
 
         // Intruders on the player ship and crew on the enemy ship are hostile.
         // This isn't very nice to read, but it gets the job done.
-        val isHostileToPlayer = (mode == SlotType.INTRUDER) == (room.ship == room.ship.sys.player)
+        val isHostileToPlayer = (mode == SlotType.INTRUDER) == (room.ship == game.player)
 
         val cf = icon.currentFrame
 
@@ -642,11 +647,10 @@ abstract class AbstractCrew(
     }
 
     fun drawPortrait(x: Int, y: Int, scale: Float = 1f) {
-        val img = portraitAnim.spriteAt(0)
         drawImage(
             x.f, y.f,
-            x.f + img.width * scale, y.f + img.height * scale,
-            img, 1f
+            x.f + portraitImage.width * scale, y.f + portraitImage.height * scale,
+            portraitImage, 1f
         )
     }
 
@@ -673,11 +677,11 @@ abstract class AbstractCrew(
         if (currentAction == Action.DYING)
             return
 
-        val isSelected = room.ship.sys.shipUI.isCrewHighlighted(this)
+        val isSelected = game.shipUI.isCrewHighlighted(this)
 
         // Draw the health bar
         if (health < maxHealth || isSelected) {
-            val healthBox = room.ship.sys.getImg("img/people/health_box.png")
+            val healthBox = game.getImg("img/people/health_box.png")
             healthBox.draw(screenX - 1f, screenY.f)
 
             val width = ceil(25f * health / maxHealth).toInt()
@@ -877,7 +881,7 @@ abstract class AbstractCrew(
 
     protected open fun updateAnimation() {
         icon = when (currentAction) {
-            Action.IDLE -> portraitAnim.startLooping()
+            Action.IDLE -> portraitAnim.startLooping(game)
 
             Action.MOVING -> {
                 // We can have a null targetPos for a short amount of time, while
@@ -893,11 +897,13 @@ abstract class AbstractCrew(
                     return
                 walkDirection = direction
 
-                anims["${codename}_walk_${dirAsString(direction)}"].startLooping()
+                anims["${codename}_walk_${dirAsString(direction)}"].startLooping(game)
             }
 
-            Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"].startLooping()
-            Action.REPAIRING -> anims["${codename}_repair"].startLooping()
+            Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"]
+                .startLooping(game)
+
+            Action.REPAIRING -> anims["${codename}_repair"].startLooping(game)
 
             Action.FIGHTING, Action.SABOTAGE, Action.ATTACKING_DOOR -> {
                 // Figure out the direction.
@@ -941,8 +947,8 @@ abstract class AbstractCrew(
                 // We have to update the icon each time the punch timer expires,
                 // so make it obvious if that isn't done by not looping.
                 val icon = when (isPunching) {
-                    true -> anims["${codename}_punch_${dirAsString(dir)}"].startSingle()
-                    false -> anims["${codename}_shoot_${dirAsString(dir)}"].startSingle()
+                    true -> anims["${codename}_punch_${dirAsString(dir)}"].startSingle(game)
+                    false -> anims["${codename}_shoot_${dirAsString(dir)}"].startSingle(game)
                 }
 
                 // Only use the first frame of shooting animations - this seems
@@ -965,19 +971,19 @@ abstract class AbstractCrew(
             }
 
             // Don't loop, we'll disappear when the animation finishes
-            Action.DYING -> anims["${codename}_death_right"].startSingle()
+            Action.DYING -> anims["${codename}_death_right"].startSingle(game)
 
             Action.TELEPORTING -> {
                 // If we're beaming back down on the destination ship, play it backwards.
                 val backwards = teleportingTo?.ship == room.ship
 
                 // Stop at the end, as it would look weird if we restarted for a moment.
-                anims["${codename}_teleport"].startSingle(1f, backwards)
+                anims["${codename}_teleport"].startSingle(game, 1f, backwards)
             }
 
             Action.CLONING -> {
                 // This just re-uses the teleport animation
-                anims["${codename}_teleport"].startSingle(1f, true)
+                anims["${codename}_teleport"].startSingle(game, 1f, true)
             }
 
             Action.FIRE_FIGHTING -> {
@@ -990,7 +996,7 @@ abstract class AbstractCrew(
                     Direction.bestFit(roomPosition!!, firePos)
                 }
 
-                anims["${codename}_fire_${dirAsString(direction)}"].startLooping()
+                anims["${codename}_fire_${dirAsString(direction)}"].startLooping(game)
             }
         }
 

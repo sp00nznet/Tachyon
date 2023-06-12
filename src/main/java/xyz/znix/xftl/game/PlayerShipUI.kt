@@ -1429,7 +1429,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             hackingLastNS = currentNS
 
             if (hackingSparks == null || hackingSparks?.isStopped == true) {
-                hackingSparks = ship.sys.animations["stun_spark_big"].startSingle()
+                hackingSparks = ship.sys.animations["stun_spark_big"].startSingle(game)
 
                 hackingOffsetX = Random.nextInt(25)
                 hackingMaskY = Random.nextInt(31)

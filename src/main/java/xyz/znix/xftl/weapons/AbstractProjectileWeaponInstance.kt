@@ -101,7 +101,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
     override fun render(g: Graphics) {
         if (isFiring) {
-            val frame = animation.spriteAt(fireAnimationFrame)
+            val frame = animation.spriteAt(ship.sys, fireAnimationFrame)
             frame.draw(0f, 0f)
 
             // Keep rendering the chain lights even when firing

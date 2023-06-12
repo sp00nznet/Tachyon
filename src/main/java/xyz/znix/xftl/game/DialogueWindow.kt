@@ -272,7 +272,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             val bpWidth: Int = when (bp) {
                 is AbstractWeaponBlueprint -> {
                     val nameWidth = resourceNumFont.getWidth(game.translator[bp.title!!])
-                    val img = bp.getLauncher(game).chargedImage
+                    val img = bp.getLauncher(game).getChargedImage(game)
                     height += img.width + 9
                     10 + img.height + 10 + nameWidth + 16
                 }
@@ -455,7 +455,8 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
                 // Draw the name
                 val name = game.translator[bp.title!!]
-                resourceNumFont.drawString(boxX + anim.chargedImage.height + 20f, textY + 22f, name, textColour)
+                val chargedImage = anim.getChargedImage(game)
+                resourceNumFont.drawString(boxX + chargedImage.height + 20f, textY + 22f, name, textColour)
 
                 return 42
             }
@@ -489,7 +490,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     }
 
     private fun drawRewardCrew(crew: LivingCrewInfo, x: Int, y: Int, textColour: Color): Int {
-        crew.drawPortrait(game, x - 2, y - 2)
+        crew.drawPortrait(x - 2, y - 2)
 
         resourceNumFont.drawString(x + 30f, y + 21f, crew.name, textColour)
 
@@ -833,7 +834,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         val text = SaveUtil.getOptionalTag(elem, "eventText")
 
         val resourcesElem = elem.getChild("resources")
-        val resources = ResourceSet(resourcesElem, refs, game.content)
+        val resources = ResourceSet(resourcesElem, refs, game)
 
         val evaluated = EvaluatedEvent(event, game, choiceText, choice)
         evaluated.textOverride = text

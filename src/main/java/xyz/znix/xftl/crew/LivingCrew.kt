@@ -46,7 +46,7 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         }
 
     override fun drawImage(x0: Float, y0: Float, x1: Float, y1: Float, baseFrame: Image, alpha: Float) {
-        info.drawImage(room.ship.sys, x0, y0, x1, y1, baseFrame, alpha)
+        info.drawImage(x0, y0, x1, y1, baseFrame, alpha)
     }
 
     override fun onMidTeleport() {
@@ -128,7 +128,7 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         super.loadFromXML(elem, refs)
 
         SaveUtil.getAttrRef(elem, "ownerShip", refs, Ship::class.java) { ownerShip = it }
-        info = LivingCrewInfo.loadFromXMLWithRace(elem, blueprint)
+        info = LivingCrewInfo.loadFromXMLWithRace(elem, blueprint, game)
     }
 
     companion object {
@@ -144,6 +144,8 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
  * without spawning them.
  */
 class LivingCrewInfo(
+    private val game: InGameState,
+
     val race: CrewBlueprint,
 
     /**
@@ -174,27 +176,24 @@ class LivingCrewInfo(
      */
     val isFemale: Boolean get() = colour >= race.baseNumberOfColours
 
+    private val portraitImage: Image = game.animations["${race.name}_portrait"].spriteAt(game, 0)
+
     /**
      * Draw this crew's portrait, without having to construct the crewmember instance.
      *
      * Useful for events and shops.
      */
-    fun drawPortrait(game: InGameState, x: Int, y: Int, scale: Float = 1f) {
-        val animation = game.animations["${race.name}_portrait"]
-        val portrait = animation.spriteAt(0)
-
+    fun drawPortrait(x: Int, y: Int, scale: Float = 1f) {
         drawImage(
-            game,
             x.f, y.f,
-            x.f + portrait.width * scale, y.f + portrait.height * scale,
-            portrait,
+            x.f + portraitImage.width * scale, y.f + portraitImage.height * scale,
+            portraitImage,
             1f
         )
     }
 
     // This is moved out of LivingCrew so it can be used in drawPortrait.
     fun drawImage(
-        game: InGameState,
         x0: Float, y0: Float,
         x1: Float, y1: Float,
         baseFrame: Image,
@@ -212,10 +211,11 @@ class LivingCrewInfo(
         val baseAnimationName = if (isFemale) "female" else race.name
         val imageNames = if (isFemale) race.femaleLayerImageNames else race.layerImageNames
 
-        val fullBaseImage = when {
-            isFemale -> game.getImg("img/people/female_base.png")
-            else -> game.animations["${baseAnimationName}_portrait"].sheet.sheetImage
+        val baseImagePath = when {
+            isFemale -> "img/people/female_base.png"
+            else -> game.animations["${baseAnimationName}_portrait"].sheet.sheetPath
         }
+        val fullBaseImage = game.getImg(baseImagePath)
 
         // Draw the base image, without any tinting
         fullBaseImage.alpha = alpha
@@ -347,27 +347,27 @@ class LivingCrewInfo(
             }
             // TODO pick names with the correct language
             val name = game.nameManager.getForGender(isMale, "en", Random.Default)
-            return LivingCrewInfo(race, name, colour)
+            return LivingCrewInfo(game, race, name, colour)
         }
 
-        fun generateWithName(race: CrewBlueprint, name: String): LivingCrewInfo {
+        fun generateWithName(race: CrewBlueprint, game: InGameState, name: String): LivingCrewInfo {
             val colour: Int = when (val max = race.numberOfColours) {
                 0 -> 0
                 else -> Random.nextInt(max)
             }
-            return LivingCrewInfo(race, name, colour)
+            return LivingCrewInfo(game, race, name, colour)
         }
 
         fun loadFromXML(elem: Element, game: InGameState): LivingCrewInfo {
             val raceName = SaveUtil.getAttr(elem, "race")
             val race = game.blueprintManager[raceName] as CrewBlueprint
-            return loadFromXMLWithRace(elem, race)
+            return loadFromXMLWithRace(elem, race, game)
         }
 
-        fun loadFromXMLWithRace(elem: Element, race: CrewBlueprint): LivingCrewInfo {
+        fun loadFromXMLWithRace(elem: Element, race: CrewBlueprint, game: InGameState): LivingCrewInfo {
             val name = SaveUtil.getAttr(elem, "selectedName")
             val colour = SaveUtil.getAttrInt(elem, "colour")
-            val info = LivingCrewInfo(race, name, colour)
+            val info = LivingCrewInfo(game, race, name, colour)
 
             // Skills are omitted if they're set to zero, which is what the default is anyway.
             for (skillElem in elem.getChildren("skill")) {

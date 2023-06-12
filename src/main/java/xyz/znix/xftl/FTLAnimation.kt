@@ -2,11 +2,20 @@ package xyz.znix.xftl
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.Renderable
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Image
 
-class FTLAnimation(val spec: AnimationSpec, var loop: Boolean, val speed: Float, val backwards: Boolean) : Renderable {
-    val width: Int = spec.spriteAt(0).width
-    val height: Int = spec.spriteAt(0).height
+class FTLAnimation(
+    private val game: InGameState,
+    val spec: AnimationSpec,
+    var loop: Boolean,
+    val speed: Float,
+    val backwards: Boolean
+) : Renderable {
+    val sprites: List<Image> = (0 until spec.length).map { spec.spriteAt(game, it) }
+
+    val width: Int = sprites[0].width
+    val height: Int = sprites[0].height
 
     var timer: Float = 0f
         set(value) {
@@ -29,8 +38,7 @@ class FTLAnimation(val spec: AnimationSpec, var loop: Boolean, val speed: Float,
             updateImage()
         }
 
-    lateinit var currentFrame: Image
-        private set
+    val currentFrame: Image get() = sprites[frame]
 
     init {
         // Initialise the current index and frame
@@ -56,8 +64,10 @@ class FTLAnimation(val spec: AnimationSpec, var loop: Boolean, val speed: Float,
         val effectiveTimer = if (backwards) duration - timer else timer
         val progress = effectiveTimer / duration // 0-1 progress through the animation
         frame = (frameCount * progress).toInt().coerceIn(0 until frameCount)
+    }
 
-        currentFrame = spec.spriteAt(frame)
+    fun spriteAt(i: Int): Image {
+        return sprites[i]
     }
 
     override fun draw(x: Float, y: Float) {

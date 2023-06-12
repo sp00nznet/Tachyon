@@ -27,7 +27,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     private fun makeBomb(target: Room, missed: Boolean, hitSuperShield: Boolean): FiredBomb {
-        val animation = target.ship.sys.animations[projectile!!].startSingle(0.5f, true)
+        val animation = target.ship.sys.animations[projectile!!].startSingle(target.ship.sys, 0.5f, true)
         return FiredBomb(this@BombBlueprint, target, animation, missed, hitSuperShield)
     }
 
@@ -46,7 +46,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         override fun render(g: Graphics) {
             if (target != null) {
-                val frame = animation.spriteAt(fireAnimationFrame)
+                val frame = animation.spriteAt(ship.sys, fireAnimationFrame)
                 frame.draw()
             } else {
                 super.render(g)

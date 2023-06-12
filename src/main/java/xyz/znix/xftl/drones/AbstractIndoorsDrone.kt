@@ -192,11 +192,11 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
         override fun updateAnimation() {
             if (powerUpDuration != 0f) {
-                icon = ship.sys.animations["${codename}_power_up"].startSingle()
+                icon = ship.sys.animations["${codename}_power_up"].startSingle(game)
                 return
             }
             if (!runningLastUpdate) {
-                icon = ship.sys.animations["${codename}_power_down"].startSingle()
+                icon = ship.sys.animations["${codename}_power_down"].startSingle(game)
                 return
             }
 
@@ -216,7 +216,7 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             destroy()
 
             // Play the explosion animation whenever a drone is killed.
-            ship.animations += Ship.FloatingAnimation.centred(explodeAnimation, getPixelPositionCentre())
+            ship.playCentredAnimation(explodeAnimation, getPixelPositionCentre())
             explodeSound.play()
         }
 
