@@ -23,6 +23,12 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
      */
     val shipClass: GameText? = elem.getGameTextChild("class")
 
+    /**
+     * The localisation key of the ship, defining the in-hangar title
+     * for player ships (eg 'The Kestrel').
+     */
+    val shipTitle: GameText? = elem.getGameTextChild("name")
+
     val weaponSlots: Int? = elem.getChildTextTrim("weaponSlots")?.toInt()
     val droneSlots: Int? = elem.getChildTextTrim("droneSlots")?.toInt()
 
