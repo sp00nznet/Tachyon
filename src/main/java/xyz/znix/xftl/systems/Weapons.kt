@@ -156,22 +156,6 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         return startPos
     }
 
-    private fun translateHardpoint(g: Graphics, hp: ShipBlueprint.ParsedHardpoint) {
-        g.translate(hp.position.x.f, hp.position.y.f)
-
-        // We are now in hardpoint-xy space - x and y are relative to the hardpoint's xy,
-        // but rotation is independant
-
-        if (hp.rotate)
-            g.rotate(0f, 0f, 90f)
-
-        // We are now properly in hardpoint space, y+ is always forward and y- is always backwards
-
-        if (hp.mirror) {
-            g.scale(-1f, 1f)
-        }
-    }
-
     override fun powerStateChanged() {
         // The weapons are arranged in order of priority, so turn the last ones off if possible.
         for (hp in ship.hardpoints.asReversed()) {
@@ -344,6 +328,22 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     companion object {
         val INFO: SystemInfo = WeaponsInfo
         val SKILL_BONUSES = listOf(10, 15, 20)
+
+        fun translateHardpoint(g: Graphics, hp: ShipBlueprint.ParsedHardpoint) {
+            g.translate(hp.position.x.f, hp.position.y.f)
+
+            // We are now in hardpoint-xy space - x and y are relative to the hardpoint's xy,
+            // but rotation is independant
+
+            if (hp.rotate)
+                g.rotate(0f, 0f, 90f)
+
+            // We are now properly in hardpoint space, y+ is always forward and y- is always backwards
+
+            if (hp.mirror) {
+                g.scale(-1f, 1f)
+            }
+        }
     }
 }
 

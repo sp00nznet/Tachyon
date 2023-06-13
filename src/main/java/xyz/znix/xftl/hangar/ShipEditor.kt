@@ -3,6 +3,7 @@ package xyz.znix.xftl.hangar
 import org.newdawn.slick.Color
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants.ROOM_SIZE
+import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -10,6 +11,7 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.Rectangle
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.*
 
 class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
@@ -24,6 +26,10 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
     val allSystems: List<SystemBlueprint> = state.blueprints.blueprints.values
         .filterIsInstance(SystemBlueprint::class.java)
 
+    val weaponBlueprints = state.blueprints.blueprints.values
+        .filterIsInstance<AbstractWeaponBlueprint>()
+        .sortedBy { bp -> bp.short?.let { state.translator[it] } ?: bp.name }
+
     private var selected: UIObject? = null
         set(value) {
             field = value
@@ -33,7 +39,12 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
             updateHover()
         }
 
+    // Used by WindowRenderer.renderWithTitle
+    val titleTab = state.getImg("img/map/side_beaconmap.png")
+    val titleFont = SILFontLoader(state.fontHL2).apply { scale = 2f }
+
     private val systemPalette = SystemPaletteObject(this)
+    private val weaponPanel = WeaponPanel(this)
 
     private var hovered: UIObject? = null
     private val objects = ArrayList<UIObject>()
@@ -64,6 +75,10 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
      */
     fun draw(g: Graphics) {
         updateObjects()
+
+        // Set the X values for the stuff at the bottom
+        systemPalette.x = editorWidth - systemPalette.width - 10
+        weaponPanel.baseX = systemPalette.x - weaponPanel.width - 10
 
         for (obj in objects) {
             obj.draw(g)
@@ -122,6 +137,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
 
         newObjects += systemPalette
         newObjects.addAll(systemPalette.systems)
+        weaponPanel.addObjects(newObjects)
 
         for (obj in objects) {
             // Rooms are copied over if possible
@@ -280,6 +296,12 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
                 // Start at the one with the highest priority.
                 selected = objectsAtCursor.first()
             }
+
+            for (obj in objects) {
+                if (obj.canHover(x, y)) {
+                    obj.onLeftClick(x, y)
+                }
+            }
         }
 
         if (button == Input.MOUSE_RIGHT_BUTTON) {
@@ -290,7 +312,11 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
                     selected = objects.filter { it.canSelectFrom(x, y) }.maxBy { it.selectPriority }
                 }
 
-                selected?.onRightClick(x, y)
+                for (obj in objects) {
+                    if (obj.canHover(x, y)) {
+                        obj.onRightClick(x, y)
+                    }
+                }
             }
         }
     }
@@ -409,6 +435,11 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
     }
 
     private fun updateHover() {
+        // Don't update hover if a menu is open, since that's supposed to consume
+        // all input and freeze the editor while it's open.
+        if (menu != null)
+            return
+
         if (dragging != null) {
             hovered = dragging
         } else if (selected?.canHover(mousePixelPos.x, mousePixelPos.y) == true) {
@@ -438,8 +469,14 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         }
     }
 
-    fun openPopupMenu(entries: List<PopupMenu.Entry?>) {
-        menu = PopupMenu(this, mousePixelPos.const, entries.filterNotNull())
+    fun openPopupMenu(vararg entries: PopupMenu.Entry?) {
+        val entryList = entries.toList().filterNotNull()
+
+        // We can't handle a no-item popup menu
+        if (entryList.isEmpty())
+            return
+
+        menu = PopupMenu(this, mousePixelPos.const, entryList)
     }
 
     fun openMenu(newMenu: EditorMenu) {

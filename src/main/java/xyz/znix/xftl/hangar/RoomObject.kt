@@ -67,6 +67,9 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
     }
 
     override fun onRightClick(x: Int, y: Int) {
+        if (!editor.isSelected(this))
+            return
+
         val systemEntries = ArrayList<PopupMenu.Entry>()
 
         systemEntries += PopupMenu.Entry("No system") {
@@ -88,10 +91,6 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         val isArtillery = room.system?.type?.info == Artillery.INFO
         val artilleryWeaponEntry = if (!isArtillery) null else {
             PopupMenu.Entry("Artillery weapon") {
-                val blueprints = editor.state.blueprints.blueprints.values
-                    .filterIsInstance<AbstractWeaponBlueprint>()
-                    .sortedBy { it.name }
-
                 val controller = object : BlueprintSelector.SelectionController {
                     override val title: String get() = "SELECT ARTILLERY WEAPON"
 
@@ -103,15 +102,13 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
                     }
                 }
 
-                editor.openMenu(BlueprintSelector(editor, blueprints, controller))
+                editor.openMenu(BlueprintSelector(editor, editor.weaponBlueprints, controller))
             }
         }
 
         editor.openPopupMenu(
-            listOf(
-                PopupMenu.Entry("System", systemEntries, null),
-                artilleryWeaponEntry
-            )
+            PopupMenu.Entry("System", systemEntries, null),
+            artilleryWeaponEntry
         )
     }
 

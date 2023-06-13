@@ -4,12 +4,12 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
-import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -21,9 +21,6 @@ class BlueprintSelector(
 ) : EditorMenu {
     val size = ConstPoint(800, 600)
     val pos = editor.getCentralScreenPosition(size)
-
-    private val titleFont = SILFontLoader(editor.state.fontHL2).also { it.scale = 2f }
-    private val weaponFont = editor.font
 
     private val blueprintImg = editor.state.getImg("img/upgradeUI/Equipment/box_weapons_on.png")
     private val blueprintImgSelected = editor.state.getImg("img/upgradeUI/Equipment/box_weapons_selected.png")
@@ -44,9 +41,8 @@ class BlueprintSelector(
 
         val startWidth = 20
         val endWidth = 38
-        val textWidth = titleFont.getWidth(title)
+        val textWidth = editor.titleFont.getWidth(title)
         val titleTabWidth = startWidth + textWidth + endWidth
-        val titleTab = editor.state.getImg("img/map/side_beaconmap.png")
 
         // Subtract out the glow
         val tabX = pos.x - 7
@@ -54,13 +50,13 @@ class BlueprintSelector(
 
         editor.state.windowRenderer.renderMasked(pos.x, pos.y, size.x, size.y, {
             g.colour = Color.red // Anything non-transparent will do
-            g.fillRect(tabX.f, tabY.f, titleTabWidth.f, titleTab.height.f)
+            g.fillRect(tabX.f, tabY.f, titleTabWidth.f, editor.titleTab.height.f)
         }, {
             drawBody(g)
         })
 
-        UIUtils.drawTab(titleFont, title, titleTab, tabX.f, tabY.f, startWidth.f, endWidth.f)
-        titleFont.drawString(tabX + startWidth.f, pos.y + 24f, title, Constants.JUMP_DISABLED_TEXT)
+        UIUtils.drawTab(editor.titleFont, title, editor.titleTab, tabX.f, tabY.f, startWidth.f, endWidth.f)
+        editor.titleFont.drawString(tabX + startWidth.f, pos.y + 24f, title, Constants.JUMP_DISABLED_TEXT)
     }
 
     fun drawBody(g: Graphics) {
@@ -104,34 +100,22 @@ class BlueprintSelector(
                 true -> blueprintImgSelected
                 false -> blueprintImg
             }
-            img.draw(x.f, y.f)
 
             // Draw the weapon icon, if this is a weapon
-            if (bp is AbstractWeaponBlueprint)
-                drawWeaponIcon(g, bp, x, y)
+            if (bp is AbstractWeaponBlueprint) {
+                drawWeaponCard(g, editor, x, y, bp, img)
+            } else {
+                img.draw(x.f, y.f)
 
-            val title = bp.short?.let { editor.state.translator[it] } ?: bp.name
-            weaponFont.drawStringCentred(x + 11f, y + 70f, 96f, title, Constants.SECTOR_CUTOUT_TEXT)
+                val title = bp.short?.let { editor.state.translator[it] } ?: bp.name
+                editor.font.drawStringCentred(x + 11f, y + 70f, 96f, title, Constants.SECTOR_CUTOUT_TEXT)
+            }
 
             i++
             column++
         }
 
         drawScrollBar(g)
-    }
-
-    private fun drawWeaponIcon(g: Graphics, bp: AbstractWeaponBlueprint, x: Int, y: Int) {
-        val iconWindowWidth = 96
-        val iconWindowHeight = 45
-        val animation = editor.state.animations.weaponAnimations[bp.launcher] ?: return
-        val sheet = editor.state.getImg(animation.sheet.sheetPath)
-        val icon = animation.spriteAt(sheet, animation.chargedFrame)
-
-        // The sprite is rotated 90°, so swap the width and height.
-        val iconX = (iconWindowWidth - icon.height) / 2
-        val iconY = (iconWindowHeight - icon.width) / 2
-
-        bp.drawLauncherUI(icon, g, x + iconX + 11f, y + iconY + 11f)
     }
 
     private fun drawScrollBar(g: Graphics) {
@@ -174,6 +158,32 @@ class BlueprintSelector(
     companion object {
         private const val FIRST_BP_X = 20
         private const val FIRST_BP_Y = 40
+
+        fun drawWeaponCard(
+            g: Graphics, editor: ShipEditor,
+            x: Int, y: Int,
+            weapon: AbstractWeaponBlueprint,
+            cardImage: Image
+        ) {
+            cardImage.draw(x, y)
+
+            val iconWindowWidth = 96
+            val iconWindowHeight = 45
+            val animation = editor.state.animations.weaponAnimations[weapon.launcher]
+            if (animation != null) {
+                val sheet = editor.state.getImg(animation.sheet.sheetPath)
+                val icon = animation.spriteAt(sheet, animation.chargedFrame)
+
+                // The sprite is rotated 90°, so swap the width and height.
+                val iconX = (iconWindowWidth - icon.height) / 2
+                val iconY = (iconWindowHeight - icon.width) / 2
+
+                weapon.drawLauncherUI(icon, g, x + iconX + 11f, y + iconY + 11f)
+            }
+
+            val title = weapon.short?.let { editor.state.translator[it] } ?: weapon.name
+            editor.font.drawStringCentred(x + 11f, y + 70f, 96f, title, Constants.SECTOR_CUTOUT_TEXT)
+        }
     }
 
     interface SelectionController {

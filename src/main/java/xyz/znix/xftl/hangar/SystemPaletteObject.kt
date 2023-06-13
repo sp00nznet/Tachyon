@@ -11,6 +11,11 @@ class SystemPaletteObject(val editor: ShipEditor) : UIObject {
 
     val systems = ArrayList<SystemObject>()
 
+    val width = 180
+    val height = 130
+
+    var x: Int = 0
+
     init {
         updateSystems()
     }
@@ -19,11 +24,9 @@ class SystemPaletteObject(val editor: ShipEditor) : UIObject {
         updateSystems()
 
         // TODO fix this not rendering the background due to translation
-        val width = 180
-        val height = 130
-        val x = editor.editorWidth - width - 10
         val y = editor.editorHeight - height - 10
-        editor.state.windowRenderer.render(x, y, width, height)
+        val title = "SYSTEMS"
+        editor.state.windowRenderer.renderWithTitleTab(g, editor.titleTab, editor.titleFont, x, y, width, height, title)
 
         val maxColumns = 6
 
@@ -46,7 +49,7 @@ class SystemPaletteObject(val editor: ShipEditor) : UIObject {
             for ((column, system) in rowItems.withIndex()) {
                 val leftX = startX + column * itemWidth
                 system.centreX = leftX + itemWidth / 2
-                system.centreY = y + 40 + row * 30
+                system.centreY = y + 47 + row * 30
             }
         }
     }

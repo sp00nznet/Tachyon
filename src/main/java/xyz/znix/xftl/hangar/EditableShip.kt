@@ -9,6 +9,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 
 /**
@@ -27,7 +28,15 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
 
     val rooms = ArrayList<EditableRoom>()
 
+    val weapons = ArrayList<AbstractWeaponBlueprint>()
+
+    var weaponSlots: Int = 4
+    var droneSlots: Int = 2
+
     fun draw(g: Graphics, drawSystems: Boolean) {
+        // Draw the weapons behind the hull images, so it covers up the edge of the texture.
+        drawWeapons(g)
+
         hullImage?.draw(hullOffset.x, hullOffset.y)
         floorImage?.draw(floorOffset.x + hullOffset.x, floorOffset.y + hullOffset.y)
 
@@ -37,6 +46,24 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
         }
 
         // Draw the doors
+        // TODO implement
+    }
+
+    private fun drawWeapons(g: Graphics) {
+        for ((index, weapon) in weapons.withIndex()) {
+            val hp = baseBlueprint.hardpoints[index]
+
+            val anim = state.animations.weaponAnimations.getValue(weapon.launcher)
+            val spriteSheet = state.getImg(anim.sheet.sheetPath)
+            val launcher = anim.spriteAt(spriteSheet, anim.chargedFrame)
+
+            g.pushTransform()
+            g.translate(-baseBlueprint.roomOffset.x.f * ROOM_SIZE, -baseBlueprint.roomOffset.y.f * ROOM_SIZE)
+            Weapons.translateHardpoint(g, hp)
+            g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
+            launcher.draw(0f, 0f)
+            g.popTransform()
+        }
     }
 
     private fun drawRoom(g: Graphics, room: EditableRoom, drawSystems: Boolean) {
@@ -118,6 +145,13 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
                     room.system!!.artilleryWeapon = weapon
                 }
             }
+
+            for (weapon in blueprint.initialWeapons) {
+                ship.weapons += state.blueprints[weapon] as AbstractWeaponBlueprint
+            }
+
+            blueprint.weaponSlots?.let { ship.weaponSlots = it }
+            blueprint.droneSlots?.let { ship.droneSlots = it }
 
             return ship
         }

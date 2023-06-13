@@ -1,8 +1,11 @@
 package xyz.znix.xftl.rendering
 
 import org.newdawn.slick.Color
+import xyz.znix.xftl.Constants
+import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.UIUtils
 
 /**
  * This class can efficiently render dynamically-sized windows by tiling
@@ -61,6 +64,25 @@ class WindowRenderer(
         Utils.drawStenciled(Utils.StencilMode.BLOCKING, maskFn) {
             drawOutlineOrMask(outlineImage, x, y, width, height)
         }
+    }
+
+    fun renderWithTitleTab(
+        g: Graphics, tabImage: Image, font: SILFontLoader,
+        x: Int, y: Int, width: Int, height: Int,
+        text: String
+    ) {
+        val startWidth = 20
+        val endWidth = 38
+        val textWidth = font.getWidth(text)
+        val tabWidth = startWidth + textWidth + endWidth
+
+        renderMasked(x, y, width, height, {
+            g.colour = Color.red // Anything non-transparent will do
+            g.fillRect(x.f - GLOW, y.f - GLOW, tabWidth.f, tabImage.height.f)
+        }, {})
+
+        UIUtils.drawTab(font, text, tabImage, x.f - GLOW, y.f - GLOW, startWidth.f, endWidth.f)
+        font.drawString(x.f - GLOW + startWidth, y + 24f, text, Constants.JUMP_DISABLED_TEXT)
     }
 
     // This draws more than the specified width/height, so it must be masked.

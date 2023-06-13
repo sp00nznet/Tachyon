@@ -28,6 +28,7 @@ interface UIObject {
     fun canHover(mouseX: Int, mouseY: Int): Boolean = canSelectFrom(mouseX, mouseY)
 
     fun onDeletePressed() = Unit
+    fun onLeftClick(x: Int, y: Int) = Unit
     fun onRightClick(x: Int, y: Int) = Unit
 
     /**
