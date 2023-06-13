@@ -16,26 +16,51 @@ class WindowRenderer(
     private val baseImage = BulkImageRenderer(backgroundImage)
 
     fun render(x: Int, y: Int, width: Int, height: Int) {
-        // Subtract out the size of the glow, to avoid having to do that later on.
-        val xBase = x - GLOW
-        val yBase = y - GLOW
-        val outlineWidth = width + GLOW * 2
-        val outlineHeight = height + GLOW * 2
-
         // Tile in the background area. We have to mask it, since the tiles
         // will clip the corners of the image.
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
-            drawOutlineOrMask(maskImage, xBase, yBase, outlineWidth, outlineHeight)
+            drawOutlineOrMask(maskImage, x, y, width, height)
         }, {
             drawTiled(x, y, width, height)
         })
 
         // Draw the outline image
-        drawOutlineOrMask(outlineImage, xBase, yBase, outlineWidth, outlineHeight)
+        drawOutlineOrMask(outlineImage, x, y, width, height)
 
         // For testing, this will draw an outline around the specified area.
         // g.color = Color(1f, 0f, 0f, 0.2f)
         // g.drawRect(x.f, y.f, width - 1f, height - 1f)
+    }
+
+    /**
+     * Draw a window, but with a stencil applied when drawing the outline image.
+     *
+     * This allows the consumer to mask off areas where they're drawing their own
+     * stuff, such as title bars.
+     *
+     * The stencil is run in blocking mode - any pixel you draw into won't be
+     * drawn by the outline.
+     *
+     * This also accepts a second function, which is rendered on the inside of
+     * the while, masked by the mask image. This is an easy way to draw stuff
+     * inside the window, making sure it doesn't leak out.
+     */
+    fun renderMasked(
+        x: Int, y: Int, width: Int, height: Int,
+        maskFn: () -> Unit,
+        drawFn: () -> Unit
+    ) {
+        Utils.drawStenciled(Utils.StencilMode.MASKING, {
+            drawOutlineOrMask(maskImage, x, y, width, height)
+        }, {
+            drawTiled(x, y, width, height)
+            drawFn()
+        })
+
+        // Draw the outline image
+        Utils.drawStenciled(Utils.StencilMode.BLOCKING, maskFn) {
+            drawOutlineOrMask(outlineImage, x, y, width, height)
+        }
     }
 
     // This draws more than the specified width/height, so it must be masked.
@@ -65,7 +90,13 @@ class WindowRenderer(
     }
 
     // Note the coordinates for this include the glow!
-    private fun drawOutlineOrMask(image: Image, x: Int, y: Int, width: Int, height: Int) {
+    private fun drawOutlineOrMask(image: Image, baseX: Int, baseY: Int, baseWidth: Int, baseHeight: Int) {
+        // Subtract out the size of the glow, to avoid having to do that later on.
+        val x = baseX - GLOW
+        val y = baseY - GLOW
+        val width = baseWidth + GLOW * 2
+        val height = baseHeight + GLOW * 2
+
         // Define some lines that run CORNER_SIZE away from the edge, since
         // we'll need these repeatedly when drawing.
         val leftLineX = x.f + CORNER_SIZE

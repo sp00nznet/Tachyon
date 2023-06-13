@@ -5,6 +5,7 @@ import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.Rectangle
 import xyz.znix.xftl.rendering.Graphics
@@ -282,9 +283,14 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         }
 
         if (button == Input.MOUSE_RIGHT_BUTTON) {
-            val selected = selected // For smart-casting
-            if (selected != null && selected.canSelectFrom(x, y)) {
-                selected.onRightClick(x, y)
+            // Try right-clicking an object
+            if (dragging == null) {
+                // If there isn't a selected object at the given point, pick the top one there.
+                if (selected?.canSelectFrom(x, y) != true) {
+                    selected = objects.filter { it.canSelectFrom(x, y) }.maxBy { it.selectPriority }
+                }
+
+                selected?.onRightClick(x, y)
             }
         }
     }
@@ -328,6 +334,8 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
     }
 
     fun mouseReleased(button: Int, x: Int, y: Int) {
+        updateMousePos(x, y)
+
         if (menu != null)
             return
 
@@ -381,6 +389,13 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         updateMousePos(x, y)
     }
 
+    fun mouseWheelMoved(change: Int) {
+        menu?.let {
+            it.mouseWheelMoved(change)
+            return
+        }
+    }
+
     private fun updateMousePos(x: Int, y: Int) {
         mousePixelPos.set(x, y)
 
@@ -423,12 +438,24 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         }
     }
 
-    fun openPopupMenu(entries: List<PopupMenu.Entry>) {
-        menu = PopupMenu(this, mousePixelPos.const, entries)
+    fun openPopupMenu(entries: List<PopupMenu.Entry?>) {
+        menu = PopupMenu(this, mousePixelPos.const, entries.filterNotNull())
     }
 
-    fun closeMenu() {
-        menu = null
+    fun openMenu(newMenu: EditorMenu) {
+        menu = newMenu
+    }
+
+    /**
+     * Close a currently-open window.
+     *
+     * This requires the window to close is passed in, so code doesn't
+     * inadvertently close a newly-opened window (for example, a popup
+     * closing a window it's callback opened).
+     */
+    fun closeMenu(menuToClose: EditorMenu) {
+        if (menu == menuToClose)
+            menu = null
     }
 
     fun isHovered(obj: UIObject): Boolean {
@@ -441,6 +468,19 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
 
     fun isDragging(obj: UIObject): Boolean {
         return dragging == obj
+    }
+
+    /**
+     * Get the position the top-left corner of a menu should be placed at
+     * to be centred in the screen.
+     *
+     * This is non-trivial, since the editor is translated by the ship's position.
+     */
+    fun getCentralScreenPosition(size: IPoint): IPoint {
+        // Find the position, without including the transform the editor is rendered with.
+        val posRelative = (state.screenSize - size).divideTruncate(2f)
+
+        return posRelative - state.shipOffset
     }
 
     companion object {

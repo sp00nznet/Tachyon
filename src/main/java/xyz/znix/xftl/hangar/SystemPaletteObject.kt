@@ -1,6 +1,7 @@
 package xyz.znix.xftl.hangar
 
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.systems.Artillery
 
 /**
  * This is a palette containing all the systems not present on the ship.
@@ -55,8 +56,12 @@ class SystemPaletteObject(val editor: ShipEditor) : UIObject {
     }
 
     fun updateSystems() {
-        val installedSystems = editor.ship.rooms.mapNotNull { it.system }.toSet()
-        val systemsInPalette = systems.map { it.system }.toSet()
+        val installedSystems = editor.ship.rooms.mapNotNull { it.system?.type }.toHashSet()
+
+        // Always include artillery systems, since you can have multiple of those.
+        installedSystems.removeIf { it.info == Artillery.INFO }
+
+        val systemsInPalette = systems.map { it.system.type }.toSet()
         val nonInstalledSystems = editor.allSystems.toHashSet()
         nonInstalledSystems.removeAll(installedSystems)
 
@@ -68,11 +73,11 @@ class SystemPaletteObject(val editor: ShipEditor) : UIObject {
         systems.clear()
 
         for (system in nonInstalledSystems) {
-            systems += SystemObject(editor, null, 0, 0, system)
+            systems += SystemObject(editor, null, 0, 0, EditableSystem(system))
         }
 
         // It doesn't really matter what order we use, just make sure it's
         // not changing due to the order coming from a set.
-        systems.sortBy { it.system.name }
+        systems.sortBy { it.system.type.name }
     }
 }

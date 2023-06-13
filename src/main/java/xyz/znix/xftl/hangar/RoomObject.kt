@@ -1,10 +1,12 @@
 package xyz.znix.xftl.hangar
 
 import org.newdawn.slick.Color
+import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.systems.Artillery
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.roundToInt
 
 class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, DragObject {
@@ -21,7 +23,7 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
     )
 
     var systemObject: SystemObject? = null
-    private var lastSystem: SystemBlueprint? = null
+    private var lastSystem: EditableSystem? = null
 
     init {
         updateSubObjects()
@@ -75,18 +77,42 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
             systemEntries += PopupMenu.Entry(system.name) {
                 // Clear this system from all other rooms
                 for (otherRoom in editor.ship.rooms) {
-                    if (otherRoom.system == system)
+                    if (otherRoom.system?.type == system)
                         otherRoom.system = null
                 }
 
-                room.system = system
+                room.system = EditableSystem(system)
             }
         }
 
-        editor.openPopupMenu(listOf(
-            PopupMenu.Entry("System", systemEntries, null),
-            PopupMenu.Entry("Something else") {}
-        ))
+        val isArtillery = room.system?.type?.info == Artillery.INFO
+        val artilleryWeaponEntry = if (!isArtillery) null else {
+            PopupMenu.Entry("Artillery weapon") {
+                val blueprints = editor.state.blueprints.blueprints.values
+                    .filterIsInstance<AbstractWeaponBlueprint>()
+                    .sortedBy { it.name }
+
+                val controller = object : BlueprintSelector.SelectionController {
+                    override val title: String get() = "SELECT ARTILLERY WEAPON"
+
+                    override fun select(blueprint: Blueprint) {
+                        // Cast the blueprint back to a weapon
+                        require(blueprint is AbstractWeaponBlueprint)
+
+                        room.system?.artilleryWeapon = blueprint
+                    }
+                }
+
+                editor.openMenu(BlueprintSelector(editor, blueprints, controller))
+            }
+        }
+
+        editor.openPopupMenu(
+            listOf(
+                PopupMenu.Entry("System", systemEntries, null),
+                artilleryWeaponEntry
+            )
+        )
     }
 
     override fun updateSubObjects() {

@@ -10,6 +10,7 @@ interface EditorMenu {
     fun keyReleased(key: Int, c: Char) {}
     fun mouseMoved(x: Int, y: Int) {}
     fun mouseClicked(button: Int, x: Int, y: Int, clickCount: Int) {}
+    fun mouseWheelMoved(change: Int) {}
     fun draw(g: Graphics)
 }
 
@@ -36,13 +37,13 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
             if (entry != null) {
                 if (entry.onClick != null) {
                     entry.onClick.invoke()
-                    editor.closeMenu()
+                    editor.closeMenu(this)
                 }
                 return
             }
         }
 
-        editor.closeMenu()
+        editor.closeMenu(this)
     }
 
     override fun mouseMoved(x: Int, y: Int) {

@@ -9,6 +9,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 
 /**
  * A ship that can be rendered in the hangar.
@@ -85,7 +86,7 @@ class EditableShip(val state: SelectShipState) {
         // Note that when using the editor, it draws the system icons instead.
         val system = room.system
         if (system != null && drawSystems) {
-            val icon = state.getImg(system.roomIconPath)
+            val icon = state.getImg(system.type.roomIconPath)
             icon.draw(
                 x + (room.pixelWidth - icon.width) / 2,
                 y + (room.pixelHeight - icon.height) / 2,
@@ -108,7 +109,14 @@ class EditableShip(val state: SelectShipState) {
 
             for (system in blueprint.systems) {
                 val room = ship.rooms[system.room.id]
-                room.system = state.blueprints[system.systemName] as SystemBlueprint
+                val type = state.blueprints[system.systemName] as SystemBlueprint
+                room.system = EditableSystem(type)
+
+                // If this is an artillery system, set its weapon.
+                if (system.weapon != null) {
+                    val weapon = state.blueprints[system.weapon] as AbstractWeaponBlueprint
+                    room.system!!.artilleryWeapon = weapon
+                }
             }
 
             return ship
@@ -125,7 +133,7 @@ class EditableRoom(
     var w: Int = 2,
     var h: Int = 2
 ) {
-    var system: SystemBlueprint? = null
+    var system: EditableSystem? = null
 
     val pixelX: Int get() = x * ROOM_SIZE
     val pixelY: Int get() = y * ROOM_SIZE
@@ -140,3 +148,8 @@ class EditableRoom(
         return px in pixelX..pixelRight && py in pixelY..pixelBottom
     }
 }
+
+data class EditableSystem(
+    val type: SystemBlueprint,
+    var artilleryWeapon: AbstractWeaponBlueprint? = null
+)

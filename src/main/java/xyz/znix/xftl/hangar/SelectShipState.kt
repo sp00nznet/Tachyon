@@ -2,10 +2,7 @@ package xyz.znix.xftl.hangar
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import xyz.znix.xftl.BlueprintManager
-import xyz.znix.xftl.Datafile
-import xyz.znix.xftl.SILFontLoader
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.Point
@@ -16,6 +13,14 @@ import xyz.znix.xftl.rendering.WindowRenderer
 class SelectShipState(private val vanillaDF: Datafile, private val main: MainGame) : MainGame.GameState() {
 
     val font = SILFontLoader(vanillaDF, vanillaDF["fonts/c&c.font"])
+    val fontHL2 = SILFontLoader(vanillaDF, vanillaDF["fonts/HL2.font"])
+
+    val mousePos = Point(0, 0)
+    val shipOffset = Point(0, 0)
+
+    // This is the size of the game window, not the full screen - but 'window'
+    // also refers to in-game windows.
+    val screenSize = Point(0, 0)
 
     private val baseShipNames = listOf(
         "PLAYER_SHIP_HARD",
@@ -33,6 +38,8 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     )
 
     val blueprints: BlueprintManager = BlueprintManager(vanillaDF, true)
+    val translator: Translator = Translator(vanillaDF, "en")
+    val animations: Animations = Animations(vanillaDF)
 
     val windowRenderer: WindowRenderer
 
@@ -46,13 +53,9 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     private var current: EditableShip
 
-    private val mousePos = Point(0, 0)
-
     private val images = HashMap<String, Image>()
 
     private var editor: ShipEditor
-
-    private val shipOffset = Point(0, 0)
 
     init {
         current = EditableShip.fromBlueprint(this, ships.first())
@@ -67,11 +70,14 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     override fun render(container: GameContainer, g: Graphics) {
         g.clear(Color.darkGray)
 
+        screenSize.x = container.width
+        screenSize.y = container.height
+
         hovered = null
 
         val x = 30
         var y = 40
-        val width = 350
+        val width = 175
         val height = 17
 
         for (ship in ships) {
@@ -129,6 +135,10 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     override fun mouseMoved(oldX: Int, oldY: Int, newX: Int, newY: Int) {
         editor.mouseMoved(newX - shipOffset.x, newY - shipOffset.y)
+    }
+
+    override fun mouseWheelMoved(change: Int) {
+        editor.mouseWheelMoved(change)
     }
 
     override fun keyReleased(key: Int, c: Char) {

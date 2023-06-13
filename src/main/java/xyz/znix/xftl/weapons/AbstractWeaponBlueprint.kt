@@ -10,6 +10,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.RefLoader
 import java.util.*
 
@@ -74,7 +75,10 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     fun drawLauncherUI(game: InGameState, g: Graphics, x: Float, y: Float) {
         val anim = getLauncher(game)
         val spr = anim.getChargedImage(game)
+        drawLauncherUI(spr, g, x, y)
+    }
 
+    fun drawLauncherUI(chargedImage: Image, g: Graphics, x: Float, y: Float) {
         g.pushTransform()
 
         // Flip and rotate the sprite appropriately to make it loop like it's mounted above
@@ -82,12 +86,12 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
 
         // Note we have to add the width (height, but we've rotated it 90°) and height
         // to fix the offset caused by the rotation and mirroring.
-        g.translate(x + spr.height, y + spr.width)
+        g.translate(x + chargedImage.height, y + chargedImage.width)
 
         g.scale(1f, -1f)
         g.rotate(0f, 0f, 90f)
 
-        spr.draw(0, 0)
+        chargedImage.draw(0, 0)
 
         g.popTransform()
     }
