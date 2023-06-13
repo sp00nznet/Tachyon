@@ -5,6 +5,8 @@ import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
+import xyz.znix.xftl.systems.Clonebay
+import xyz.znix.xftl.systems.Medbay
 import kotlin.math.pow
 
 class SystemObject(
@@ -89,6 +91,32 @@ class SystemObject(
         room?.system = newRoom?.system
         newRoom?.system = system.copy()
 
+        // Clear out duplicate systems, with special exceptions for artillery
+        // (which allows multiple) and the clonebay/medbay (which remove each
+        // other). Other than these cases it shouldn't be possible for a ship
+        // to have multiple of a system, but this check is here just in case
+        // that does somehow happen.
+        for (room in editor.ship.rooms) {
+            if (room == newRoom)
+                continue
+
+            val roomSystem = room.system ?: continue
+
+            // Multiple artillery weapons are allowed.
+            if (system.type.info == Artillery.INFO)
+                continue
+
+            // Clonebays and medbays block each other
+            if (isMedical(system) && isMedical(roomSystem)) {
+                room.system = null
+                continue
+            }
+
+            if (roomSystem.type == system.type) {
+                room.system = null
+            }
+        }
+
         // Update the objects immediately to avoid flickering, as otherwise
         // the system could 'pop back' to the previous room for a frame.
         editor.fullUpdateObjects()
@@ -96,5 +124,9 @@ class SystemObject(
 
     override fun onDeletePressed() {
         room?.system = null
+    }
+
+    private fun isMedical(system: EditableSystem): Boolean {
+        return system.type.info == Medbay.INFO || system.type.info == Clonebay.INFO
     }
 }

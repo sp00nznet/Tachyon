@@ -70,24 +70,6 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         if (!editor.isSelected(this))
             return
 
-        val systemEntries = ArrayList<PopupMenu.Entry>()
-
-        systemEntries += PopupMenu.Entry("No system") {
-            room.system = null
-        }
-
-        for (system in editor.allSystems) {
-            systemEntries += PopupMenu.Entry(system.name) {
-                // Clear this system from all other rooms
-                for (otherRoom in editor.ship.rooms) {
-                    if (otherRoom.system?.type == system)
-                        otherRoom.system = null
-                }
-
-                room.system = EditableSystem(system)
-            }
-        }
-
         val isArtillery = room.system?.type?.info == Artillery.INFO
         val artilleryWeaponEntry = if (!isArtillery) null else {
             PopupMenu.Entry("Artillery weapon") {
@@ -107,7 +89,6 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         }
 
         editor.openPopupMenu(
-            PopupMenu.Entry("System", systemEntries, null),
             artilleryWeaponEntry
         )
     }
