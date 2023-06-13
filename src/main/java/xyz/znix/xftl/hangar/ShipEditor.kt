@@ -12,6 +12,7 @@ import xyz.znix.xftl.math.Rectangle
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.*
 
 class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
@@ -30,6 +31,10 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         .filterIsInstance<AbstractWeaponBlueprint>()
         .sortedBy { bp -> bp.short?.let { state.translator[it] } ?: bp.name }
 
+    val droneBlueprints = state.blueprints.blueprints.values
+        .filterIsInstance<DroneBlueprint>()
+        .sortedBy { bp -> bp.short?.let { state.translator[it] } ?: bp.name }
+
     private var selected: UIObject? = null
         set(value) {
             field = value
@@ -45,6 +50,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
 
     private val systemPalette = SystemPaletteObject(this)
     private val weaponPanel = WeaponPanel(this)
+    private val dronePanel = DronePanel(this)
 
     private var hovered: UIObject? = null
     private val objects = ArrayList<UIObject>()
@@ -79,6 +85,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         // Set the X values for the stuff at the bottom
         systemPalette.x = editorWidth - systemPalette.width - 10
         weaponPanel.baseX = systemPalette.x - weaponPanel.width - 10
+        dronePanel.baseX = weaponPanel.baseX - dronePanel.width - 10
 
         for (obj in objects) {
             obj.draw(g)
@@ -138,6 +145,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         newObjects += systemPalette
         newObjects.addAll(systemPalette.systems)
         weaponPanel.addObjects(newObjects)
+        dronePanel.addObjects(newObjects)
 
         for (obj in objects) {
             // Rooms are copied over if possible

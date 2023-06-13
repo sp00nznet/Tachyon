@@ -11,6 +11,7 @@ import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 
 /**
  * A ship that can be rendered in the hangar.
@@ -29,6 +30,7 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
     val rooms = ArrayList<EditableRoom>()
 
     val weapons = ArrayList<AbstractWeaponBlueprint>()
+    val drones = ArrayList<DroneBlueprint>()
 
     var weaponSlots: Int = 4
     var droneSlots: Int = 2
@@ -148,6 +150,9 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
 
             for (weapon in blueprint.initialWeapons) {
                 ship.weapons += state.blueprints[weapon] as AbstractWeaponBlueprint
+            }
+            for (drone in blueprint.initialDrones) {
+                ship.drones += state.blueprints[drone] as DroneBlueprint
             }
 
             blueprint.weaponSlots?.let { ship.weaponSlots = it }

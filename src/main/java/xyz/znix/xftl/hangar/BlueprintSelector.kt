@@ -11,6 +11,7 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -31,7 +32,7 @@ class BlueprintSelector(
     private val rows = ceil(blueprints.size.f / numColumns).toInt()
 
     private var scroll: Float = 0f
-    private val maxScroll = (blueprintSpacingY * rows) - (size.y - FIRST_BP_Y)
+    private val maxScroll = ((blueprintSpacingY * rows) - (size.y - FIRST_BP_Y)).coerceAtLeast(0)
 
     private val mousePos = Point(0, 0)
     private var hovered: Blueprint? = null
@@ -104,6 +105,8 @@ class BlueprintSelector(
             // Draw the weapon icon, if this is a weapon
             if (bp is AbstractWeaponBlueprint) {
                 drawWeaponCard(g, editor, x, y, bp, img)
+            } else if (bp is DroneBlueprint) {
+                drawDroneCard(g, editor, x, y, bp, img)
             } else {
                 img.draw(x.f, y.f)
 
@@ -182,6 +185,20 @@ class BlueprintSelector(
             }
 
             val title = weapon.short?.let { editor.state.translator[it] } ?: weapon.name
+            editor.font.drawStringCentred(x + 11f, y + 70f, 96f, title, Constants.SECTOR_CUTOUT_TEXT)
+        }
+
+        fun drawDroneCard(
+            g: Graphics, editor: ShipEditor,
+            x: Int, y: Int,
+            drone: DroneBlueprint,
+            cardImage: Image
+        ) {
+            cardImage.draw(x, y)
+
+            drone.drawIconUI(editor.state.animations, ConstPoint(x + 60, y + 35), editor.state::getImg)
+
+            val title = drone.short?.let { editor.state.translator[it] } ?: drone.name
             editor.font.drawStringCentred(x + 11f, y + 70f, 96f, title, Constants.SECTOR_CUTOUT_TEXT)
         }
     }

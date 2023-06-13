@@ -1,7 +1,9 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import xyz.znix.xftl.Animations
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.Constants
 import xyz.znix.xftl.drones.*
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
@@ -49,6 +51,11 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     }
 
     fun drawIconUI(game: InGameState, pos: IPoint) {
+        drawIconUI(game.animations, pos, game::getImg)
+    }
+
+    // This version is used by the ship editor, since it doesn't have an InGameState instance.
+    fun drawIconUI(animations: Animations, pos: IPoint, getImg: (String) -> Image) {
         var base: Image? = null
 
         // For indoor drones, use their portrait.
@@ -61,25 +68,27 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
             else -> null
         }
         if (indoorIcon != null) {
-            val portrait = "${indoorIcon}_portrait"
-            if (game.animations.animations.containsKey(portrait))
-                base = game.animations[portrait].spriteAt(game, 0)
+            val portraitAnim = animations.animations["${indoorIcon}_portrait"]
+            if (portraitAnim != null) {
+                val img = getImg(portraitAnim.sheet.sheetPath)
+                base = portraitAnim.sheet.getSprite(img, portraitAnim.x, portraitAnim.y)
+            }
         }
 
         // Special-case the hacking drone, though obviously it's probably
         // not great if the player is seeing this outside a debug menu.
         if (name == "DRONE_HACKING") {
-            base = game.getImg("img/ship/drones/drone_hack_base.png")
+            base = getImg("img/ship/drones/drone_hack_base.png")
         }
 
         // Otherwise use the outside charged image - this won't exist
         // for indoor drones, so only use it if there isn't a portrait.
         if (base == null && droneImage != null) {
-            base = game.getImg("img/ship/drones/${droneImage}_charged.png")
+            base = getImg("img/ship/drones/${droneImage}_charged.png")
         }
 
         if (base == null)
-            base = game.missingImage
+            base = getImg(Constants.MISSING_FILE_PATH)
 
         // Be sure to pixel-align the image, to make it as sharp as possible.
         val imgX = pos.x - base.width / 2
@@ -94,7 +103,7 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
 
         // Draw the laser for defence drones
         if (type == DroneType.DEFENSE) {
-            val gun = game.getImg("img/ship/drones/${droneImage}_gun_charged.png")
+            val gun = getImg("img/ship/drones/${droneImage}_gun_charged.png")
             gun.draw(imgX.f, imgY.f)
         }
     }
