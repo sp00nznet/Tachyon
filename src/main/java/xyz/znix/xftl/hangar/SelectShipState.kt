@@ -3,6 +3,7 @@ package xyz.znix.xftl.hangar
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.*
+import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.Point
@@ -57,9 +58,12 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     private var editor: ShipEditor
 
+    private val startGameButton: StartGameButton
+
     init {
         current = EditableShip.fromBlueprint(this, ships.first())
         editor = ShipEditor(this, current)
+        startGameButton = StartGameButton(this)
 
         val background = getImg("img/window_base.png")
         val outline = getImg("img/window_outline.png")
@@ -93,6 +97,8 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
             y += height + 3
         }
 
+        startGameButton.draw(g)
+
         g.pushTransform()
         shipOffset.x = x + width + 50 - current.hullOffset.x
         shipOffset.y = 100 - current.hullOffset.y
@@ -114,11 +120,12 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
         if (hovered != null) {
             current = EditableShip.fromBlueprint(this, hovered!!)
             editor = ShipEditor(this, current)
-            // TODO main.startNewGame(hovered!!.name, Difficulty.NORMAL)
             return
         }
 
         editor.mouseClicked(button, x - shipOffset.x, y - shipOffset.y, clickCount)
+
+        startGameButton.mouseClicked(button)
     }
 
     override fun mousePressed(button: Int, x: Int, y: Int) {
@@ -147,5 +154,9 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     fun getImg(path: String): Image {
         return images.getOrPut(path) { vanillaDF.readImage(path) }
+    }
+
+    fun startGame(selected: Difficulty) {
+        main.startNewGame(current.baseBlueprint.name, selected)
     }
 }

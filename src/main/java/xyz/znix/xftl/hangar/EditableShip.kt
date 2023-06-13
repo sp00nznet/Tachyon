@@ -18,7 +18,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
  * in-game (room locations etc being immutable) isn't suitable for ship that
  * can be edited.
  */
-class EditableShip(val state: SelectShipState) {
+class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint) {
     var hullImage: Image? = null
     var floorImage: Image? = null
 
@@ -97,7 +97,7 @@ class EditableShip(val state: SelectShipState) {
 
     companion object {
         fun fromBlueprint(state: SelectShipState, blueprint: ShipBlueprint): EditableShip {
-            val ship = EditableShip(state)
+            val ship = EditableShip(state, blueprint)
 
             ship.hullImage = state.getImg(blueprint.hullImage)
             ship.floorImage = blueprint.floorImage?.let { state.getImg(it) }

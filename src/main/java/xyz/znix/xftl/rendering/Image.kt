@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
 import org.newdawn.slick.Renderable
 import xyz.znix.xftl.f
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 
 /**
@@ -24,6 +25,8 @@ class Image(
 
     @Deprecated("Pass in a filter to the image, rather than mutating it.")
     var alpha: Float = 1f
+
+    val imageSize: IPoint get() = ConstPoint(width, height)
 
     fun draw() {
         draw(0, 0)
@@ -140,6 +143,27 @@ class Image(
         Graphics.glVertexTransformed(x2, y)
 
         GL11.glEnd()
+    }
+
+    fun drawSection(
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        offsetX: Int = 0,
+        offsetY: Int = 0,
+        stretchX: Int? = null,
+        stretchY: Int? = null,
+        colour: Color? = null
+    ) {
+        val screenWidth = stretchX ?: width
+        val screenHeight = stretchY ?: height
+
+        draw(
+            x.f, y.f, x.f + screenWidth, y.f + screenHeight,
+            offsetX.f, offsetY.f, offsetX + width.f, offsetY + height.f,
+            colour ?: Color.white
+        )
     }
 
     fun getSubImage(x: Int, y: Int, width: Int, height: Int): Image {

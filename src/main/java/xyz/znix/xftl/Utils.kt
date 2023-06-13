@@ -17,23 +17,6 @@ import kotlin.random.Random
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
 
-val Image.imageSize: IPoint get() = ConstPoint(width, height)
-
-fun Image.drawSection(
-    x: Int,
-    y: Int,
-    width: Int,
-    height: Int,
-    offsetX: Int = 0,
-    offsetY: Int = 0,
-    colour: Color? = null
-) {
-    draw(
-        x.f, y.f, x.f + width, y.f + height, offsetX.f, offsetY.f,
-        offsetX + width.f, offsetY + height.f, colour ?: Color.white
-    )
-}
-
 fun Element.requireAttributeValue(name: String): String {
     return getAttributeValue(name) ?: error("Missing mandatory attribute $name on element ${this.name}")
 }

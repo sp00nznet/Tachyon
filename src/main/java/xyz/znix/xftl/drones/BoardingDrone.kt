@@ -4,7 +4,6 @@ import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.f
-import xyz.znix.xftl.imageSize
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint

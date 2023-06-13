@@ -12,4 +12,14 @@ enum class Difficulty {
      * This is -1 on easy, which delays everything by a sector.
      */
     val sectorOffset: Int get() = if (this == EASY) -1 else 0
+
+    /**
+     * Get the localisation key for the start button for this difficulty.
+     */
+    val startButtonKey: String
+        get() = when (this) {
+            EASY -> "easy_button"
+            NORMAL -> "normal_button"
+            HARD -> "hard_button"
+        }
 }

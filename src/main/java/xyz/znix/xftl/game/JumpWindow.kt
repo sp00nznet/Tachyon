@@ -6,7 +6,6 @@ import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Utils
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.drawSection
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
@@ -481,7 +480,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         // Step along the path of the vector, drawing images in each place
         for (i in 6..(dist - 5) step segmentWidth) {
             // Draw the line itself
-            lineImg.drawSection(i, 0, segmentWidth, 4, 1, 0, colour)
+            lineImg.drawSection(i, 0, segmentWidth, 4, 1, 0, colour = colour)
         }
 
         g.popTransform()
