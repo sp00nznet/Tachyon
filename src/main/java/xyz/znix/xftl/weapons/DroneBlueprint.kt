@@ -101,10 +101,16 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
 
         base.draw(imgX.f, imgY.f)
 
-        // Draw the laser for defence drones
+        // Draw the laser for defence drones.
+        // Note that while the normal defence drones have a fully-charged
+        // gun sprite, the anti-drone doesn't and uses a separate gun and
+        // charge glow sprite.
         if (type == DroneType.DEFENSE) {
-            val gun = getImg("img/ship/drones/${droneImage}_gun_charged.png")
-            gun.draw(imgX.f, imgY.f)
+            val gunBase = getImg("img/ship/drones/${droneImage}_gun_on.png")
+            gunBase.draw(imgX.f, imgY.f)
+
+            val gunGlow = getImg("img/ship/drones/${droneImage}_gun_charged.png")
+            gunGlow.draw(imgX.f, imgY.f)
         }
     }
 
