@@ -6,7 +6,6 @@ import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
-import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.roundToInt
 
@@ -26,13 +25,24 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
     var systemObject: SystemObject? = null
     private var lastSystem: EditableSystem? = null
 
+    // This is the list of doors that are attached to the room when we're dragging it.
+    private var draggingDoors: List<EditableDoor> = emptyList()
+
     init {
         updateSubObjects()
     }
 
     override fun setGridPos(x: Int, y: Int) {
+        val deltaX = x - room.x
+        val deltaY = y - room.y
+
         room.x = x
         room.y = y
+
+        for (door in draggingDoors) {
+            door.x += deltaX
+            door.y += deltaY
+        }
     }
 
     override fun canSelectFrom(mouseX: Int, mouseY: Int): Boolean {
@@ -99,6 +109,32 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         systemObject = room.system?.let { SystemObject(editor, room, 0, 0, it) }
         lastSystem = room.system
         updateSystemPosition()
+    }
+
+    override fun onDragStart() {
+        // Find all the doors that are only connected to this room, and move them with us.
+        // We only find this when we start dragging, to avoid leaving them behind if the
+        // room is dragged past another room.
+        val doors = ArrayList<EditableDoor>()
+
+        for (door in editor.ship.doors) {
+            // If the door connects to more than two rooms (which can only happen if rooms
+            // are overlapped), we certainly don't care.
+            val firstNeighbour = EditableDoor.findNeighbourRoom(editor.ship, door, null) ?: continue
+            val secondNeighbour = EditableDoor.findNeighbourRoom(editor.ship, door, firstNeighbour)
+
+            // Make sure we're the only connecting room.
+            if (firstNeighbour != this.room || secondNeighbour != null)
+                continue
+
+            doors.add(door)
+        }
+
+        draggingDoors = doors
+    }
+
+    override fun onDropped(x: Int, y: Int) {
+        draggingDoors = emptyList()
     }
 
     private fun updateSystemPosition() {

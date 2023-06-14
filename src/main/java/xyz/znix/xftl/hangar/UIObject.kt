@@ -49,6 +49,7 @@ interface DragObject : UIObject {
     fun setGridPos(x: Int, y: Int) = Unit
     fun setPixelPos(x: Int, y: Int) = Unit
 
+    fun onDragStart() = Unit
     fun onDropped(x: Int, y: Int) = Unit
 
     // Check if a mouse position can be used to start dragging the object.

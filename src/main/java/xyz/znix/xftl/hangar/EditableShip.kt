@@ -8,6 +8,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
@@ -26,6 +27,7 @@ class EditableShip(
     val baseBlueprint: String // ShipBlueprint name
 ) {
     val rooms = ArrayList<EditableRoom>()
+    val doors = ArrayList<EditableDoor>()
 
     val weapons = ArrayList<String>() // AbstractWeaponBlueprint names
     val drones = ArrayList<String>() // DroneBlueprint names
@@ -33,7 +35,7 @@ class EditableShip(
     var weaponSlots: Int = 4
     var droneSlots: Int = 2
 
-    fun draw(g: Graphics, state: SelectShipState, drawSystems: Boolean) {
+    fun draw(g: Graphics, state: SelectShipState, renderAll: Boolean) {
         val blueprint = state.blueprints[baseBlueprint] as ShipBlueprint
 
         val hullImage = state.getImg(blueprint.hullImage)
@@ -49,11 +51,16 @@ class EditableShip(
 
         // Draw the rooms
         for (room in rooms) {
-            drawRoom(g, state, room, drawSystems)
+            drawRoom(g, state, room, renderAll)
         }
 
         // Draw the doors
-        // TODO implement
+        val doorImage = state.getImg("img/effects/door_sheet.png")
+        if (renderAll) {
+            for (door in doors) {
+                door.draw(g, doorImage)
+            }
+        }
     }
 
     private fun drawWeapons(g: Graphics, state: SelectShipState, shipBlueprint: ShipBlueprint) {
@@ -137,6 +144,9 @@ class EditableShip(
             val rooms = blueprint.rooms.map { EditableRoom(it.pos.x, it.pos.y, it.size.x, it.size.y) }
             ship.rooms.addAll(rooms)
 
+            val doors = blueprint.doors.map { EditableDoor(it.pos.x, it.pos.y, it.isVertical) }
+            ship.doors.addAll(doors)
+
             for (system in blueprint.systems) {
                 val room = ship.rooms[system.room.id]
                 val type = system.systemName
@@ -182,6 +192,98 @@ class EditableRoom(
 
     fun containsPixel(px: Int, py: Int): Boolean {
         return px in pixelX..pixelRight && py in pixelY..pixelBottom
+    }
+}
+
+class EditableDoor(
+    var x: Int,
+    var y: Int,
+    var isVertical: Boolean
+) {
+    /**
+     * The offset from the grid position to the centre of the door image, in the X axis.
+     */
+    val centreOffsetX: Int get() = if (isVertical) 0 else ROOM_SIZE / 2
+
+    /**
+     * The offset from the grid position to the centre of the door image, in the Y axis.
+     */
+    val centreOffsetY: Int get() = if (isVertical) ROOM_SIZE / 2 else 0
+
+    fun draw(g: Graphics, doorsImage: Image) {
+        draw(
+            g, doorsImage,
+            x * ROOM_SIZE + centreOffsetX,
+            y * ROOM_SIZE + centreOffsetY,
+            isVertical, null
+        )
+    }
+
+    companion object {
+        fun draw(g: Graphics, doorsImage: Image, centreX: Int, centreY: Int, isVertical: Boolean, highlight: Image?) {
+            // Broken and level 1 doors use the same sprite, but broken doors
+            // have a colour filter applied to them.
+            val sheetY = ROOM_SIZE * 0.coerceAtLeast(0)
+
+            // This is used to animate the door opening and closing, selecting the
+            // correct frame for its motion.
+            val sheetX = 0
+
+            g.pushTransform()
+
+            // Make the centre of the door sprite the origin
+            g.translate(centreX.f, centreY.f)
+
+            if (!isVertical) {
+                g.rotate(0f, 0f, 90f)
+            }
+
+            highlight?.draw(-ROOM_SIZE / 2, -ROOM_SIZE / 2)
+
+            doorsImage.drawSection(
+                -ROOM_SIZE / 2, -ROOM_SIZE / 2, ROOM_SIZE, ROOM_SIZE,
+                sheetX, sheetY
+            )
+
+            g.popTransform()
+        }
+
+        fun findNeighbourRoom(ship: EditableShip, door: EditableDoor, exclude: EditableRoom?): EditableRoom? {
+            return findNeighbourRoom(ship, door.x, door.y, door.isVertical, exclude)
+        }
+
+        fun findNeighbourRoom(
+            ship: EditableShip,
+            cellX: Int, cellY: Int,
+            vertical: Boolean,
+            exclude: EditableRoom?
+        ): EditableRoom? {
+            for (room in ship.rooms) {
+                if (room == exclude)
+                    continue
+
+                // Filter out rooms that we aren't in.
+                if (cellX !in room.x..room.x + room.w)
+                    continue
+                if (cellY !in room.y..room.y + room.h)
+                    continue
+
+                // Check we're on a suitable edge.
+                if (vertical) {
+                    if (cellY == room.y + room.h)
+                        continue
+                    if (cellX == room.x || cellX == room.x + room.w)
+                        return room
+                } else {
+                    if (cellX == room.x + room.w)
+                        continue
+                    if (cellY == room.y || cellY == room.y + room.h)
+                        return room
+                }
+            }
+
+            return null
+        }
     }
 }
 

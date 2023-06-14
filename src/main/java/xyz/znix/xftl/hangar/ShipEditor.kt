@@ -71,8 +71,10 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
     private var creatingRoom: Boolean = false
     private var creatingRoomStart: ConstPoint? = null
 
-    private val mousePixelPos = Point(0, 0)
-    private val mouseGridPos = Point(0, 0)
+    var creatingDoor: DoorObject? = null
+
+    val mousePixelPos = Point(0, 0)
+    val mouseGridPos = Point(0, 0)
 
     private var menu: EditorMenu? = null
 
@@ -106,6 +108,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         if (creatingRoom) {
             dragging = null
             selected = null
+            creatingDoor = null
 
             val bounds = getNewRoomBounds()
             if (bounds == null) {
@@ -141,25 +144,35 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         newObjects.clear()
 
         val remainingRooms = HashSet(ship.rooms)
+        val remainingDoors = HashSet(ship.doors)
 
         newObjects += systemPalette
         newObjects.addAll(systemPalette.systems)
         weaponPanel.addObjects(newObjects)
         dronePanel.addObjects(newObjects)
+        creatingDoor?.let { newObjects += it }
 
         for (obj in objects) {
-            // Rooms are copied over if possible
+            // Rooms and doors are copied over if possible
             if (obj is RoomObject) {
                 if (remainingRooms.remove(obj.room)) {
                     newObjects += obj
                     obj.systemObject?.let { newObjects += it }
                 }
             }
+            if (obj is DoorObject) {
+                if (remainingDoors.remove(obj.door)) {
+                    newObjects += obj
+                }
+            }
         }
 
-        // Add any new rooms
+        // Add any new rooms or doors
         for (room in remainingRooms) {
             newObjects += RoomObject(this, room)
+        }
+        for (door in remainingDoors) {
+            newObjects += DoorObject(this, door)
         }
 
         // Apply our changes
@@ -285,6 +298,11 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
                 return
             }
 
+            creatingDoor?.let { door ->
+                door.onLeftClick(x, y)
+                return
+            }
+
             // We're clearly not dragging anything any more, since we just
             // released the button. But we need to do this before changing
             // the selected object, so the dragging-is-hovered logic doesn't apply.
@@ -313,6 +331,11 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         }
 
         if (button == Input.MOUSE_RIGHT_BUTTON) {
+            if (creatingDoor != null) {
+                creatingDoor = null
+                return
+            }
+
             // Try right-clicking an object
             if (dragging == null) {
                 // If there isn't a selected object at the given point, pick the top one there.
@@ -332,6 +355,10 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
     fun mousePressed(button: Int, x: Int, y: Int) {
         if (menu != null)
             return
+
+        if (creatingDoor != null) {
+            return
+        }
 
         if (button == Input.MOUSE_LEFT_BUTTON) {
             if (creatingRoom) {
@@ -355,6 +382,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
             val dragStart = dragging
             if (dragStart != null) {
                 dragOffset.set(x - dragStart.dragX, y - dragStart.dragY)
+                dragStart.onDragStart()
             }
         }
 
@@ -372,6 +400,10 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
 
         if (menu != null)
             return
+
+        if (creatingDoor != null) {
+            return
+        }
 
         if (button == Input.MOUSE_LEFT_BUTTON) {
             if (creatingRoom) {
@@ -419,6 +451,9 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
             it.mouseMoved(x, y)
             return
         }
+
+        // This is only called normally when dragging an object.
+        creatingDoor?.setPixelPos(x, y)
 
         updateMousePos(x, y)
     }
@@ -474,6 +509,16 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
         // 'N' for 'new room'
         if (key == Input.KEY_N) {
             creatingRoom = true
+        }
+
+        // 'D' for 'new door'
+        if (key == Input.KEY_D) {
+            // Don't add the new door to ship.doors, this will happen when and if
+            // the door is placed in the ship.
+            creatingDoor = DoorObject(this, EditableDoor(0, 0, true))
+
+            // Don't start at the 0,0 position until the mouse is moved.
+            creatingDoor!!.setPixelPos(mousePixelPos.x, mousePixelPos.y)
         }
     }
 
