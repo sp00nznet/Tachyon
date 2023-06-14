@@ -39,7 +39,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         val shipBlueprint = spec.autoBlueprint.resolve(rand) as ShipBlueprint
         val elem = shipBlueprint.loadElem(df)
 
-        val ship = Ship(shipBlueprint, sys, spec)
+        val ship = Ship(shipBlueprint, sys, null, spec)
         ship.loadDefaultContents()
 
         ship.escapeHealth = spec.escapeHealth?.pick(rand) ?: 0

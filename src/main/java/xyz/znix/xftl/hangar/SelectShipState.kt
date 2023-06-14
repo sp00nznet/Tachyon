@@ -53,6 +53,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     private var hovered: ShipBlueprint? = null
 
     private var current: EditableShip
+    private var currentBlueprint: ShipBlueprint
 
     private val images = HashMap<String, Image>()
 
@@ -61,7 +62,8 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     private val startGameButton: StartGameButton
 
     init {
-        current = EditableShip.fromBlueprint(this, ships.first())
+        currentBlueprint = ships.first()
+        current = EditableShip.fromBlueprint(currentBlueprint)
         editor = ShipEditor(this, current)
         startGameButton = StartGameButton(this)
 
@@ -100,10 +102,10 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
         startGameButton.draw(g)
 
         g.pushTransform()
-        shipOffset.x = x + width + 50 - current.hullOffset.x
-        shipOffset.y = 100 - current.hullOffset.y
+        shipOffset.x = x + width + 50 - currentBlueprint.hullOffset.x
+        shipOffset.y = 100 - currentBlueprint.hullOffset.y
         g.translate(shipOffset.x.f, shipOffset.y.f)
-        current.draw(g, false)
+        current.draw(g, this, false)
         editor.editorWidth = container.width - shipOffset.x
         editor.editorHeight = container.height - shipOffset.y
         editor.draw(g)
@@ -118,7 +120,8 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     override fun mouseClicked(button: Int, x: Int, y: Int, clickCount: Int) {
         if (hovered != null) {
-            current = EditableShip.fromBlueprint(this, hovered!!)
+            currentBlueprint = hovered!!
+            current = EditableShip.fromBlueprint(currentBlueprint)
             editor = ShipEditor(this, current)
             return
         }
@@ -157,6 +160,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     }
 
     fun startGame(selected: Difficulty) {
-        main.startNewGame(current.baseBlueprint.name, selected)
+        // TODO a way to play the ship unedited
+        main.startNewGame(currentBlueprint.name, selected, editor.ship)
     }
 }

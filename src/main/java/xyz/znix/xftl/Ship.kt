@@ -8,6 +8,8 @@ import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.*
+import xyz.znix.xftl.hangar.EditableShip
+import xyz.znix.xftl.hangar.FinalisedEditableSystem
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
@@ -25,7 +27,27 @@ import java.util.stream.Collectors
 import kotlin.math.min
 import kotlin.random.Random
 
-class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpec?) :
+class Ship(
+    val type: ShipBlueprint,
+
+    val sys: InGameState,
+
+    /**
+     * If this ship was customised by the player, this is it.
+     *
+     * Note this must ABSOLUTELY NOT be modified once the game has started!
+     * Serialisation in particular would be completely wrecked if the room
+     * indices change.
+     *
+     * While it would be possible to always create an EditableShip instance,
+     * even for unmodified ships, it constraints what simplifications we can
+     * do with EditableShip while still being able to properly load all the
+     * vanilla ships, with all their details.
+     */
+    private val customised: EditableShip?,
+
+    val spec: EnemyShipSpec?
+) :
     ISerialReferencable {
 
     // Helper methods, providing quick access to important stuff from the blueprint
@@ -34,10 +56,9 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
     val isPlayerShip: Boolean get() = type.isPlayerShip
     val isFlagship: Boolean get() = type.isFlagship
     val isAutoScout: Boolean get() = type.isAutoScout
-    val weaponSlots: Int? get() = type.weaponSlots
-    val droneSlots: Int? get() = type.droneSlots
+    val weaponSlots: Int? get() = customised?.weaponSlots ?: type.weaponSlots
+    val droneSlots: Int? get() = customised?.droneSlots ?: type.droneSlots
 
-    @Suppress("JoinDeclarationAndAssignment")
     val rooms: List<Room>
     val doors: List<Door>
 
@@ -290,14 +311,19 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
         private set
 
     init {
-        rooms = type.rooms.map { Room(this, it.id, it.pos.x, it.pos.y, it.size.x, it.size.y) }
-        doors = type.doors.map { it ->
-            Door(
-                it.pos,
-                it.left?.let { rooms[it.id] },
-                it.right?.let { rooms[it.id] },
-                it.isVertical
-            )
+        if (customised != null) {
+            rooms = customised.rooms.withIndex().map { (idx, r) -> Room(this, idx, r.x, r.y, r.w, r.h) }
+            doors = emptyList() // TODO
+        } else {
+            rooms = type.rooms.map { Room(this, it.id, it.pos.x, it.pos.y, it.size.x, it.size.y) }
+            doors = type.doors.map { it ->
+                Door(
+                    it.pos,
+                    it.left?.let { rooms[it.id] },
+                    it.right?.let { rooms[it.id] },
+                    it.isVertical
+                )
+            }
         }
 
         for (room in rooms) {
@@ -316,13 +342,23 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
             else -> selectedShieldHalfSize
         }
 
-        for (node in type.systems) {
-            val room = rooms[node.room.id]
+        if (customised != null) {
+            var systemIdx = 0
+            for ((idx, room) in rooms.withIndex()) {
+                val editable = customised.rooms[idx]
+                val system = editable.system ?: continue
+                val finalised = FinalisedEditableSystem(system, systemIdx++, sys)
+                room.systemSlots.add(SystemInstallConfiguration(finalised, sys, room))
+            }
+        } else {
+            for (node in type.systems) {
+                val room = rooms[node.room.id]
 
-            // Load the information about the available system into the room.
-            // This will be used when loading the system from a save, spawning
-            // a new ship, or buying a system at a store.
-            room.systemSlots.add(SystemInstallConfiguration(node, sys, room))
+                // Load the information about the available system into the room.
+                // This will be used when loading the system from a save, spawning
+                // a new ship, or buying a system at a store.
+                room.systemSlots.add(SystemInstallConfiguration(node, sys, room))
+            }
         }
 
         systemSlots = rooms.flatMap { it.systemSlots }
@@ -1058,7 +1094,7 @@ class Ship(val type: ShipBlueprint, val sys: InGameState, val spec: EnemyShipSpe
         }
 
         if (item is AbstractWeaponBlueprint) {
-            val weaponSlotCount = type.weaponSlots ?: hardpoints.size
+            val weaponSlotCount = weaponSlots ?: hardpoints.size
 
             for (slot in 0 until weaponSlotCount) {
                 if (hardpoints[slot].weapon != null)

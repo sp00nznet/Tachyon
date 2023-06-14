@@ -7,6 +7,8 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
 import xyz.znix.xftl.systems.Clonebay
 import xyz.znix.xftl.systems.Medbay
+import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.pow
 
 class SystemObject(
@@ -20,6 +22,8 @@ class SystemObject(
 
     val system: EditableSystem
 ) : UIObject, DragObject {
+
+    val systemType = system.getBP(editor.state)
 
     override var dragX: Int = 0
     override var dragY: Int = 0
@@ -38,7 +42,7 @@ class SystemObject(
             else -> Constants.SYSTEM_NORMAL
         }
 
-        val icon = editor.state.getImg(system.type.roomIconPath)
+        val icon = editor.state.getImg(systemType.roomIconPath)
         icon.draw(
             dragX - icon.width / 2,
             dragY - icon.height / 2,
@@ -46,8 +50,8 @@ class SystemObject(
         )
 
         // For artillery systems, draw the weapon name.
-        if (room != null && !editor.isDragging(this) && system.type.info == Artillery.INFO) {
-            val weapon = system.artilleryWeapon
+        if (room != null && !editor.isDragging(this) && systemType.info == Artillery.INFO) {
+            val weapon = system.artilleryWeapon?.let { editor.state.blueprints[it] } as AbstractWeaponBlueprint?
             val weaponName = if (weapon == null) "NO WEAPON!" else editor.state.translator[weapon.short!!]
             editor.font.drawStringCentred(dragX.f, dragY + 13f, 0f, weaponName, Color.black)
         }
@@ -100,14 +104,14 @@ class SystemObject(
             if (room == newRoom)
                 continue
 
-            val roomSystem = room.system ?: continue
+            val roomSystem = room.system?.getBP(editor.state) ?: continue
 
             // Multiple artillery weapons are allowed.
-            if (system.type.info == Artillery.INFO)
+            if (systemType.info == Artillery.INFO)
                 continue
 
             // Clonebays and medbays block each other
-            if (isMedical(system) && isMedical(roomSystem)) {
+            if (isMedical(systemType) && isMedical(roomSystem)) {
                 room.system = null
                 continue
             }
@@ -126,7 +130,7 @@ class SystemObject(
         room?.system = null
     }
 
-    private fun isMedical(system: EditableSystem): Boolean {
-        return system.type.info == Medbay.INFO || system.type.info == Clonebay.INFO
+    private fun isMedical(system: SystemBlueprint): Boolean {
+        return system.info == Medbay.INFO || system.info == Clonebay.INFO
     }
 }

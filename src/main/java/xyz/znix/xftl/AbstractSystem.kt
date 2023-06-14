@@ -629,7 +629,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
  * the computer position calculated based on the loaded ship.
  */
 class SystemInstallConfiguration(
-    val spec: ShipBlueprint.ParsedSystem,
+    val spec: ISystemConfiguration,
     game: InGameState,
     val room: Room
 ) {
@@ -754,4 +754,46 @@ abstract class SystemInfo(
     abstract fun create(blueprint: SystemBlueprint): AbstractSystem
 
     abstract fun getLevelName(level: Int, translator: Translator): String
+}
+
+/**
+ * Describes how a system can be placed in a room.
+ *
+ * This either comes from the ship blueprint (via [ShipBlueprint.ParsedSystem])
+ * or from the ship editor ([xyz.znix.xftl.hangar.FinalisedEditableSystem]).
+ */
+interface ISystemConfiguration {
+    val systemName: String
+
+    val slotNumber: Int?
+    val slotDirection: Direction?
+
+    val startingPower: Int
+
+    /**
+     * The index of this configuration within the ship's list of systems.
+     *
+     * This is for figuring out the order the artillery systems are specified
+     * in, as that determines what hardpoint they fire from.
+     */
+    val systemIndex: Int
+
+    val availableByDefault: Boolean
+
+    /**
+     * Used for calculations by the ship generator.
+     * The flagship notably doesn't have it's maximum power set, so
+     * use the maximum specified in the system blueprint in that case.
+     */
+    val aiMaxPower: Int?
+
+    /**
+     * The room interior image
+     */
+    val interiorImage: String?
+
+    /**
+     *  For artillery weapons, this is the weapon they're using internally.
+     */
+    val weapon: String?
 }

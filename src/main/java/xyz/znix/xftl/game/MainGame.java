@@ -7,6 +7,7 @@ import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
+import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
 import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
@@ -41,7 +42,7 @@ public class MainGame implements Game {
 
         if (commandLineArgs.newGameShip != null) {
             // Switch right into a new game
-            startNewGame(commandLineArgs.newGameShip, Difficulty.NORMAL);
+            startNewGame(commandLineArgs.newGameShip, Difficulty.NORMAL, null);
         } else {
             switchToShipSelect();
         }
@@ -52,8 +53,8 @@ public class MainGame implements Game {
         setCurrentState(state);
     }
 
-    public void startNewGame(@NotNull String shipName, Difficulty difficulty) {
-        InGameState inGameState = new InGameState(this, content, gameContainer, shipName, difficulty);
+    public void startNewGame(@NotNull String shipName, Difficulty difficulty, EditableShip customised) {
+        InGameState inGameState = new InGameState(this, content, gameContainer, shipName, difficulty, customised);
         setCurrentState(inGameState);
     }
 

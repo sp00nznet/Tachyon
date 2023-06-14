@@ -15,6 +15,7 @@ import xyz.znix.xftl.ai.ShipAI;
 import xyz.znix.xftl.crew.*;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.devutil.DebugFlagManager;
+import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
@@ -96,13 +97,13 @@ public class InGameState extends MainGame.GameState {
      */
     private final ArrayList<Event> delayedQuests = new ArrayList<>();
 
-    public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName, Difficulty difficulty) {
+    public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName, Difficulty difficulty, EditableShip customised) {
         this(mainGame, content, container);
         this.difficulty = difficulty;
 
         gameMap = new GameMap(df, eventManager, enableAdvancedEdition, Random.Default);
 
-        createNewPlayerShip(playerShipName);
+        createNewPlayerShip(playerShipName, customised);
         shipUI = new PlayerShipUI(player, this);
 
         // Start at the first beacon of the first sector
@@ -216,10 +217,10 @@ public class InGameState extends MainGame.GameState {
         });
     }
 
-    private void createNewPlayerShip(String shipName) {
+    private void createNewPlayerShip(String shipName, EditableShip customised) {
         ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipName);
         Element playerXml = blueprint.loadElem(df);
-        player = new Ship(blueprint, this, null);
+        player = new Ship(blueprint, this, customised, null);
         player.loadDefaultContents();
 
         for (Element elem : playerXml.getChildren("crewCount")) {
@@ -636,7 +637,7 @@ public class InGameState extends MainGame.GameState {
         }
 
         ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipName);
-        Ship flagship = new Ship(blueprint, this, null);
+        Ship flagship = new Ship(blueprint, this, null, null);
         flagship.loadDefaultContents();
 
         // TODO handle crew being killed across fights
@@ -920,7 +921,8 @@ public class InGameState extends MainGame.GameState {
         ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipId);
 
         // And use that to build and deserialise the ship
-        Ship ship = new Ship(blueprint, this, spec);
+        EditableShip customised = null; // FIXME save and load
+        Ship ship = new Ship(blueprint, this, customised, spec);
         ship.loadFromXml(shipElement, refs);
 
         return ship;

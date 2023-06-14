@@ -6,6 +6,7 @@ import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
+import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.roundToInt
 
@@ -70,7 +71,8 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         if (!editor.isSelected(this))
             return
 
-        val isArtillery = room.system?.type?.info == Artillery.INFO
+        val systemType = room.system?.getBP(editor.state)
+        val isArtillery = systemType?.info == Artillery.INFO
         val artilleryWeaponEntry = if (!isArtillery) null else {
             PopupMenu.Entry("Artillery weapon") {
                 val controller = object : BlueprintSelector.SelectionController {
@@ -80,7 +82,7 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
                         // Cast the blueprint back to a weapon
                         require(blueprint is AbstractWeaponBlueprint)
 
-                        room.system?.artilleryWeapon = blueprint
+                        room.system?.artilleryWeapon = blueprint.name
                     }
                 }
 

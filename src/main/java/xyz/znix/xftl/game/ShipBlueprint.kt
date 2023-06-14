@@ -259,37 +259,25 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
     class ParsedSystem(
         val room: ParsedRoom,
 
-        val slotNumber: Int?,
-        val slotDirection: Direction?,
-
-        /**
-         * The index of this configuration within the ship's list of systems.
-         *
-         * This is for figuring out the order the artillery systems are specified
-         * in, as that determines what hardpoint they fire from.
-         */
-        val systemIndex: Int,
+        override val slotNumber: Int?,
+        override val slotDirection: Direction?,
+        override val systemIndex: Int,
 
         elem: Element
-    ) {
+    ) : ISystemConfiguration {
         // The system name comes from the name of the element declaring it
-        val systemName: String = elem.name
+        override val systemName: String = elem.name
 
-        val startingPower = elem.getAttributeValue("power").toInt()
+        override val startingPower = elem.getAttributeValue("power").toInt()
 
         // Note that if not specified, the system is included by default. This
         // is commonly found with enemy ships.
-        val availableByDefault = elem.getAttributeValue("start")?.toBoolean() != false
+        override val availableByDefault = elem.getAttributeValue("start")?.toBoolean() != false
 
-        // Used for calculations by the ship generator.
-        // The flagship notably doesn't have it's maximum power set, so
-        // use the maximum specified in the system blueprint in that case.
-        val aiMaxPower: Int? = elem.getAttributeValue("max")?.toInt()
+        override val aiMaxPower: Int? = elem.getAttributeValue("max")?.toInt()
 
-        // The room interior image
-        val interiorImage: String? = elem.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
+        override val interiorImage: String? = elem.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
 
-        // For artillery weapons, this is the weapon they're using internally.
-        val weapon: String? = elem.getAttributeValue("weapon")
+        override val weapon: String? = elem.getAttributeValue("weapon")
     }
 }

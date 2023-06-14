@@ -2,16 +2,15 @@ package xyz.znix.xftl.hangar
 
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Constants.ROOM_SIZE
+import xyz.znix.xftl.ISystemConfiguration
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.ShipBlueprint
-import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
-import xyz.znix.xftl.weapons.DroneBlueprint
 
 /**
  * A ship that can be rendered in the hangar.
@@ -19,48 +18,55 @@ import xyz.znix.xftl.weapons.DroneBlueprint
  * This is kept separate from [xyz.znix.xftl.Ship], since what's desirable
  * in-game (room locations etc being immutable) isn't suitable for ship that
  * can be edited.
+ *
+ * Note this doesn't reference any blueprints or images, so it's safe to use
+ * after changing mods or otherwise re-creating the blueprint manager.
  */
-class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint) {
-    var hullImage: Image? = null
-    var floorImage: Image? = null
-
-    var hullOffset: IPoint = ConstPoint.ZERO
-    var floorOffset: IPoint = ConstPoint.ZERO
-
+class EditableShip(
+    val baseBlueprint: String // ShipBlueprint name
+) {
     val rooms = ArrayList<EditableRoom>()
 
-    val weapons = ArrayList<AbstractWeaponBlueprint>()
-    val drones = ArrayList<DroneBlueprint>()
+    val weapons = ArrayList<String>() // AbstractWeaponBlueprint names
+    val drones = ArrayList<String>() // DroneBlueprint names
 
     var weaponSlots: Int = 4
     var droneSlots: Int = 2
 
-    fun draw(g: Graphics, drawSystems: Boolean) {
-        // Draw the weapons behind the hull images, so it covers up the edge of the texture.
-        drawWeapons(g)
+    fun draw(g: Graphics, state: SelectShipState, drawSystems: Boolean) {
+        val blueprint = state.blueprints[baseBlueprint] as ShipBlueprint
 
-        hullImage?.draw(hullOffset.x, hullOffset.y)
+        val hullImage = state.getImg(blueprint.hullImage)
+        val floorImage = blueprint.floorImage?.let { state.getImg(it) }
+        val hullOffset = blueprint.hullOffset
+        val floorOffset = blueprint.floorOffset
+
+        // Draw the weapons behind the hull images, so it covers up the edge of the texture.
+        drawWeapons(g, state, blueprint)
+
+        hullImage.draw(hullOffset.x, hullOffset.y)
         floorImage?.draw(floorOffset.x + hullOffset.x, floorOffset.y + hullOffset.y)
 
         // Draw the rooms
         for (room in rooms) {
-            drawRoom(g, room, drawSystems)
+            drawRoom(g, state, room, drawSystems)
         }
 
         // Draw the doors
         // TODO implement
     }
 
-    private fun drawWeapons(g: Graphics) {
+    private fun drawWeapons(g: Graphics, state: SelectShipState, shipBlueprint: ShipBlueprint) {
         for ((index, weapon) in weapons.withIndex()) {
-            val hp = baseBlueprint.hardpoints[index]
+            val weaponBp = state.blueprints[weapon] as AbstractWeaponBlueprint
+            val hp = shipBlueprint.hardpoints[index]
 
-            val anim = state.animations.weaponAnimations.getValue(weapon.launcher)
+            val anim = state.animations.weaponAnimations.getValue(weaponBp.launcher)
             val spriteSheet = state.getImg(anim.sheet.sheetPath)
             val launcher = anim.spriteAt(spriteSheet, anim.chargedFrame)
 
             g.pushTransform()
-            g.translate(-baseBlueprint.roomOffset.x.f * ROOM_SIZE, -baseBlueprint.roomOffset.y.f * ROOM_SIZE)
+            g.translate(-shipBlueprint.roomOffset.x.f * ROOM_SIZE, -shipBlueprint.roomOffset.y.f * ROOM_SIZE)
             Weapons.translateHardpoint(g, hp)
             g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
             launcher.draw(0f, 0f)
@@ -68,7 +74,7 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
         }
     }
 
-    private fun drawRoom(g: Graphics, room: EditableRoom, drawSystems: Boolean) {
+    private fun drawRoom(g: Graphics, state: SelectShipState, room: EditableRoom, drawSystems: Boolean) {
         val x = room.pixelX
         val y = room.pixelY
 
@@ -115,7 +121,7 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
         // Note that when using the editor, it draws the system icons instead.
         val system = room.system
         if (system != null && drawSystems) {
-            val icon = state.getImg(system.type.roomIconPath)
+            val icon = state.getImg(system.getBP(state).roomIconPath)
             icon.draw(
                 x + (room.pixelWidth - icon.width) / 2,
                 y + (room.pixelHeight - icon.height) / 2,
@@ -125,35 +131,26 @@ class EditableShip(val state: SelectShipState, val baseBlueprint: ShipBlueprint)
     }
 
     companion object {
-        fun fromBlueprint(state: SelectShipState, blueprint: ShipBlueprint): EditableShip {
-            val ship = EditableShip(state, blueprint)
-
-            ship.hullImage = state.getImg(blueprint.hullImage)
-            ship.floorImage = blueprint.floorImage?.let { state.getImg(it) }
-            ship.hullOffset = blueprint.hullOffset
-            ship.floorOffset = blueprint.floorOffset
+        fun fromBlueprint(blueprint: ShipBlueprint): EditableShip {
+            val ship = EditableShip(blueprint.name)
 
             val rooms = blueprint.rooms.map { EditableRoom(it.pos.x, it.pos.y, it.size.x, it.size.y) }
             ship.rooms.addAll(rooms)
 
             for (system in blueprint.systems) {
                 val room = ship.rooms[system.room.id]
-                val type = state.blueprints[system.systemName] as SystemBlueprint
+                val type = system.systemName
                 room.system = EditableSystem(type)
 
                 // If this is an artillery system, set its weapon.
                 if (system.weapon != null) {
-                    val weapon = state.blueprints[system.weapon] as AbstractWeaponBlueprint
+                    val weapon = system.weapon
                     room.system!!.artilleryWeapon = weapon
                 }
             }
 
-            for (weapon in blueprint.initialWeapons) {
-                ship.weapons += state.blueprints[weapon] as AbstractWeaponBlueprint
-            }
-            for (drone in blueprint.initialDrones) {
-                ship.drones += state.blueprints[drone] as DroneBlueprint
-            }
+            ship.weapons += blueprint.initialWeapons
+            ship.drones += blueprint.initialDrones
 
             blueprint.weaponSlots?.let { ship.weaponSlots = it }
             blueprint.droneSlots?.let { ship.droneSlots = it }
@@ -189,6 +186,34 @@ class EditableRoom(
 }
 
 data class EditableSystem(
-    val type: SystemBlueprint,
-    var artilleryWeapon: AbstractWeaponBlueprint? = null
-)
+    val type: String, // SystemBlueprint name
+    var artilleryWeapon: String? = null // AbstractWeaponBlueprint name
+) {
+    fun getBP(state: SelectShipState): SystemBlueprint = state.blueprints[type] as SystemBlueprint
+}
+
+/**
+ * An instance of [EditableSystem] that's been frozen in a ship,
+ * with a fixed system index, and anything else that's only known
+ * when the ship layout will no longer change.
+ */
+class FinalisedEditableSystem(
+    val editableSystem: EditableSystem,
+    override val systemIndex: Int,
+    game: InGameState
+) : ISystemConfiguration {
+    private val system = game.blueprintManager[editableSystem.type] as SystemBlueprint
+
+    override val systemName: String get() = system.type
+
+    override val aiMaxPower: Int? get() = null
+    override val weapon: String? get() = editableSystem.artilleryWeapon
+
+    // TODO implement the computer
+    override val slotNumber: Int? get() = null
+    override val slotDirection: Direction? get() = null
+
+    override val startingPower: Int get() = system.startPower // TODO make this adjustable
+    override val availableByDefault: Boolean get() = true // TODO don't spawn all systems by default
+    override val interiorImage: String? get() = null // TODO implement interior images
+}
