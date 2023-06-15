@@ -85,48 +85,17 @@ class EditableShip(
         val x = room.pixelX
         val y = room.pixelY
 
-        g.color = Constants.ROOM_BORDER_COLOUR
-        g.fillRect(
-            x.f,
-            y.f,
-            room.pixelWidth.f,
-            room.pixelHeight.f
-        )
+        EditableRoom.drawFloor(g, x, y, room.w, room.h)
 
-        val wallThickness = 2
-        g.color = Constants.FLOOR_COLOUR
-        g.fillRect(
-            x + wallThickness.f,
-            y + wallThickness.f,
-            room.pixelWidth - 2f * wallThickness,
-            room.pixelHeight - 2f * wallThickness
-        )
-
-        // Draw the floor grid
-        g.color = Constants.FLOOR_GRID_COLOUR
-        for (i in 1 until room.w) {
-            val lineX = x + i * ROOM_SIZE - 1
-            g.drawLine(
-                lineX.f,
-                y + wallThickness.f,
-                lineX.f,
-                y + room.pixelHeight - wallThickness - 1f
-            )
-        }
-
-        for (i in 1 until room.h) {
-            val lineY = y + ROOM_SIZE * i - 1
-            g.drawLine(
-                x + wallThickness.f,
-                lineY.f,
-                (x + room.pixelWidth - 1) - wallThickness - 1f,
-                lineY.f
-            )
+        // Draw the room image
+        val system = room.system
+        if (system != null) {
+            val img = system.interiorImage?.let { state.getImg(it) }
+            img?.draw(x, y)
         }
 
         // Draw the system icon.
         // Note that when using the editor, it draws the system icons instead.
-        val system = room.system
         if (system != null && drawSystems) {
             val icon = state.getImg(system.getBP(state).roomIconPath)
             icon.draw(
@@ -150,7 +119,7 @@ class EditableShip(
             for (system in blueprint.systems) {
                 val room = ship.rooms[system.room.id]
                 val type = system.systemName
-                room.system = EditableSystem(type)
+                room.system = EditableSystem(type, system.interiorImage)
 
                 // If this is an artillery system, set its weapon.
                 if (system.weapon != null) {
@@ -172,12 +141,12 @@ class EditableShip(
 
 class EditableRoom(
     // Position
-    var x: Int = 0,
-    var y: Int = 0,
+    var x: Int,
+    var y: Int,
 
     // Width/height
-    var w: Int = 2,
-    var h: Int = 2
+    var w: Int,
+    var h: Int
 ) {
     var system: EditableSystem? = null
 
@@ -192,6 +161,95 @@ class EditableRoom(
 
     fun containsPixel(px: Int, py: Int): Boolean {
         return px in pixelX..pixelRight && py in pixelY..pixelBottom
+    }
+
+    fun findSuitableInteriorImages(editor: ShipEditor): List<String> {
+        val system = system?.getBP(editor.state) ?: return emptyList()
+        val images = editor.state.roomImageMeta
+
+        val suitable = ArrayList<String>()
+
+        outer@ for (image in images.roomImages) {
+            if (!image.matchesSystem(system))
+                continue
+
+            if (image.size.x != w || image.size.y != h)
+                continue
+
+            // Make sure there's space in the image for all the doors
+            for (door in editor.ship.doors) {
+                if (!door.isRoomNeighbour(this)) {
+                    continue
+                }
+
+                val doorX = door.x - x
+                val doorY = door.y - y
+                if (image.doorways.none { it.pos.x == doorX && it.pos.y == doorY && it.isVertical == door.isVertical }) {
+                    continue@outer
+                }
+            }
+
+            suitable += image.path
+        }
+
+        return suitable
+    }
+
+    fun pickBestInteriorImage(editor: ShipEditor): String? {
+        val suitable = findSuitableInteriorImages(editor)
+
+        // No suitable images?
+        if (suitable.isEmpty())
+            return null
+
+        // Pick one of the suitable images
+        return suitable.random()
+    }
+
+    companion object {
+        fun drawFloor(g: Graphics, x: Int, y: Int, width: Int, height: Int) {
+            val pixelWidth = width * ROOM_SIZE
+            val pixelHeight = height * ROOM_SIZE
+
+            g.color = Constants.ROOM_BORDER_COLOUR
+            g.fillRect(
+                x.f,
+                y.f,
+                pixelWidth.f,
+                pixelHeight.f
+            )
+
+            val wallThickness = 2
+            g.color = Constants.FLOOR_COLOUR
+            g.fillRect(
+                x + wallThickness.f,
+                y + wallThickness.f,
+                pixelWidth - 2f * wallThickness,
+                pixelHeight - 2f * wallThickness
+            )
+
+            // Draw the floor grid
+            g.color = Constants.FLOOR_GRID_COLOUR
+            for (i in 1 until width) {
+                val lineX = x + i * ROOM_SIZE - 1
+                g.drawLine(
+                    lineX.f,
+                    y + wallThickness.f,
+                    lineX.f,
+                    y + pixelHeight - wallThickness - 1f
+                )
+            }
+
+            for (i in 1 until height) {
+                val lineY = y + ROOM_SIZE * i - 1
+                g.drawLine(
+                    x + wallThickness.f,
+                    lineY.f,
+                    (x + pixelWidth - 1) - wallThickness - 1f,
+                    lineY.f
+                )
+            }
+        }
     }
 }
 
@@ -217,6 +275,14 @@ class EditableDoor(
             y * ROOM_SIZE + centreOffsetY,
             isVertical, null
         )
+    }
+
+    fun findNeighbourRoom(ship: EditableShip, exclude: EditableRoom?): EditableRoom? {
+        return findNeighbourRoom(ship, x, y, isVertical, exclude)
+    }
+
+    fun isRoomNeighbour(room: EditableRoom): Boolean {
+        return Companion.isRoomNeighbour(x, y, isVertical, room)
     }
 
     companion object {
@@ -248,10 +314,6 @@ class EditableDoor(
             g.popTransform()
         }
 
-        fun findNeighbourRoom(ship: EditableShip, door: EditableDoor, exclude: EditableRoom?): EditableRoom? {
-            return findNeighbourRoom(ship, door.x, door.y, door.isVertical, exclude)
-        }
-
         fun findNeighbourRoom(
             ship: EditableShip,
             cellX: Int, cellY: Int,
@@ -262,33 +324,41 @@ class EditableDoor(
                 if (room == exclude)
                     continue
 
-                // Filter out rooms that we aren't in.
-                if (cellX !in room.x..room.x + room.w)
-                    continue
-                if (cellY !in room.y..room.y + room.h)
-                    continue
-
-                // Check we're on a suitable edge.
-                if (vertical) {
-                    if (cellY == room.y + room.h)
-                        continue
-                    if (cellX == room.x || cellX == room.x + room.w)
-                        return room
-                } else {
-                    if (cellX == room.x + room.w)
-                        continue
-                    if (cellY == room.y || cellY == room.y + room.h)
-                        return room
-                }
+                if (isRoomNeighbour(cellX, cellY, vertical, room))
+                    return room
             }
 
             return null
+        }
+
+        fun isRoomNeighbour(cellX: Int, cellY: Int, vertical: Boolean, room: EditableRoom): Boolean {
+            // Filter out rooms that we aren't in.
+            if (cellX !in room.x..room.x + room.w)
+                return false
+            if (cellY !in room.y..room.y + room.h)
+                return false
+
+            // Check we're on a suitable edge.
+            if (vertical) {
+                if (cellY == room.y + room.h)
+                    return false
+                if (cellX == room.x || cellX == room.x + room.w)
+                    return true
+            } else {
+                if (cellX == room.x + room.w)
+                    return false
+                if (cellY == room.y || cellY == room.y + room.h)
+                    return true
+            }
+
+            return false
         }
     }
 }
 
 data class EditableSystem(
     val type: String, // SystemBlueprint name
+    var interiorImage: String? = null,
     var artilleryWeapon: String? = null // AbstractWeaponBlueprint name
 ) {
     fun getBP(state: SelectShipState): SystemBlueprint = state.blueprints[type] as SystemBlueprint
@@ -310,6 +380,7 @@ class FinalisedEditableSystem(
 
     override val aiMaxPower: Int? get() = null
     override val weapon: String? get() = editableSystem.artilleryWeapon
+    override val interiorImage: String? get() = editableSystem.interiorImage
 
     // TODO implement the computer
     override val slotNumber: Int? get() = null
@@ -317,5 +388,4 @@ class FinalisedEditableSystem(
 
     override val startingPower: Int get() = system.startPower // TODO make this adjustable
     override val availableByDefault: Boolean get() = true // TODO don't spawn all systems by default
-    override val interiorImage: String? get() = null // TODO implement interior images
 }

@@ -100,8 +100,15 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
             }
         }
 
+        val setInteriorImage = if (systemType == null) null else {
+            PopupMenu.Entry("Set interior image") {
+                editor.openMenu(InteriorImageSelector(editor, room))
+            }
+        }
+
         editor.openPopupMenu(
-            artilleryWeaponEntry
+            artilleryWeaponEntry,
+            setInteriorImage
         )
     }
 
@@ -118,13 +125,15 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         val doors = ArrayList<EditableDoor>()
 
         for (door in editor.ship.doors) {
+            if (!door.isRoomNeighbour(room))
+                continue
+
             // If the door connects to more than two rooms (which can only happen if rooms
             // are overlapped), we certainly don't care.
-            val firstNeighbour = EditableDoor.findNeighbourRoom(editor.ship, door, null) ?: continue
-            val secondNeighbour = EditableDoor.findNeighbourRoom(editor.ship, door, firstNeighbour)
+            val otherRoom = door.findNeighbourRoom(editor.ship, room)
 
             // Make sure we're the only connecting room.
-            if (firstNeighbour != this.room || secondNeighbour != null)
+            if (otherRoom != null)
                 continue
 
             doors.add(door)

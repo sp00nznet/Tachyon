@@ -42,6 +42,8 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     val translator: Translator = Translator(vanillaDF, "en")
     val animations: Animations = Animations(vanillaDF)
 
+    val roomImageMeta: RoomImageMeta = RoomImageMeta.loadFromResource()
+
     val windowRenderer: WindowRenderer
 
     private val ships: List<ShipBlueprint> = blueprints.blueprints.values

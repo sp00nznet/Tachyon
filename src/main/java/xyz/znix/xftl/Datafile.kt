@@ -116,6 +116,7 @@ constructor(private val data_file: File) {
     fun readString(file: FTLFile) = String(read(file), Charsets.UTF_8)
 
     fun parseXML(file: FTLFile): Document {
+        @Suppress("VulnerableCodeUsages") // we set expandEntities
         val builder = SAXBuilder()
         builder.expandEntities = false
         return builder.build(open(file))
@@ -130,6 +131,10 @@ constructor(private val data_file: File) {
     }
 
     fun readImage(path: String) = readImage(this[path])
+
+    fun getAllFiles(): List<FTLFile> {
+        return files.values.toList()
+    }
 
     companion object {
         @JvmStatic

@@ -27,6 +27,9 @@ class RoomCornerDragObject(
         val deltaX = x - gridX
         val deltaY = y - gridY
 
+        if (deltaX == 0 && deltaY == 0)
+            return
+
         @Suppress("DuplicatedCode")
         if (bottom) {
             room.h = (room.h + deltaY).coerceIn(ShipEditor.VALID_ROOM_SIZE)
@@ -46,6 +49,10 @@ class RoomCornerDragObject(
             room.w = (room.w - deltaX).coerceIn(ShipEditor.VALID_ROOM_SIZE)
             room.x = oldRight - room.w
         }
+
+        // Pick a new suitable image for our system, if we have one, since the
+        // previous one isn't the right size.
+        room.system?.interiorImage = room.pickBestInteriorImage(editor)
     }
 
     // Can't be selected, only dragged.

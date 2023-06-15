@@ -8,7 +8,6 @@ import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractExternalDrone
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.*
-import xyz.znix.xftl.hangar.EditableDoor
 import xyz.znix.xftl.hangar.EditableShip
 import xyz.znix.xftl.hangar.FinalisedEditableSystem
 import xyz.znix.xftl.layout.Door
@@ -317,8 +316,8 @@ class Ship(
             rooms = customised.rooms.withIndex().map { (idx, r) -> Room(this, idx, r.x, r.y, r.w, r.h) }
 
             doors = customised.doors.mapNotNull { door ->
-                val firstRoom = EditableDoor.findNeighbourRoom(customised, door, null)
-                val secondRoom = EditableDoor.findNeighbourRoom(customised, door, firstRoom)
+                val firstRoom = door.findNeighbourRoom(customised, null)
+                val secondRoom = door.findNeighbourRoom(customised, firstRoom)
 
                 // Skip disconnected doors.
                 if (firstRoom == null && secondRoom == null)

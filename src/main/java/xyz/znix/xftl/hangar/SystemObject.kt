@@ -95,6 +95,17 @@ class SystemObject(
         room?.system = newRoom?.system
         newRoom?.system = system.copy()
 
+        // Moving a system to another room means the previous interior image
+        // probably won't be suitable any more, so pick a new one.
+        if (newRoom != null) {
+            newRoom.system!!.interiorImage = newRoom.pickBestInteriorImage(editor)
+        }
+
+        // And do the same for the system we swapped with.
+        if (room?.system != null) {
+            room.system!!.interiorImage = room.pickBestInteriorImage(editor)
+        }
+
         // Clear out duplicate systems, with special exceptions for artillery
         // (which allows multiple) and the clonebay/medbay (which remove each
         // other). Other than these cases it shouldn't be possible for a ship

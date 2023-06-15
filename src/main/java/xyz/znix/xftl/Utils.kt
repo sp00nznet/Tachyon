@@ -6,6 +6,7 @@ import org.newdawn.slick.AppGameContainer
 import org.newdawn.slick.Color
 import org.newdawn.slick.Game
 import org.newdawn.slick.GameContainer
+import xyz.znix.xftl.devutil.BakeRoomImageMeta
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import java.io.File

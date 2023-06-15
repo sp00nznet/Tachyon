@@ -1150,6 +1150,7 @@ class DebugConsole(var game: InGameState) {
         pickFromList("Select save", items) { path ->
             val doc: Document = try {
                 Files.newBufferedReader(path).use { reader ->
+                    @Suppress("VulnerableCodeUsages") // we set expandEntities
                     val builder = SAXBuilder()
                     builder.expandEntities = false
                     builder.build(reader)
