@@ -228,7 +228,7 @@ class InfoPanel(private val game: InGameState) {
 
             // The details images are drawn on top, so we have to paint
             // the background that the text sits on here.
-            g.color = when (canHaveLevel) {
+            g.colour = when (canHaveLevel) {
                 true -> Constants.UPGRADE_DETAILS_BG_ON
                 false -> Constants.UPGRADE_DETAILS_BG_OFF
             }
@@ -273,7 +273,7 @@ class InfoPanel(private val game: InGameState) {
             val hasLevel = i < energyLevels
             val undoable = hasLevel && i >= maxNonUndoable
 
-            g.color = when {
+            g.colour = when {
                 undoable -> Constants.SYS_ENERGY_PURCHASE_UNDOABLE
                 hasLevel -> Constants.SYS_ENERGY_ACTIVE
                 else -> Constants.UPGRADE_DETAILS_POWER_OFF

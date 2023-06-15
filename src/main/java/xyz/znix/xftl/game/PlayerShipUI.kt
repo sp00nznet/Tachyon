@@ -429,10 +429,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val y = height - 34 - 9 * i
 
             if (i < availablePower) {
-                g.color = SYS_ENERGY_ACTIVE
+                g.colour = SYS_ENERGY_ACTIVE
                 g.fillRect(x.f, y.f, 28f, 7f)
             } else {
-                g.color = SYS_ENERGY_DEPOWERED
+                g.colour = SYS_ENERGY_DEPOWERED
                 g.drawRect(x.f, y.f, 28f - 1f, 7f - 1f)
             }
         }
@@ -679,7 +679,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // Draw the crew selection rectangle, if appropriate
         val csr = crewSelectionRectangle
         if (csr != null && !isCrewSelectionPoint) {
-            g.color = Color.white
+            g.colour = Color.white
             val size = csr.second - csr.first
             g.drawRect(csr.first.x.f, csr.first.y.f, size.x.f, size.y.f)
             g.drawRect(csr.first.x + 1f, csr.first.y + 1f, size.x - 2f, size.y - 2f)
@@ -721,7 +721,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val window = currentWindow ?: return
 
         // Add the tint over all the regular game stuff to make the window clearer.
-        g.color = Color(0f, 0f, 0f, 0.65f)
+        g.colour = Color(0f, 0f, 0f, 0.65f)
         g.fillRect(0f, 0f, container.width.f, container.height.f)
 
         // Centre the window.
@@ -820,7 +820,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (ship.superShield != 0) {
                 // Draw the super-shield bar where the recharge
                 // bar would normally go.
-                g.color = SYS_ENERGY_ACTIVE
+                g.colour = SYS_ENERGY_ACTIVE
                 var x = 33
                 for (i in 0 until ship.superShield) {
                     // The middle bar is one pixel shorter to make everything
@@ -833,7 +833,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             } else if (shields.rechargeTimer != 0f) {
                 // Draw the recharge bar
                 val progress = (shields.rechargeTimer / shields.rechargeDelay).coerceIn(0f..1f)
-                g.color = when (hacked) {
+                g.colour = when (hacked) {
                     true -> SHIELD_BAR_HACKED
                     false -> SHIELD_BAR_NORMAL
                 }
@@ -943,23 +943,23 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         if (!drawSkills) {
             // Draw the semi-transparent background
-            g.color = Color(colour.r, colour.g, colour.b, 0.25f)
+            g.colour = Color(colour.r, colour.g, colour.b, 0.25f)
             g.fillRect(x.f, y.f, CREW_BOX_WIDTH.f, CREW_BOX_HEIGHT.f)
 
             // Draw the solid outline, via two unfilled rectangles.
-            g.color = colour
+            g.colour = colour
             g.drawRect(x.f, y.f, CREW_BOX_WIDTH - 1f, CREW_BOX_HEIGHT - 1f)
             g.drawRect(x + 1f, y + 1f, CREW_BOX_WIDTH - 3f, CREW_BOX_HEIGHT - 3f)
 
             // TODO show the animation when the crewmember gets a skill point.
         } else {
             // Draw the semi-transparent background
-            g.color = Color(colour.r, colour.g, colour.b, 0.25f)
+            g.colour = Color(colour.r, colour.g, colour.b, 0.25f)
             g.fillRect(x.f, y.f, 89f, CREW_BOX_HEIGHT.f)
             g.fillRect(x + 89f, y.f, 80f, 146f)
 
             // Draw the outline, which we do with line drawing by rectangles.
-            g.color = colour
+            g.colour = colour
             g.fillRect(x.f, y.f, 2f, CREW_BOX_HEIGHT.f)
             g.fillRect(x.f, y.f, 169f, 2f)
             g.fillRect(x.f, y + 25f, 91f, 2f)
@@ -981,9 +981,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val hpWidth = (maxHpWidth * hpFraction).toInt().coerceAtLeast(1)
 
         if (crew.health == crew.maxHealth) {
-            g.color = Color.green
+            g.colour = Color.green
         } else {
-            g.color = Color(
+            g.colour = Color(
                 1f,
                 (2f * hpFraction).coerceIn(0f..1f),
                 0f
@@ -1328,7 +1328,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         private val weaponNumberString = (slotNumber + 1).toString()
 
         override fun draw(g: Graphics) {
-            g.color = mainColour
+            g.colour = mainColour
 
             // Draw the outline box
             g.drawRect(pos.x.f, pos.y.f, (size.x - 1).f, (size.y - 1).f)
@@ -1356,12 +1356,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 }
 
                 if (isTargeted)
-                    g.color = WEAPONS_ITEM_TARGETING
+                    g.colour = WEAPONS_ITEM_TARGETING
 
                 val chargePx = (barSize * chargeProgress).toInt()
                 g.fillRect((pos.x - 5).f, (pos.y + 36 - chargePx).f, 4f, chargePx.f)
 
-                g.color = mainColour
+                g.colour = mainColour
 
                 g.lineWidth = 2f
                 g.drawLine(pos.x - 7.5f, pos.y.f + top.f + 1.5f, pos.x - 7.5f, pos.y + 39 - 1.5f)
@@ -1398,19 +1398,19 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 val y = pos.y + size.y - 11 - bar * 8
 
                 if (zoltanPower > bar) {
-                    g.color = WEAPONS_ITEM_ENERGY_ZOLTAN
+                    g.colour = WEAPONS_ITEM_ENERGY_ZOLTAN
                 } else if (!isPowered) {
-                    g.color = WEAPONS_ITEM_ENERGY_UNPOWERED
+                    g.colour = WEAPONS_ITEM_ENERGY_UNPOWERED
                     g.drawRect((pos.x + 4).f, y.f, (16 - 1).f, (7 - 1).f)
                     continue
                 } else if (isBeingHacked) {
-                    g.color = SYSTEM_HACKED
+                    g.colour = SYSTEM_HACKED
                 } else if (isSelectingTarget) {
-                    g.color = WEAPONS_ITEM_TARGETING
+                    g.colour = WEAPONS_ITEM_TARGETING
                 } else if (isCharged) {
-                    g.color = WEAPONS_ITEM_ENERGY_CHARGED
+                    g.colour = WEAPONS_ITEM_ENERGY_CHARGED
                 } else {
-                    g.color = WEAPONS_ITEM_ENERGY_POWERED
+                    g.colour = WEAPONS_ITEM_ENERGY_POWERED
                 }
                 g.fillRect((pos.x + 4).f, y.f, 16f, 7f)
             }

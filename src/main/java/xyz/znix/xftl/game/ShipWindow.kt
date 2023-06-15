@@ -279,7 +279,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
                     // Draw the energy bars
                     for (level in 0 until ship.maxReactorPower) {
-                        g.color = when {
+                        g.colour = when {
                             level in refundRange -> Constants.SYS_ENERGY_PURCHASE_UNDOABLE
                             ship.purchasedReactorPower > level -> Constants.SYS_ENERGY_ACTIVE
                             hovered -> Constants.SYS_ENERGY_PURCHASE_HOVER
@@ -387,7 +387,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
             // Draw the energy bars
             for (level in 1..system.blueprint.maxPower) {
-                g.color = when {
+                g.colour = when {
                     level in refundRange -> Constants.SYS_ENERGY_PURCHASE_UNDOABLE
                     system.energyLevels >= level -> Constants.SYS_ENERGY_ACTIVE
                     hovered -> Constants.SYS_ENERGY_PURCHASE_HOVER

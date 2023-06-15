@@ -163,7 +163,7 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         for (next in info.nextSectors) {
             getSectorPos(next, other)
 
-            g.color = when {
+            g.colour = when {
                 hoveredSector == next && info == currentSector -> Constants.SECTOR_BRANCH_HOVER
                 accessible.contains(next) && accessible.contains(info) -> Constants.SECTOR_BRANCH
                 visitedSectors.contains(next) && visitedSectors.contains(info) -> Constants.SECTOR_BRANCH_PATH
@@ -214,9 +214,9 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         val outerDiameter = SECTOR_RADIUS * 2f
         val innerDiameter = (SECTOR_RADIUS - 1) * 2f
 
-        g.color = outer
+        g.colour = outer
         g.fillOval(x.f, y.f, outerDiameter, outerDiameter)
-        g.color = inner
+        g.colour = inner
         g.fillOval(x + 1f, y + 1f, innerDiameter, innerDiameter)
     }
 
@@ -254,11 +254,11 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         pos.x = pos.x + 49 - width
 
         // Draw the outline
-        g.color = colour
+        g.colour = colour
         g.drawRect(pos.x.f, pos.y.f, width.f, height.f)
 
         // And the transparent background
-        g.color = Constants.SECTOR_NAME_BACKGROUND
+        g.colour = Constants.SECTOR_NAME_BACKGROUND
         g.fillRect(pos.x + 1f, pos.y + 1f, width - 2f, height.f - 2f)
 
         // Finally, draw the sector name
@@ -356,7 +356,7 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
     // Draw one of the cutouts for the description of a beacon type
     private fun drawCutoutBevel(g: Graphics, x: Int, y: Int, leftSide: Boolean) {
         // TODO Consolidate this functionality and JumpWindow's drawCutout
-        g.color = Constants.SECTOR_TYPE_CUTOUT
+        g.colour = Constants.SECTOR_TYPE_CUTOUT
         g.lineWidth = 1f
 
         for (i in 0..2) {
@@ -383,7 +383,7 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         if (bevelledStart)
             width -= 3
 
-        g.color = Constants.SECTOR_TYPE_CUTOUT
+        g.colour = Constants.SECTOR_TYPE_CUTOUT
         g.fillRect(x.f, y.f, width.f, TYPE_WINDOW_HEIGHT.f)
 
         drawSectorCircle(g, originX + prePadding, y + 5, Constants.SECTOR_BRANCH, colour)

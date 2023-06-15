@@ -211,7 +211,7 @@ class EditableRoom(
             val pixelWidth = width * ROOM_SIZE
             val pixelHeight = height * ROOM_SIZE
 
-            g.color = Constants.ROOM_BORDER_COLOUR
+            g.colour = Constants.ROOM_BORDER_COLOUR
             g.fillRect(
                 x.f,
                 y.f,
@@ -220,7 +220,7 @@ class EditableRoom(
             )
 
             val wallThickness = 2
-            g.color = Constants.FLOOR_COLOUR
+            g.colour = Constants.FLOOR_COLOUR
             g.fillRect(
                 x + wallThickness.f,
                 y + wallThickness.f,
@@ -229,7 +229,7 @@ class EditableRoom(
             )
 
             // Draw the floor grid
-            g.color = Constants.FLOOR_GRID_COLOUR
+            g.colour = Constants.FLOOR_GRID_COLOUR
             for (i in 1 until width) {
                 val lineX = x + i * ROOM_SIZE - 1
                 g.drawLine(

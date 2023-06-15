@@ -141,7 +141,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val maxHeight = 50 - imageId * 10 // one pixel per second of charging
         val barHeight = (chargeProgress * maxHeight).toInt()
 
-        g.color = Color.white
+        g.colour = Color.white
         g.fillRect(barX.f, barBaseY.f - barHeight, 5f, barHeight.f)
     }
 

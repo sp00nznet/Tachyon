@@ -92,7 +92,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
             val highlighted = mousePos.x in x..x + width && mousePos.y in y..y + height
 
             if (highlighted) {
-                g.color = Color(50, 50, 150)
+                g.colour = Color(50, 50, 150)
                 g.fillRect(x.f, y.f, width.f, height.f)
                 hovered = ship
             }

@@ -685,7 +685,7 @@ abstract class AbstractCrew(
             healthBox.draw(screenX - 1f, screenY.f)
 
             val width = ceil(25f * health / maxHealth).toInt()
-            g.color = Color.green
+            g.colour = Color.green
             g.fillRect(screenX + 4f, screenY + 3f, width.f, 3f)
         }
     }

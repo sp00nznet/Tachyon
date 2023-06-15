@@ -131,7 +131,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
                 superShieldBar.draw(bubbleX, superShieldY)
 
                 val width = 50f * enemy.superShield / enemy.maxSuperShield
-                g.color = Constants.SYS_ENERGY_ACTIVE
+                g.colour = Constants.SYS_ENERGY_ACTIVE
                 g.fillRect(bubbleX + 3f, superShieldY + 3f, width, 7f)
             } else if (shields.rechargeTimer != 0f) {
                 // Draw the charge bar
@@ -144,7 +144,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
                 }
 
                 val width = (56 * progress)
-                g.color = colour
+                g.colour = colour
                 g.fillRect(textX.f + 5 + 3, shieldsY.f + 39 + 3, width, 6f)
             }
         }

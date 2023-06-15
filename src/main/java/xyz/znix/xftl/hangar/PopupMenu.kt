@@ -109,9 +109,9 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
         var hovered: Boolean = false
 
         fun draw(g: Graphics) {
-            g.color = Color.darkGray
+            g.colour = Color.darkGray
             g.fillRect(pos.x.f, pos.y.f, width.f, height.f)
-            g.color = Color.white
+            g.colour = Color.white
             g.drawRect(pos.x.f, pos.y.f, width.f, height.f)
 
             for ((index, entry) in entries.withIndex()) {
@@ -119,7 +119,7 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
 
                 // Items light up either when you're hovering over them, or their child menu is open.
                 if (index == selected && (hovered || entry.children != null)) {
-                    g.color = Color.gray
+                    g.colour = Color.gray
                     g.fillRect(pos.x + 1f, y + 1f, width - 1f, ENTRY_HEIGHT - 1f)
                 }
 
@@ -130,7 +130,7 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
                 )
 
                 if (entry.children != null) {
-                    g.color = Color.white
+                    g.colour = Color.white
 
                     // Draw a triangle to indicate the sub-list
                     val leftX = pos.x + width - 7

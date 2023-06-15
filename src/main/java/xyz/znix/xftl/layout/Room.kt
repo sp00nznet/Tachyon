@@ -134,7 +134,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val x = offsetX
         val y = offsetY
 
-        g.color = FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)
+        g.colour = FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)
         g.fillRect(
             x.f,
             y.f,
@@ -148,7 +148,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             img.draw(x.f, y.f)
         }
 
-        g.color = FLOOR_GRID_COLOUR
+        g.colour = FLOOR_GRID_COLOUR
         for (i in 1 until width) {
             g.drawLine(
                 (x + i * ROOM_SIZE - 1).f,
@@ -196,7 +196,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         // Draw the highlight on the room if it's being selected for weapon targeting.
         if (selected) {
             for (i in 2..5) {
-                g.color = when {
+                g.colour = when {
                     i < 5 -> ROOM_BORDER_COLOUR_SELECTED
                     else -> ROOM_BORDER_COLOUR_SELECTED_INNER
                 }
@@ -213,7 +213,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         // Note that when drawing right-hand or bottom
         // walls, we need to subtract two from the x/y
         // in order to keep the lines internal to the room.
-        g.color = ROOM_BORDER_COLOUR
+        g.colour = ROOM_BORDER_COLOUR
         g.lineWidth = 2f
         for (cellX in 0 until width) {
             drawWall(g, x, y, cellX, 0, Direction.UP)

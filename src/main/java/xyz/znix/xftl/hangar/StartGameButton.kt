@@ -84,7 +84,7 @@ class StartGameButton(val state: SelectShipState) {
             this.hovered = difficulty
         }
 
-        g.color = when {
+        g.colour = when {
             isHovering -> Constants.UI_BUTTON_HOVER
             selected == difficulty -> Constants.UI_BUTTON_HOVER
             else -> Constants.SECTOR_CUTOUT_TEXT
@@ -99,7 +99,7 @@ class StartGameButton(val state: SelectShipState) {
 
         hoveringStart = state.mousePos.x in x until x + width && state.mousePos.y in y until y + height
 
-        g.color = when {
+        g.colour = when {
             hoveringStart -> Constants.UI_BUTTON_HOVER
             else -> Constants.SECTOR_CUTOUT_TEXT
         }

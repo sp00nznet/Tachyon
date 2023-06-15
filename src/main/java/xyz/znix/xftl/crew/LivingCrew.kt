@@ -292,21 +292,21 @@ class LivingCrewInfo(
         // Draw the outer box around the bar.
         // Note that drawRect draws its lower and right lines outside
         // the specified region, so -1 from width and height.
-        g.color = Color.white
+        g.colour = Color.white
         g.drawRect(x.f, y.f, width - 1f, height - 1f)
 
         val innerBarWidth = width - 2
         val progressWidth = (innerBarWidth * progress).roundToInt()
 
-        g.color = baseColour
+        g.colour = baseColour
         g.fillRect(x + 1f, y + 1f, innerBarWidth.f, height - 2f)
 
-        g.color = barColour
+        g.colour = barColour
         g.fillRect(x + 1f, y + 1f, progressWidth.f, height - 2f)
 
         // Draw the white divider line between yellow and green sections
         if (level == SkillLevel.PARTIAL) {
-            g.color = Color.white
+            g.colour = Color.white
             g.fillRect(x + 1f + progressWidth, y + 1f, 1f, height - 2f)
         }
     }

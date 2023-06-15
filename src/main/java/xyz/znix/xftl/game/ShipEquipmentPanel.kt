@@ -171,9 +171,9 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
             ) {
                 override fun draw(g: Graphics) {
                     // Draw the empty box
-                    g.color = Constants.AUGMENT_EMPTY_OUTLINE
+                    g.colour = Constants.AUGMENT_EMPTY_OUTLINE
                     g.fillRect(pos.x.f, pos.y.f, size.x.f, size.y.f)
-                    g.color = Constants.AUGMENT_EMPTY_INSIDE
+                    g.colour = Constants.AUGMENT_EMPTY_INSIDE
                     g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
 
                     // Draw the semi-transparent augment on top of it
@@ -191,7 +191,7 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
 
                     // Draw the borders. Since the middle is semi-transparent, we can't
                     // just fill in the whole thing twice to get our border easily.
-                    g.color = when {
+                    g.colour = when {
                         dragPosition != null -> Constants.AUGMENT_BOX_OUTLINE
                         hovered -> Constants.AUGMENT_BOX_OUTLINE_HOVER
                         else -> Constants.AUGMENT_BOX_OUTLINE
@@ -205,7 +205,7 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
                     g.fillRect(pos.x + 3f, pos.y + size.y - 3f, size.x - 6f, 3f)
 
                     // Fill in the background
-                    g.color = Constants.AUGMENT_BOX_INSIDE
+                    g.colour = Constants.AUGMENT_BOX_INSIDE
                     g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
 
                     // Draw the name

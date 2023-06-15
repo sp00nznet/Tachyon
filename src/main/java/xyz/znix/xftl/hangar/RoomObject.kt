@@ -69,7 +69,7 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         if (!editor.isSelected(this))
             return
 
-        g.color = Color(0, 255, 0, 100)
+        g.colour = Color(0, 255, 0, 100)
         g.fillRect(room.pixelX.f, room.pixelY.f, room.pixelWidth.f, room.pixelHeight.f)
     }
 

@@ -351,10 +351,10 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     private fun drawResourceBox(g: Graphics, resourceSet: ResourceSet, pos: IPoint, size: IPoint, textColour: Color) {
         var y = pos.y
 
-        g.color = Constants.REWARDS_BACKGROUND
+        g.colour = Constants.REWARDS_BACKGROUND
         g.fillRect(pos.x.f, y.f, size.x.f, size.y.f)
 
-        g.color = textColour
+        g.colour = textColour
         g.drawRect(pos.x.f, y.f, size.x - 1f, size.y - 1f)
         g.drawRect(pos.x.f + 1, y + 1f, size.x - 3f, size.y - 3f)
 

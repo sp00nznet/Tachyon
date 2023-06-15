@@ -108,7 +108,7 @@ class DebugConsole(var game: InGameState) {
     fun render(gc: GameContainer, g: Graphics) {
         val height = gc.height / 2
 
-        g.color = Color(127, 127, 127, 180)
+        g.colour = Color(127, 127, 127, 180)
         g.fillRect(0f, 0f, gc.width.f, height.f)
 
         var y = height - 6
@@ -141,7 +141,7 @@ class DebugConsole(var game: InGameState) {
         // at the latest message.
         if (offset != 0) {
             val lineY = height - 6 - fontHeight - 4
-            g.color = Color.red
+            g.colour = Color.red
             g.drawLine(0f, lineY.f, gc.width.f, lineY.f)
 
             font.drawStringLeftAligned(gc.width - 5f, lineY - 2f, "$offset lines scrolled past", Color.red)
@@ -528,7 +528,7 @@ class DebugConsole(var game: InGameState) {
                 val skillWidth = (boxWidth - nameIconWidth) / 6
 
                 // Draw the info text
-                g.color = Color(55, 55, 55, 180)
+                g.colour = Color(55, 55, 55, 180)
                 g.fillRect(x.f, y.f, boxWidth.f, 20f)
                 font.drawString(x + 20f, y + 15f, "Drag to adjust skills, right-click to toggle level", Color.white)
                 y += 25
@@ -537,7 +537,7 @@ class DebugConsole(var game: InGameState) {
                     if (crew !is LivingCrew)
                         continue
 
-                    g.color = Color(55, 55, 55, 180)
+                    g.colour = Color(55, 55, 55, 180)
                     g.fillRect(x.f, y.f, boxWidth.f, boxHeight.f)
 
                     crew.drawPortrait(x, y, 1f)
@@ -1422,16 +1422,16 @@ class DebugConsole(var game: InGameState) {
                 // FIXME this is copied from ShipEquipmentPanel.
 
                 // Draw the empty box
-                g.color = Constants.AUGMENT_EMPTY_OUTLINE
+                g.colour = Constants.AUGMENT_EMPTY_OUTLINE
                 g.fillRect(pos.x.f, pos.y.f, size.x.f, size.y.f)
-                g.color = Constants.AUGMENT_EMPTY_INSIDE
+                g.colour = Constants.AUGMENT_EMPTY_INSIDE
                 g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
 
                 // Draw the semi-transparent augment on top of it
 
                 // Draw the borders. Since the middle is semi-transparent, we can't
                 // just fill in the whole thing twice to get our border easily.
-                g.color = when {
+                g.colour = when {
                     // dragPosition != null -> Constants.AUGMENT_BOX_OUTLINE
                     hovered -> Constants.AUGMENT_BOX_OUTLINE_HOVER
                     else -> Constants.AUGMENT_BOX_OUTLINE
@@ -1445,7 +1445,7 @@ class DebugConsole(var game: InGameState) {
                 g.fillRect(pos.x + 3f, pos.y + size.y - 3f, size.x - 6f, 3f)
 
                 // Fill in the background
-                g.color = Constants.AUGMENT_BOX_INSIDE
+                g.colour = Constants.AUGMENT_BOX_INSIDE
                 g.fillRect(pos.x + 3f, pos.y + 3f, size.x - 6f, size.y - 6f)
 
                 // Draw the name
@@ -1596,7 +1596,7 @@ class DebugConsole(var game: InGameState) {
                 var optionX = x
                 fun drawOption(value: Boolean, text: String) {
                     val boxWidth = 5 + font.getWidth(text) + 5
-                    g.color = Color(55, if (value) 180 else 55, 55, 180)
+                    g.colour = Color(55, if (value) 180 else 55, 55, 180)
 
                     val y = height + 10f
                     g.fillRect(optionX.f, y, boxWidth.f, optionHeight.f)
@@ -1617,7 +1617,7 @@ class DebugConsole(var game: InGameState) {
                     val hovering = mouseX in x until x + width && mouseY in y until y + blockHeight
 
                     val shade = if (hovering) 140 else 100
-                    g.color = Color(shade, shade, shade, 180)
+                    g.colour = Color(shade, shade, shade, 180)
                     g.fillRect(x.f, y.f, width.f, blockHeight.f)
 
                     font.drawStringTruncated(x + 5f, y + 10f, idWidth.f, event.event.debugId, Color.white)
@@ -1769,7 +1769,7 @@ class DebugConsole(var game: InGameState) {
                     val hovering = mouseX in x until x + width && mouseY in y until y + blockHeight
 
                     val shade = if (hovering) 140 else 100
-                    g.color = Color(shade, shade, shade, 180)
+                    g.colour = Color(shade, shade, shade, 180)
                     g.fillRect(x.f, y.f, width.f, blockHeight.f)
 
                     font.drawString(x + 5f, y + 10f, item.first, Color.white)

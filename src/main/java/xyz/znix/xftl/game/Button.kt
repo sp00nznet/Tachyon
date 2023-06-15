@@ -164,7 +164,7 @@ object Buttons {
             val canCharge = ship.canChargeFTL
 
             if (ship.isFtlCharged) {
-                g.color = if (canCharge) Constants.JUMP_READY else Constants.JUMP_DISABLED
+                g.colour = if (canCharge) Constants.JUMP_READY else Constants.JUMP_DISABLED
                 drawRounded(g, pos.x + 5, pos.y + 6, size.x, size.y, 3)
 
                 val textColour = when {
@@ -201,7 +201,7 @@ object Buttons {
     ) : Button(game, pos, size) {
 
         override fun draw(g: Graphics) {
-            g.color = when {
+            g.colour = when {
                 disabled -> Constants.JUMP_DISABLED
                 hovered -> Constants.UI_BUTTON_HOVER
                 else -> Constants.SECTOR_CUTOUT_TEXT
@@ -260,7 +260,7 @@ object Buttons {
             // one image, draw a rounded box over it - this is how vanilla
             // FTL does it.
             if (hovered) {
-                g.color = Constants.UI_BUTTON_HOVER
+                g.colour = Constants.UI_BUTTON_HOVER
                 drawRounded(g, imgPos.x + 12, imgPos.y + 12, 78, 31, 3)
             }
 

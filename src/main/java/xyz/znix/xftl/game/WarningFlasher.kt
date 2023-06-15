@@ -68,7 +68,7 @@ class WarningFlasher(
             UIUtils.drawStringWithGlow(game, font, warningText, x, centre.y - spacing, colour, alpha)
         }
 
-        g.color = Color(this.colour.colour).also { it.a = alpha }
+        g.colour = Color(this.colour.colour).also { it.a = alpha }
         for (i in 0 until linePoints.size - 1) {
             val a = linePoints[i]
             val b = linePoints[i + 1]

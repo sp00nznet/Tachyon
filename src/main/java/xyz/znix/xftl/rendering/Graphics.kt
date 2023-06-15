@@ -16,13 +16,6 @@ import kotlin.math.sin
 class Graphics {
     var lineWidth: Float = 1f
 
-    // TODO switch everything over to the colour variable
-    var color: Color
-        get() = colour
-        set(value) {
-            colour = value
-        }
-
     var colour: Color = Color.white
 
     // The stack of transforms from pushTransform/popTransform calls.
@@ -34,7 +27,7 @@ class Graphics {
 
     fun fillRect(x: Float, y: Float, width: Float, height: Float) {
         Texture.unbind()
-        colour.bind()
+        this.colour.bind()
         GL11.glBegin(GL11.GL_QUADS)
 
         glVertexTransformed(x, y)
@@ -50,7 +43,7 @@ class Graphics {
         GL11.glLineWidth(1f)
 
         Texture.unbind()
-        colour.bind()
+        this.colour.bind()
         GL11.glBegin(GL11.GL_LINE_LOOP)
 
         // Offset the line points by 0.5, so int values fall in the middle
@@ -88,7 +81,7 @@ class Graphics {
         }
 
         Texture.unbind()
-        colour.bind()
+        this.colour.bind()
         GL11.glLineWidth(lineWidth)
 
         GL11.glBegin(GL11.GL_LINES)
@@ -196,7 +189,7 @@ class Graphics {
         segments: Int, start: Float, end: Float
     ) {
         Texture.unbind()
-        colour.bind()
+        this.colour.bind()
 
         GL11.glBegin(GL11.GL_LINE_STRIP)
         addArcVertices(x1, y1, width, height, segments, start, end)
@@ -208,7 +201,7 @@ class Graphics {
         segments: Int, start: Float, end: Float
     ) {
         Texture.unbind()
-        colour.bind()
+        this.colour.bind()
 
         GL11.glBegin(GL11.GL_TRIANGLE_FAN)
         addArcVertices(x1, y1, width, height, segments, start, end)
@@ -225,7 +218,7 @@ class Graphics {
         require(end >= start)
 
         Texture.unbind()
-        colour.bind()
+        this.colour.bind()
 
         val cx = x1 + width / 2.0f
         val cy = y1 + height / 2.0f

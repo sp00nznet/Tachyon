@@ -118,13 +118,13 @@ object UIUtils {
         val innerHeight = height - 1 // 1px of margin
         val fillHeight = (innerHeight * progress).roundToInt()
 
-        g.color = outline
+        g.colour = outline
         g.drawRect(
             x.f, y.f,
             width.f, height.f
         )
 
-        g.color = fill
+        g.colour = fill
         g.fillRect(
             x + 1f, y.f + height - fillHeight,
             width - 1f, fillHeight.f

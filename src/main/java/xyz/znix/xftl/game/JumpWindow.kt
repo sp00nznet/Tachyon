@@ -286,7 +286,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             mapBase.x + nextDangerZoneRHS - 181f,
             mapBase.y + sector.dangerZoneCentre.y - 498f
         )
-        g.color = fleetAdvanceColour
+        g.colour = fleetAdvanceColour
         g.fillRect(
             position.x.f,
             position.y.f,
@@ -314,7 +314,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
     private fun drawLastStandDangerZone(g: Graphics) {
         // The last stand is entirely covered in stripes.
-        g.color = fleetAdvanceColour
+        g.colour = fleetAdvanceColour
         g.fillRect(position.x.f, position.y.f, size.x.f, size.y.f)
 
         for (tileX in position.x..position.x + size.x step fleetControlTile.width) {
@@ -327,7 +327,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     override fun draw(g: Graphics) {
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
             // Draw the stencil
-            g.color = Color.red // Any non-transparent colour will work
+            g.colour = Color.red // Any non-transparent colour will work
 
             // The glow means the inside of the window has an 11-pixel boundary
             // This does leave a tiny area in the bevelled right-hand corner unstenciled,
@@ -373,7 +373,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         // Cutouts for text
         fun drawCutout(x: Int, y: Int, width: Int, text: String) {
-            g.color = Constants.SECTOR_CUTOUT
+            g.colour = Constants.SECTOR_CUTOUT
             g.fillRect(x + 3f, y.f, width - 6f, 2f)
             g.fillRect(x + 2f, y + 1f, width - 4f, 2f)
             g.fillRect(x + 1f, y + 2f, width - 2f, 2f)

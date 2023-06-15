@@ -73,12 +73,12 @@ class RoomCornerDragObject(
         val originY = y - DRAG_BOX_SIZE / 2
 
         // Draw the background to make the handle easier to see
-        g.color = Color(255, 255, 255, 200)
+        g.colour = Color(255, 255, 255, 200)
         g.fillRect(originX.f, originY.f, DRAG_BOX_SIZE.f, DRAG_BOX_SIZE.f)
 
         // Draw the line indicating the handle - note we have to -3 on the width/height
         // because drawRect draws one pixel larger than if you pass the same coordinates to fillRect.
-        g.color = when (highlight) {
+        g.colour = when (highlight) {
             false -> Color.black
             true -> Color.blue
         }

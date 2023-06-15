@@ -500,7 +500,7 @@ class Ship(
         if (sys.debugFlags.showHardpoints.set) {
             for ((index, hp) in hardpoints.withIndex()) {
                 val pos = hp.spec.position
-                g.color = Color.red
+                g.colour = Color.red
                 g.drawLine(pos.x - 5f, pos.y - 5f, pos.x + 5f, pos.y + 5f)
                 g.drawLine(pos.x + 5f, pos.y - 5f, pos.x - 5f, pos.y + 5f)
 

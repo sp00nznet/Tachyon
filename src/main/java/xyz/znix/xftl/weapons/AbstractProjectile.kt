@@ -130,7 +130,7 @@ abstract class AbstractProjectile(
 
         if (currentSpace.sys.debugFlags.showProjectileHitboxes.set) {
             val r = hitboxRadius.f
-            g.color = Color.red
+            g.colour = Color.red
             g.drawOval(-r, -r, r * 2, r * 2)
         }
 

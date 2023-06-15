@@ -394,28 +394,28 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             when {
                 i >= energyLevels - damagedEnergyLevels -> {
                     // System damaged/broken
-                    g.color = Constants.SYS_ENERGY_BROKEN
+                    g.colour = Constants.SYS_ENERGY_BROKEN
                     g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
                     g.drawLine(barX, (y + 6).f, barX + 16f, y.f)
                 }
 
                 scriptedPowerLimit != null && i >= scriptedPowerLimit -> {
                     // System power limited by a scripted event
-                    g.color = Constants.SYS_ENERGY_EVENT_LOCKED
+                    g.colour = Constants.SYS_ENERGY_EVENT_LOCKED
                     g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
                     g.drawLine(barX, (y + 6).f, barX + 16f, y.f)
                 }
 
                 this is MainSystem && i >= powerSelected -> {
                     // System depowered
-                    g.color = Constants.SYS_ENERGY_DEPOWERED
+                    g.colour = Constants.SYS_ENERGY_DEPOWERED
                     g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
                 }
 
                 isHackActive -> {
                     // The power bars go purple when hacked, taking
                     // priority over ion damage.
-                    g.color = Constants.SYSTEM_HACKED
+                    g.colour = Constants.SYSTEM_HACKED
                     g.fillRect(barX, y.f, 16f, 6f)
                 }
 
@@ -423,27 +423,27 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
                     // The system is powered at this level (or it's
                     // a subsystem), but ion damage is applied.
                     // This changes the colour of all the remaining power.
-                    g.color = Constants.SYSTEM_IONISED
+                    g.colour = Constants.SYSTEM_IONISED
                     g.fillRect(barX, y.f, 16f, 6f)
                 }
 
                 else -> {
                     // System powered, or a subsystem that doesn't need powering
-                    g.color = Constants.SYS_ENERGY_ACTIVE
+                    g.colour = Constants.SYS_ENERGY_ACTIVE
                     g.fillRect(barX, y.f, 16f, 6f)
                 }
             }
 
             // The repair bar
             if (i == energyLevels - damagedEnergyLevels) {
-                g.color = Constants.SYS_ENERGY_REPAIR
+                g.colour = Constants.SYS_ENERGY_REPAIR
                 val width = (16 * repairProgress).toInt()
                 g.fillRect(barX + 16 - width, y.f, width.f, 6f)
             }
 
             // The sabotage bar
             if (i == energyLevels - damagedEnergyLevels - 1) {
-                g.color = Constants.SYS_ENERGY_SABOTAGE
+                g.colour = Constants.SYS_ENERGY_SABOTAGE
                 val width = (16 * damageProgress).toInt()
                 g.fillRect(barX, y.f, width.f, 6f)
             }
@@ -465,11 +465,11 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         if (isHackActive) {
             // When this system is actively being hacked, draw a purple
             // outline around it.
-            g.color = Constants.SYSTEM_HACKED
+            g.colour = Constants.SYSTEM_HACKED
             drawIonOrHackBar()
         } else if (isIonised) {
             // If the system is ionised, draw the 'locked' bar around it
-            g.color = Constants.SYSTEM_IONISED
+            g.colour = Constants.SYSTEM_IONISED
             drawIonOrHackBar()
 
             // Draw the padlock icon at the top
