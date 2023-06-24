@@ -107,10 +107,15 @@ class Animations(df: Datafile) {
         val x = desc.getAttributeValue("x").toInt()
         val y = sheet.verticalCount - desc.getAttributeValue("y").toInt() - 1
 
-        // Convert from per-cycle to per-frame
-        val time = xml.getChild("time").textTrim.toFloat() / length
+        // The chargeion_charge animation claims to be four frames long,
+        // but it's really only three frames long if you look at the image,
+        // or the width/framewidth values.
+        val realLength = length.coerceAtMost(sheet.horizontalCount)
 
-        return AnimationSpec(sheet, name, x, y, length, time)
+        // Convert from per-cycle to per-frame
+        val time = xml.getChild("time").textTrim.toFloat() / realLength
+
+        return AnimationSpec(sheet, name, x, y, realLength, time)
     }
 
     operator fun get(name: String): AnimationSpec {
