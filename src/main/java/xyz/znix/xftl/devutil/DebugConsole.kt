@@ -54,10 +54,6 @@ class DebugConsole(var game: InGameState) {
 
     private val maxScroll: Int get() = max(0, lines.size - 15)
 
-    // TODO move this to somewhere in appdata (or platform equivalent) when we pick
-    //  somewhere to store the regular savegames.
-    private val debugSaveDir = Path.of("debug-saves")
-
     // Used for event searches - put them here so they persiste between
     // searches.
     var eventSearchIds = true
@@ -1084,9 +1080,9 @@ class DebugConsole(var game: InGameState) {
         }
 
         // Create the saves directory if it doesn't already exist
-        if (!Files.exists(debugSaveDir)) {
+        if (!Files.exists(DEBUG_SAVE_DIR)) {
             try {
-                Files.createDirectory(debugSaveDir)
+                Files.createDirectory(DEBUG_SAVE_DIR)
             } catch (ex: Exception) {
                 ex.printStackTrace()
                 addLine("Exception while creating debug save directory!")
@@ -1094,7 +1090,7 @@ class DebugConsole(var game: InGameState) {
             }
         }
 
-        val file = debugSaveDir.resolve(args[1] + ".xml")
+        val file = DEBUG_SAVE_DIR.resolve(args[1] + ".xml")
 
         fun doSave() {
             val xmlOutput = XMLOutputter(Format.getPrettyFormat())
@@ -1132,7 +1128,7 @@ class DebugConsole(var game: InGameState) {
 
     private fun cmdLoad(@Suppress("UNUSED_PARAMETER") args: List<String>) {
         val files: List<Path> = try {
-            Files.list(debugSaveDir).filter { it.fileName.toString().endsWith(".xml") }.collect(Collectors.toList())
+            Files.list(DEBUG_SAVE_DIR).filter { it.fileName.toString().endsWith(".xml") }.collect(Collectors.toList())
         } catch (ex: IOException) {
             ex.printStackTrace()
             addLine("Exception while listing debug saves, see the console for details.")
@@ -1881,5 +1877,10 @@ class DebugConsole(var game: InGameState) {
     companion object {
         private const val PROMPT = "> "
         private const val FLASH_TIME = 0.65f
+
+        // TODO move this to somewhere in appdata (or platform equivalent) when we pick
+        //  somewhere to store the regular savegames.
+        @JvmField
+        val DEBUG_SAVE_DIR = Path.of("debug-saves")
     }
 }

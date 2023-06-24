@@ -1,16 +1,24 @@
 package xyz.znix.xftl.game;
 
 import org.jdom2.Document;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.Game;
 import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
+import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
 import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class MainGame implements Game {
     private final Datafile vanillaDatafile;
@@ -43,6 +51,19 @@ public class MainGame implements Game {
         if (commandLineArgs.newGameShip != null) {
             // Switch right into a new game
             startNewGame(commandLineArgs.newGameShip, Difficulty.NORMAL, null);
+        } else if (commandLineArgs.debugLoad != null) {
+            Path path = DebugConsole.DEBUG_SAVE_DIR.resolve(commandLineArgs.debugLoad + ".xml");
+            Document doc;
+            try (BufferedReader reader = Files.newBufferedReader(path)) {
+                @SuppressWarnings("VulnerableCodeUsages") // we set expandEntities
+                SAXBuilder builder = new SAXBuilder();
+                builder.setExpandEntities(true);
+                doc = builder.build(reader);
+            } catch (IOException | JDOMException ex) {
+                throw new RuntimeException("Failed to load save", ex);
+            }
+
+            loadSavedGame(doc);
         } else {
             switchToShipSelect();
         }
@@ -154,5 +175,8 @@ public class MainGame implements Game {
     public static class CommandLineArgs {
         // If a new game should be started, this is the name of the ship to use.
         public String newGameShip;
+
+        // If a save created with the debug 'save' command should be loaded, this is it's name.
+        public String debugLoad;
     }
 }
