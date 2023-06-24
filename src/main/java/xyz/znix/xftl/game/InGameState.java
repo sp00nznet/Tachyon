@@ -795,6 +795,13 @@ public class InGameState extends MainGame.GameState {
             refs.register(enemy, "flagship");
         }
 
+        // If the player ship has a custom layout, save that.
+        if (player.getCustomised() != null) {
+            Element customLayout = new Element("customLayout");
+            player.getCustomised().saveToXML(customLayout);
+            root.addContent(customLayout);
+        }
+
         // Serialise the player ship
         Element playerShip = new Element("playerShip");
         player.saveToXML(playerShip, refs);
@@ -843,15 +850,22 @@ public class InGameState extends MainGame.GameState {
     private void loadGameState(Element root) {
         RefLoader refs = new RefLoader();
 
+        // If the player ship has a custom layout, load that.
+        Element customLayout = root.getChild("customLayout");
+        EditableShip customised = null;
+        if (customLayout != null) {
+            customised = EditableShip.loadFromXML(customLayout);
+        }
+
         // Load the player ship
         Element playerShip = root.getChild("playerShip");
-        player = deserialiseSingleShip(playerShip, refs);
+        player = deserialiseSingleShip(playerShip, refs, customised);
 
         // Load the flagship, if we're fighting it.
         Element flagshipElem = root.getChild("flagship");
         Ship flagship = null;
         if (flagshipElem != null) {
-            flagship = deserialiseSingleShip(flagshipElem, refs);
+            flagship = deserialiseSingleShip(flagshipElem, refs, null);
         }
 
         // Load the game map. The sector needs to reference it's SectorInfo
@@ -906,7 +920,7 @@ public class InGameState extends MainGame.GameState {
      * the player ship deserialisation in this class and the enemy ship
      * deserialisation in beacons.
      */
-    public Ship deserialiseSingleShip(Element shipElement, RefLoader refs) {
+    public Ship deserialiseSingleShip(Element shipElement, RefLoader refs, EditableShip customised) {
         // Load the appropriate ship definition XML element from the blueprints
         String shipId = shipElement.getAttributeValue("shipId");
 
@@ -921,7 +935,6 @@ public class InGameState extends MainGame.GameState {
         ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipId);
 
         // And use that to build and deserialise the ship
-        EditableShip customised = null; // FIXME save and load
         Ship ship = new Ship(blueprint, this, customised, spec);
         ship.loadFromXml(shipElement, refs);
 

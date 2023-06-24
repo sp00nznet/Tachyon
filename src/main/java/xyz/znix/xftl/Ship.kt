@@ -44,7 +44,7 @@ class Ship(
      * do with EditableShip while still being able to properly load all the
      * vanilla ships, with all their details.
      */
-    private val customised: EditableShip?,
+    val customised: EditableShip?,
 
     val spec: EnemyShipSpec?
 ) :

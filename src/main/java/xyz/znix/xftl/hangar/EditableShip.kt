@@ -1,5 +1,6 @@
 package xyz.znix.xftl.hangar
 
+import org.jdom2.Element
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.ISystemConfiguration
@@ -9,6 +10,7 @@ import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.systems.Weapons
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
@@ -106,6 +108,49 @@ class EditableShip(
         }
     }
 
+    fun saveToXML(elem: Element) {
+        SaveUtil.addAttr(elem, "baseBlueprint", baseBlueprint)
+
+        SaveUtil.addAttrInt(elem, "weaponSlots", weaponSlots)
+        SaveUtil.addAttrInt(elem, "droneSlots", droneSlots)
+
+        val roomsElem = Element("room")
+        for (room in rooms) {
+            roomsElem.addContent("${room.x},${room.y},${room.w},${room.h} ")
+        }
+        elem.addContent(roomsElem)
+
+        val doorElem = Element("door")
+        for (door in doors) {
+            val orientation = when (door.isVertical) {
+                true -> 'v'
+                false -> 'h'
+            }
+            doorElem.addContent("${door.x},${door.y},$orientation ")
+        }
+        elem.addContent(doorElem)
+
+        for ((roomId, room) in rooms.withIndex()) {
+            val system = room.system ?: continue
+
+            val systemElem = Element("system")
+            SaveUtil.addAttrInt(systemElem, "roomId", roomId)
+            system.saveToXML(systemElem)
+            elem.addContent(systemElem)
+        }
+
+        for (weapon in weapons) {
+            val weaponElem = Element("startingWeapon")
+            SaveUtil.addAttr(weaponElem, "name", weapon)
+            elem.addContent(weaponElem)
+        }
+        for (drone in drones) {
+            val droneElem = Element("startingDrone")
+            SaveUtil.addAttr(droneElem, "name", drone)
+            elem.addContent(droneElem)
+        }
+    }
+
     companion object {
         fun fromBlueprint(blueprint: ShipBlueprint): EditableShip {
             val ship = EditableShip(blueprint.name)
@@ -133,6 +178,55 @@ class EditableShip(
 
             blueprint.weaponSlots?.let { ship.weaponSlots = it }
             blueprint.droneSlots?.let { ship.droneSlots = it }
+
+            return ship
+        }
+
+        @JvmStatic
+        fun loadFromXML(elem: Element): EditableShip {
+            val ship = EditableShip(SaveUtil.getAttr(elem, "baseBlueprint"))
+
+            ship.weaponSlots = SaveUtil.getAttrInt(elem, "weaponSlots")
+            ship.droneSlots = SaveUtil.getAttrInt(elem, "droneSlots")
+
+            val roomsElem = elem.getChild("room")
+            for (roomStr in roomsElem.textTrim.split(' ', '\t', '\n')) {
+                val parts = roomStr.split(',')
+                require(parts.size == 4)
+                val x = parts[0].toInt()
+                val y = parts[1].toInt()
+                val w = parts[2].toInt()
+                val h = parts[3].toInt()
+                ship.rooms += EditableRoom(x, y, w, h)
+            }
+
+            val doorElem = elem.getChild("door")
+            for (doorStr in doorElem.textTrim.split(' ', '\t', '\n')) {
+                val parts = doorStr.split(',')
+                require(parts.size == 3)
+                val x = parts[0].toInt()
+                val y = parts[1].toInt()
+                val isVertical = when (parts[2]) {
+                    "v" -> true
+                    "h" -> false
+                    else -> error("Invalid door orientation: '${parts[2]}'")
+                }
+                ship.doors.add(EditableDoor(x, y, isVertical))
+            }
+
+            for (systemElem in elem.getChildren("system")) {
+                val roomId = SaveUtil.getAttrInt(systemElem, "roomId")
+                ship.rooms[roomId].system = EditableSystem.loadFromXML(systemElem)
+            }
+
+            for (weaponElem in elem.getChildren("startingWeapon")) {
+                val name = SaveUtil.getAttr(weaponElem, "name")
+                ship.weapons.add(name)
+            }
+            for (droneElem in elem.getChildren("startingDrone")) {
+                val name = SaveUtil.getAttr(droneElem, "name")
+                ship.drones.add(name)
+            }
 
             return ship
         }
@@ -362,6 +456,21 @@ data class EditableSystem(
     var artilleryWeapon: String? = null // AbstractWeaponBlueprint name
 ) {
     fun getBP(state: SelectShipState): SystemBlueprint = state.blueprints[type] as SystemBlueprint
+
+    fun saveToXML(elem: Element) {
+        SaveUtil.addAttr(elem, "type", type)
+        interiorImage?.let { img -> SaveUtil.addAttr(elem, "interiorImage", img) }
+        artilleryWeapon?.let { name -> SaveUtil.addAttr(elem, "artilleryWeapon", name) }
+    }
+
+    companion object {
+        fun loadFromXML(elem: Element): EditableSystem {
+            val type = SaveUtil.getAttr(elem, "type")
+            val interiorImage = elem.getAttributeValue("interiorImage")
+            val artilleryWeapon = elem.getAttributeValue("artilleryWeapon")
+            return EditableSystem(type, interiorImage, artilleryWeapon)
+        }
+    }
 }
 
 /**

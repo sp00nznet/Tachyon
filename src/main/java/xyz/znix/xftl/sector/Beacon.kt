@@ -282,7 +282,7 @@ class Beacon(
 
             // Deserialise the enemy ship, if present
             val shipElem = elem.getChild("enemyShip")
-            beacon.ship = shipElem?.let { game.deserialiseSingleShip(it, refs) }
+            beacon.ship = shipElem?.let { game.deserialiseSingleShip(it, refs, null) }
 
             for (powerLimit in elem.getChildren("powerLimit")) {
                 val system = powerLimit.getAttributeValue("system")
