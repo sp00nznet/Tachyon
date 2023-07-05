@@ -57,7 +57,8 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
     }
 
     // List of the default systems, for sorting purposes
-    // TODO handle modded systems
+    // Modded systems can just use one of the vanilla systems, since if two
+    // systems share the same sorting type they'll use the room ID as a tie-breaker.
     enum class SortingType {
         SHIELD,
         ENGINES,
