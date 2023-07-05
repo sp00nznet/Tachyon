@@ -18,6 +18,8 @@ Crew tasks are more inconvenient to find, my names are:
 7=TASK_COMBAT
 8=TASK_TELEPORTING        (not sure if this is standing on a teleporter, or all of boarding)
 
+Note that mind-controlled crew use the standard intruder/crew AI.
+
 
 
 CrewAI::CheckForHealing:
@@ -82,7 +84,9 @@ If a task is in a room marked as dangerous (see DangerRating), then it
 gets a priority of 100.
 
 For crew members that are bad at combat (<1x damage or <100hp), healing
-and teleporting tasks also get a priority of 100.
+and teleporting tasks also get a priority of 100, if not all of the crew
+are bad at combat, and unless the combat/race override is set (see the end
+of AttemptToAssign).
 
 Teleporting tasks for crew with <50% health also get a priority of 100.
 Otherwise, non-urgent teleporting is 32 if the teleporter is charged,
@@ -116,3 +120,143 @@ Use PrioritizeSystem + 16, or 24 (8+16) for rooms without a system.
 
 For task ID=3 (likely repairing hull breaches):
 Use PrioritizeSystem + 32, or 40 (8+32) for rooms without a system.
+
+
+CrewAI::UpdateIntruders
+
+This is run every update for the player's ship, and presumably also for
+the enemy ship. This controls the enemies that are aboard the player ship.
+
+This first sets all the crew to attack the system in the room they're in, or
+gives them a bogus order to attack system SYS_INVALID (-1) if their room
+doesn't have a system.
+
+Next, it goes through each crewmember, using ChoosePriorityRoom to pick that
+boarder's preferred room. It then commands that crewmember AND EVERY SUBSEQUENT ONE
+to move to that room.
+
+This means that the first crewmember picks the target for itself and all the
+subsequent ones. They still run the loop, and if they see a better target (noting
+that ChoosePriorityRoom returns the currently-assigned room if there's multiple
+equally good options) they'll then re-assign themselves to that room.
+
+This appears to be why enemies will meet up: one picks it's preferred room,
+then all the others join it unless they have a reason to prefer a different system.
+
+
+CrewAI::ChoosePriorityRoom
+
+This uses PrioritizeIntruderRoom to calculate the priority of the room of our
+currently-assigned task.
+
+It then goes through all the rooms on the ship that aren't full and that we
+can pathfind to, and uses PrioritizeIntruderRoom to find their priority.
+
+If a room with a lower priority value (lower is more important) than the
+currently-assigned room is found, switch to it. If there's multiple rooms tied
+for lowest priority, pick one at random.
+
+Note that the current task is kept if another task has the same priority - this
+avoids the assigned room randomly switching constantly.
+
+
+CrewAI::PrioritizeIntruderRoom
+
+This picks the priority that is attached to a given room, for a given crewmember.
+
+Ion intruder drones have special handling here (via crew->boardingGoal.damageType).
+They return priority 1000 if there's no system in the room, and if the system
+is ioned then it's treated as being fully broken.
+
+The doors system is checked. If it's installed, and it's completely broken (or
+possibly ioned) then the next step is skipped. This seems like a bug - I suspect
+it was supposed to only check for blast doors.
+
+Otherwise, if the crewmember can fight, the room being tested is the room the crewmember
+is currently in, and there's enemies (from the point of view of the invading crewmember)
+in the room, then the room is given priority -10.
+
+Next, the danger of the room is calculated, accounting for the crewmember's fire
+resistance and whether they're anaerobic (Lanius):
+
+       No Fire  Fire
+Air       0      100
+No air   70      170
+
+The 'no air' threshold is 10%, not the 5% that crew start suffocating at.
+
+A 5 point penalty is added for rooms that don't have the exact same number of slots
+as the number of boarders.
+
+For rooms that aren't adjacent to the current player's room, a 10 point penalty is added.
+
+For ion drones, a 100 point penalty is then added if this is the room they last attacked.
+
+It appears that crew have two modes in their boarding goal, set by BoardingGoal.target:
+
+System mode (value 1), where a 20 point penalty is applied if there isn't a system
+to attack, it's broken, or (in the case of ion intruders) is already ioned.
+Crew mode (value 0), where a 20 point penalty is applied for rooms without crew.
+
+It looks like system mode is used as standard, from cursory search I can't find
+anything that uses crew mode.
+
+
+CrewAI::UpdateCrewMember
+
+First, this checks for fires and hull breaches in the friendly crew's
+current room, and assigns them to work on this. Enemies are assigned
+to damage systems, or fight friendly crew.
+
+Next, if the crew isn't fighting, repairing, or moving (CrewMember::IsBusy),
+there's a series of checks, in the following order:
+
+* If healing, and <99% health, and the medbay isn't hacked, remain
+  in the healing state.
+* If teleporting (notably, standing there while the cooldown resets),
+  then stay in the teleporting state unless the ship AI decides not
+  to request a teleport (eg, you teleport in first).
+* If not manning a system, switch to idle mode.
+* If someone else is manning the room, go into idle mode.
+* Otherwise, continue manning the room.
+
+Otherwise, the crewmember keeps their current task.
+
+
+CrewAI::AttemptToAssign
+
+This is called by OnLoop for each task in sequence. The tasks aren't sorted.
+Also note this is called AFTER UpdateCrewMember, so what's set here
+will override that function.
+
+It loops through all the friendly crew, and for each one:
+
+* If the crewmember is currently doing the given task, exclude them. Since
+  tasks aren't added by CheckForProblems if there's a crewmember already
+  doing them, this doesn't force multiple crew to do the same task.
+  This check is required so that multiple identical tasks can be registered,
+  eg calling multiple crew to defend a single room from intruders.
+* If the crewmember's room doesn't have any doors (flagship weapons), then
+  exclude them to avoid jamming up the AI.
+* Exclude crewmembers whose task is more important (lower priority number)
+  than the task to be assigned.
+* If the crewmember's current task is combat, repair, fire-fighting, or
+  hull-breach repair, and they're in the same room as the task, assign
+  them immediately and stop the function here.
+
+Assuming no crewmembers satisfied that last condition, pick the crewmember
+whose current task has the highest priority value (is the last important).
+If there's a tie, pick the crewmember that appears first in the crew list.
+
+The priority depends on the crewmember, as some tasks (eg combat, putting
+out fires, etc) depend on the crewmember. When calculating the priority
+in the code above, use the crewmember under consideration.
+
+Check if the new task's priority (as seen by the best crewmember, as picked
+above) is lower (not lower or equal!) than the priority of the new task, and
+if so assign the task to the new crewmember. This ensures that crew don't
+constantly switch between equally-important tasks.
+
+Finally, if a combat task isn't assigned, and some of the crew are bad
+at combat, the combat/race override is set to avoid de-prioritising combat
+tasks for crew that are bad at it. Once set, this flag (bOverrideRace) remains
