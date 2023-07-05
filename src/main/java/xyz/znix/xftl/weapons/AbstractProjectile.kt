@@ -336,6 +336,9 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
 
         resolveMissed()
 
+        if (missed == true)
+            return
+
         // Check for shield piercing, which seems to work the same
         // way across all weapons. Missiles for example just have
         // a very high shieldPiercing of 5.
