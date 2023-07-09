@@ -41,6 +41,11 @@ class DebugFlagManager {
         "Ships don't take damage"
     )
 
+    val noIon = DebugFlag(
+        "noi", "No ion damage", false,
+        "Auto-clear ion damage, including system cooldowns"
+    )
+
     val continuousSaveLoad = DebugFlag(
         "cont-save-load", "Continuous save and load", false,
         "Save and load the game state every update, to test the serialisation logic"
@@ -76,6 +81,7 @@ class DebugFlagManager {
         fastWeaponCharge,
         noEnemyFire,
         noDmg,
+        noIon,
         continuousSaveLoad,
         noClone,
         anyJump,

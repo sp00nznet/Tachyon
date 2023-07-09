@@ -137,6 +137,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         // Check both the damage and timer to avoid somehow getting stuck where
         // one of them is zero and the other isn't.
         if (ionPowerLimit != null || ionTimer > 0f) {
+            if (ship.sys.debugFlags.noIon.set)
+                ionTimer = 0f
+
             ionTimer -= dt
             if (ionTimer <= 0) {
                 ionPowerLimit = null
