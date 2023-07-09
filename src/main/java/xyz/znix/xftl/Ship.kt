@@ -3,6 +3,7 @@ package xyz.znix.xftl
 import org.jdom2.Element
 import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants.*
+import xyz.znix.xftl.ai.FriendlyCrewAI
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractExternalDrone
@@ -114,6 +115,15 @@ class Ship(
      * around this ship.
      */
     val externalDrones = ArrayList<AbstractExternalDrone>()
+
+    /**
+     * The AI that controls friendly (non-intruder) crew on this ship.
+     *
+     * It's present on all ships, including the player ship. This is because
+     * it's used for mind-controlled intruders, as well as regular enemies
+     * on their ships.
+     */
+    val crewAI = FriendlyCrewAI(this)
 
     // This really is a bit horrible - if this is the enemy ship, we store the beam the
     // player is currently aiming at us to highlight the affected rooms.
@@ -726,6 +736,8 @@ class Ship(
         }
 
         averageOxygen = rooms.map { it.oxygen }.average().toFloat()
+
+        crewAI.update()
 
         updateCrew(dt)
 

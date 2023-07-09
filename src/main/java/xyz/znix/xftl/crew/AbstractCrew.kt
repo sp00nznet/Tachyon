@@ -108,6 +108,7 @@ abstract class AbstractCrew(
     open val fireFightingSpeed: Float get() = 1f
     open val canPunch: Boolean get() = true
     open val canFight: Boolean get() = true
+    open val canRepair: Boolean get() = true
     open val attackDamageMult: Float get() = 1f
     open val hasDyingAnimation: Boolean get() = true
     open val suffocationMultiplier: Float get() = 1f
@@ -513,7 +514,7 @@ abstract class AbstractCrew(
             currentFireSlot = -1
             changedFire = true
         }
-        if (currentFireSlot == -1) {
+        if (currentFireSlot == -1 && canRepair) {
             currentFireSlot = findFirstFire()
         }
         if (currentFireSlot != -1) {
@@ -542,7 +543,7 @@ abstract class AbstractCrew(
 
         // Check if the system in this room is broken, and if so repair it.
         system?.let { sys ->
-            if (sys.damaged && mode == SlotType.CREW) {
+            if (sys.damaged && mode == SlotType.CREW && canRepair) {
                 currentAction = Action.REPAIRING
                 val didRepair = sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
                 if (didRepair) {
@@ -1390,6 +1391,16 @@ abstract class AbstractCrew(
         val isAttackAction: Boolean
             get() = when (this) {
                 ATTACKING_DOOR, SABOTAGE, FIGHTING -> true
+                else -> false
+            }
+
+        /**
+         * Is the crew member in an idle-ish state, where they'll remain in
+         * that state for a prolonged period of time if no more damage occurs?
+         */
+        val isIdle: Boolean
+            get() = when (this) {
+                IDLE, MANNING -> true
                 else -> false
             }
     }

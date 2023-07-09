@@ -48,6 +48,7 @@ class RepairDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
     override fun makePawn(room: Room): Pawn = RepairPawn(room)
 
     private inner class RepairPawn(room: Room) : AbstractIndoorsDrone.Pawn(room) {
+        override val canRepair: Boolean get() = true
         override val repairSpeed: Float get() = 2f
     }
 }
