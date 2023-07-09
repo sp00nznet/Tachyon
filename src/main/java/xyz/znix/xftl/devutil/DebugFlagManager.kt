@@ -41,6 +41,11 @@ class DebugFlagManager {
         "Ships don't take damage"
     )
 
+    val noCrewDamage = DebugFlag(
+        "nocd", "No crew damage", false,
+        "Disable all crew damage"
+    )
+
     val noIon = DebugFlag(
         "noi", "No ion damage", false,
         "Auto-clear ion damage, including system cooldowns"
@@ -81,6 +86,7 @@ class DebugFlagManager {
         fastWeaponCharge,
         noEnemyFire,
         noDmg,
+        noCrewDamage,
         noIon,
         continuousSaveLoad,
         noClone,

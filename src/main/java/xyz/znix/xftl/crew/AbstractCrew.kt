@@ -691,6 +691,9 @@ abstract class AbstractCrew(
     }
 
     fun dealDamage(damage: Float) {
+        if (game.debugFlags.noCrewDamage.set)
+            return
+
         health = max(0f, health - damage)
 
         // Dying is handled in the update loop
