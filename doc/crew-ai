@@ -81,7 +81,10 @@ Hull breaches get a task, one per room, plus a bonus task.
 CrewAI::PrioritizeTask:
 
 If a task is in a room marked as dangerous (see DangerRating), then it
-gets a priority of 100.
+gets a priority of 100. Note that this means that if multiple rooms are
+dangerous, they effectively all have the same priority, so you can lock
+up the AI if the ship runs out of oxygen and all the crew are on low health,
+as no-one will ever change their task.
 
 For crew members that are bad at combat (<1x damage or <100hp), healing
 and teleporting tasks also get a priority of 100, if not all of the crew
@@ -120,6 +123,12 @@ Use PrioritizeSystem + 16, or 24 (8+16) for rooms without a system.
 
 For task ID=3 (likely repairing hull breaches):
 Use PrioritizeSystem + 32, or 40 (8+32) for rooms without a system.
+
+An idle task has priority 1000. Since this is evaluated long after
+the danger rating, this means that an idle crewmember prefers to
+stand in a dangerous room! This doesn't mean an idle crewmember will
+walk into a dangerous room without a reason though, it just means
+that they'll do a task there without any regard for their safety.
 
 
 CrewAI::UpdateIntruders
