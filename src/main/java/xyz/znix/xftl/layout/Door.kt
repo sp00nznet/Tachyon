@@ -46,7 +46,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
             val healths = BASE_HEALTHS.getValue(ship.sys.difficulty)
 
             if (isHacked) {
-                return healths[1] // Level 3 equivalent
+                return healths[2] // Level 3 equivalent
             }
 
             val baseLevel = ship.doorsSystem?.undamagedEnergy ?: 0
@@ -439,6 +439,12 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
 
         if (isHacked) {
             return crew.mode == AbstractCrew.SlotType.CREW
+        }
+
+        // If there isn't a doors system, the door isn't locked.
+        val baseLevel = ship.doorsSystem?.undamagedEnergy ?: 0
+        if (baseLevel < 2) {
+            return false
         }
 
         return crew.mode == AbstractCrew.SlotType.INTRUDER
