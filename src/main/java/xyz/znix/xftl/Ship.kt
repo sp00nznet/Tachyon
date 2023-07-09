@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.ai.FriendlyCrewAI
+import xyz.znix.xftl.ai.IntruderCrewAI
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractExternalDrone
@@ -124,6 +125,8 @@ class Ship(
      * on their ships.
      */
     val crewAI = FriendlyCrewAI(this)
+
+    val intruderAI = IntruderCrewAI(this)
 
     // This really is a bit horrible - if this is the enemy ship, we store the beam the
     // player is currently aiming at us to highlight the affected rooms.
@@ -738,6 +741,7 @@ class Ship(
         averageOxygen = rooms.map { it.oxygen }.average().toFloat()
 
         crewAI.update()
+        intruderAI.update()
 
         updateCrew(dt)
 

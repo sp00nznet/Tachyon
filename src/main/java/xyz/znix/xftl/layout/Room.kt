@@ -78,6 +78,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     private val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
 
     val obstructions = HashSet<ConstPoint>()
+    private val obstructionSlots = HashSet<Int>()
 
     private var computerHackAnimation: FTLAnimation? = null
     private var bigSparksHackAnimation: FTLAnimation? = null
@@ -420,8 +421,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         system?.initialise(ship)
 
         obstructions.clear()
+        obstructionSlots.clear()
         if (config.obstructionPoint != null) {
             obstructions.add(config.obstructionPoint)
+            obstructionSlots.add(pointToSlot(config.obstructionPoint))
         }
 
         ship.updateAvailableSystems()
@@ -582,6 +585,27 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     }
 
     /**
+     * Check if this room has any free slots.
+     *
+     * If [crew] is specified, it's checked from their perspective - if they
+     * already have a slot, then this returns true even if all the slots
+     * are full.
+     */
+    fun anySlotsFree(type: AbstractCrew.SlotType, crew: AbstractCrew? = null): Boolean {
+        val slots = slotsFor(type)
+
+        for ((index, slotCrew) in slots.withIndex()) {
+            if (obstructionSlots.contains(index))
+                continue
+
+            if (slotCrew == crew || slotCrew == null)
+                return true
+        }
+
+        return false
+    }
+
+    /**
      * Returns true if the specified crewmember is assigned to walk to a slot in this room.
      */
     fun isCrewAssigned(crew: AbstractCrew): Boolean {
@@ -688,5 +712,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             fireSpreadTimers[slot] = SaveUtil.getAttrFloat(spreadElem, "timer")
             fireSpreadUpdated[slot] = SaveUtil.getAttrBool(spreadElem, "updated")
         }
+    }
+
+    /**
+     * True if this room has a door to the given other room.
+     */
+    fun connectedTo(room: Room): Boolean {
+        return doors.any { it.other(this) == room }
     }
 }
