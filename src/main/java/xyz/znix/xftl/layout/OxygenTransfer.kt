@@ -2,6 +2,7 @@ package xyz.znix.xftl.layout
 
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.LoopHandle
 import kotlin.math.min
 import kotlin.math.pow
 
@@ -23,6 +24,10 @@ object OxygenTransfer {
             val numHullBreaches = 0
             drainRate += numHullBreaches * 0.8f
 
+            // Check if there's any drain other than from anaerobic crew, in
+            // which case we'll play the sound leaking noise if appropriate.
+            val enableSound = drainRate > 0f
+
             // Apply anaerobic crew
             for (crew in room.crew) {
                 drainRate += crew.anaerobicOxygenDrainRate
@@ -31,10 +36,22 @@ object OxygenTransfer {
             if (drainRate == 0f)
                 continue
 
+            var hasAirLoss = false
+
             for ((otherRoom, distance) in findDistances(room)) {
                 val modifier = 0.75f.pow(distance)
                 val finalRate = drainRate * modifier
                 otherRoom.oxygen -= dt * finalRate
+
+                // Mute the sound effect if the rooms are fully drained.
+                if (otherRoom.oxygen > 0.01f) {
+                    hasAirLoss = true
+                }
+            }
+
+            if (hasAirLoss && enableSound) {
+                val sound: LoopHandle = ship.sys.sounds.getLoop("airLeak")
+                sound.continueLoopPlayerOnly(ship)
             }
         }
 

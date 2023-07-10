@@ -104,7 +104,9 @@ class SoundManager(private val df: Datafile) {
             // Un-pause sounds that were paused by pausing the game.
             sound.isPaused = false
 
-            sound.setVolume(1f * count / spec.maxCount)
+            // Clamp to ensure that having more than maxCount sources
+            // doesn't adjust the volume.
+            sound.setVolume((1f * count / spec.maxCount).coerceIn(0f..1f))
         }
 
         // Start any new sounds
