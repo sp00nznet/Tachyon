@@ -44,8 +44,18 @@ object AIUtils {
             return true
         }
 
-        // TODO fire
-        // TODO medbay hacking
+        // Unless the crew is fireproof, fire is dangerous if we're <20%
+        // health, and it's always dangerous if there's four fires in a room.
+        val fireCount = room.fires.count { it != null }
+        if (crew.fireDamageMult > 0f && (fireCount >= 4 || healthFraction < 0.20f)) {
+            return true
+        }
+
+        // A hacked medbay is, unsurprisingly, dangerous
+        val medbay = room.system as? Medbay
+        if (medbay?.isHackActive == true) {
+            return true
+        }
 
         return false
     }
