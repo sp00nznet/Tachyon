@@ -1,0 +1,73 @@
+Oxygen drains from rooms at 1.2% per second when the oxygen system
+is off, and the refill rate is 1.2% times the multiplier 1,4,7 for
+levels 1,2,3 (NOT the 1,3,6 multipliers listed in the UI).
+
+
+
+OxygenSystem::ComputeAirLoss
+
+This is called for hull breaches (and anaerobic crew, which are equivalent)
+and open airlocks. The base air loss (more on that later) for airlock doors
+is 16%/sec per open airlock door, and for hull breaches it's 8%/sec per
+breach.
+
+(Note that while Fires reduce the oxygen in a room by 0.96% per second,
+for each fire, they only reduce it for their room - they thus don't use this
+method, instead using OxygenSystem::ModifyRoomOxygen directly).
+
+Note that the number of airlocks open is important here - opening more vents
+the ship much faster.
+
+It drains the oxygen from the relevant room, and from all adjacent rooms. It
+first builds the distance map (via ShipGraph::ConnectivityDFS) - this makes
+a list of how far away each room is from the starting room.
+
+For each room, the air loss rate is computed as 0.75 to the power of it's
+distance from the room with the breach/open airlock, where that room has a
+distance of 0, the adjacent rooms have a distance of 1, and so on.
+
+
+
+OxygenSystem::RedistributeOxygen
+
+This spreads oxygen out between rooms.
+
+It first splits the ship into chunks. Any two rooms with a path of open doors
+between them is part of a single chunk, while rooms with no such path are in
+separate chunks.
+
+Thus for example, with all the internal doors open there's one chunk and with
+all the doors closed, there's as many chunks as there are rooms.
+
+The air is then spread among each chunk. Find the average oxygen level in a
+chunk, and for each room therein find the difference of it's oxygen vs the
+average, and change the level by 8% of that per second.
+
+Note the distance between the rooms in the chunk isn't used - so air spreads
+equally well along a very narrow line of rooms, as it does one room and it's
+neighbours.
+
+
+Tactical notes
+
+If you're trying to vent a room, make sure you open all the airlock doors.
+Logically it doesn't make sense - the airlock room is already vented - but
+unless you're venting only one close room, or a very far away room, the
+airlock venting speed is much, much faster than the spreading speed.
+
+It may also be worth opening multiple different airlocks, even if they're a
+long way away from the vented room. For example, on the Kestrel with level 1
+oxygen, venting the teleporter room is about 50% faster if you vent it both
+through weapons and engines (3.5 vs 5.2 seconds).
+
+Finally, if you're trying to keep oxygen in a room with a hull breach, don't
+open all internal doors - close all but one (or two, depending on the ship
+layout) of the doors around the breached room, and close other doors to try
+and make the oxygen snake it's way around the ship. Remember that oxygen
+spread within a chunk isn't affected by distance but hull breach loss is, so
+by opening nearby doors you're loosing more air.
+
+(this is also why level 3 oxygen can keep a room with a single lanius full
+of air, but if you have two such rooms it breaks if you open the door
+between them - you're loosing almost twice as much air, since they both
+vent each other's rooms)
