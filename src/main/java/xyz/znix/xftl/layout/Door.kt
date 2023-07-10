@@ -196,9 +196,11 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
             stateAnimation = (stateAnimation - dt / ANIMATION_TIME).coerceAtLeast(0f)
         }
 
-        // If the door is actually open, transfer air between the two rooms
-        if (open) {
-            updateOxygen(dt)
+        // If this is an airlock, instantly drain the air from this room.
+        // Air transfer between non-airlock doors is handled by OxygenTransfer
+        if (open && (left == null || right == null)) {
+            left?.oxygen = 0f
+            right?.oxygen = 0f
         }
 
         // Run the timer for doors that were broken open.
@@ -220,27 +222,6 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         isHacked = ship.doorsSystem?.isHackActive == true ||
                 left?.system?.hackedBy?.isPoweredUp == true ||
                 right?.system?.hackedBy?.isPoweredUp == true
-    }
-
-    private fun updateOxygen(dt: Float) {
-        // If this is an airlock, instantly drain the air from this room.
-        if (left == null || right == null) {
-            left?.oxygen = 0f
-            right?.oxygen = 0f
-            return
-        }
-
-        // Otherwise transfer air between the adjacent rooms.
-        // There's 8% per second mentioned in the code, but that's part
-        // of a fairly complicated-looking transfer thing and seems
-        // way too slow here.
-        // It seems to take about 6.5 seconds for a room adjacent to
-        // an airlock to drain of oxygen, so we need to match that.
-        // TODO make this properly match how FTL works.
-        val transferRate = 0.45f
-        val delta = left.oxygen - right.oxygen
-        left.oxygen -= delta * dt * transferRate
-        right.oxygen += delta * dt * transferRate
     }
 
     fun updateMouseHover(x: Int, y: Int) {

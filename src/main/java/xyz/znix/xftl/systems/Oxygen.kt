@@ -11,17 +11,20 @@ import kotlin.math.roundToInt
 class Oxygen(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.OXYGEN
 
-    // Note: it takes ~85 seconds for the ship to refill with oxygen from 0%
-    // Note we also add the drain rate to counter that out, since that was included in the test
-    // Maybe this is done wrong and the room drain is only applied with oxygen off, but it's not going
-    // to have much of an effect since it only applies to level 2/3 oxygen.
     val refillRate: Float
         get() {
-            // From the wiki, drains about 6% per second.
+            // Drains 6% per second, including the constant drain rate.
             if (isHackActive)
-                return -0.06f
+                return -(0.06f - ROOM_DRAIN_RATE)
 
-            return REFILL_RATES[powerSelected] * (1f / 85f + ROOM_DRAIN_RATE)
+            if (powerSelected == 0)
+                return 0f
+
+            // The UI is wrong, the refill rates are 1,4,7
+            // Note we add 2, since for level 1 we have to offset the
+            // drain rate, then also refill at a rate equal to the drain rate.
+            val multiplier = 2 + (powerSelected - 1) * 3
+            return multiplier * ROOM_DRAIN_RATE
         }
 
     // Nothing to serialise
@@ -29,8 +32,10 @@ class Oxygen(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
-        // ~1% per second according to the FTL wiki
-        const val ROOM_DRAIN_RATE = 0.01f
+        /**
+         * 1.2% oxygen drain per second, with the oxygen system off.
+         */
+        const val ROOM_DRAIN_RATE = 0.012f
 
         /**
          * The amount of oxygen below which crew take damage and the warning stripes appear.

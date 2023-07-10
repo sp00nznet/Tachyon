@@ -8,6 +8,7 @@ class CrewAnaerobic(blueprint: CrewBlueprint, animations: Animations, room: Room
 
     override val movementSpeed: Float get() = BASE_MOVEMENT_SPEED * 0.85f
     override val suffocationMultiplier: Float get() = 0f
+    override val anaerobicOxygenDrainRate: Float get() = 0.08f
 
     // TODO implement oxygen draining
 }

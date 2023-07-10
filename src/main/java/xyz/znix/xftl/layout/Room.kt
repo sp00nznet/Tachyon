@@ -53,6 +53,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
      * Oxygen level from 1-0.
      */
     var oxygen: Float = 1f
+        set(value) {
+            field = value.coerceIn(0f..1f)
+        }
 
     /**
      * Is the oxygen level so low the crew will suffocate?
@@ -100,9 +103,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         system?.update(dt)
 
-        // On the observation from the FTL wiki that ships loose ~1% oxygen per second
+        // Ships loose 1.2% oxygen per second, but gain whatever the oxygen
+        // system is providing.
         val refillRate = (ship.oxygen?.refillRate ?: 0f) - Oxygen.ROOM_DRAIN_RATE
-        oxygen = (oxygen + refillRate * dt).coerceAtLeast(0f).coerceAtMost(1f)
+        oxygen += refillRate * dt
 
         // Note that transferring oxygen through open doors is handled
         // in the Door update function.

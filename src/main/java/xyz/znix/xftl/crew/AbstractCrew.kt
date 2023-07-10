@@ -116,6 +116,16 @@ abstract class AbstractCrew(
     open val playerControllable: Boolean get() = true
     open val movementSpeed: Float get() = BASE_MOVEMENT_SPEED
 
+    /**
+     * The amount of oxygen to drain per second from this crew's room, and
+     * all surrounding rooms with open doors, via the hull breach oxygen
+     * draining logic.
+     *
+     * This should NOT be used for crew that refill oxygen in the current
+     * room, unless you want them to also refill connected rooms.
+     */
+    open val anaerobicOxygenDrainRate: Float get() = 0f
+
     var pathingTarget: RoomPoint? = null
         private set(value) {
             field = value

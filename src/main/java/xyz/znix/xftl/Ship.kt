@@ -13,6 +13,7 @@ import xyz.znix.xftl.game.*
 import xyz.znix.xftl.hangar.EditableShip
 import xyz.znix.xftl.hangar.FinalisedEditableSystem
 import xyz.znix.xftl.layout.Door
+import xyz.znix.xftl.layout.OxygenTransfer
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
@@ -737,6 +738,9 @@ class Ship(
         for (door in doors) {
             door.update(dt)
         }
+
+        // Move oxygen around the ship
+        OxygenTransfer.update(this, dt)
 
         averageOxygen = rooms.map { it.oxygen }.average().toFloat()
 
