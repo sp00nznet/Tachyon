@@ -1,0 +1,59 @@
+ShipAI::CheckPowerLevels
+
+(This controls what systems the ship powers)
+
+First, it turns all systems off, as far as it can (respecting ion power
+locking, hacking, etc).
+
+Next it allocates one power to several systems, in order:
+* Oxygen
+* Teleporter
+* Clonebay
+* Medbay, but only if bHurtCrew is set on CrewAI - see doc/crew-ai
+
+There's then a big loop to allocate the rest of the power:
+
+If the ship is hostile and not escaping, power up one weapon. If there's a
+weapon that's powered off that's playing it's firing animation, use that.
+
+Otherwise, loop through all the powered-off weapons, and keep track of the
+weapon that has been charging for the longest. There's a major bit of
+weirdness, however. When the charge time is stored, it's rounded down, as
+shown in this pseudocode:
+
+bestWeapon = null
+bestWeaponTime = -1
+for weapon in poweredOffWeapons:
+    if weapon.chargingTime > bestWeaponTime:
+        bestWeaponTime = roundDown(weapon.chargingTime)
+        bestWeapon = weapon
+
+This means that unless the weapons have all been charging for an integer
+amount of time (which in practice means they were off until now), they'll
+strongly prefer weapons that appear in the list later (further to the right,
+if the enemy had a weapons panel like the player) if there's multiple weapons
+with the same charge time.
+
+This also means that the AI will swap weapon powers, if a weapon has just fired
+and another was was powered off but hasn't yet lost all it's charge.
+
+Next, and also with the hostile-and-not-escaping check, attempt to power up
+a drone.
+
+Then attempt to power up shields, cloaking, and engines, in that order.
+
+This loop repeats until no more power was added to any of drones, shields,
+cloaking, or engines. This notably excludes weapons - thus this loop can
+end if the ship has one shield/engine and three weapons, with only two of
+the weapons turned on.
+
+Finally, go through each system in this order and try to add as much power
+to it as possible:
+
+Shields, Engines, Oxygen, Weapons, Drone, Medbay, Teleporter, Cloaking,
+Artillery, Clonebay, Mind Control, Hacking
+
+(this is just the numerical order of the system IDs, so it's not an order
+ that was picked specifically for this purpose - eg, the Advanced Edition
+ systems are all at the end)
+

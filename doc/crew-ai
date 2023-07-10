@@ -34,6 +34,10 @@ Then path to the medbay.
 If the health is low but the medbay is inaccessible, mark
 the medbay as requested (this adjusts repair priorities).
 
+Set bHurtCrew (used by ShipAI for powering the medbay) if any crew
+is assigned to the healing task, or if any crew satisfy the first
+per-crew condition (<25% or <99% health for busy/calm ship).
+
 
 CrewAI::DangerRating:
 

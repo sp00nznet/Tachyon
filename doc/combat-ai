@@ -1,0 +1,100 @@
+This controls the weapons, mind control and maybe other systems (such as
+hacking and cloaking) on an enemy ship. It's all in the CombatAI class.
+
+
+
+CombatAI::UpdateWeapons
+
+If the ship is cloaked and the bFiringWhileCloaked flag isn't set, then this
+function immediately returns (see OnLoop for more information).
+
+If the player ship is cloaked, this function also does nothing (technically
+it skips each weapon, but the the outcome is the same).
+
+The rest of the function is a big loop over all the ship's weapons:
+
+If a weapon isn't charged, or (for charge weapons) it hasn't reached
+goalChargeLevel, then this weapon is skipped.
+
+If the weapon is fully charged (or always for a non-charge weapon), the weapon
+is now fired:
+* Pick the number of target rooms - 1 for charge weapons, the number of shots
+  for any other weapons.
+* For each shot, call PrioritizeSystem to pick a system to fire at, or chose a
+  random room if it returns null.
+* Call ProjectileFactory::Fire to queue up shots at the selected rooms.
+* For charge weapons, randomly set goalChargeLevel between 1 and the maximum
+  number of shots the weapon can fire (this is done in the
+  ProjectileFactory::SelectChargeGoal function).
+* Skip the rest of the logic for this weapon.
+
+Otherwise, find the number of remaining shots that can be charged, plus one.
+Then take a random chance of 1:n where n is the number we just found. If the
+chance succeeds, run the firing logic above.
+
+This seems a bit weird, as with a reasonable frame rate it'll only delay
+charge weapons that have reached the goalChargeLevel by a few frames. I'm
+guessing it was a previous attempt to regulate the number of shots fired
+before the goal system was written, and Matthew Davis forgot to remove it.
+
+
+
+CombatAI::OnLoop
+
+This first runs UpdateWeapons.
+
+Next, it checks if the ship can cloak (a cloaking system is installed, and it's
+not on cooldown or active). If so, it starts a cloak and randomly sets
+bFiringWhileCloaked to a true/false value.
+
+Next, it checks if the ship has a hacking system, and if so it'll either launch
+a hacking probe at a random enemy system (if the probe isn't yet launched), or
+start the hacking pulse if it's not active or on cooldown.
+
+
+
+CombatAI::PrioritizeSystem
+
+(this function is called to determine what system we should shoot any
+ given shot at, and is called once for each shot)
+
+On normal/easy, there's a 33%/20% (for normal/easy respectively) to pick a
+system to target from the system_targets list. Otherwise it returns null
+and a random room is selected by the ChooseTarget function (which is inlined
+into UpdateWeapons).
+
+If the selected target isn't present in the player ship, this function also
+returns null, so if you're lacking a system in this list it'll decrease the
+probability that any given shot is targeted at a system.
+
+For hard mode, it's significantly more complicated.
+It loops through all the systems on the player ship, and marks some of them
+as high-priority systems:
+
+* Shields:             if powered
+* Engines, Piloting:   if ship has >25% dodge
+* Oxygen:              if average oxygen is <50%
+* Weapons, Drones:     if any weapon/drone is powered
+* Teleporter:          if the enemy ship has any intruders
+* Cloaking:            if not on cooldown, nor active
+* Artillery:           yes if < 4sec of total charge (see below)
+* Clonebay:            if crew is being cloned (ignores DNA backup)
+* Mind control:        if active
+* Hacking:             if drone launched (flying or landed), probably
+* Doors:               if there are any intruders or fires
+* Sensors:             never
+* Backup battery:      if active
+
+For the artillery system, the game checks if it's been charging for less
+than four seconds. I assume it was intended to check if it'll fire in
+the next four seconds, but that logic appears to be faulty. I'm guessing
+no-one ever actually tested it.
+
+Next, it takes a chance:
+
+* 50%: Don't target a system, return null (a random room is picked)
+* 25%: Pick a random system
+* 25%: Pick a high-priority system at random if there is one, otherwise
+        pick a system at random.
+
+
