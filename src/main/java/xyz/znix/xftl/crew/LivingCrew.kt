@@ -80,7 +80,11 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
     override fun onFinishedExtinguishing() {
         super.onFinishedExtinguishing()
-        addSkillPoint(Skill.REPAIRS)
+
+        // Putting out fires doesn't give repair skill. The code for it is
+        // there in vanilla, but Repairable::PartialRepair compares the final
+        // negative health value to zero to check if it's done, which is
+        // thus always false.
     }
 
     override fun onKilledCrew(enemy: AbstractCrew) {
