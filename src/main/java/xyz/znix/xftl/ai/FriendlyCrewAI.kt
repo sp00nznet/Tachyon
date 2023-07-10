@@ -2,6 +2,7 @@ package xyz.znix.xftl.ai
 
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.layout.FireInstance
@@ -33,6 +34,11 @@ class FriendlyCrewAI(private val ship: Ship) {
                 continue
 
             if (crew.mode != AbstractCrew.SlotType.CREW)
+                continue
+
+            // Don't set tasks for dying crew. Vanilla has a separate task
+            // for dying, so ignoring them does the same thing.
+            if (crew.currentAction == AbstractCrew.Action.DYING)
                 continue
 
             // TODO mind-controlled boarders
@@ -69,7 +75,7 @@ class FriendlyCrewAI(private val ship: Ship) {
                 }
             }
 
-            if (room.fires.any { it != null } && room.oxygen < FireInstance.OXYGEN_CUTOFF) {
+            if (room.fires.any { it != null } && room.oxygen > FireInstance.OXYGEN_CUTOFF) {
                 tasks += ExtinguishFireTask(this, room)
                 tasks += ExtinguishFireTask(this, room)
             }
@@ -85,6 +91,18 @@ class FriendlyCrewAI(private val ship: Ship) {
             }
         }
 
+        // Figure out if the ship is calm, used for healing crew
+        // at nearly-full health.
+        val isShipCalm = tasks.none {
+            when (it) {
+                is CombatTask -> true
+                is RepairTask -> true
+                is ExtinguishFireTask -> true
+                // TODO breaches
+                else -> false
+            }
+        }
+
         // Remove the tasks currently being performed, so we don't
         // assign the same task to multiple crew (unless multiple
         // of it are added to the tasks list).
@@ -94,11 +112,34 @@ class FriendlyCrewAI(private val ship: Ship) {
             if (isRoomDisabled(crew.room))
                 continue
 
-            val oldTask = assignments[crew] ?: continue
+            var task = assignments[crew] ?: continue
 
             // Tasks can automatically reassign their crew, usually back to
             // idle. This matches the CrewAI::UpdateCrewMember logic.
-            val task = oldTask.nextTask(crew) ?: continue
+            task = task.nextTask(crew) ?: continue
+
+            // If we're low on health, make our way to the medbay.
+            val healingThreshold = if (isShipCalm) 0.99f else 0.25f
+            val medbay = ship.medbay
+            val medbayDangerous = medbay?.let { AIUtils.isDangerous(crew, medbay.room!!) }
+            if (
+                task !is HealingTask &&
+                crew is LivingCrew &&
+                medbay != null &&
+                crew.health / crew.maxHealth < healingThreshold &&
+                medbay.energyLevels > 0 &&
+                medbayDangerous == false
+            ) {
+                // Try to start pathfinding there immediately, and if there's
+                // no space, keep our current task so we can continue
+                // doing something useful while we wait for whoever is in
+                // there now to heal up and leave.
+                val setPath = crew.setTargetRoom(medbay.room!!)
+
+                if (setPath) {
+                    task = HealingTask(this, medbay.room!!)
+                }
+            }
 
             tasks.remove(task)
             newAssignments[crew] = task
@@ -328,3 +369,25 @@ class CombatTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
         return crew.canFight
     }
 }
+
+class HealingTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
+    override fun priorityWithoutDanger(crew: AbstractCrew): Int {
+        return 0
+    }
+
+    override fun isSuitable(crew: AbstractCrew): Boolean {
+        return crew is LivingCrew
+    }
+
+    override fun nextTask(crew: AbstractCrew): AITask? {
+        val medbay = room.system as Medbay
+
+        if (medbay.isHackActive || crew.health == crew.maxHealth)
+            return null
+
+        return this
+    }
+}
+
+// TODO repair hull breach task
+// TODO teleporting task
