@@ -80,7 +80,9 @@ class FriendlyCrewAI(private val ship: Ship) {
                 tasks += ExtinguishFireTask(this, room)
             }
 
-            // TODO one task if there's a hull breach
+            if (room.breaches.any { it != null }) {
+                tasks += RepairBreachTask(this, room)
+            }
 
             // One task for each intruder
             for (crew in room.crew) {
@@ -97,8 +99,8 @@ class FriendlyCrewAI(private val ship: Ship) {
             when (it) {
                 is CombatTask -> true
                 is RepairTask -> true
+                is RepairBreachTask -> true
                 is ExtinguishFireTask -> true
-                // TODO breaches
                 else -> false
             }
         }
@@ -310,6 +312,16 @@ class RepairTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
     }
 }
 
+class RepairBreachTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
+    override fun priorityWithoutDanger(crew: AbstractCrew): Int {
+        return AIUtils.systemPriority(room.system) + 32
+    }
+
+    override fun isSuitable(crew: AbstractCrew): Boolean {
+        return crew.canRepair
+    }
+}
+
 class ExtinguishFireTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
     override fun priorityWithoutDanger(crew: AbstractCrew): Int {
         return AIUtils.systemPriority(room.system) + 16
@@ -389,5 +401,4 @@ class HealingTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
     }
 }
 
-// TODO repair hull breach task
 // TODO teleporting task
