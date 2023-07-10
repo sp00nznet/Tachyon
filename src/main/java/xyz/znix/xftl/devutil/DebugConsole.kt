@@ -429,6 +429,7 @@ class DebugConsole(var game: InGameState) {
         for (room in targetShip.rooms) {
             for (idx in room.fires.indices) {
                 room.fires[idx] = null
+                room.breaches[idx] = null
             }
         }
 

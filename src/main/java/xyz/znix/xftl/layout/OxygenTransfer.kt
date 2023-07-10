@@ -20,9 +20,7 @@ object OxygenTransfer {
 
             drainRate += 0.16f * room.doors.count { it.isAirlock && it.open }.f
 
-            // TODO hull breaches
-            val numHullBreaches = 0
-            drainRate += numHullBreaches * 0.8f
+            drainRate += 0.08f * room.breaches.count { it != null }
 
             // Check if there's any drain other than from anaerobic crew, in
             // which case we'll play the sound leaking noise if appropriate.

@@ -893,6 +893,11 @@ class Ship(
             target.spawnFire()
         }
 
+        if (Random.rollChance(type.breachChance * 10) && !sys.debugFlags.noDmg.set) {
+            // Spawns two fires (or possibly only one, if they both roll on the same cell).
+            target.spawnBreach()
+        }
+
         if (!vfx) return
 
         playDamageEffect(type, target.pixelCentre)

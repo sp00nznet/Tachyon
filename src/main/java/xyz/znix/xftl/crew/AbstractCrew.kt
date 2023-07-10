@@ -182,6 +182,7 @@ abstract class AbstractCrew(
 
     // The room slot of the fire we're currently putting out, or -1.
     private var currentFireSlot: Int = -1
+    private var currentBreachSlot: Int = -1
 
     val screenX: Int get() = pixelPosition.x
     val screenY: Int
@@ -517,23 +518,9 @@ abstract class AbstractCrew(
 
 
         // Check if this room is on fire, and we need to put it out.
-        var changedFire = false
-        if (currentFireSlot != -1 && room.fires[currentFireSlot] == null) {
-            // The fire we were fighting has gone out, so either pick
-            // a different one or switch to another action.
-            currentFireSlot = -1
-            changedFire = true
-        }
-        if (currentFireSlot == -1 && canRepair) {
-            currentFireSlot = findFirstFire()
-        }
+        currentFireSlot = selectFireOrBreach(currentFireSlot, room.fires)
         if (currentFireSlot != -1) {
             currentAction = Action.FIRE_FIGHTING
-
-            // We have to change our animation if we move on to a new fire.
-            if (changedFire) {
-                updateAnimation()
-            }
 
             // See doc/fires. We include the 1.2x multiplier here, rather
             // than in the fire speed multiplier.
@@ -547,6 +534,22 @@ abstract class AbstractCrew(
             }
 
             // TODO draw the fire extinguisher particles.
+
+            return
+        }
+
+        // Do the same for fixing hull breaches.
+        currentBreachSlot = selectFireOrBreach(currentBreachSlot, room.breaches)
+        if (currentBreachSlot != -1) {
+            currentAction = Action.REPAIRING_BREACH
+
+            val currentBreach = room.breaches[currentBreachSlot]!!
+            currentBreach.health -= 0.08f * repairSpeed * dt
+
+            if (currentBreach.health == 0f) {
+                onFinishedBreachRepair()
+                room.breaches[currentBreachSlot] = null
+            }
 
             return
         }
@@ -917,7 +920,7 @@ abstract class AbstractCrew(
             Action.MANNING -> anims["${codename}_type_${dirAsString(room.system!!.configuration.computerDirection!!)}"]
                 .startLooping(game)
 
-            Action.REPAIRING -> anims["${codename}_repair"].startLooping(game)
+            Action.REPAIRING, Action.REPAIRING_BREACH -> anims["${codename}_repair"].startLooping(game)
 
             Action.FIGHTING, Action.SABOTAGE, Action.ATTACKING_DOOR -> {
                 // Figure out the direction.
@@ -1131,6 +1134,12 @@ abstract class AbstractCrew(
     }
 
     /**
+     * Called whenever this crewmember finishes repairing a breach.
+     */
+    open fun onFinishedBreachRepair() {
+    }
+
+    /**
      * Called whenever this crewmember finishes putting out a fire.
      */
     open fun onFinishedExtinguishing() {
@@ -1206,13 +1215,35 @@ abstract class AbstractCrew(
         roomPosition = RoomPoint(room, cellX, cellY)
     }
 
-    private fun findFirstFire(): Int {
+    private fun selectFireOrBreach(currentSlot: Int, slots: Array<*>): Int {
+        var newSlot = currentSlot
+        var changedSlot = false
+        if (newSlot != -1 && slots[newSlot] == null) {
+            // The fire we were fighting has gone out, so either pick
+            // a different one or switch to another action.
+            newSlot = -1
+            changedSlot = true
+        }
+        if (newSlot == -1 && canRepair) {
+            newSlot = findFirstFireOrBreach(slots)
+        }
+        if (newSlot == -1)
+            return newSlot
+
+        // We have to change our animation if we move on to a new fire.
+        if (changedSlot) {
+            updateAnimation()
+        }
+        return newSlot
+    }
+
+    private fun findFirstFireOrBreach(slots: Array<*>): Int {
         // This order is annoyingly different to the crew slot order
         for (x in 0 until room.width) {
             for (y in 0 until room.height) {
                 val idx = x + y * room.width
 
-                if (room.fires[idx] != null) {
+                if (slots[idx] != null) {
                     return idx
                 }
             }
@@ -1278,6 +1309,10 @@ abstract class AbstractCrew(
 
         if (currentAction == Action.FIRE_FIGHTING) {
             SaveUtil.addTagInt(elem, "fireSlot", currentFireSlot)
+        }
+
+        if (currentAction == Action.REPAIRING_BREACH) {
+            SaveUtil.addTagInt(elem, "breachSlot", currentBreachSlot)
         }
 
         // Serialise the animation progress, so we can use it for stuff like
@@ -1362,6 +1397,10 @@ abstract class AbstractCrew(
             currentFireSlot = SaveUtil.getTagInt(elem, "fireSlot")
         }
 
+        if (currentAction == Action.REPAIRING_BREACH) {
+            currentBreachSlot = SaveUtil.getTagInt(elem, "breachSlot")
+        }
+
         // Load this *after* the enemy we're attacking is set, which
         // means during resolution time.
         refs.addOnResolveFunction {
@@ -1390,6 +1429,7 @@ abstract class AbstractCrew(
         ATTACKING_DOOR,
         MANNING, // Working at a computer
         REPAIRING,
+        REPAIRING_BREACH,
         FIRE_FIGHTING,
         FIGHTING,
         SABOTAGE,

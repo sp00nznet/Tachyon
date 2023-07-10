@@ -74,6 +74,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val pixelHeight = height * ROOM_SIZE
 
     val fires: Array<FireInstance?> = Array(width * height) { null }
+    val breaches: Array<BreachInstance?> = Array(width * height) { null }
     private val fireSpreadTimers: Array<Float?> = Array(width * height) { null }
     private val fireSpreadUpdated: Array<Boolean> = Array(width * height) { false }
 
@@ -173,6 +174,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         }
 
         renderSystemStuff(g)
+
+        // Breaches are drawn on top of the room image
+        for (breach in breaches) {
+            breach?.draw()
+        }
 
         // Draw the pathing-to boxes, if required
         reservedPlayerSlots.forEachIndexed draw@{ i, crew ->
@@ -635,6 +641,18 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         }
     }
 
+    fun spawnBreach() {
+        // Same mechanics as spawning a fire.
+        val slot = breaches.indices.random()
+
+        val existingBreach = breaches[slot]
+        if (existingBreach != null) {
+            existingBreach.health = 1f
+        } else {
+            breaches[slot] = BreachInstance(this, slot)
+        }
+    }
+
     /**
      * Called by [FireInstance] to spread itself to adjacent tiles.
      *
@@ -670,7 +688,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     fun saveToXML(): Element? {
         // The oxygen level is handled separately.
 
-        if (fires.all { it == null } && fireSpreadTimers.all { it == null }) {
+        if (fires.all { it == null } && fireSpreadTimers.all { it == null } && breaches.all { it == null }) {
             return null
         }
 
@@ -700,6 +718,16 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             }
         }
 
+        for ((slot, breach) in breaches.withIndex()) {
+            if (breach == null)
+                continue
+
+            val breachElem = Element("breach")
+            SaveUtil.addAttrInt(breachElem, "slot", slot)
+            breach.saveToXML(breachElem)
+            elem.addContent(breachElem)
+        }
+
         return elem
     }
 
@@ -715,6 +743,13 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             val slot = SaveUtil.getAttrInt(spreadElem, "slot")
             fireSpreadTimers[slot] = SaveUtil.getAttrFloat(spreadElem, "timer")
             fireSpreadUpdated[slot] = SaveUtil.getAttrBool(spreadElem, "updated")
+        }
+
+        for (breachElem in elem.getChildren("breach")) {
+            val slot = SaveUtil.getAttrInt(breachElem, "slot")
+            val breach = BreachInstance(this, slot)
+            breach.loadFromXML(breachElem)
+            breaches[slot] = breach
         }
     }
 
