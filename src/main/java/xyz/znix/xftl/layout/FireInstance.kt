@@ -44,6 +44,9 @@ class FireInstance(val room: Room, val slot: Int) {
         // Same damage as crew
         room.system?.attack(dt * 0.08f)
 
+        // Drains 0.96% oxygen per second, per fire.
+        room.oxygen -= dt * 0.0096f
+
         val lowO2 = room.oxygen < OXYGEN_CUTOFF
 
         // Spread to adjacent cells, and also count how many adjacent fires there are.
