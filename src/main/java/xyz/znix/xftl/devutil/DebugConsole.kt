@@ -83,6 +83,7 @@ class DebugConsole(var game: InGameState) {
         Cmd("damage", 1, this::cmdDamage, "Apply a given amount of damage to the player ship (or negative to heal)"),
         Cmd("force-hack", 1, this::cmdForceHack, "Forces the enemy to hack a given player system"),
         Cmd("super-shield", null, this::cmdSuperShield, "Give the player (or enemy) a super-shield (see help sub-cmd)"),
+        Cmd("env", null, this::cmdEnvironment, "Change the environment at the current beacon"),
         Cmd("dump-save", null, this::cmdDumpSave, "Save the game to XML, and print it to standard output"),
         Cmd("save-load", null, this::cmdSaveLoad, "Save the game to XML, and load it back in."),
         Cmd("gc", null, this::cmdGC, "Manually trigger Java's Garbage Collector."),
@@ -1038,6 +1039,16 @@ class DebugConsole(var game: InGameState) {
         target.superShield = amount
 
         addLine("Added $amount/$max super-shield to ship ${target.name}.")
+    }
+
+    private fun cmdEnvironment(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+        val items = Beacon.EnvironmentType.values().map { Pair(it.name, it) }
+
+        pickFromList("Environment", items) { type ->
+            val beacon = game.currentBeacon
+            val environment = type.create(game, beacon)
+            beacon.debugSetEnvironment(environment)
+        }
     }
 
     private fun cmdDumpSave(@Suppress("UNUSED_PARAMETER") args: List<String>) {

@@ -79,15 +79,10 @@ public class InGameState extends MainGame.GameState {
     // the current one.
     private final ArrayList<GameMap.SectorInfo> visitedSectors = new ArrayList<>();
 
-    private EnvironmentImage background;
-    private EnvironmentImage planet;
-
     private DebugConsole debugConsole;
     private boolean debugConsoleVisible;
 
     private DebugFlagManager debugFlags = new DebugFlagManager();
-
-    private float asteroidAnimationTimer;
 
     private boolean isCurrentlyLoadingSave;
 
@@ -139,8 +134,6 @@ public class InGameState extends MainGame.GameState {
 
         // This just loads stuff from XML, we don't need to serialise it
         lootPool = new LootPool(blueprintManager, currentBeacon.getSector().getType());
-
-        loadBeaconEnvironment();
 
         // Give all the ships an update, for stuff like the
         // doors automatically opening. This must only be done once all
@@ -248,8 +241,6 @@ public class InGameState extends MainGame.GameState {
             updateGameState(0.01f);
 
         shipUI.updateAlways(delta);
-
-        asteroidAnimationTimer += delta;
 
         hoveredRoom = null;
 
@@ -392,7 +383,7 @@ public class InGameState extends MainGame.GameState {
 
     @Override
     public void render(@NotNull GameContainer container, @NotNull Graphics g) throws SlickException {
-        renderBackground(container, g);
+        currentBeacon.getEnvironment(this).renderBackground(container, g);
 
         // Get the player's ship away from the top UI
         g.pushTransform();
@@ -427,40 +418,9 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
-    private void renderBackground(GameContainer gc, Graphics g) throws SlickException {
-        if (currentBeacon.getEnvironmentType() == Beacon.EnvironmentType.ASTEROID) {
-            // The actual background
-            getImg("img/stars/bg_dullstars.png").draw();
-
-            // Rough speeds measured from FTL
-            // back img = ~13sec to traverse weapons bar (~400px)
-            // middle img = ~10sec
-            // foreground img = ~8sec
-            renderAsteroid(gc, getImg("img/asteroids/asteroid_back1.png"), 400f / 13);
-            renderAsteroid(gc, getImg("img/asteroids/asteroid_back2.png"), 400f / 10);
-            renderAsteroid(gc, getImg("img/asteroids/asteroid_back3.png"), 400f / 8);
-
-            return;
-        }
-
-        if (background != null) {
-            background.getImg(this).draw();
-        }
-        if (planet != null) {
-            planet.getImg(this).draw();
-        }
-    }
-
-    private void renderAsteroid(GameContainer gc, Image img, float speed) {
-        int offset = (int) (asteroidAnimationTimer * speed) % img.getWidth();
-        for (int x = -offset; x < gc.getWidth(); x += img.getWidth()) {
-            for (int y = 0; y < gc.getHeight(); y += img.getHeight()) {
-                img.draw(x, y);
-            }
-        }
-    }
-
     private void updateGameState(float dt) {
+        currentBeacon.getEnvironment(this).update(dt);
+
         shipUI.update();
         player.update(dt);
 
@@ -607,17 +567,6 @@ public class InGameState extends MainGame.GameState {
         currentBeacon.setVisited(true);
 
         // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
-
-        // Load the visual stuff like this beacon's background
-        loadBeaconEnvironment();
-    }
-
-    private void loadBeaconEnvironment() {
-        var images = currentBeacon.getEnvironmentImages(this);
-        planet = images.getFirst();
-        background = images.getSecond();
-
-        // TODO load image settings from text tags
     }
 
     private void spawnFlagship() {

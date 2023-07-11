@@ -2,6 +2,9 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.environment.AbstractEnvironment
+import xyz.znix.xftl.environment.AsteroidEnvironment
+import xyz.znix.xftl.environment.NormalEnvironment
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
@@ -140,8 +143,7 @@ class Beacon(
             }
         }
 
-    private var backgroundImageIndex: Int = Random.nextInt(999)
-    private var planetImageIndex: Int = Random.nextInt(999)
+    private var actualEnvironment: AbstractEnvironment? = null
 
     fun getStore(game: InGameState): StoreData? {
         if (!hasStore)
@@ -162,43 +164,19 @@ class Beacon(
         }
     }
 
+    fun getEnvironment(game: InGameState): AbstractEnvironment {
+        actualEnvironment?.let { return it }
+
+        val env = environmentType.create(game, this)
+        actualEnvironment = env
+        return env
+    }
+
     /**
-     * Get the image to use for the planet and background (in that order in the pair).
+     * FOR USE WITH THE DEBUG CONSOLE ONLY!
      */
-    fun getEnvironmentImages(game: InGameState): Pair<EnvironmentImage?, EnvironmentImage> {
-        // We have three goals here:
-        // 1. If the environment or event changes, the background should too.
-        // 3. We can't be random here, we need to deserialise to the same values each time.
-        // 3. Make the planet/background information easy to serialise.
-        // Thus pick the image list for the planet and background deterministically,
-        // and serialise the index into that list. If the list changes and the index
-        // becomes invalid, we can just pick a new one.
-        // This does have the limitation that if the event changes to one with a new
-        // image list that's larger than the previous one we won't be able to access
-        // all it's images. To get around it, we actually serialise a large random number
-        // which we then use as an index into the image list, modulo the list's size.
-
-        var backgroundList: ImageList = game.eventManager.getImageList("BACKGROUND")
-        var planetList: ImageList = game.eventManager.getImageList("PLANET")
-
-        val bgName = environmentType.backgroundName
-        if (bgName != null) {
-            val backgroundImg = EnvironmentImage("img/stars/$bgName.png")
-            return Pair(null, backgroundImg)
-        }
-
-        event.backImg?.let { backgroundList = it }
-        event.planetImg?.let { planetList = it }
-
-        val backImg = backgroundList.getRandom(backgroundImageIndex)
-        val planetImg = planetList.getRandom(planetImageIndex)
-
-        requireNotNull(backImg) { "Cannot set NONE as a background image with event ${event.deserialisationId}" }
-
-        // TODO show the rebel fleet in the background if we're at an overtaken beacon
-        // TODO show the flagship rebel/fed mixed fight backgrounds
-
-        return Pair(planetImg, backImg)
+    fun debugSetEnvironment(environment: AbstractEnvironment) {
+        actualEnvironment = environment
     }
 
     fun saveToXML(elem: Element, refs: ObjectRefs) {
@@ -218,9 +196,12 @@ class Beacon(
         // identify them, not store all their data.
         SaveUtil.addAttr(elem, "eventId", event.deserialisationId)
 
-        // See getEnvironmentImages for more information on these.
-        SaveUtil.addAttrInt(elem, "planetImg", planetImageIndex)
-        SaveUtil.addAttrInt(elem, "backImg", backgroundImageIndex)
+        // This both marks the set environment, and whether the environment
+        // object needs to be deserialised.
+        if (actualEnvironment != null) {
+            SaveUtil.addAttr(elem, "env", actualEnvironment!!.type.name)
+            actualEnvironment!!.saveToXML(elem)
+        }
 
         if (internalStore != null) {
             val storeElem = Element("storeData")
@@ -271,8 +252,13 @@ class Beacon(
             beacon.hasStore = SaveUtil.getOptionalTagBool(elem, "hasStore") ?: false
             beacon.hasQuest = SaveUtil.getOptionalTagBool(elem, "hasQuest") ?: false
 
-            beacon.planetImageIndex = SaveUtil.getAttrInt(elem, "planetImg")
-            beacon.backgroundImageIndex = SaveUtil.getAttrInt(elem, "backImg")
+            // Load environment-specific data, if we've visited this beacon.
+            val envName = elem.getAttributeValue("env")
+            val envType = envName?.let { EnvironmentType.valueOf(it) }
+            if (envType != null) {
+                beacon.actualEnvironment = envType.create(game, beacon)
+                beacon.actualEnvironment!!.loadFromXML(elem)
+            }
 
             val storeElem = elem.getChild("storeData")
             if (storeElem != null) {
@@ -305,13 +291,17 @@ class Beacon(
         OVERTAKEN,
     }
 
-    enum class EnvironmentType(val backgroundName: String?, val isDangerous: Boolean) {
-        NORMAL(null, false),
-        ASTEROID("low_asteroid", true),
-        SUN("low_sun", true),
-        PULSAR("low_pulsar", true),
-        NEBULA("low_nebula", false),
-        ION_STORM("low_storm", false);
+    enum class EnvironmentType(
+        val backgroundName: String?,
+        val isDangerous: Boolean,
+        val create: (InGameState, Beacon) -> AbstractEnvironment
+    ) {
+        NORMAL(null, false, ::NormalEnvironment),
+        ASTEROID(null, true, ::AsteroidEnvironment),
+        SUN("low_sun", true, ::NormalEnvironment), // TODO implement
+        PULSAR("low_pulsar", true, ::NormalEnvironment), // TODO implement
+        NEBULA(null, false, ::NormalEnvironment), // TODO implement
+        ION_STORM(null, false, ::NormalEnvironment); // TODO implement
 
         // TODO how should we represent PDS/ABSes, given they can be targed at the player or enemy (or both?)
 
