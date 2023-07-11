@@ -1218,7 +1218,14 @@ public class InGameState extends MainGame.GameState {
 
             player.damage(targetRoom, damage.getAmount(), damage.getAmount(), 0, 0);
 
-            // TODO apply the fire and breach damage.
+            if (damage.getEffectFire()) {
+                targetRoom.spawnFire();
+                targetRoom.spawnFire();
+            }
+            if (damage.getEffectBreach()) {
+                targetRoom.spawnBreach();
+            }
+
             // TEST_EVENT is a good way to test this, as it spawns both of them.
         }
 
