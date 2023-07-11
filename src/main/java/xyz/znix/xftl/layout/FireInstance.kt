@@ -2,16 +2,16 @@ package xyz.znix.xftl.layout
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import xyz.znix.xftl.FTLAnimation
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.LoopHandle
 import xyz.znix.xftl.game.UIUtils
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
+import kotlin.random.Random
 
 /**
  * This represents one cell of fire in a room.
@@ -30,6 +30,12 @@ class FireInstance(val room: Room, val slot: Int) {
 
     private val animation: FTLAnimation = ship.sys.animations["fire_large"].startLooping(ship.sys)
     private val sound: LoopHandle = ship.sys.sounds.getLoop("fire")
+
+    init {
+        // Start at a random point in the animation, to make sure we don't
+        // have multiple fires that are in-sync with each other.
+        animation.timer = (0f..animation.duration).random(Random)
+    }
 
     fun update(dt: Float) {
         sound.continueLoopPlayerOnly(ship)
@@ -96,8 +102,14 @@ class FireInstance(val room: Room, val slot: Int) {
     }
 
     private fun extinguish() {
-        // TODO smoke animation
         room.fires[slot] = null
+
+        // Play the smoke animation
+        val centreOffset = ConstPoint(
+            pos.offsetX + Constants.ROOM_SIZE / 2,
+            pos.offsetY + Constants.ROOM_SIZE / 2
+        )
+        ship.playCentredAnimation(SMOKE_ANIMATION, centreOffset)
     }
 
     private fun checkConnection(from: IPoint, to: IPoint): Pair<Boolean, Door?> {
@@ -161,5 +173,17 @@ class FireInstance(val room: Room, val slot: Int) {
 
     companion object {
         const val OXYGEN_CUTOFF = 0.1f // Starts burning out at 10% o2
+
+        // The smoke animation is hardcoded
+        private val SMOKE_SPRITE_SHEET = Animations.SpriteSheetSpec(
+            "img/effects/fire_smoke.png",
+            34, 34, 238, 34
+        )
+        private val SMOKE_ANIMATION = AnimationSpec(
+            SMOKE_SPRITE_SHEET, "hardcoded_smoke",
+            0, 0,
+            SMOKE_SPRITE_SHEET.horizontalCount,
+            1f / SMOKE_SPRITE_SHEET.horizontalCount
+        )
     }
 }
