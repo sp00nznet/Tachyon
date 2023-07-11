@@ -168,7 +168,7 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
 
         // The portrait frame of the robot, which is shown on top
         // of the thruster sprite
-        val portrait = game.animations["battle_portrait"].spriteAt(ship.sys, 0)
+        val portrait = game.animations["battle_portrait"].spriteAt(game, 0)
 
         val thruster = game.getImg("img/ship/drones/boarder_engine.png")
 
