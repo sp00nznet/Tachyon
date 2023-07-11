@@ -117,10 +117,6 @@ public class Constants {
     public static final float SHIELD_OPACITY_BASE = 0.4f;
     public static final float SHIELD_OPACITY_SCALING = (1 - SHIELD_OPACITY_BASE);
 
-    // Time in seconds it takes a single human to repair one bar of a system
-    // TODO measure more accurately
-    public static final float BASE_REPAIR_TIME = 13.0f;
-
     public static final Color CLONE_DYING_FILTER = new Color(1f, 0.3f, 0.3f);
 
     public static final Color CREW_BOX_NORMAL = new Color(100, 100, 100);

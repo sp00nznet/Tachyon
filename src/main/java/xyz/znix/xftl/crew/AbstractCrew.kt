@@ -558,7 +558,9 @@ abstract class AbstractCrew(
         system?.let { sys ->
             if (sys.damaged && mode == SlotType.CREW && canRepair) {
                 currentAction = Action.REPAIRING
-                val didRepair = sys.repair(repairSpeed * dt / BASE_REPAIR_TIME)
+                // The base repair speed is 8% per second, or 12.5 seconds to
+                // repair one bar of damage.
+                val didRepair = sys.repair(repairSpeed * 0.08f * dt)
                 if (didRepair) {
                     // Builds skill in living crew
                     onFinishedRepair(sys)
