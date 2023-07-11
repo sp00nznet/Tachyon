@@ -249,7 +249,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         // If we hit a new room, damage it
                         if (lastRoomId != room.id) {
                             lastRoomId = room.id
-                            targetShip.damage(room, beamPower, beamPower, 0)
+                            // Don't deal crew damage here, we do that per-cell ourselves
+                            targetShip.damage(room, beamPower, beamPower, 0, 0)
                         }
 
                         // Deal crew damage - this is done on entry to a new cell, not only to a new room.

@@ -391,8 +391,9 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
             // I'm guessing this is how vanilla determines the damage to be done?
             val ionDamage = if (type.ionDamage != 0) chainDamage else 0
             val hullDamage = if (type.damage != 0) chainDamage else 0
+            val crewDamage = type.personnelDamage ?: hullDamage
 
-            ship.damage(target, hullDamage, hullDamage, ionDamage)
+            ship.damage(target, hullDamage, hullDamage, ionDamage, crewDamage * 15)
         }
     }
 
