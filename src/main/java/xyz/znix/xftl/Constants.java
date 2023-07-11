@@ -148,6 +148,9 @@ public class Constants {
     public static final Color UPGRADE_DETAILS_BG_OFF = new Color(53, 43, 45);
     public static final Color UPGRADE_DETAILS_POWER_OFF = new Color(255, 255, 100, 64);
 
+    public static final Color SOLAR_FLARE_FILTER = new Color(248, 129, 33);
+    public static final Color PULSAR_PULSE_FILTER = new Color(133, 231, 237);
+
     public static final String MISSING_FILE_PATH = "xftl-missing.png";
 
     private Constants() {

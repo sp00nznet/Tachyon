@@ -1,0 +1,17 @@
+These occur once every 28-34 seconds.
+The sound effect (which starts with a little bit of silence, so
+you'll only get the full warning if you keep pausing) starts playing
+1.2 seconds ahead of the flare.
+
+With no shields (including Zoltan shields), 3-6 fires will be started.
+Otherwise, 1-2 fires are started. Note the number of shields bubbles doesn't
+affect the number of fires, as long as you have at least one.
+
+While there are more fires to start, pick a random room. Then spawn either
+1/2 fires (always 1 if there's only one left to spawn), and spawn it into
+the room. This uses the normal fire starting mechanics, so if there's
+already a fire in that room, it won't always start a new fire - it might
+just refill the health of an existing fire.
+
+For each room a fire is started in, there's a 33%/66% chance to deal a
+point of damage, depending on whether 1/2 fires were started in that room.

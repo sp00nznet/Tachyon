@@ -26,6 +26,11 @@ class DebugFlagManager {
         "Show the vectors representing the beam/shield contact"
     )
 
+    val showSunTimer = DebugFlag(
+        "sst", "Show sun/pulsar timer", true,
+        "Show how much time is left until the next solar flare/ion pulse"
+    )
+
     val fastWeaponCharge = DebugFlag(
         "fwc", "Fast Weapon Charge", false,
         "Weapons charge at ten times their normal speed"
@@ -83,6 +88,7 @@ class DebugFlagManager {
         showRoomNumbers,
         showFireTimers,
         showBeamVectors,
+        showSunTimer,
         fastWeaponCharge,
         noEnemyFire,
         noDmg,

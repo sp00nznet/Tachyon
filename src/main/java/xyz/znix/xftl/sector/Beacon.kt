@@ -2,10 +2,7 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
-import xyz.znix.xftl.environment.AbstractEnvironment
-import xyz.znix.xftl.environment.AsteroidEnvironment
-import xyz.znix.xftl.environment.NebulaEnvironment
-import xyz.znix.xftl.environment.NormalEnvironment
+import xyz.znix.xftl.environment.*
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.StoreData
 import xyz.znix.xftl.math.ConstPoint
@@ -299,7 +296,7 @@ class Beacon(
     ) {
         NORMAL(null, false, ::NormalEnvironment),
         ASTEROID(null, true, ::AsteroidEnvironment),
-        SUN("low_sun", true, ::NormalEnvironment), // TODO implement
+        SUN(null, true, ::SunEnvironment),
         PULSAR("low_pulsar", true, ::NormalEnvironment), // TODO implement
         NEBULA(null, false, { game, beacon -> NebulaEnvironment(game, beacon, false) }),
         ION_STORM(null, false, { game, beacon -> NebulaEnvironment(game, beacon, true) });

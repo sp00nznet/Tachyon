@@ -411,6 +411,9 @@ public class InGameState extends MainGame.GameState {
             pauseImg.draw(imgX, imgY);
         }
 
+        // Draw solar flares and pulsar pulses
+        currentBeacon.getEnvironment(this).renderOverlay(container, g);
+
         shipUI.renderMenus(container, g);
 
         if (debugConsoleVisible) {

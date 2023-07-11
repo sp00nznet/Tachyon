@@ -138,4 +138,6 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
             alpha = alpha.coerceIn(0f..1f)
         }
     }
+
+    // Don't bother serialising the clouds, since they're only visual.
 }

@@ -60,6 +60,14 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
         planetImage?.getImg(game)?.draw()
     }
 
+    /**
+     * Render something on top of everything else, including the UI.
+     *
+     * Used for solar flares and pulsars.
+     */
+    open fun renderOverlay(gc: GameContainer, g: Graphics) {
+    }
+
     open fun update(dt: Float) {
     }
 
