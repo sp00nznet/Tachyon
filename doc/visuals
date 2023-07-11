@@ -1,0 +1,17 @@
+Nebula clouds:
+
+These start off with alpha 0, and increase at 80% per second until they
+reach 100% alpha. They then fade at 3.2% per second.
+
+Once they decrease to the new cloud trigger point (randomly picked
+between 60%-90% alpha), the cloud fades at 16% per second and a new
+cloud is spawned in the same place.
+
+The clouds grow in size by 4.8% per second, and start with a scale of
+either 300% or 400% (selected at random).
+
+The initial clouds are set in a grid with spacing 350x230, and the points
+are randomised by ±60x40 each.
+
+The lightning in a plasma storm is triggered every 6.25 to 18.75 seconds,
+and this timer runs independently per cloud. The lighting lasts 0.25 seconds.

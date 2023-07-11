@@ -120,10 +120,13 @@ class Graphics {
      * Rotates subsequent drawing by [degrees], around the point at [pointX],[pointY].
      */
     fun rotate(pointX: Float, pointY: Float, degrees: Float) {
+        val radians = Math.toRadians(degrees.toDouble()).toFloat()
+        rotateRadians(pointX, pointY, radians)
+    }
+
+    fun rotateRadians(pointX: Float, pointY: Float, angle: Float) {
         // Translate so the rotation point is at the origin
         translate(pointX, pointY)
-
-        val angle = Math.toRadians(degrees.toDouble()).toFloat()
 
         // Effectively, we build a 2x2 matrix to use for our rotations. We can
         // trivially expand it by assuming all but the bottom-right entries of

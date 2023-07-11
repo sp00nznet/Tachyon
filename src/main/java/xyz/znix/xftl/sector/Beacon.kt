@@ -4,6 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.environment.AbstractEnvironment
 import xyz.znix.xftl.environment.AsteroidEnvironment
+import xyz.znix.xftl.environment.NebulaEnvironment
 import xyz.znix.xftl.environment.NormalEnvironment
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.StoreData
@@ -300,8 +301,8 @@ class Beacon(
         ASTEROID(null, true, ::AsteroidEnvironment),
         SUN("low_sun", true, ::NormalEnvironment), // TODO implement
         PULSAR("low_pulsar", true, ::NormalEnvironment), // TODO implement
-        NEBULA(null, false, ::NormalEnvironment), // TODO implement
-        ION_STORM(null, false, ::NormalEnvironment); // TODO implement
+        NEBULA(null, false, { game, beacon -> NebulaEnvironment(game, beacon, false) }),
+        ION_STORM(null, false, { game, beacon -> NebulaEnvironment(game, beacon, true) });
 
         // TODO how should we represent PDS/ABSes, given they can be targed at the player or enemy (or both?)
 
