@@ -2,6 +2,7 @@ package xyz.znix.xftl.ai
 
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 
 /**
@@ -13,9 +14,10 @@ import xyz.znix.xftl.weapons.IRoomTargetingWeapon
  * It specifically does not handle crew - see [FriendlyCrewAI] for that.
  */
 class ShipAI(val ship: Ship, val player: Ship) {
+    private val fireAtChargeLevel = HashMap<AbstractWeaponInstance, Int>()
+
     fun update(dt: Float) {
         // If the ship is dying, don't do anything.
-        // TODO figure out where the boarder AI will live
         if (ship.isDead)
             return
 
@@ -70,9 +72,23 @@ class ShipAI(val ship: Ship, val player: Ship) {
         for (hp in ship.hardpoints) {
             val weapon = hp.weapon ?: continue
 
-            // TODO use the correct logic for when to fire charge weapons
             if (!weapon.isCharged)
                 continue
+
+            if (weapon.maxTotalCharges > 1) {
+                // Pick a random level to charge up to
+                var fireAt = fireAtChargeLevel[weapon]
+                if (fireAt == null) {
+                    fireAt = (1..weapon.maxTotalCharges).random()
+                    fireAtChargeLevel[weapon] = fireAt
+                }
+
+                if (weapon.totalReadyCharges < fireAt)
+                    continue
+
+                // Pick a new number of shots next time
+                fireAtChargeLevel.remove(weapon)
+            }
 
             if (ship.sys.debugFlags.noEnemyFire.set)
                 continue
