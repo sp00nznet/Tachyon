@@ -43,15 +43,18 @@ class IntruderCrewAI(private val ship: Ship) {
         // and all subsequent crew. Thus the subsequent crew will still go to
         // a different room if that's better for them, but otherwise they'll
         // stick together.
-        var assignment = currentTarget(aiCrew.first())
+        var lastCrewAssignment: Room? = null
         for (crew in aiCrew) {
+            val currentlyAssigned = currentTarget(crew)
+
             // If the room the last crew was in is full, we can't carry across
             // their assignment - revert to this crew's actual current assignment.
-            if (!assignment.anySlotsFree(AbstractCrew.SlotType.INTRUDER, crew)) {
-                assignment = currentTarget(crew)
+            if (lastCrewAssignment?.anySlotsFree(AbstractCrew.SlotType.INTRUDER, crew) == false) {
+                lastCrewAssignment = null
             }
 
-            assignment = pickNextRoom(crew, assignment)
+            val assignment = pickNextRoom(crew, currentlyAssigned, lastCrewAssignment)
+            lastCrewAssignment = assignment
 
             val target = crew.pathingTarget?.room
 
@@ -70,12 +73,20 @@ class IntruderCrewAI(private val ship: Ship) {
         return crew.pathingTarget?.room ?: crew.room
     }
 
-    private fun pickNextRoom(crew: AbstractCrew, currentlyAssigned: Room): Room {
+    private fun pickNextRoom(crew: AbstractCrew, currentlyAssigned: Room, preferred: Room?): Room {
+        // Note that preferred is the room the previous crewmember is assigned
+        // to, so use that unless we have a good reason not to.
+        val defaultTask = when {
+            preferred == null -> currentlyAssigned
+            roomPriority(crew, currentlyAssigned) < roomPriority(crew, preferred) -> currentlyAssigned
+            else -> preferred
+        }
+
         // For all the rooms, check their priorities and see which ones are
         // more important than the currently assigned tasks. If there's
         // multiple equally-most-important rooms, pick one at random.
 
-        val currentPriority = roomPriority(crew, currentlyAssigned)
+        val currentPriority = roomPriority(crew, defaultTask)
 
         val mostImportant = ArrayList<Room>()
         var mostImportantPriority = 1000
@@ -115,7 +126,13 @@ class IntruderCrewAI(private val ship: Ship) {
 
         if (mostImportant.isEmpty()) {
             // Nothing is more important than the current task
-            return currentlyAssigned
+            return defaultTask
+        }
+
+        // If the tasks tie with the current task, then keep it to avoid
+        // constantly switching tasks.
+        if (mostImportantPriority >= currentPriority) {
+            return defaultTask
         }
 
         // If there's one or more rooms that are more important than the
