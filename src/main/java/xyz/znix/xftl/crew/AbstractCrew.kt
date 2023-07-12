@@ -261,8 +261,14 @@ abstract class AbstractCrew(
         dealDamage(FireDamage(fires * 2.128f * dt * fireDamageMult))
 
         if (health == 0f) {
+            // Zoltan crew deal damage when their animation starts, so
+            // we need to call out when that happens.
+            if (currentAction != Action.DYING) {
+                onStartedDying()
+            }
+
             if (!hasDyingAnimation) {
-                onDied()
+                onFinishedDying()
                 return
             }
 
@@ -270,7 +276,7 @@ abstract class AbstractCrew(
             currentAction = Action.DYING
 
             if (icon.isStopped)
-                onDied()
+                onFinishedDying()
 
             return
         }
@@ -1114,7 +1120,10 @@ abstract class AbstractCrew(
         room.ship.updateCrewReservedSlots()
     }
 
-    open fun onDied() {
+    open fun onStartedDying() {
+    }
+
+    open fun onFinishedDying() {
         removeFromShip()
     }
 

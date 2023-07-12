@@ -14,5 +14,5 @@ abstract class AbstractCrewDamage(var amount: Float)
 class SuffocationDamage(amount: Float) : AbstractCrewDamage(amount)
 class FireDamage(amount: Float) : AbstractCrewDamage(amount)
 class CombatDamage(amount: Float, val attacker: AbstractCrew) : AbstractCrewDamage(amount)
-
 class WeaponDamage(amount: Float, val weapon: AbstractWeaponBlueprint) : AbstractCrewDamage(amount)
+class ZoltanDeathDamage(amount: Float, val crew: CrewZoltan) : AbstractCrewDamage(amount)

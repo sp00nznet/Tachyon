@@ -123,8 +123,8 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         }
     }
 
-    override fun onDied() {
-        super.onDied()
+    override fun onFinishedDying() {
+        super.onFinishedDying()
 
         val clonebay = ownerShip?.clonebay ?: return
         clonebay.addDeadCrew(this)
