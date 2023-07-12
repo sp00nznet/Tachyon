@@ -49,8 +49,13 @@ abstract class Window {
     }
 
     open fun updateUI(x: Int, y: Int) {
-        for (button in buttons) {
-            button.update(x, y)
+        // Start at the end of the array, so if buttons overlap we only
+        // hover the one that's rendered last.
+        var anyHovered = false
+        for (i in buttons.size - 1 downTo 0) {
+            buttons[i].update(x, y, anyHovered)
+            if (buttons[i].hovered)
+                anyHovered = true
         }
     }
 

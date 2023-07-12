@@ -32,6 +32,12 @@ abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint
         private set
 
     /**
+     * True if the mouse is hovering over a button in front of this one.
+     */
+    var mouseObstructed = false
+        private set
+
+    /**
      * True if the 'hoverBeep' sound should play when this button is moused over.
      */
     open val makesHoverNoise: Boolean get() = true
@@ -52,6 +58,7 @@ abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint
      */
     open fun mouseDown(button: Int, x: Int, y: Int): Boolean {
         if (!contains(x, y)) return false
+        if (mouseObstructed) return false
         click(button)
         return true
     }
@@ -64,8 +71,10 @@ abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint
         return pos.x <= x && x < pos.x + size.x && pos.y <= y && y < pos.y + size.y
     }
 
-    fun update(x: Int, y: Int) {
-        if (disabled) {
+    open fun update(x: Int, y: Int, blockHover: Boolean = false) {
+        mouseObstructed = blockHover
+
+        if (disabled || mouseObstructed) {
             hovered = false
             return
         }
