@@ -6,6 +6,7 @@ import org.newdawn.slick.Renderable
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import kotlin.math.floor
 
 /**
  * A custom image class, whose functions generally match that of [org.newdawn.slick.Image].
@@ -93,6 +94,18 @@ class Image(
         filter: Color
     ) {
         drawWithTexFiltering(x, y, x2, y2, srcX1, srcY1, srcX2, srcY2, filter, DEFAULT_TEXTURE_FILTERING)
+    }
+
+    fun drawAlignedCentred(centreX: Int, centreY: Int, filter: Color = Color.white) {
+        drawAlignedCentred(centreX, centreY, width.f, height.f, filter)
+    }
+
+    fun drawAlignedCentred(centreX: Int, centreY: Int, width: Float, height: Float, filter: Color = Color.white) {
+        draw(
+            centreX - floor(width / 2f), centreY - floor(height / 2f),
+            width, height,
+            filter
+        )
     }
 
     fun drawNearest(

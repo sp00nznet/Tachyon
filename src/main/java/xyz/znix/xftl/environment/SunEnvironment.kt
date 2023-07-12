@@ -20,6 +20,8 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
     override val type: Beacon.EnvironmentType get() = Beacon.EnvironmentType.SUN
     override val serialiseImageIndexes: Boolean get() = false
 
+    private val realBackground = game.getImg("img/stars/bg_dullstars.png")
+
     private val sunImage = game.getImg("img/stars/planet_sun1.png")
     private val glowImage = game.getImg("img/stars/planet_sun2.png")
     private val flareImage = game.getImg("img/stars/planet_sun_flare.png")
@@ -40,6 +42,8 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
     }
 
     override fun renderBackground(gc: GameContainer, g: Graphics) {
+        realBackground.draw()
+
         val backGlow = alphaCycle(7f, 0.1f, 1f)
         val frontGlow = alphaCycle(10f, 0.05f, 0.4f)
         val sunOpacity = alphaCycle(5f, 0.7f, 1f)
@@ -173,7 +177,6 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         SaveUtil.addAttrFloat(elem, "sunTimer", time)
         SaveUtil.addAttrFloat(elem, "nextFlare", nextFlareTime)
         SaveUtil.addAttrFloat(elem, "lastFlare", lastFlareTime)
-        SaveUtil.addAttrBool(elem, "playedFlareSound", hasPlayedSound)
     }
 
     override fun loadFromXML(elem: Element) {
@@ -182,6 +185,6 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         time = SaveUtil.getAttrFloat(elem, "sunTimer")
         nextFlareTime = SaveUtil.getAttrFloat(elem, "nextFlare")
         lastFlareTime = SaveUtil.getAttrFloat(elem, "lastFlare")
-        hasPlayedSound = SaveUtil.getAttrBool(elem, "playedFlareSound")
+        hasPlayedSound = (nextFlareTime - time) < 1.2f
     }
 }

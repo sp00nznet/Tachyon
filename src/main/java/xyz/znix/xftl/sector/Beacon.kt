@@ -297,7 +297,7 @@ class Beacon(
         NORMAL(null, false, ::NormalEnvironment),
         ASTEROID(null, true, ::AsteroidEnvironment),
         SUN(null, true, ::SunEnvironment),
-        PULSAR("low_pulsar", true, ::NormalEnvironment), // TODO implement
+        PULSAR(null, true, ::PulsarEnvironment),
         NEBULA(null, false, { game, beacon -> NebulaEnvironment(game, beacon, false) }),
         ION_STORM(null, false, { game, beacon -> NebulaEnvironment(game, beacon, true) });
 
