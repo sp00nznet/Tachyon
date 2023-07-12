@@ -170,6 +170,11 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (target.ship.superShield > 0)
             return
 
+        // Consume a drone part
+        if (ship.dronesCount <= 0)
+            return
+        ship.dronesCount--
+
         // The direction the probe flies in depends on whether this is
         // a player ship or an enemy ship, as it's supposed to go
         // forwards out of both of them.
@@ -256,7 +261,9 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         override val timeRemaining: Float? get() = this@Hacking.timeRemaining
         override val duration: Float get() = this@Hacking.duration
-        override val isOff: Boolean get() = powerSelected == 0 || isPowerLocked || droneInFlight
+        override val isOff: Boolean
+            get() = powerSelected == 0 || isPowerLocked || droneInFlight ||
+                    (droneLaunched && ship.dronesCount == 0)
 
         override val forceHighlight: Boolean
             get() {
