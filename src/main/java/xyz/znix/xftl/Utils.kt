@@ -6,7 +6,6 @@ import org.newdawn.slick.AppGameContainer
 import org.newdawn.slick.Color
 import org.newdawn.slick.Game
 import org.newdawn.slick.GameContainer
-import xyz.znix.xftl.devutil.BakeRoomImageMeta
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import java.io.File
@@ -69,6 +68,10 @@ fun String.replaceArg(value: Int, index: Int = 1): String {
 
 fun String.replaceArg(value: String, index: Int = 1): String {
     return replace("\\$index", value)
+}
+
+fun <E> MutableList<E>.pop(): E {
+    return removeAt(size - 1)
 }
 
 object Utils {

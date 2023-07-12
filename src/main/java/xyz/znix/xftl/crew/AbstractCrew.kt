@@ -254,11 +254,11 @@ abstract class AbstractCrew(
         }
 
         if (room.oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL) {
-            dealDamage(6.4f * dt * suffocationMultiplier)
+            dealDamage(SuffocationDamage(6.4f * dt * suffocationMultiplier))
         }
 
         val fires = room.fires.count { it != null }
-        dealDamage(fires * 2.128f * dt * fireDamageMult)
+        dealDamage(FireDamage(fires * 2.128f * dt * fireDamageMult))
 
         if (health == 0f) {
             if (!hasDyingAnimation) {
@@ -486,7 +486,7 @@ abstract class AbstractCrew(
 
                 // Apply damage
                 val damage = (3f..7f).random(Random.Default) * attackDamageMult
-                enemyToAttack!!.dealDamage(damage)
+                enemyToAttack!!.dealDamage(CombatDamage(damage, this))
 
                 if (enemyToAttack!!.health <= 0f && !enemyWasDying) {
                     onKilledCrew(enemyToAttack!!)
@@ -709,11 +709,11 @@ abstract class AbstractCrew(
         }
     }
 
-    fun dealDamage(damage: Float) {
+    open fun dealDamage(damage: AbstractCrewDamage) {
         if (game.debugFlags.noCrewDamage.set)
             return
 
-        health = max(0f, health - damage)
+        health = max(0f, health - damage.amount)
 
         // Dying is handled in the update loop
     }

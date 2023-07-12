@@ -171,7 +171,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
                 damagedRooms.add(room)
 
                 // Note no crew damage
-                ship.damage(room, 1, 1, 0, 0)
+                ship.damage(room, 1, 1, 0)
             }
 
             numFires -= numStarted

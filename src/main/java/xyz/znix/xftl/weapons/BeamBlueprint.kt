@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
 import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.crew.WeaponDamage
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
@@ -249,8 +250,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         // If we hit a new room, damage it
                         if (lastRoomId != room.id) {
                             lastRoomId = room.id
-                            // Don't deal crew damage here, we do that per-cell ourselves
-                            targetShip.damage(room, beamPower, beamPower, 0, 0)
+                            targetShip.damage(room, beamPower, beamPower, 0)
                         }
 
                         // Deal crew damage - this is done on entry to a new cell, not only to a new room.
@@ -258,7 +258,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         val crew = room.crew.filter { it.findNearestRoomPos().shipPoint posEq tmp }
 
                         for (crewmember in crew) {
-                            crewmember.dealDamage(crewDamage)
+                            crewmember.dealDamage(WeaponDamage(crewDamage, type))
                         }
                     }
                 }

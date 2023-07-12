@@ -393,7 +393,8 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
             val hullDamage = if (type.damage != 0) chainDamage else 0
             val crewDamage = type.personnelDamage ?: hullDamage
 
-            ship.damage(target, hullDamage, hullDamage, ionDamage, crewDamage * 15)
+            ship.damage(target, hullDamage, hullDamage, ionDamage)
+            ship.crewWeaponDamage(target, crewDamage * 15, type)
         }
     }
 

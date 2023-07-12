@@ -886,7 +886,8 @@ class Ship(
 
     fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
         val crewDamage = (type.personnelDamage ?: type.damage) * 15
-        damage(target, type.damage, type.sysDamage, type.ionDamage, crewDamage)
+        damage(target, type.damage, type.sysDamage, type.ionDamage)
+        crewWeaponDamage(target, crewDamage, type)
 
         if (Random.rollChance(type.fireChance * 10) && !sys.debugFlags.noDmg.set) {
             // Spawns two fires (or possibly only one, if they both roll on the same cell).
@@ -911,15 +912,17 @@ class Ship(
         playCentredAnimation(animation, position)
     }
 
-    fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int, crewDamage: Int) {
+    fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
         if (sys.debugFlags.noDmg.set)
             return
 
         health -= damage
         target.system?.dealDamage(systemDamage, ionDamage)
+    }
 
+    fun crewWeaponDamage(target: Room, damage: Int, weapon: AbstractWeaponBlueprint) {
         for (crew in target.crew) {
-            crew.dealDamage(crewDamage.f)
+            crew.dealDamage(WeaponDamage(damage.f, weapon))
         }
     }
 

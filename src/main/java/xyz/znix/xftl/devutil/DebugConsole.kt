@@ -619,7 +619,7 @@ class DebugConsole(var game: InGameState) {
             return
         }
 
-        enemy.damage(enemy.rooms.random(), 100, 0, 0, 0)
+        enemy.damage(enemy.rooms.random(), 100, 0, 0)
 
         // In case nodmg is set, manually set the health to zero.
         enemy.health = 0

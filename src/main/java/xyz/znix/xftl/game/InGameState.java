@@ -1220,7 +1220,7 @@ public class InGameState extends MainGame.GameState {
 
             Objects.requireNonNull(targetRoom);
 
-            player.damage(targetRoom, damage.getAmount(), damage.getAmount(), 0, 0);
+            player.damage(targetRoom, damage.getAmount(), damage.getAmount(), 0);
 
             if (damage.getEffectFire()) {
                 targetRoom.spawnFire();
