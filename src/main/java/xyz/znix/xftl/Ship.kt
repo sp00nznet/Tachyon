@@ -1514,6 +1514,11 @@ class Ship(
         updateAvailableSystems()
     }
 
+    fun hasCrewOwnedByShip(otherShip: Ship): Boolean {
+        return crew.filterIsInstance(LivingCrew::class.java)
+            .any { it.ownerShip == otherShip }
+    }
+
     companion object {
         const val MAX_AUGMENTS: Int = 3
     }

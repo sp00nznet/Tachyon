@@ -127,9 +127,8 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
      * immediately spawn. Also, [AbstractCrew] needs the initial room in its
      * constructor, which is inconvenient for us.
      */
-    @Suppress("LeakingThis") // Because we use occupancySlotType
     open inner class Pawn(room: Room) :
-        AbstractCrew(getPawnBlueprint(room.ship.sys), room.ship.sys.animations, room, occupancySlotType) {
+        AbstractCrew(getPawnBlueprint(room.ship.sys), room.ship.sys.animations, room) {
 
         val drone: AbstractIndoorsDrone = this@AbstractIndoorsDrone
 
@@ -142,7 +141,8 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         override val hasDyingAnimation: Boolean get() = false
         override val suffocationMultiplier: Float get() = 0f
         override val fireDamageMult: Float get() = 0f
-        override val playerControllable: Boolean get() = false
+
+        override val mode: SlotType get() = occupancySlotType
 
         override fun update(dt: Float) {
             // If the ship powering this drone has jumped away, destroy it.

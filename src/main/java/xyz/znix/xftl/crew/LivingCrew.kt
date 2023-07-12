@@ -11,10 +11,7 @@ import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import xyz.znix.xftl.systems.Engines
-import xyz.znix.xftl.systems.Piloting
-import xyz.znix.xftl.systems.Shields
-import xyz.znix.xftl.systems.Weapons
+import xyz.znix.xftl.systems.*
 import java.util.*
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -23,11 +20,13 @@ import kotlin.random.Random
  * Represents a crew member that can be hired by the player.
  */
 abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Room, mode: SlotType) :
-    AbstractCrew(blueprint, anims, room, mode) {
+    AbstractCrew(blueprint, anims, room) {
 
     override val repairSpeed: Float get() = 1f + REPAIR_SKILL_BONUS[getSkillLevel(Skill.REPAIRS).ordinal] / 100f
 
     override val attackDamageMult: Float get() = 1f + COMBAT_SKILL_BONUS[getSkillLevel(Skill.COMBAT).ordinal] / 100f
+
+    open val isMindControlResistant: Boolean get() = false
 
     var info: LivingCrewInfo = LivingCrewInfo.generateRandom(blueprint, room.ship.sys)
 
@@ -35,7 +34,33 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
      * The ship that 'owns' this crewmember, or null if they were
      * spawned in by an intruder event.
      */
-    var ownerShip: Ship? = room.ship
+    var ownerShip: Ship? = if (mode == SlotType.CREW) room.ship else null
+
+    /**
+     * The mind control system that is actively controlling this crewmember.
+     */
+    var mindControlledBy: MindControl? = null
+
+    private var mindControlAnimation: FTLAnimation? = null
+
+    override val playerControllable: Boolean
+        get() = mindControlledBy == null && ownerShip?.isPlayerShip == true
+
+    override val showRedOutline: Boolean get() = ownerShip?.isPlayerShip != true
+
+    override val mode: SlotType
+        get() {
+            var side = when (room.ship) {
+                ownerShip -> SlotType.CREW
+                else -> SlotType.INTRUDER
+            }
+
+            if (mindControlledBy != null) {
+                side = side.other
+            }
+
+            return side
+        }
 
     override val suffocationMultiplier: Float
         get() {
@@ -44,6 +69,44 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
             }
             return 1f
         }
+
+    override fun update(dt: Float) {
+        // Update the mind-control status now, so it applies for
+        // the rest of the update cycle.
+        if (mindControlledBy?.isControlling(this) != true) {
+            mindControlledBy = null
+            mindControlAnimation = null
+        } else {
+            mindControlAnimation?.update(dt)
+        }
+
+        super.update(dt)
+    }
+
+    override fun drawForeground(g: Graphics) {
+        super.drawForeground(g)
+
+        if (mindControlledBy == null)
+            return
+
+        // Draw the mind-control animation
+        if (mindControlAnimation == null) {
+            mindControlAnimation = game.animations["mindcontrol"].startLooping(game)
+        }
+
+        val filter = when (showRedOutline) {
+            true -> Color.red
+            false -> Color.green
+        }
+
+        if (showHealthBar) {
+            // Draw to the left of the health bar
+            mindControlAnimation!!.draw(screenX.f - 11, screenY.f - 3, filter)
+        } else {
+            // Draw in the centre, above the crew
+            mindControlAnimation!!.draw(screenX.f + 9, screenY.f, filter)
+        }
+    }
 
     override fun drawImage(x0: Float, y0: Float, x1: Float, y1: Float, baseFrame: Image, alpha: Float) {
         info.drawImage(x0, y0, x1, y1, baseFrame, alpha)

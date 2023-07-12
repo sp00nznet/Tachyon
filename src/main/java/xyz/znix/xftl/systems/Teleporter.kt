@@ -21,6 +21,7 @@ import xyz.znix.xftl.savegame.RefLoader
 
 class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.TELEPORTER
+    override val insertButtonSpace: Boolean get() = true
 
     private val teleportSound by onInit { it.sounds.getSample("teleport") }
 

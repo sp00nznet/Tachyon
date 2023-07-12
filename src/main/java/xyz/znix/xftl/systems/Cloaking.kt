@@ -16,6 +16,7 @@ import kotlin.math.min
 
 class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.CLOAKING
+    override val insertButtonSpace: Boolean get() = true
 
     /**
      * The time remaining on the cloak, or null if the cloak is inactive.

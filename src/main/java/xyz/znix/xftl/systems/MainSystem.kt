@@ -21,6 +21,13 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
     abstract val sortingType: SortingType
 
+    /**
+     * Use a 54-pixel gap in the power bar, to allow a button (eg cloaking)
+     * to fit in next to the power icon.
+     */
+    open val insertButtonSpace: Boolean get() = false
+
+
     override fun powerStateChanged() {
         if (powerSelected > powerAvailable)
             simpleSelectedEnergyLevel = powerAvailable.coerceAtLeast(0)

@@ -134,6 +134,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     val teleportMode: Boolean? get() = (game.clickEvent as? TeleportRoomListener)?.send
 
     val isSelectingHackingTarget: Boolean get() = game.clickEvent is HackingRoomListener
+    val isSelectingMindControlTarget: Boolean get() = game.clickEvent is MindControlRoomListener
 
     init {
         updateButtons()
@@ -232,6 +233,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             if (button == MOUSE_RIGHT_BUTTON) {
                 for (crew in selectedCrew) {
+                    // Skip mind-controlled crew that remained selected.
+                    if (!crew.playerControllable)
+                        continue
+
                     // Exclude crew that are boarding an enemy ship, as
                     // this could cause a crash.
                     if (crew.room.ship == ship)
@@ -289,6 +294,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     // Called by SlickGame, used for controlling boarders.
     fun enemyRoomRightClicked(room: Room, enemyShip: Ship) {
         for (crew in selectedCrew) {
+            // Skip mind-controlled crew that remained selected.
+            if (!crew.playerControllable)
+                continue
+
             if (crew.room.ship == enemyShip)
                 crew.setTargetRoom(room)
         }
@@ -473,10 +482,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 buttons += system.makeExtraButtons(powerPos)
             }
 
-            powerX += when (system) {
-                is Weapons -> 48 + ship.weaponSlots!! * 97
-                is Drones -> 48 + ship.droneSlots!! * 97
-                is Cloaking, is Teleporter, is Hacking -> 54
+            powerX += when {
+                system is Weapons -> 48 + ship.weaponSlots!! * 97
+                system is Drones -> 48 + ship.droneSlots!! * 97
+                system.insertButtonSpace -> 54
                 else -> 36
             }
 
@@ -487,10 +496,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             val lastSystem = i == ship.mainSystems.size - 2
 
-            val wireWidth = when (system) {
+            val wireWidth = when {
                 // Remember that we'll only run this if this isn't the last system,
                 // so we won't be drawing a wire under weapons if drones isn't installed.
-                is Weapons -> {
+                system is Weapons -> {
                     // Draw the wire that goes under the weapons to the drone system
                     when (ship.weaponSlots) {
                         4 -> "456"
@@ -498,7 +507,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                     }
                 }
 
-                is Cloaking, is Teleporter, is Hacking -> "54"
+                system.insertButtonSpace -> "54"
                 else -> "36"
             }
             val image = when (lastSystem) {
@@ -941,6 +950,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (crew !is LivingCrew)
                 continue
 
+            // Filter out intruders, not including mind-controlled crew.
+            if (crew.ownerShip != ship)
+                continue
+
             val crewY = crewBaseY + index * CREW_BOX_SPACING
 
             drawCrewBox(g, crew, crewX, crewY)
@@ -948,7 +961,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     private fun drawCrewBox(g: Graphics, crew: LivingCrew, x: Int, y: Int) {
-        val isMindControlled = false // TODO implement when mind control is added
+        val isMindControlled = crew.mindControlledBy != null
         val isStunned = false // TODO implement when stunning crew is added
         val isFlashingHealth = false // TODO
 
@@ -1178,6 +1191,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         game.clickEvent = HackingRoomListener()
     }
 
+    /**
+     * Called by [MindControl] when we're supposed to select the room to
+     * apply mind control to.
+     */
+    fun mindControlSelected() {
+        game.clickEvent = MindControlRoomListener()
+    }
+
     fun openSectorMap() {
         currentWindow = SectorMapWindow(game) { sectorInfo ->
             currentWindow = null
@@ -1262,11 +1283,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         // Any intruders on the enemy ship should also be controllable,
         // including mind controlled enemies (once that's implemented).
+        // Mind-controlled crew are then filtered out in the for loop.
         val controllableCrew = ArrayList(ship.friendlyCrew)
         game.enemy?.let { controllableCrew.addAll(it.intruders) }
 
         for (crew in controllableCrew) {
-            // Skip drones and the like which the player isn't allowed to control
+            // Skip drones, mind controlled crew and the like which the
+            // player isn't allowed to control.
             if (!crew.playerControllable)
                 continue
 
@@ -1521,6 +1544,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 return
 
             ship.hacking!!.selectTarget(room)
+        }
+    }
+
+    private inner class MindControlRoomListener : RoomClickListener {
+        override fun roomClicked(room: Room, gc: GameContainer) {
+            ship.mindControl!!.selectRoom(room)
         }
     }
 

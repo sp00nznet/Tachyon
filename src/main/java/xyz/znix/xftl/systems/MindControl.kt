@@ -1,26 +1,212 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
+import org.newdawn.slick.Input
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
+import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.game.Button
+import xyz.znix.xftl.game.SystemPowerButton
+import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.savegame.SaveUtil
 
 class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.MIND_CONTROL
+    override val insertButtonSpace: Boolean get() = true
 
-    // TODO implement
+    /**
+     * The time remaining on the cloak, or null if the cloak is inactive.
+     */
+    var timeRemaining: Float? = null
+
+    val active: Boolean get() = timeRemaining != null
+
+    var controlledCrew: LivingCrew? = null
+        private set
+
+    override val isPowerLocked: Boolean get() = super.isPowerLocked || active
+
+    val ready: Boolean get() = powerSelected > 0 && !isPowerLocked && !isHackActive
+
+    private val startSound by onInit { it.sounds.getSample("mindControl") }
+    private val endSound by onInit { it.sounds.getSample("mindControlEnd") }
+
+    val duration: Float
+        get() {
+            return when (powerSelected) {
+                // From the wiki
+                0 -> 0.1f // Dummy value
+                1 -> 14f
+                2 -> 20f
+                3 -> 28f
+                else -> 28f
+            }
+        }
+
+    override fun update(dt: Float) {
+        super.update(dt)
+
+        // TODO hacking
+
+        val oldTime = timeRemaining
+        if (oldTime == null || controlledCrew == null) {
+            timeRemaining = null
+            controlledCrew = null
+            return
+        }
+
+        checkEnemyGone()
+
+        val newTime = oldTime - dt
+        if (newTime <= 0) {
+            switchToCooldown()
+            return
+        }
+
+        timeRemaining = newTime
+    }
+
+    private fun switchToCooldown() {
+        // Only play the ending sound if a crew was mind-controlled.
+        // If we counter enemy mind control, this should only play
+        // for the enemy ship's system.
+        if (controlledCrew != null) {
+            endSound.play()
+        }
+
+        controlledCrew?.mindControlledBy = null
+        timeRemaining = null
+        controlledCrew = null
+
+        ionTimer = 20f
+    }
+
+    private fun checkEnemyGone() {
+        val crew = controlledCrew ?: return
+
+        // If the ship the crew was on has gone, we're probably not
+        // in combat and we can reset immediately, without triggering
+        // a cooldown.
+        // This also avoids playing the end sound effect when the
+        // enemy ship is destroyed.
+        if (!ship.sys.isShipPresent(crew.room.ship)) {
+            controlledCrew = null
+            timeRemaining = null
+            return
+        }
+
+        // If the crew disappears (most notably because they died), then
+        // go to cooldown right away.
+        if (!crew.room.ship.crew.contains(crew)) {
+            switchToCooldown()
+            return
+        }
+    }
+
+    fun isControlling(crew: LivingCrew): Boolean {
+        // Check if one of the ships has jumped away, or is no longer
+        // hostile towards the other.
+        if (ship.sys.getEnemyOf(ship) == null)
+            return false
+
+        return active && crew == controlledCrew
+    }
+
+    override fun makeExtraButtons(powerPos: IPoint): List<Button> {
+        return listOf(MindControlButton(powerPos))
+    }
+
+    fun selectRoom(room: Room) {
+        if (!ready)
+            return
+
+        // If we're attacking a room on the player's ship, look for intruders.
+        // Otherwise, look for crewmembers on enemy ships.
+        val targetMode = when (room.ship) {
+            ship -> AbstractCrew.SlotType.INTRUDER
+            else -> AbstractCrew.SlotType.CREW
+        }
+
+        val suitableCrew = room.crew.filterIsInstance(LivingCrew::class.java)
+            .filter { it.mode == targetMode }
+            .filter { !it.isMindControlResistant }
+        if (suitableCrew.isEmpty())
+            return
+
+        // Note we don't prefer countering mind control for our own
+        // crew over controlling enemy crew.
+        val crew = suitableCrew.random()
+
+        // Countering mind control immediately puts both systems on cooldown
+        val otherMC = crew.mindControlledBy
+        if (otherMC != this && otherMC != null) {
+            otherMC.switchToCooldown()
+            switchToCooldown()
+            return
+        }
+
+        crew.mindControlledBy = this
+        controlledCrew = crew
+        timeRemaining = duration
+
+        startSound.play()
+    }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
-        // TODO implement
+        // To avoid serialising a reference to a ship that's gone, check
+        // if the enemy has jumped away.
+        checkEnemyGone()
+
+        SaveUtil.addTagFloat(elem, "timeRemaining", timeRemaining)
+
+        val crew = controlledCrew
+        if (crew != null) {
+            val shipWithEnemy = crew.room.ship
+            SaveUtil.addRef(elem, "shipWithEnemy", refs, shipWithEnemy)
+            SaveUtil.addTagInt(elem, "crewId", shipWithEnemy.crew.indexOf(crew))
+        }
     }
 
     override fun loadSystem(elem: Element, refs: RefLoader) {
-        // TODO implement
+        timeRemaining = SaveUtil.getTagFloatOrNull(elem, "timeRemaining")
+
+        SaveUtil.getOptionalRef(elem, "shipWithEnemy", refs, Ship::class.java) { shipWithEnemy ->
+            if (shipWithEnemy == null)
+                return@getOptionalRef
+
+            val crewId = SaveUtil.getTagInt(elem, "crewId")
+            controlledCrew = shipWithEnemy.crew[crewId] as LivingCrew
+            controlledCrew!!.mindControlledBy = this
+        }
     }
 
     companion object {
         val INFO: SystemInfo = MindControlInfo
+    }
+
+    // Note the mind control button always uses the two-power height
+    private inner class MindControlButton(powerPos: IPoint) : SystemPowerButton(ship.sys, 2, powerPos) {
+        override val timeRemaining: Float? get() = this@MindControl.timeRemaining
+        override val duration: Float get() = this@MindControl.duration
+        override val isOff: Boolean get() = !ready
+
+        override val forceHighlight: Boolean
+            get() = game.shipUI.isSelectingMindControlTarget
+
+        override fun click(button: Int) {
+            if (button != Input.MOUSE_LEFT_BUTTON)
+                return
+
+            if (disabled)
+                return
+
+            game.shipUI.mindControlSelected()
+        }
     }
 }
 

@@ -41,8 +41,8 @@ class FriendlyCrewAI(private val ship: Ship) {
             if (crew.currentAction == AbstractCrew.Action.DYING)
                 continue
 
-            // TODO mind-controlled boarders
-            if (ship.isPlayerShip)
+            // We have to check playerControllable for mind-controlled crew.
+            if (crew.playerControllable)
                 continue
 
             aiCrew += crew

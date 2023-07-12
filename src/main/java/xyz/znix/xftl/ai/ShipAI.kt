@@ -34,6 +34,8 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         updateHacking()
 
+        updateMindControl()
+
         // Check if we need to escape or surrender
         if (ship.health <= ship.surrenderHealth) {
             // Don't surrender repeatedly
@@ -118,5 +120,20 @@ class ShipAI(val ship: Ship, val player: Ship) {
         // Run this all the time and it'll only start one
         // when it's ready.
         hacking.startHackingPulse()
+    }
+
+    private fun updateMindControl() {
+        val mindControl = ship.mindControl ?: return
+
+        if (!mindControl.ready)
+            return
+
+        // Go through all the rooms, and try triggering on them all.
+        // The system will ignore calls once it starts, so it won't
+        // control multiple crew.
+        val shuffled = player.rooms.shuffled()
+        for (room in shuffled) {
+            mindControl.selectRoom(room)
+        }
     }
 }

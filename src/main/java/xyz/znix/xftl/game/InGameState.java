@@ -397,7 +397,7 @@ public class InGameState extends MainGame.GameState {
         if (enemy != null) {
             // If the enemy ship is neutral but we still have crew inside,
             // allow the user to control and recover them.
-            boolean anyLivingBoarders = enemy.getIntruders().stream().anyMatch(crew -> crew instanceof LivingCrew);
+            boolean anyLivingBoarders = enemy.hasCrewOwnedByShip(player);
             enemyInteriorVisible = enemyIsHostile || anyLivingBoarders;
 
             hostileShipUI.render(container, g, hoveredRoom, enemyInteriorVisible, enemyIsHostile);
@@ -473,10 +473,11 @@ public class InGameState extends MainGame.GameState {
             }
 
             // Check if the enemy crew is dead (including any aboard the player ship).
-            boolean anyCrewLeft = enemy.getFriendlyCrew().stream().anyMatch(crew -> crew instanceof LivingCrew);
-            boolean anyBoardersLeft = player.getIntruders().stream().anyMatch(crew -> crew instanceof LivingCrew);
+            // Note we check the crew owners, so that mind-controlling the last
+            // crew doesn't break it.
+            boolean anyCrewLeft = enemy.hasCrewOwnedByShip(enemy);
+            boolean anyBoardersLeft = player.hasCrewOwnedByShip(enemy);
             if (!anyCrewLeft && !anyBoardersLeft && !enemy.isAutoScout() && enemyIsHostile) {
-
                 if (enemy.getSpec() != null) {
                     IEvent event = enemy.getSpec().getDeadCrew();
                     if (event != null)
@@ -1036,8 +1037,11 @@ public class InGameState extends MainGame.GameState {
 
         if (source == player) {
             return enemy;
-        } else {
+        } else if (source == enemy) {
             return player;
+        } else {
+            // Some ship that isn't present
+            return null;
         }
     }
 
@@ -1167,7 +1171,7 @@ public class InGameState extends MainGame.GameState {
             LivingCrew crew = removed.getCrew();
             // TODO clone bay support
             if (removed.getInfo().getTurnHostile()) {
-                crew.setMode(crew.getMode().getOther());
+                crew.setOwnerShip(null);
             } else {
                 crew.removeFromShip();
             }

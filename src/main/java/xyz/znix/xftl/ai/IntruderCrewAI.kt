@@ -2,7 +2,6 @@ package xyz.znix.xftl.ai
 
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
-import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.layout.Room
 
@@ -21,9 +20,7 @@ class IntruderCrewAI(private val ship: Ship) {
             if (crew.mode != AbstractCrew.SlotType.INTRUDER)
                 continue
 
-            // TODO mind-controlled crew
-            // TODO split into isPlayerControlled property
-            if (crew is LivingCrew && crew.ownerShip?.isPlayerShip == true)
+            if (crew.playerControllable)
                 continue
 
             aiCrew += crew

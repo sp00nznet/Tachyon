@@ -21,8 +21,7 @@ import kotlin.random.Random
 abstract class AbstractCrew(
     val blueprint: CrewBlueprint,
     private val anims: Animations,
-    initialRoom: Room,
-    mode: SlotType
+    initialRoom: Room
 ) : ISerialReferencable {
 
     protected val game: InGameState get() = room.ship.sys
@@ -94,6 +93,16 @@ abstract class AbstractCrew(
             return roomPosition
         }
 
+    open val showHealthBar: Boolean
+        get() = health < maxHealth || game.shipUI.isCrewHighlighted(this)
+
+    // Used for drawing the coloured outline around the crew.
+    // Intruders on the player ship and crew on the enemy ship are hostile.
+    // This isn't very nice to read, but it gets the job done.
+    open val showRedOutline: Boolean
+        get() = (mode == SlotType.INTRUDER) == (room.ship == game.player)
+
+
     init {
         // Initialise pixelPosition, pixelPositionCentre, and roomPosition
         positionChanged()
@@ -113,7 +122,7 @@ abstract class AbstractCrew(
     open val hasDyingAnimation: Boolean get() = true
     open val suffocationMultiplier: Float get() = 1f
     open val fireDamageMult: Float get() = 1f
-    open val playerControllable: Boolean get() = true
+    open val playerControllable: Boolean get() = false
     open val movementSpeed: Float get() = BASE_MOVEMENT_SPEED
 
     /**
@@ -155,13 +164,8 @@ abstract class AbstractCrew(
             }
         }
 
-    var mode: SlotType = mode
-        set(value) {
-            if (field == value)
-                return
-            field = value
-            room.ship.updateCrewReservedSlots()
-        }
+    private var lastMode: SlotType = SlotType.CREW
+    abstract val mode: SlotType
 
     // If we're currently attacking someone, the time until our next
     // punch or shot is fired.
@@ -241,6 +245,14 @@ abstract class AbstractCrew(
     open fun update(dt: Float) {
         icon.update(dt)
 
+        // If we switched between being a crewmember and an intruder, update
+        // the room slot reservation stuff, to make sure we're still valid
+        // to stand in this cell.
+        if (lastMode != mode) {
+            lastMode = mode
+            room.ship.updateCrewReservedSlots()
+        }
+
         if (room.oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL) {
             dealDamage(6.4f * dt * suffocationMultiplier)
         }
@@ -296,9 +308,6 @@ abstract class AbstractCrew(
                 // conflict with the other crew (both standing on the same cell)
                 // and thus force someone to move.
                 removeFromShip()
-
-                // Flip between being an intruder and a crewmember
-                mode = mode.other
 
                 // Move to the other ship
                 destination.ship.crew.add(this)
@@ -592,10 +601,6 @@ abstract class AbstractCrew(
         // Bit of a hack, since we're drawn from the ship
         val isSelected = game.shipUI.isCrewHighlighted(this)
 
-        // Intruders on the player ship and crew on the enemy ship are hostile.
-        // This isn't very nice to read, but it gets the job done.
-        val isHostileToPlayer = (mode == SlotType.INTRUDER) == (room.ship == game.player)
-
         val cf = icon.currentFrame
 
         var spriteY = screenY
@@ -648,7 +653,7 @@ abstract class AbstractCrew(
                 cf.height
             )
             val backColour = when {
-                isHostileToPlayer -> Color(CREW_HOSTILE_BG)
+                showRedOutline -> Color(CREW_HOSTILE_BG)
                 isSelected -> Color(CREW_SELECTED_BG)
                 else -> Color(CREW_DESELECTED_BG)
             }
@@ -688,15 +693,13 @@ abstract class AbstractCrew(
         baseFrame.alpha = 1f
     }
 
-    fun drawForeground(g: Graphics) {
+    open fun drawForeground(g: Graphics) {
         // It should already be pretty obvious what their health is...
         if (currentAction == Action.DYING)
             return
 
-        val isSelected = game.shipUI.isCrewHighlighted(this)
-
         // Draw the health bar
-        if (health < maxHealth || isSelected) {
+        if (showHealthBar) {
             val healthBox = game.getImg("img/people/health_box.png")
             healthBox.draw(screenX - 1f, screenY.f)
 
@@ -1264,7 +1267,6 @@ abstract class AbstractCrew(
         SaveUtil.addAttrFloat(elem, "y", pixelSpaceY)
 
         SaveUtil.addAttrFloat(elem, "health", health)
-        SaveUtil.addAttr(elem, "mode", mode.name)
         SaveUtil.addAttr(elem, "action", currentAction.name)
 
         if (pathingTarget != null) {
@@ -1339,7 +1341,6 @@ abstract class AbstractCrew(
         positionChanged()
 
         health = SaveUtil.getAttrFloat(elem, "health")
-        mode = SlotType.valueOf(SaveUtil.getAttr(elem, "mode"))
         currentAction = Action.valueOf(SaveUtil.getAttr(elem, "action"))
 
         if (elem.getChild("pathingTarget") != null) {
