@@ -207,6 +207,16 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         primeShot()
     }
 
+    protected fun damageCloak() {
+        // We only damage the cloak if we're fired from the weapons system. If
+        // we're fired via the artillery system, from a drone, etc then we
+        // don't affect the cloak.
+        if (ship.hardpoints.none { it.weapon == this })
+            return
+
+        ship.cloaking?.weaponFired()
+    }
+
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
         super.saveToXML(elem, refs)
 
@@ -258,6 +268,11 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         isFiring = true
         waitingToFireAt = targets.removeAt(targets.lastIndex)
         firingAnimationTimer = 0f
+
+        // Damage the cloak when the last shot is fired
+        if (targets.isEmpty()) {
+            damageCloak()
+        }
     }
 
     protected abstract fun buildProjectile(target: Room): AbstractWeaponProjectile

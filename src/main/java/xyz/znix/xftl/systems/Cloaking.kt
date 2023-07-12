@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.newdawn.slick.Input
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.math.IPoint
@@ -130,6 +131,15 @@ class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 unCloakSound.play()
             }
         }
+    }
+
+    fun weaponFired() {
+        if (ship.hasAugment(AugmentBlueprint.STEALTH_WEAPONS))
+            return
+
+        // Cut 20% from our cloak
+        val previous = timeRemaining ?: return
+        timeRemaining = previous * 0.80f
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
