@@ -16,7 +16,8 @@ class WarningFlasher(
     val warningWarning: Boolean = true,
     val linePoints: List<IPoint> = emptyList(),
     val colour: GlowColour = GlowColour.RED,
-    val animated: Boolean = true
+    val animated: Boolean = true,
+    val alwaysOn: Boolean = false
 ) {
     private val textLines: List<String> = game.translator[key].split("\n")
     private val warningText: String = game.translator["warning_warning"]
@@ -31,7 +32,7 @@ class WarningFlasher(
     var timeRemaining: Float = 0f
         private set
 
-    val isRunning: Boolean get() = timeRemaining > 0f
+    val isRunning: Boolean get() = alwaysOn || timeRemaining > 0f
 
     /**
      * If this flasher is flashing, this checks if it's at it's stronger intensity.
@@ -111,11 +112,19 @@ class WarningFlasher(
     }
 
     fun startFor(time: Float) {
+        if (alwaysOn) {
+            throw IllegalStateException("Cannot start always-on warning")
+        }
+
         val current = System.nanoTime()
         stopTime = current + (time * 1_000_000_000f).toLong()
     }
 
     fun stop() {
+        if (alwaysOn) {
+            throw IllegalStateException("Cannot stop always-on warning")
+        }
+
         stopTime = 0
     }
 }

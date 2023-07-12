@@ -31,6 +31,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
     // This is white, and is filtered differently for the sun and pulsar
     private val flareImage = game.getImg("img/stars/planet_sun_flare.png")
 
+    private val warningSound = game.sounds.getSample("environWarning")
     private val pulseSound = game.sounds.getSample("pulsar")
 
     // Time since we jumped into the level
@@ -39,8 +40,10 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
     private var timeToPulse = 0f
     private var pulseTimer: Float? = null
     private var hasPlayedSound = false
+    private var hasPlayedWarning = false
 
-    // TODO warning message 5sec prior
+    val showWarning: Boolean
+        get() = timeToPulse < 5f
 
     init {
         prepareNextFlare()
@@ -138,6 +141,11 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
             game.enemy?.let { dealIonDamage(it) }
             prepareNextFlare()
         }
+
+        if (showWarning && !hasPlayedWarning) {
+            warningSound.play()
+            hasPlayedWarning = true
+        }
     }
 
     private fun alphaCycle(period: Float, min: Float, max: Float): Float {
@@ -154,6 +162,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
     private fun prepareNextFlare() {
         timeToPulse = (11f..18f).random(Random)
         hasPlayedSound = false
+        hasPlayedWarning = false
     }
 
     private fun dealIonDamage(ship: Ship) {
@@ -210,5 +219,6 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
         pulseTimer = SaveUtil.getOptionalTagFloat(elem, "pulseTimer")
 
         hasPlayedSound = timeToPulse < 1.2f
+        hasPlayedWarning = showWarning
     }
 }

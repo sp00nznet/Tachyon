@@ -12,6 +12,8 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.crew.SkillLevel
+import xyz.znix.xftl.environment.PulsarEnvironment
+import xyz.znix.xftl.environment.SunEnvironment
 import xyz.znix.xftl.game.InGameState.RoomClickListener
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -74,6 +76,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             ConstPoint(151, 114),
             ConstPoint(250, 114)
         )
+    )
+
+    private val sunWarning = WarningFlasher(
+        game, ConstPoint(825, 64), "warning_solar_flare", false, alwaysOn = true
+    )
+    private val pulsarWarning = WarningFlasher(
+        game, ConstPoint(825, 64), "warning_ion_pulse", false, alwaysOn = true
     )
 
     private var lastHealth: Int = -1
@@ -886,6 +895,19 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         val shieldsEndX = 122
+
+        // Draw the environmental hazard imminent warnings (eg 'ion pulse imminent')
+        when (val env = game.currentBeacon.getEnvironment(game)) {
+            is SunEnvironment -> {
+                if (env.showWarning)
+                    sunWarning.draw(g)
+            }
+
+            is PulsarEnvironment -> {
+                if (env.showWarning)
+                    pulsarWarning.draw(g)
+            }
+        }
 
         // Fuel shows as red when there's three or less left.
         drawSmallCounter("fuel", shieldsEndX, 0, ship.fuelCount, 3)

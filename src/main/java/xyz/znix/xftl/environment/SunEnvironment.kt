@@ -26,6 +26,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
     private val glowImage = game.getImg("img/stars/planet_sun2.png")
     private val flareImage = game.getImg("img/stars/planet_sun_flare.png")
 
+    private val warningSound = game.sounds.getSample("environWarning")
     private val flareSound = game.sounds.getSample("solarFlare")
 
     // Time since we jumped into the level
@@ -34,8 +35,9 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
     private var nextFlareTime = 0f
     private var lastFlareTime = -100f // Don't show a flare as we jump in
     private var hasPlayedSound = false
+    private var hasPlayedWarning = false
 
-    // TODO warning message 5sec prior
+    val showWarning: Boolean get() = (nextFlareTime - time) < 5f
 
     init {
         prepareNextFlare()
@@ -111,6 +113,10 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
             flareSound.play()
             hasPlayedSound = true
         }
+        if (showWarning && !hasPlayedWarning) {
+            warningSound.play()
+            hasPlayedWarning = true
+        }
         if (timeToFlare < 0f) {
             lastFlareTime = nextFlareTime
 
@@ -134,6 +140,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
     private fun prepareNextFlare() {
         nextFlareTime = time + (28f..34f).random(Random)
         hasPlayedSound = false
+        hasPlayedWarning = false
     }
 
     private fun dealFlareDamage(ship: Ship) {
@@ -186,5 +193,6 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         nextFlareTime = SaveUtil.getAttrFloat(elem, "nextFlare")
         lastFlareTime = SaveUtil.getAttrFloat(elem, "lastFlare")
         hasPlayedSound = (nextFlareTime - time) < 1.2f
+        hasPlayedWarning = showWarning
     }
 }
