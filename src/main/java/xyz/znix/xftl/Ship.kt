@@ -26,6 +26,7 @@ import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.*
+import java.util.*
 import java.util.stream.Collectors
 import kotlin.math.min
 import kotlin.random.Random
@@ -100,7 +101,26 @@ class Ship(
     val friendlyCrew: List<AbstractCrew> = ArrayList()
 
     val cargoBlueprints = ArrayList<Blueprint?>(listOf(null, null, null, null))
+
+    /**
+     * The ship's augment slots. This should only be used for UI relating
+     * to the augment objects as seen on the ship screen - in the future,
+     * mods will be able to apply blueprint effects to the ship without
+     * using an augment slot, and those show up in [augmentCounts], so it
+     * should be used for mod compatibility whenever possible.
+     *
+     * One must always call [cargoUpdated] after modifying this, so the
+     * changes show up in [augmentCounts].
+     */
     val augments = ArrayList<AugmentBlueprint>()
+
+    /**
+     * This contains the number of each type of augment. Mods will be able to
+     * apply augment effects without a regular augments, and those effects
+     * will then be stored here.
+     */
+    val privateAugmentCounts = HashMap<AugmentBlueprint, Int>()
+    val augmentCounts: Map<AugmentBlueprint, Int> = Collections.unmodifiableMap(privateAugmentCounts)
 
     val pathFinder: PathFinder
 
@@ -462,6 +482,9 @@ class Ship(
                 room.oxygen = 0f
             }
         }
+
+        // Calculate the number of each type of augment
+        cargoUpdated()
     }
 
     fun render(g: Graphics, interiorVisible: Boolean, selected: Room?) {
@@ -756,7 +779,7 @@ class Ship(
             ftlChargeProgress = 1f
         }
 
-        for (augment in augments) {
+        for (augment in augmentCounts.keys) {
             augment.update(this, dt)
         }
     }
@@ -956,7 +979,7 @@ class Ship(
         // any that were previously set at this beacon.
         updateScriptedPowerLimits()
 
-        for (augment in augments) {
+        for (augment in augmentCounts.keys) {
             augment.onJump(this)
         }
 
@@ -1115,7 +1138,14 @@ class Ship(
     fun cargoUpdated() {
         // Update all the buttons that have to change to reflect
         // the cargo being modified.
-        sys.shipUI.shipModified()
+        // This is called very early, before the ship UI is created.
+        sys.shipUI?.shipModified()
+
+        // Update the number of each type of augment, for fast lookups.
+        privateAugmentCounts.clear()
+        for (aug in augments) {
+            privateAugmentCounts[aug] = 1 + (augmentCounts[aug] ?: 0)
+        }
     }
 
     /**
@@ -1186,7 +1216,7 @@ class Ship(
      */
     fun hasAugment(name: String): Boolean {
         val blueprint = sys.blueprintManager[name] as AugmentBlueprint
-        return augments.contains(blueprint)
+        return augmentCounts.containsKey(blueprint)
     }
 
     /**

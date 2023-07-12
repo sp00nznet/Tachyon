@@ -559,7 +559,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             if (playerShip.drones?.drones?.any { it?.type?.type?.name == name } == true) {
                 return true
             }
-            if (playerShip.augments.any { it.name == name }) {
+            if (playerShip.augmentCounts.any { it.key.name == name }) {
                 return true
             }
             return playerShip.cargoBlueprints.any { it?.name == name }
