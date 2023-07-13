@@ -9,10 +9,21 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
  * would want to adjust damage in various ways, which requires them
  * to know what's causing it.
  */
-abstract class AbstractCrewDamage(var amount: Float)
+abstract class AbstractCrewDamage(var amount: Float) {
+    /**
+     * True if drones take half the damage from this source as regular crew do.
+     */
+    open val halvedForDrone: Boolean = false
+}
 
 class SuffocationDamage(amount: Float) : AbstractCrewDamage(amount)
 class FireDamage(amount: Float) : AbstractCrewDamage(amount)
 class CombatDamage(amount: Float, val attacker: AbstractCrew) : AbstractCrewDamage(amount)
-class WeaponDamage(amount: Float, val weapon: AbstractWeaponBlueprint) : AbstractCrewDamage(amount)
-class ZoltanDeathDamage(amount: Float, val crew: CrewZoltan) : AbstractCrewDamage(amount)
+
+class WeaponDamage(amount: Float, val weapon: AbstractWeaponBlueprint) : AbstractCrewDamage(amount) {
+    override val halvedForDrone: Boolean get() = true
+}
+
+class ZoltanDeathDamage(amount: Float, val crew: CrewZoltan) : AbstractCrewDamage(amount) {
+    override val halvedForDrone: Boolean get() = true
+}

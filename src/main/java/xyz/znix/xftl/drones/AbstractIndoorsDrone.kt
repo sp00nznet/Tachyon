@@ -3,6 +3,7 @@ package xyz.znix.xftl.drones
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.AbstractCrewDamage
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
@@ -206,6 +207,14 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         override fun draw(g: Graphics) {
             super.draw(g)
             drawPawn()
+        }
+
+        override fun dealDamage(damage: AbstractCrewDamage) {
+            if (damage.halvedForDrone) {
+                damage.amount /= 2f
+            }
+
+            super.dealDamage(damage)
         }
 
         override fun removeFromShip() {
