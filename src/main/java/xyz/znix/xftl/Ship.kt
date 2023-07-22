@@ -1407,6 +1407,10 @@ class Ship(
         // serialised on that ship instead of this one.
         val dronesElem = Element("drones")
         for (drone in externalDrones) {
+            // Skip drones that are left over from a now-destroyed fight
+            if (!sys.isShipPresent(drone.ownerShip))
+                continue
+
             val droneElem = Element("drone")
             drone.saveToXML(droneElem, refs)
             dronesElem.addContent(droneElem)
