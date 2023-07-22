@@ -243,7 +243,7 @@ class LivingCrewInfo(
     /**
      * For humans, this determines whether they're male or female.
      */
-    val isFemale: Boolean get() = colour >= race.baseNumberOfColours
+    val isFemale: Boolean get() = colour >= race.baseNumberOfColours && race.baseNumberOfColours > 0
 
     private val portraitImage: Image = game.animations["${race.name}_portrait"].spriteAt(game, 0)
 
