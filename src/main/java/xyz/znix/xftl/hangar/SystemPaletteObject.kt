@@ -24,7 +24,6 @@ class SystemPaletteObject(val editor: ShipEditor) : UIObject {
     override fun draw(g: Graphics) {
         updateSystems()
 
-        // TODO fix this not rendering the background due to translation
         val y = editor.editorHeight - height - 10
         val title = "SYSTEMS"
         editor.state.windowRenderer.renderWithTitleTab(g, editor.titleTab, editor.titleFont, x, y, width, height, title)

@@ -3,6 +3,7 @@ package xyz.znix.xftl.weapons
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.DefenceDrone
+import xyz.znix.xftl.environment.AsteroidProjectile
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
@@ -114,6 +115,8 @@ interface IProjectile {
                 FlyingDroneProjectile.SERIALISATION_TYPE -> {
                     error("Cannot deserialise flying drones as projectiles - they must be stored as a drone!")
                 }
+
+                AsteroidProjectile.SERIALISATION_TYPE -> AsteroidProjectile.loadFromXML(elem, refs, callback)
 
                 else -> {
                     error("Invalid serialised projectile with serialisation type '$serialisationType'")

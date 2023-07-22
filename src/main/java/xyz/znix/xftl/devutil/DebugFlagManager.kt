@@ -27,7 +27,7 @@ class DebugFlagManager {
     )
 
     val showSunTimer = DebugFlag(
-        "sst", "Show sun/pulsar timer", true,
+        "sst", "Show sun/pulsar/asteroid timer", true,
         "Show how much time is left until the next solar flare/ion pulse"
     )
 

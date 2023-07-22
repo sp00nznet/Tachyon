@@ -3,6 +3,7 @@ package xyz.znix.xftl.drones
 import org.jdom2.Element
 import org.newdawn.slick.Color
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.environment.AsteroidProjectile
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
@@ -213,6 +214,10 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
             // a missile or not. This isn't properly copied from FTL, but
             // should be about right.
             val priority = when {
+                // Don't give asteroids an unreasonably high priority, as they're not
+                // weapon projectiles as they don't have a blueprint.
+                projectile is AsteroidProjectile -> 1
+
                 // This is non-weapon stuff, like drones or hacking.
                 projectile !is AbstractWeaponProjectile -> 5
 
