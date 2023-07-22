@@ -57,6 +57,7 @@ class Event(
     val boarderCount: IntRange
 
     val statuses: List<EventStatus>
+    val removedStuff: List<String>
 
     /**
      * If this event triggers a quest, this is its event name.
@@ -194,6 +195,11 @@ class Event(
             val amount = statusElem.getAttributeValue("amount")?.toInt() ?: 0
 
             statuses.add(EventStatus(system, op, target, amount))
+        }
+
+        removedStuff = ArrayList()
+        for (e in elem.getChildren("remove")) {
+            removedStuff += e.requireAttributeValue("name")
         }
     }
 
@@ -352,7 +358,7 @@ class Event(
             "autoReward", "weapon", "drone", "augment",
             "ship", "img", "environment", "damage",
             "upgrade", "modifyPursuit", "status",
-            "quest", "reveal_map",
+            "quest", "reveal_map", "remove",
 
             // Used by the code loading the event
             "text", "choice"

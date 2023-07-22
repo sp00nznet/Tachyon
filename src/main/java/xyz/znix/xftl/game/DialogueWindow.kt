@@ -655,6 +655,22 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     private fun addResources(event: EvaluatedEvent) {
         game.givePlayerResources(event.resources)
 
+        // Remove blueprints
+        removeStuff@ for (name in event.event.removedStuff) {
+            val blueprint = game.blueprintManager[name]
+            if (blueprint is BlueprintList) {
+                // Try and remove one item from the list.
+                // This isn't used in vanilla, but seems like a logical behaviour
+                // that mods will probably use.
+                for (item in blueprint.list().shuffled()) {
+                    if (playerShip.removeBlueprint(item))
+                        continue@removeStuff
+                }
+            } else {
+                playerShip.removeBlueprint(blueprint.resolve())
+            }
+        }
+
         // Apply the status effects
         effectLoop@ for (effect in event.event.statuses) {
             val ship = when (effect.target) {

@@ -1210,6 +1210,55 @@ class Ship(
     }
 
     /**
+     * Remove an item from the ship's inventory, including it's weapons and
+     * drones areas.
+     *
+     * Returns true if the item was removed, false otherwise.
+     */
+    fun removeBlueprint(item: Blueprint): Boolean {
+        // Check the cargo storage first, so the player doesn't have to swap
+        // the item in again if they have multiple.
+        for ((index, cargo) in cargoBlueprints.withIndex()) {
+            if (cargo != item)
+                continue
+            cargoBlueprints[index] = null
+
+            cargoUpdated()
+            return true
+        }
+
+        if (augments.remove(item)) {
+            cargoUpdated()
+            return true
+        }
+
+        drones?.let { drones ->
+            for ((index, drone) in drones.drones.withIndex()) {
+                if (drone?.type != item)
+                    continue
+
+                drone.instance?.removeInstance()
+                drones.drones[index] = null
+
+                cargoUpdated()
+                return true
+            }
+        }
+
+        for (hp in hardpoints) {
+            if (hp.weapon?.type != item)
+                continue
+
+            hp.weapon = null
+
+            cargoUpdated()
+            return true
+        }
+
+        return true
+    }
+
+    /**
      * Check if the ship has an augment by name.
      *
      * This throws an exception if the named blueprint doesn't exist.
