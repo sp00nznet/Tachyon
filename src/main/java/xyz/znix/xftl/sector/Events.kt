@@ -291,8 +291,9 @@ class Event(
         for (info in removedCrew) {
             val crew: LivingCrew
 
-            // TODO exclude mind-controlled crew
-            val allCrew = game.player.friendlyCrew.filterIsInstance(LivingCrew::class.java)
+            val allCrew = game.player.crew
+                .filterIsInstance(LivingCrew::class.java)
+                .filter { it.ownerShip == game.player }
 
             if (allCrew.isEmpty()) {
                 println("Warning: Cannot remove crewmember via event, no crew left.")
