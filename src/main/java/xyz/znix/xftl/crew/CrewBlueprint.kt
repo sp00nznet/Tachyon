@@ -92,17 +92,6 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
     }
 
     companion object {
-        val PLAYABLE_RACE_NAMES = listOf(
-            "human",
-            "mantis",
-            "engi",
-            "energy",
-            "slug",
-            "rock",
-            "crystal",
-            "anaerobic"
-        )
-
         private fun parseColourLayer(layerElem: Element): List<Color> {
             val colourElements = layerElem.getChildren("color")
 
