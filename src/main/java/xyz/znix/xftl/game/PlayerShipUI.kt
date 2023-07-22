@@ -1103,6 +1103,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun showEventDialogue(event: Event) {
+        openEventDialogue(event)
+    }
+
+    private fun openEventDialogue(event: Event?) {
         var hasImmediatelyClosed = false
 
         currentWindow = DialogueWindow(game, ship, event) {
@@ -1124,7 +1128,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun showSyntheticDialogue(syntheticEvent: DialogueWindow.SyntheticEvent) {
-        (currentWindow as DialogueWindow).addSyntheticEvent(syntheticEvent)
+        var dialogue = currentWindow as? DialogueWindow
+
+        // Open a new, event-less window.
+        // This would crash on the next render if we didn't add
+        // the synthetic event.
+        if (dialogue == null) {
+            openEventDialogue(null)
+            dialogue = currentWindow as DialogueWindow
+        }
+
+        dialogue.addSyntheticEvent(syntheticEvent)
     }
 
     private fun eventDialogueClosed() {

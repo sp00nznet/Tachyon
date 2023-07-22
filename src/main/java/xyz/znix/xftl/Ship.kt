@@ -1159,13 +1159,24 @@ class Ship(
     fun addBlueprint(item: Blueprint, forced: Boolean): Boolean {
         // Augments can only go in their special area
         if (item is AugmentBlueprint) {
+            // Break down non-stackable duplicated augments
+            // to scrap, using the AUGMENT_FULL event.
+            // Note this goes before the max augments check, so the player
+            // gets paid for duplicate augments when they're full.
+            if (!item.stackable && augments.any { it == item }) {
+                val realEvent = sys.eventManager["AUGMENT_FULL"].resolve()
+                val synthetic = DialogueWindow.SyntheticEvent(realEvent.text!!.resolve())
+                synthetic.resources.scrap = 25
+                sys.shipUI.showSyntheticDialogue(synthetic)
+                return true
+            }
+
             if (augments.size < MAX_AUGMENTS) {
-                // TODO break down non-stackable duplicated augments
-                //  to scrap, using the AUGMENT_FULL event.
                 augments.add(item)
                 cargoUpdated()
                 return true
             }
+
             // TODO handle forced=true.
             return false
         }
@@ -1205,6 +1216,8 @@ class Ship(
         }
 
         // TODO handle forced=true.
+        // TODO if the overflow box is also full, use the EQUIP_FULL event
+        //  and award 25 scrap.
 
         return false
     }

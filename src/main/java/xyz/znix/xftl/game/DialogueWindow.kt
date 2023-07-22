@@ -57,9 +57,19 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
     private val continueEvent = EvaluatedEvent(null, game, game.translator["continue"])
 
-    constructor(game: InGameState, playerShip: Ship, startingEvent: Event, close: () -> Unit)
+    constructor(game: InGameState, playerShip: Ship, startingEvent: Event?, close: () -> Unit)
             : this(game, playerShip, close) {
-        loadEvent(EvaluatedEvent(startingEvent, game, null))
+
+        // Starting event can be null to get the window open before adding
+        // a synthetic event.
+        if (startingEvent != null) {
+            loadEvent(EvaluatedEvent(startingEvent, game, null))
+        } else {
+            // We have to set this for serialisation, and although it should
+            // never be observed, it's still worth adding the continue event
+            // to avoid the player getting stuck if something happens.
+            options = listOf(continueEvent)
+        }
     }
 
     private fun loadEvent(event: EvaluatedEvent) {
@@ -156,34 +166,14 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         game.windowRenderer.render(position.x, position.y, size.x, size.y)
 
         if (syntheticEvents.isNotEmpty()) {
-            drawSyntheticEvent(syntheticEvents.first())
+            drawSyntheticEvent(g, syntheticEvents.first())
             return
         }
 
         // If syntheticEvent is empty, then currentEvent must not be null.
         val event = currentEvent!!
 
-        var textY = position.y + 35
-        textY = drawText(textY, event.text!! + extraText)
-
-        val resourcesGained = event.resources
-        if (resourcesGained.hasAnything) {
-            // The box is centred 43 pixels below the baseline of the last line of
-            // the event text.
-            val boxMiddleY = textY + 43
-
-            val boxSize = findResourceBoxSize(resourcesGained)
-            val boxX = position.x + (size.x - boxSize.x) / 2
-            val boxY = boxMiddleY - boxSize.y / 2
-            val boxPos = ConstPoint(boxX, boxY)
-            drawResourceBox(g, resourcesGained, boxPos, boxSize, Color.white)
-
-            // The spacing between the event text and the options is constant, regardless
-            // of the size of the rewards.
-            textY += 95
-        } else {
-            textY += 45
-        }
+        var textY = drawEventOutcome(g, event.text!! + extraText, event.resources)
 
         val rebuildBBs = optionBoundingBoxes.isEmpty()
 
@@ -275,12 +265,35 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
     }
 
-    private fun drawSyntheticEvent(event: SyntheticEvent) {
+    private fun drawEventOutcome(g: Graphics, text: String, resourcesGained: ResourceSet): Int {
         var textY = position.y + 35
-        textY = drawText(textY, event.text)
+        textY = drawText(textY, text)
 
-        // Gap where resources would otherwise be
-        textY += 45
+        if (resourcesGained.hasAnything) {
+            // The box is centred 43 pixels below the baseline of the last line of
+            // the event text.
+            val boxMiddleY = textY + 43
+
+            val boxSize = findResourceBoxSize(resourcesGained)
+            val boxX = position.x + (size.x - boxSize.x) / 2
+            val boxY = boxMiddleY - boxSize.y / 2
+            val boxPos = ConstPoint(boxX, boxY)
+            drawResourceBox(g, resourcesGained, boxPos, boxSize, Color.white)
+
+            // The spacing between the event text and the options is constant, regardless
+            // of the size of the rewards.
+            textY += 95
+        } else {
+            textY += 45
+        }
+
+        // At this point, textY is where the choices should go.
+
+        return textY
+    }
+
+    private fun drawSyntheticEvent(g: Graphics, event: SyntheticEvent) {
+        val textY = drawEventOutcome(g, event.text, event.resources)
 
         val rebuildBBs = optionBoundingBoxes.isEmpty()
 
@@ -678,9 +691,12 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
     fun selectOption(idx: Int) {
         // Pressing continue on a synthetic event closes it
-        if (syntheticEvents.isNotEmpty()) {
+        val syntheticEvent = syntheticEvents.firstOrNull()
+        if (syntheticEvent != null) {
             if (idx == 0) {
                 syntheticEvents.removeAt(0)
+
+                game.givePlayerResources(syntheticEvent.resources)
 
                 // Re-calculate the bounding boxes now the event is visible again
                 optionBoundingBoxes.clear()
@@ -877,6 +893,10 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             val syntheticElem = Element("syntheticEvent")
             SaveUtil.addAttr(syntheticElem, "text", ev.text)
             elem.addContent(syntheticElem)
+
+            val resourcesElem = Element("resources")
+            ev.resources.saveToXML(resourcesElem, refs)
+            syntheticElem.addContent(resourcesElem)
         }
 
         for (option in options) {
@@ -899,7 +919,12 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         for (syntheticElem in elem.getChildren("syntheticEvent")) {
             val text = SaveUtil.getAttr(syntheticElem, "text")
-            syntheticEvents += SyntheticEvent(text)
+            val event = SyntheticEvent(text)
+
+            val resourcesElem = syntheticElem.getChild("resources")
+            event.resources += ResourceSet(resourcesElem, refs, game)
+
+            syntheticEvents += event
         }
 
         options = ArrayList()
@@ -957,7 +982,9 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
      * code when something happens. This includes breaking down duplicate
      * augments, and the crew clone success/failure messages.
      */
-    class SyntheticEvent(val text: String)
+    class SyntheticEvent(val text: String) {
+        val resources = ResourceSet()
+    }
 
     /**
      * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)
