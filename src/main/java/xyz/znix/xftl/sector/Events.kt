@@ -270,11 +270,11 @@ class Event(
 
         // Pick names for the new crewmembers
         for (crew in addedCrew) {
-            // TODO filter out anaerobic when AE is off
-            // TODO use the proper way of figuring out what crew are given as rewards
-            //  in each sector, so we're not giving out crystals all the time.
-            val raceName = crew.race ?: CrewBlueprint.PLAYABLE_RACE_NAMES.random()
-            val race = game.blueprintManager[raceName] as CrewBlueprint
+            val race = if (crew.race != null) {
+                game.blueprintManager[crew.race] as CrewBlueprint
+            } else {
+                game.lootPool.getRandom { it is CrewBlueprint } as CrewBlueprint
+            }
 
             val info = if (crew.nameId != null) {
                 // Specifically named by the event (eg Slocknog)
