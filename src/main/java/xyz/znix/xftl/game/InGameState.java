@@ -372,8 +372,12 @@ public class InGameState extends MainGame.GameState {
             shipUI.systemPowerHotkeyPressed(Engines.class, powerUp);
         if (in.isKeyPressed(Input.KEY_F))
             shipUI.systemPowerHotkeyPressed(Oxygen.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_D))
+        if (in.isKeyPressed(Input.KEY_D)) {
+            // Try adjusting the power on both the medbay and clonebay, and
+            // one of these calls will be ignored as only one system is fitted.
             shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
+            shipUI.systemPowerHotkeyPressed(Clonebay.class, powerUp);
+        }
 
         if (in.isKeyPressed(Input.KEY_Z))
             shipUI.openAllDoors();
