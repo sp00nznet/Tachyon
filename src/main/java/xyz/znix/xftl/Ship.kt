@@ -1427,6 +1427,25 @@ class Ship(
         }
         elem.addContent(dronesElem)
 
+        // Serialise the augments. Since these are only the blueprint name,
+        // they don't need a new parent element line drones/weapons/etc do.
+        for (aug in augments) {
+            val augElem = Element("augment")
+            SaveUtil.addAttr(augElem, "name", aug.name)
+            elem.addContent(augElem)
+        }
+
+        // Serialise loose cargo
+        for ((index, item) in cargoBlueprints.withIndex()) {
+            if (item == null)
+                continue
+
+            val cargoElem = Element("cargoBlueprint")
+            SaveUtil.addAttr(cargoElem, "name", item.name)
+            SaveUtil.addAttrInt(cargoElem, "index", index)
+            elem.addContent(cargoElem)
+        }
+
         // Serialise the doors. Most of the time there's nothing interesting
         // about them other than whether they're open or closed, but occasionally
         // they have more information (like the damage they've taken from
@@ -1596,6 +1615,19 @@ class Ship(
             drone.loadFromXML(droneElem, refs, this)
 
             // The drone will add itself to the externalDrones or crew list.
+        }
+
+        // Deserialise the augments.
+        for (augElem in rootElem.getChildren("augment")) {
+            val name = SaveUtil.getAttr(augElem, "name")
+            augments.add(sys.blueprintManager[name] as AugmentBlueprint)
+        }
+
+        // Deserialise loose cargo
+        for (cargoElem in rootElem.getChildren("cargoBlueprint")) {
+            val name = SaveUtil.getAttr(cargoElem, "name")
+            val index = SaveUtil.getAttrInt(cargoElem, "index")
+            cargoBlueprints[index] = sys.blueprintManager[name] as Blueprint
         }
 
         // Deserialise explosion (and similar) animations
