@@ -1192,7 +1192,8 @@ public class InGameState extends MainGame.GameState {
 
                 // Never actually remove the crewmember if they're cloned
                 if (info.getClone()) {
-                    // TODO deduct skills
+                    crew.jumpTo(player.findSpaceForCrew(player.getClonebay().getRoom(), crew.getMode()));
+                    crew.onCloned(); // Deducts skills
                     continue;
                 }
             }

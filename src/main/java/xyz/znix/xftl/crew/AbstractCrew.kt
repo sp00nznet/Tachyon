@@ -1099,12 +1099,16 @@ abstract class AbstractCrew(
         pixelSpaceX = newRoom.offsetX.f + newPoint.x * ROOM_SIZE
         pixelSpaceY = newRoom.offsetY.f + newPoint.y * ROOM_SIZE
 
+
         // This has already been done when we updated the pixel positions,
         // but make it explicit since we changed rooms.
         positionChanged()
 
         updateMovement()
-        updateAnimation()
+
+        // If we stay in the manning state and switch room, we'll crash as
+        // the system will disappear.
+        currentAction = Action.IDLE
 
         // Unless we're moving (but even then do it just to be safe),
         // we're now occupying a different slot. Thus update them all.
@@ -1138,6 +1142,10 @@ abstract class AbstractCrew(
         // In any case, in vanilla crew don't run back to the place they died.
         nextTargetPos = null
         pathingTarget = null
+
+        // Switch to the cloning state immediately, so we don't spend one frame
+        // with our old animation.
+        currentAction = Action.CLONING
     }
 
     /**

@@ -133,7 +133,14 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
     override fun onCloned() {
         super.onCloned()
 
-        // TODO deduct skills
+        // Deduct 20% (of a single level) from all skills. This deduction
+        // is then rounded down to an integer number of actions.
+        for (skill in Skill.values()) {
+            val actionsToDeduct = (skill.actionsPerLevel * 0.20f).toInt()
+            val oldLevel = info.skills.getValue(skill)
+            val newLevel = (oldLevel - actionsToDeduct * skill.amountPerAction).coerceIn(0f..1f)
+            info.skills[skill] = newLevel
+        }
     }
 
     override fun onFinishedRepair(sys: AbstractSystem) {
@@ -167,13 +174,8 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
      * A quick way for systems to credit the crewmember with performing a single action.
      */
     fun addSkillPoint(skill: Skill) {
-        // Divide by 2f since the skill level from 0-1 represents the range
-        // of no skills to yellow (with green being 0.5), while actionsPerLevel
-        // is the number of actions to make one colour change (or 0.5 progress).
-        val amount = 1f / (skill.actionsPerLevel * 2f)
-
         val oldProgress = info.skills.getValue(skill)
-        val newProgress = (oldProgress + amount).coerceIn(0f..1f)
+        val newProgress = (oldProgress + skill.amountPerAction).coerceIn(0f..1f)
         info.skills[skill] = newProgress
     }
 
@@ -469,6 +471,11 @@ enum class Skill(
     ;
 
     val iconPath: String = "img/people/skill_${iconName}_white.png"
+
+    // Divide by 2f since the skill level from 0-1 represents the range
+    // of no skills to yellow (with green being 0.5), while actionsPerLevel
+    // is the number of actions to make one colour change (or 0.5 progress).
+    val amountPerAction = 1f / (actionsPerLevel * 2f)
 }
 
 enum class SkillLevel {
