@@ -470,9 +470,18 @@ public class InGameState extends MainGame.GameState {
             Float escapeTimer = enemy.getEscapeTimer();
             if (escapeTimer != null && escapeTimer <= 0f) {
                 // TODO play the jumping away animation
+
+                // Note we have to fetch this now, before we null
+                // out the enemy ship.
+                IEvent jumpEvent = enemy.getSpec() == null ? null : enemy.getSpec().getGotaway();
+
                 setEnemy(null);
                 currentBeacon.setShip(null);
-                // TODO show the gotaway event
+
+                if (jumpEvent != null) {
+                    shipUI.showEventDialogue(jumpEvent.resolve());
+                }
+
                 return;
             }
 
@@ -1230,8 +1239,10 @@ public class InGameState extends MainGame.GameState {
                 if (foundSystem.isPresent()) {
                     targetRoom = foundSystem.get().getRoom();
                 } else {
-                    // Just pick a random room if this system isn't installed
-                    // TODO check how FTL does it
+                    // Just pick a random room if this system isn't installed.
+                    // This might not be what FTL does, but it should be close
+                    // enough - in vanilla, this is only used to damage your
+                    // engines so this case shouldn't come up without mods.
                     targetRoom = player.getRooms().get(Random.Default.nextInt(player.getRooms().size()));
                 }
             }
