@@ -1123,6 +1123,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
+    fun showSyntheticDialogue(syntheticEvent: DialogueWindow.SyntheticEvent) {
+        (currentWindow as DialogueWindow).addSyntheticEvent(syntheticEvent)
+    }
+
     private fun eventDialogueClosed() {
         currentWindow = null
 

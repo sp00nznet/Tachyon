@@ -32,11 +32,24 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
     private val augmentStringWidth = font.getWidth(game.translator["augment"])
 
-    private lateinit var currentEvent: EvaluatedEvent
+    /**
+     * The currently-shown event. This is null if there's only [syntheticEvents]
+     * remaining.
+     */
+    private var currentEvent: EvaluatedEvent? = null
+
     private lateinit var options: List<EvaluatedEvent>
 
     private val optionBoundingBoxes = ArrayList<Rectangle>()
     private var hoveredOption: Int? = null
+
+    /**
+     * The list of [SyntheticEvent]s that should be shown, one after the other.
+     *
+     * Adding a synthetic event will cause it to be shown in front of the
+     * current event, even if that's already visible.
+     */
+    private val syntheticEvents = ArrayList<SyntheticEvent>()
 
     private val textX get() = position.x + 18
 
@@ -83,7 +96,12 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             // so add the resources now.
             addResources(event)
 
-            close()
+            currentEvent = null
+
+            // Stay open if a synthetic event was just created, we'll close when
+            // that's done.
+            checkClosed()
+
             return
         }
 
@@ -137,10 +155,18 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         // Draw the frame
         game.windowRenderer.render(position.x, position.y, size.x, size.y)
 
-        var textY = position.y + 35
-        textY = drawText(textY, currentEvent.text!! + extraText)
+        if (syntheticEvents.isNotEmpty()) {
+            drawSyntheticEvent(syntheticEvents.first())
+            return
+        }
 
-        val resourcesGained = currentEvent.resources
+        // If syntheticEvent is empty, then currentEvent must not be null.
+        val event = currentEvent!!
+
+        var textY = position.y + 35
+        textY = drawText(textY, event.text!! + extraText)
+
+        val resourcesGained = event.resources
         if (resourcesGained.hasAnything) {
             // The box is centred 43 pixels below the baseline of the last line of
             // the event text.
@@ -247,6 +273,25 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
                 textY += TEXT_OPTION_BOTTOM_MARGIN
             }
         }
+    }
+
+    private fun drawSyntheticEvent(event: SyntheticEvent) {
+        var textY = position.y + 35
+        textY = drawText(textY, event.text)
+
+        // Gap where resources would otherwise be
+        textY += 45
+
+        val rebuildBBs = optionBoundingBoxes.isEmpty()
+
+        // Draw the continue option
+        val colour = when (hoveredOption) {
+            0 -> Constants.TEXT_OPTION_HOVER
+            else -> Color.white
+        }
+
+        val text = "1. " + game.translator["continue"]
+        drawText(textY, text, colour, rebuildBBs)
     }
 
     private fun findResourceBoxSize(resourceSet: ResourceSet): IPoint {
@@ -632,6 +677,24 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     }
 
     fun selectOption(idx: Int) {
+        // Pressing continue on a synthetic event closes it
+        if (syntheticEvents.isNotEmpty()) {
+            if (idx == 0) {
+                syntheticEvents.removeAt(0)
+
+                // Re-calculate the bounding boxes now the event is visible again
+                optionBoundingBoxes.clear()
+
+                // Check if we're out of stuff to show and have to close
+                checkClosed()
+            }
+
+            return
+        }
+
+        // If syntheticEvent is empty, then currentEvent must not be null.
+        val event = currentEvent!!
+
         if (idx < 0 || idx >= options.size)
             return
 
@@ -642,14 +705,22 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             return
 
         // Add any resources the currently-visible event dropped.
-        addResources(currentEvent)
+        addResources(event)
 
         if (choice.isContinue) {
-            close()
+            currentEvent = null
+            checkClosed()
             return
         }
 
         loadEvent(choice)
+    }
+
+    fun addSyntheticEvent(syntheticEvent: SyntheticEvent) {
+        syntheticEvents.add(syntheticEvent)
+
+        // Re-calculate the bounding boxes to only show the continue option.
+        optionBoundingBoxes.clear()
     }
 
     private fun addResources(event: EvaluatedEvent) {
@@ -788,10 +859,25 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
     }
 
+    private fun checkClosed() {
+        if (syntheticEvents.isNotEmpty() || currentEvent != null)
+            return
+
+        close()
+    }
+
     fun saveToXML(elem: Element, refs: ObjectRefs) {
-        val currentEventElem = Element("currentEvent")
-        saveEEToXML(currentEvent, currentEventElem, refs)
-        elem.addContent(currentEventElem)
+        currentEvent?.let { event ->
+            val currentEventElem = Element("currentEvent")
+            saveEEToXML(event, currentEventElem, refs)
+            elem.addContent(currentEventElem)
+        }
+
+        for (ev in syntheticEvents) {
+            val syntheticElem = Element("syntheticEvent")
+            SaveUtil.addAttr(syntheticElem, "text", ev.text)
+            elem.addContent(syntheticElem)
+        }
 
         for (option in options) {
             val optionElem = Element("option")
@@ -807,11 +893,18 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             : this(game, playerShip, close) {
 
         val currentEventElem = elem.getChild("currentEvent")
-        currentEvent = loadEEFromXML(currentEventElem, refs)
+        if (currentEventElem != null) {
+            currentEvent = loadEEFromXML(currentEventElem, refs)
+        }
+
+        for (syntheticElem in elem.getChildren("syntheticEvent")) {
+            val text = SaveUtil.getAttr(syntheticElem, "text")
+            syntheticEvents += SyntheticEvent(text)
+        }
 
         options = ArrayList()
         for (optionElem in elem.getChildren("option")) {
-            options += loadEEFromXML(optionElem, refs)
+            (options as ArrayList).add(loadEEFromXML(optionElem, refs))
         }
     }
 
@@ -858,6 +951,13 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         return evaluated
     }
+
+    /**
+     * Represents an event that doesn't appear in XML, but is inserted by
+     * code when something happens. This includes breaking down duplicate
+     * augments, and the crew clone success/failure messages.
+     */
+    class SyntheticEvent(val text: String)
 
     /**
      * Represents an event with all the random stuff resolved, such as the title, text and choice text (if applicable)

@@ -110,7 +110,10 @@ class Event(
             // Special-case the crew-removing event used in STATION_SICK
             if (count < 0) {
                 for (i in 0 until -count) {
-                    removedCrew.add(RemoveCrew(false, null, null, race == "traitor", this))
+                    // Using an empty clone message hides the dialogue window
+                    val emptyText = EventText("")
+
+                    removedCrew.add(RemoveCrew(false, emptyText, null, race == "traitor", this))
                 }
             }
         }
@@ -393,7 +396,7 @@ class RemoveCrew(
      * Note: this is empty for the CRYSTAL_HELP_DIG events, we
      * shouldn't display a popup for those.
      */
-    val cloneText: IEventText?,
+    val cloneText: IEventText,
 
     /**
      * If this event removes a crewmember of a specific race, for

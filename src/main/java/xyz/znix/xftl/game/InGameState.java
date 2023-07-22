@@ -1169,8 +1169,22 @@ public class InGameState extends MainGame.GameState {
 
         for (RemoveCrewEval removed : resources.getLostCrew()) {
             LivingCrew crew = removed.getCrew();
-            // TODO clone bay support
-            if (removed.getInfo().getTurnHostile()) {
+            RemoveCrew info = removed.getInfo();
+
+            if (player.getClonebay() != null) {
+                String cloneMessage = info.getCloneText().resolve();
+                if (!cloneMessage.isBlank()) {
+                    shipUI.showSyntheticDialogue(new DialogueWindow.SyntheticEvent(cloneMessage));
+                }
+
+                // Never actually remove the crewmember if they're cloned
+                if (info.getClone()) {
+                    // TODO deduct skills
+                    continue;
+                }
+            }
+
+            if (info.getTurnHostile()) {
                 crew.setOwnerShip(null);
             } else {
                 crew.removeFromShip();
