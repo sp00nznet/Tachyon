@@ -106,12 +106,21 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             switchToCooldown()
             return
         }
+
+        // If the crew is no longer mind-controlled by us, something odd
+        // happened - so go onto cooldown.
+        if (crew.mindControlledBy != this) {
+            switchToCooldown()
+            return
+        }
     }
 
     fun isControlling(crew: LivingCrew): Boolean {
         // Check if one of the ships has jumped away, or is no longer
         // hostile towards the other.
-        if (ship.sys.getEnemyOf(ship) == null)
+        // This doesn't apply to intruders, since they can always
+        // be mind-controlled, regardless of what ship they belong to.
+        if (ship.sys.getEnemyOf(ship) == null && crew.room.ship != ship)
             return false
 
         return active && crew == controlledCrew
