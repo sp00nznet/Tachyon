@@ -171,6 +171,17 @@ class Beacon(
     }
 
     /**
+     * Remove the current environment associated with the beacon, so it'll be
+     * re-created next time it's used.
+     *
+     * This should be called after changing the beacon's event, so it reflects
+     * the new event's environment.
+     */
+    fun clearEnvironment() {
+        actualEnvironment = null
+    }
+
+    /**
      * FOR USE WITH THE DEBUG CONSOLE ONLY!
      */
     fun debugSetEnvironment(environment: AbstractEnvironment) {
@@ -290,16 +301,15 @@ class Beacon(
     }
 
     enum class EnvironmentType(
-        val backgroundName: String?,
         val isDangerous: Boolean,
         val create: (InGameState, Beacon) -> AbstractEnvironment
     ) {
-        NORMAL(null, false, ::NormalEnvironment),
-        ASTEROID(null, true, ::AsteroidEnvironment),
-        SUN(null, true, ::SunEnvironment),
-        PULSAR(null, true, ::PulsarEnvironment),
-        NEBULA(null, false, { game, beacon -> NebulaEnvironment(game, beacon, false) }),
-        ION_STORM(null, false, { game, beacon -> NebulaEnvironment(game, beacon, true) });
+        NORMAL(false, ::NormalEnvironment),
+        ASTEROID(true, ::AsteroidEnvironment),
+        SUN(true, ::SunEnvironment),
+        PULSAR(true, ::PulsarEnvironment),
+        NEBULA(false, { game, beacon -> NebulaEnvironment(game, beacon, false) }),
+        ION_STORM(false, { game, beacon -> NebulaEnvironment(game, beacon, true) });
 
         // TODO how should we represent PDS/ABSes, given they can be targed at the player or enemy (or both?)
 

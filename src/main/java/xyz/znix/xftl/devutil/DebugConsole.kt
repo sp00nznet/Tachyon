@@ -400,9 +400,11 @@ class DebugConsole(var game: InGameState) {
             // Clear any previously-set beacon power limits, left over
             // from a previous event.
             game.currentBeacon.powerLimitEffects.clear()
+            game.currentBeacon.event = event.resolve()
+            game.currentBeacon.clearEnvironment()
             game.player.updateScriptedPowerLimits()
 
-            game.shipUI.showEventDialogue(event.resolve())
+            game.shipUI.showEventDialogue(game.currentBeacon.event)
         }
     }
 

@@ -7,6 +7,7 @@ import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.requireAttributeValue
+import kotlin.math.absoluteValue
 
 // Many of the comments in this file came from ftlwiki.com (now unfortunately
 // offline, but accessable via the wayback machine):
@@ -65,6 +66,9 @@ class Event(
     val questName: String? = elem.getChild("quest")?.getAttributeValue("event")
 
     val revealMap: Boolean = elem.getChild("reveal_map") != null
+
+    val fleetBackground: FleetBackground? = elem.getChildTextTrim("fleet")
+        ?.let { name -> FleetBackground.values().first { it.xmlName == name } }
 
     init {
         // Initialise these in the constructor so we can mutate them,
@@ -358,7 +362,7 @@ class Event(
             "autoReward", "weapon", "drone", "augment",
             "ship", "img", "environment", "damage",
             "upgrade", "modifyPursuit", "status",
-            "quest", "reveal_map", "remove",
+            "quest", "reveal_map", "remove", "fleet",
 
             // Used by the code loading the event
             "text", "choice"
@@ -542,7 +546,7 @@ class ImageList(val name: String, val images: List<EnvironmentImage>) {
         if (this == NONE)
             return null
 
-        return images[seed % images.size]
+        return images[seed.absoluteValue % images.size]
     }
 
     companion object {
@@ -560,4 +564,10 @@ class EnvironmentImage(val path: String) {
     }
 
     // TODO do the width and height matter?
+}
+
+enum class FleetBackground(val xmlName: String) {
+    REBEL("rebel"),
+    FEDERATION("fed"),
+    BOTH("battle")
 }

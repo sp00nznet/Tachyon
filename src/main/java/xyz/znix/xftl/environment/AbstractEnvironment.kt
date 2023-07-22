@@ -4,21 +4,23 @@ import org.jdom2.Element
 import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.EnvironmentImage
+import xyz.znix.xftl.sector.FleetBackground
 import xyz.znix.xftl.sector.ImageList
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
     abstract val type: Beacon.EnvironmentType
 
-    protected var backgroundImage: EnvironmentImage? = null
-    protected var planetImage: EnvironmentImage? = null
+    private var backgroundImage: EnvironmentImage? = null
+    private var planetImage: EnvironmentImage? = null
+    private val backgroundShips = ArrayList<BackgroundShip>()
 
-    // These are only for use by AbstractEnvironment
-    protected var backgroundImageIndex: Int = Random.nextInt(999)
-    protected var planetImageIndex: Int = Random.nextInt(999)
+    private var visualSeed: Int = Random.nextInt(99999)
 
     // True if the backgroundImage/planetImage are used, and their indices
     // should thus be saved.
@@ -47,17 +49,74 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
         beacon.event.backImg?.let { backgroundList = it }
         beacon.event.planetImg?.let { planetList = it }
 
-        backgroundImage = backgroundList.getRandom(backgroundImageIndex)
-        planetImage = planetList.getRandom(planetImageIndex)
+        val rand = Random(visualSeed)
 
-        // TODO show the rebel fleet in the background if we're at an overtaken beacon
-        // TODO show the flagship rebel/fed mixed fight backgrounds
+        backgroundImage = backgroundList.getRandom(rand.nextInt())
+        planetImage = planetList.getRandom(rand.nextInt())
+
+        backgroundShips.clear()
+        val fleet = beacon.event.fleetBackground
+        if (fleet != null) {
+            initFleet(fleet, rand)
+        }
+    }
+
+    private fun initFleet(fleet: FleetBackground, rand: Random) {
+        val rebelShips = listOf(
+            game.getImg("img/ship/fleet/fleet_1_small.png"),
+            game.getImg("img/ship/fleet/fleet_2_small.png"),
+            game.getImg("img/ship/fleet/fleet_1_med.png"),
+            game.getImg("img/ship/fleet/fleet_2_med.png")
+        )
+        val federationShips = listOf(
+            game.getImg("img/ship/fleet/fleetfed_1_small.png"),
+            game.getImg("img/ship/fleet/fleetfed_2_small.png"),
+            game.getImg("img/ship/fleet/fleetfed_1_med.png"),
+            game.getImg("img/ship/fleet/fleetfed_2_med.png")
+        )
+
+        fun addShip(row: Int, column: Int, fed: Boolean) {
+            val image = when (fed) {
+                true -> federationShips.random(rand)
+                else -> rebelShips.random(rand)
+            }
+
+            backgroundShips.add(BackgroundShip(image, column, row, rand.nextFloat(), rand.nextFloat()))
+        }
+
+        for (x in 0 until 3) {
+            for (y in 0 until 3) {
+                val isFed = when (fleet) {
+                    FleetBackground.REBEL -> false
+                    FleetBackground.FEDERATION -> true
+                    FleetBackground.BOTH -> when (x) {
+                        0 -> false
+                        2 -> true
+                        else -> rand.nextBoolean()
+                    }
+                }
+                addShip(y, x, isFed)
+            }
+        }
     }
 
     open fun renderBackground(gc: GameContainer, g: Graphics) {
         // Simple background and planet
         backgroundImage?.getImg(game)?.draw()
         planetImage?.getImg(game)?.draw()
+
+        // Background rebel/federation ships live on a 3x3 grid
+        // We can't pick a random position within that grid when we populate
+        // this list, as we don't know the screen size, so instead we store
+        // a float of it's position within that cell in each axis.
+        val bgShipColumnWidth = gc.width / 3
+        val bgShipRowHeight = gc.height / 3
+        for (ship in backgroundShips) {
+            val x = ((ship.gridX + ship.offsetX) * bgShipColumnWidth).roundToInt()
+            val y = ((ship.gridY + ship.offsetY) * bgShipRowHeight).roundToInt()
+
+            ship.image.drawAlignedCentred(x, y)
+        }
     }
 
     /**
@@ -75,19 +134,24 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
         if (!serialiseImageIndexes)
             return
 
-        val combined = backgroundImageIndex * 999 + planetImageIndex
-        SaveUtil.addAttrInt(elem, "bgImageIdx", combined)
+        SaveUtil.addAttrInt(elem, "visualSeed", visualSeed)
     }
 
     open fun loadFromXML(elem: Element) {
         if (!serialiseImageIndexes)
             return
 
-        val combined = SaveUtil.getAttrInt(elem, "bgImageIdx")
-        backgroundImageIndex = combined / 999
-        planetImageIndex = combined % 999
+        visualSeed = SaveUtil.getAttrInt(elem, "visualSeed")
 
         // The indices have changed, we need to fetch the new images for them
         initImages()
     }
+
+    private class BackgroundShip(
+        val image: Image,
+        val gridX: Int,
+        val gridY: Int,
+        val offsetX: Float,
+        val offsetY: Float
+    )
 }

@@ -314,6 +314,7 @@ class Sector {
         val beacon = suitable.random()
         beacon.hasQuest = true
         beacon.event = questEvent
+        beacon.clearEnvironment()
 
         return true
     }
