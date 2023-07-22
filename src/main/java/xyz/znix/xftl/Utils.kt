@@ -10,7 +10,11 @@ import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import java.io.File
 import java.util.*
+import kotlin.math.PI
 import kotlin.random.Random
+
+const val PIf = PI.toFloat()
+const val TWO_PI = 2 * PIf
 
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()

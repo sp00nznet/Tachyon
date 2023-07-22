@@ -1,11 +1,8 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import xyz.znix.xftl.Animations
-import xyz.znix.xftl.FTLAnimation
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.drones.CombatDrone
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -13,7 +10,6 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -152,7 +148,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 hitSuperShield -> {
                     // Pick a random point on the ship's shield line
                     val halfSize = ship.shieldHalfSize
-                    val angle = Random.nextFloat() * PI.toFloat() * 2
+                    val angle = Random.nextFloat() * TWO_PI
                     ship.shieldOrigin + ConstPoint(
                         (halfSize.x * cos(angle)).roundToInt(),
                         (halfSize.y * sin(angle)).roundToInt()

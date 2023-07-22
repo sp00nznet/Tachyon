@@ -2,6 +2,7 @@ package xyz.znix.xftl.environment
 
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
+import xyz.znix.xftl.PIf
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
@@ -131,7 +132,7 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
             if (nextLightning <= 0) {
                 lightingTimer = 0.25f
                 nextLightning = (6.25f..18.75f).random(Random)
-                lightningRotation = (0..3).random() * (PI.toFloat() / 2f)
+                lightningRotation = (0..3).random() * (PIf / 2f)
             }
             lightingTimer = (lightingTimer - dt).coerceAtLeast(0f)
 

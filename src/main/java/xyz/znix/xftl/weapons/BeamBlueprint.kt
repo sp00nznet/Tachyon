@@ -4,6 +4,7 @@ import org.jdom2.Element
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
 import xyz.znix.xftl.FTLAnimation
+import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.WeaponDamage
 import xyz.znix.xftl.drones.CombatDrone
@@ -470,7 +471,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val beamAngle = atan2(dst.y.f - src.y, dst.x.f - src.x)
         val angleDifference = dstAngle - beamAngle
         val dstWidth = width / cos(angleDifference)
-        val dstTangentAngle = beamAngle - PI.toFloat() / 2 + angleDifference
+        val dstTangentAngle = beamAngle - PIf / 2 + angleDifference
         val dstTangentX = cos(dstTangentAngle) * dstWidth
         val dstTangentY = sin(dstTangentAngle) * dstWidth
 

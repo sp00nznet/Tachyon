@@ -2,9 +2,7 @@ package xyz.znix.xftl.drones
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import xyz.znix.xftl.FTLAnimation
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -689,7 +687,7 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
                 abs(newAngle - currentDestAngle),
                 abs(newAngle - (currentDestAngle + TWO_PI))
             )
-        } while (difference < PI.toFloat() / 2)
+        } while (difference < PIf / 2)
 
         // Save the new angle for next time
         currentDestAngle = newAngle
@@ -746,5 +744,3 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         pauseStopTime = SaveUtil.getAttrFloat(elem, "pauseStopTime")
     }
 }
-
-private const val TWO_PI = 2 * PI.toFloat()

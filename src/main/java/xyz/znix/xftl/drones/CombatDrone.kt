@@ -3,6 +3,7 @@ package xyz.znix.xftl.drones
 import org.jdom2.Element
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.TWO_PI
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Graphics
@@ -15,7 +16,6 @@ import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
-import kotlin.math.PI
 import kotlin.random.Random
 
 class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
@@ -143,7 +143,7 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
 
                 // Pick a random angle for the beam to move over, and use that
                 // to figure out which rooms it'll hit
-                aim.angle = Random.nextFloat() * PI.toFloat() * 2f
+                aim.angle = Random.nextFloat() * TWO_PI
 
                 aim.updateHitRooms()
 

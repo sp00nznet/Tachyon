@@ -334,7 +334,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             if (segments == 0)
                 segments = numSegments
 
-            val angle = Math.PI.toFloat() * 2 * segments / numSegments
+            val angle = TWO_PI * segments / numSegments
 
             // Find the position of the point that changes with the angle
             val size = timerImg.width.f

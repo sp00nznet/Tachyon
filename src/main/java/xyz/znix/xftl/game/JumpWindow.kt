@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
+import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Utils
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.f
@@ -125,8 +126,8 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
                 val width = 10f
                 val angle = atan2(a.y.f - b.y, a.x.f - b.x)
-                val tangentX = cos(angle + PI.toFloat() / 2f) * width / 2
-                val tangentY = sin(angle + PI.toFloat() / 2f) * width / 2
+                val tangentX = cos(angle + PIf / 2f) * width / 2
+                val tangentY = sin(angle + PIf / 2f) * width / 2
 
                 Texture.unbind()
                 Constants.BEACON_LINE_FLAGSHIP.bind()
@@ -468,7 +469,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         // Find the delta vector between the two points we're drawing between, and the length of said vector
         val delta = toPos - fromPos
         val dist = sqrt(delta.distToSq(ConstPoint.ZERO).f).toInt()
-        val angle = atan2(delta.y.f, delta.x.f) * 180 / Math.PI.toFloat()
+        val angle = atan2(delta.y.f, delta.x.f) * 180 / PIf
 
         // Translate to the start position, and rotate so that positive x runs along our line.
         // The beacons are drawn at their image origins, and they're 32px² - so +16 for x,y.
