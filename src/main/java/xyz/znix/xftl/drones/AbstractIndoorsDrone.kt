@@ -178,6 +178,11 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
                 // during the update cycle.
                 if (pawn != null)
                     updatePawn(dt)
+            } else if (health == 0f) {
+                // Dying is implemented by super.update, so we have to call it
+                // when we're dead, otherwise we'd become invincible while
+                // powered off.
+                super.update(dt)
             } else {
                 icon.update(dt)
 
