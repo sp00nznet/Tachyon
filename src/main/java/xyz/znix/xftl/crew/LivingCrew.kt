@@ -453,7 +453,7 @@ class LivingCrewInfo(
 }
 
 enum class Skill(
-    iconName: String,
+    val xmlName: String,
 
     /**
      * The number of actions a non-human (no 10% boost) has to perform
@@ -470,7 +470,7 @@ enum class Skill(
     COMBAT("combat", 8),
     ;
 
-    val iconPath: String = "img/people/skill_${iconName}_white.png"
+    val iconPath: String = "img/people/skill_${xmlName}_white.png"
 
     // Divide by 2f since the skill level from 0-1 represents the range
     // of no skills to yellow (with green being 0.5), while actionsPerLevel

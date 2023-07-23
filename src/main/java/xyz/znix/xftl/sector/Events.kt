@@ -4,6 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
+import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.requireAttributeValue
@@ -101,10 +102,21 @@ class Event(
             val race = crewElem.getAttributeValue("class")
             val nameId = crewElem.getAttributeValue("id")
 
-            for (i in 0 until count) {
-                addedCrew.add(AddCrew(race, nameId))
+            val skills = HashMap<Skill, Float>()
+            crewElem.getAttributeValue("all_skills")?.toInt()?.let { level ->
+                for (skill in Skill.values()) {
+                    // Use 0.5 times so that 1 is fully green, and 2 is fully yellow.
+                    skills[skill] = 0.5f * level
+                }
+            }
+            for (skill in Skill.values()) {
+                crewElem.getAttributeValue(skill.xmlName)?.toInt()?.let { level ->
+                    skills[skill] = 0.5f * level
+                }
+            }
 
-                // TODO skills, including 'all_skills'
+            for (i in 0 until count) {
+                addedCrew.add(AddCrew(race, nameId, skills))
             }
 
             // Special-case the crew-removing event used in STATION_SICK
@@ -284,6 +296,8 @@ class Event(
                 LivingCrewInfo.generateRandom(race, game)
             }
 
+            info.skills.putAll(crew.skills)
+
             resourcesGained.crew.add(info)
         }
 
@@ -382,7 +396,7 @@ class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {
     override val debugId: String get() = name
 }
 
-class AddCrew(val race: String?, val nameId: String?)
+class AddCrew(val race: String?, val nameId: String?, val skills: Map<Skill, Float>)
 
 class RemoveCrew(
     /**
