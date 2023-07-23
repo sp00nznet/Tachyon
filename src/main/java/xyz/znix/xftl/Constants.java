@@ -41,11 +41,14 @@ public class Constants {
     public static final Color WEAPONS_ITEM_SELECTED = UI_BACKGROUND_GLOW_COLOUR;
     public static final Color WEAPONS_ITEM_CHARGED = new Color(120, 255, 120);
     public static final Color WEAPONS_ITEM_TARGETING = new Color(255, 120, 120);
+    public static final Color WEAPONS_ITEM_DRONE_COOLDOWN = new Color(255, 100, 100);
 
     public static final Color WEAPONS_ITEM_ENERGY_UNPOWERED = WEAPONS_ITEM_DESELECTED;
     public static final Color WEAPONS_ITEM_ENERGY_POWERED = WEAPONS_ITEM_SELECTED;
     public static final Color WEAPONS_ITEM_ENERGY_CHARGED = WEAPONS_ITEM_CHARGED;
     public static final Color WEAPONS_ITEM_ENERGY_ZOLTAN = new Color(255, 250, 90);
+
+    public static final Color DRONE_COOLDOWN_BACKGROUND = new Color(255, 0, 0, 64);
 
     public static final Color JUMP_READY = new Color(235, 245, 0);
     public static final Color JUMP_READY_TEXT = new Color(37, 74, 77);

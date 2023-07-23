@@ -2,6 +2,7 @@ package xyz.znix.xftl.rendering
 
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
+import xyz.znix.xftl.f
 import xyz.znix.xftl.math.Matrix3f
 import kotlin.math.abs
 import kotlin.math.cos
@@ -24,6 +25,10 @@ class Graphics {
     // The 'live' transform that we're currently rendering with.
     // This is NOT on transformStack until pushTransform is called.
     private var transform = Matrix3f()
+
+    fun fillRect(x: Int, y: Int, width: Int, height: Int) {
+        fillRect(x.f, y.f, width.f, height.f)
+    }
 
     fun fillRect(x: Float, y: Float, width: Float, height: Float) {
         Texture.unbind()

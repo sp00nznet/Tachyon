@@ -12,6 +12,7 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.crew.SkillLevel
+import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.environment.PulsarEnvironment
 import xyz.znix.xftl.environment.SunEnvironment
 import xyz.znix.xftl.game.InGameState.RoomClickListener
@@ -28,10 +29,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
-import kotlin.math.atan2
-import kotlin.math.ceil
-import kotlin.math.pow
-import kotlin.math.round
+import kotlin.math.*
 import kotlin.random.Random
 
 class PlayerShipUI(val ship: Ship, private val game: InGameState) {
@@ -560,6 +558,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 override val isSelectingTarget: Boolean get() = targetingSelectedWeapon == i
                 override val hasChargeBar: Boolean get() = true
                 override val isBeingHacked: Boolean get() = ship.weapons!!.isHackActive
+                override val droneCooldownProgress: Float? get() = null
 
                 override fun click(button: Int) {
                     if (button == MOUSE_LEFT_BUTTON) {
@@ -672,6 +671,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                     override val isSelectingTarget: Boolean get() = false
                     override val hasChargeBar: Boolean get() = false
                     override val isBeingHacked: Boolean get() = drones.isHackActive && info?.instance != null
+                    override val droneCooldownProgress: Float?
+                        get() = info?.cooldown?.let { it / AbstractDrone.DRONE_DESTROYED_COOLDOWN }
 
                     override fun click(button: Int) {
                         val wasPowered = info?.instance?.isPowered ?: false
@@ -1366,6 +1367,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         abstract val isSelectingTarget: Boolean
         abstract val hasChargeBar: Boolean
         abstract val isBeingHacked: Boolean
+        abstract val droneCooldownProgress: Float?
 
         override val disabled: Boolean get() = empty
 
@@ -1373,6 +1375,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             get() = when {
                 empty -> WEAPONS_ITEM_DESELECTED
                 isBeingHacked -> SYSTEM_HACKED
+                droneCooldownProgress != null -> WEAPONS_ITEM_DRONE_COOLDOWN
                 !isPowered -> WEAPONS_ITEM_DESELECTED
                 isSelectingTarget -> WEAPONS_ITEM_TARGETING
                 isCharged -> WEAPONS_ITEM_CHARGED
@@ -1391,9 +1394,16 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         private val weaponNumberString = (slotNumber + 1).toString()
 
         override fun draw(g: Graphics) {
-            g.colour = mainColour
+            // Draw the drone cooldown progress, if applicable
+            val cooldownProgress = droneCooldownProgress
+            if (cooldownProgress != null) {
+                val height = (size.y * cooldownProgress).roundToInt()
+                g.colour = DRONE_COOLDOWN_BACKGROUND
+                g.fillRect(pos.x, pos.y + size.y - height, size.x, height)
+            }
 
             // Draw the outline box
+            g.colour = mainColour
             g.drawRect(pos.x.f, pos.y.f, (size.x - 1).f, (size.y - 1).f)
             g.drawRect((pos.x + 1).f, (pos.y + 1).f, (size.x - 3).f, (size.y - 3).f)
 
@@ -1462,6 +1472,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
                 if (zoltanPower > bar) {
                     g.colour = WEAPONS_ITEM_ENERGY_ZOLTAN
+                } else if (droneCooldownProgress != null) {
+                    g.colour = WEAPONS_ITEM_DRONE_COOLDOWN
+                    g.drawRect((pos.x + 4).f, y.f, (16 - 1).f, (7 - 1).f)
+                    continue
                 } else if (!isPowered) {
                     g.colour = WEAPONS_ITEM_ENERGY_UNPOWERED
                     g.drawRect((pos.x + 4).f, y.f, (16 - 1).f, (7 - 1).f)

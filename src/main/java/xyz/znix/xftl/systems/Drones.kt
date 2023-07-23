@@ -100,7 +100,20 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         super.update(dt)
 
         for (info in drones) {
-            info?.instance?.update(dt)
+            if (info == null)
+                continue
+
+            info.instance?.update(dt)
+
+            val oldCooldown = info.cooldown
+            if (oldCooldown != null) {
+                val newCooldown = oldCooldown - dt
+                if (newCooldown <= 0) {
+                    info.cooldown = null
+                } else {
+                    info.cooldown = newCooldown
+                }
+            }
         }
 
         if (playDroneLaunchSound) {
@@ -139,6 +152,11 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             // one present, we can't turn it on.
             val hostileShip = ship.sys.enemy
             if (info.type.type.needsHostileShip && hostileShip == null) {
+                return false
+            }
+
+            // Check the drone isn't on it's destroy cooldown
+            if (info.cooldown != null) {
                 return false
             }
 
@@ -194,7 +212,13 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
     }
 
-    class DroneInfo(val type: DroneBlueprint, var instance: AbstractDrone? = null)
+    class DroneInfo(val type: DroneBlueprint, var instance: AbstractDrone? = null) {
+        /**
+         * The cooldown (counting down) for how long until the player can
+         * deploy this drone again, after it was destroyed.
+         */
+        var cooldown: Float? = null
+    }
 
     companion object {
         val INFO: SystemInfo = DronesInfo

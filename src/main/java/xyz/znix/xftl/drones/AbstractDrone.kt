@@ -58,9 +58,13 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
      * for example a repair drone destroyed by boarders.
      */
     open fun destroy() {
-        removeInstance()
+        // Do this before calling removeInstance, otherwise we won't
+        // be able to find the info instance.
+        val drones = ownerShip.drones!!
+        val info = drones.drones.firstOrNull { it?.instance == this }
+        info?.cooldown = DRONE_DESTROYED_COOLDOWN
 
-        // TODO cooldown
+        removeInstance()
     }
 
     /**
@@ -159,5 +163,9 @@ abstract class AbstractDrone(val type: DroneBlueprint) {
 
             info.instance = this
         }
+    }
+
+    companion object {
+        const val DRONE_DESTROYED_COOLDOWN: Float = 10f
     }
 }
