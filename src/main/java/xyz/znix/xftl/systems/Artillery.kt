@@ -2,10 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Color
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.SystemInfo
-import xyz.znix.xftl.Translator
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -21,7 +18,6 @@ import kotlin.math.max
 import kotlin.math.sqrt
 
 class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
-    // TODO copy the title and desc from the weapon, as specified in the system blueprint.
 
     private lateinit var weapon: AbstractWeaponInstance
 
@@ -35,6 +31,9 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
     override val sortingType: SortingType get() = SortingType.ARTILLERY
+
+    override val title: GameText? get() = weapon.type.title
+    override val description: GameText? get() = weapon.type.desc
 
     private val barImages: List<Image> by onInit { game ->
         (1..4).map { game.getImg("img/systemUI/button_artillery_$it.png") }

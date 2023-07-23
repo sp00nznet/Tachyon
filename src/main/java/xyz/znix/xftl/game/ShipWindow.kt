@@ -168,7 +168,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         val hoveredSystem = hoveredButton?.system
         if (hoveredSystem != null) {
             val undoablePower = systemUpgradeUndos[hoveredSystem]?.size ?: 0
-            infoPanel.drawDescriptionBoxSystem(hoveredSystem.blueprint)
+            infoPanel.drawDescriptionBoxSystem(hoveredSystem)
             infoPanel.drawSystemPowerBox(g, hoveredSystem.blueprint, hoveredSystem.energyLevels, undoablePower)
         }
 

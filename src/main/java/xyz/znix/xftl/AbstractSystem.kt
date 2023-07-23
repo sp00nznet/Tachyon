@@ -25,6 +25,11 @@ import kotlin.reflect.KProperty
 abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     val codename: String get() = blueprint.type
 
+    // The title and description of the system shown in the game window.
+    // The Artillery system uses this to copy it's weapon's title/desc.
+    open val title: GameText? get() = blueprint.title
+    open val description: GameText? get() = blueprint.desc
+
     lateinit var configuration: SystemInstallConfiguration
     var room: Room? = null
 

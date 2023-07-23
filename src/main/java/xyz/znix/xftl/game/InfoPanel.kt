@@ -157,6 +157,14 @@ class InfoPanel(private val game: InGameState) {
         drawDescriptionBox(blueprint.title, blueprint.desc, null, emptyList(), INFO_HEIGHT_SYSTEM)
     }
 
+    /**
+     * Note: this does not render the system power bars!
+     */
+    fun drawDescriptionBoxSystem(system: AbstractSystem) {
+        // The artillery system uses it's weapon's title/description.
+        drawDescriptionBox(system.title, system.description, null, emptyList(), INFO_HEIGHT_SYSTEM)
+    }
+
     fun drawDescriptionBox(
         title: GameText?,
         description: GameText?,
