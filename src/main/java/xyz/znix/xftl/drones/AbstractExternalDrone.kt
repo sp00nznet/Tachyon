@@ -583,6 +583,25 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
     }
 
     override fun update(dt: Float) {
+        // Check if the drone is paused before applying the power-off
+        // momentum movement, as otherwise if you turned off a drone when
+        // it was coming to a stop it's jolt a bit since we're not updating
+        // the speed here.
+        if (paused) {
+            pauseTimer += dt
+
+            // If we're still slowing down, apply that
+            val remaining = pauseStopTime - pauseTimer
+            if (remaining > 0f) {
+                val newSpeedMult = remaining / 1.5f
+
+                posX += speedX * dt * newSpeedMult
+                posY += speedY * dt * newSpeedMult
+            }
+
+            return
+        }
+
         if (!drone.isPowered) {
             posX += speedX * dt
             posY += speedY * dt
@@ -600,20 +619,6 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
             return
         }
 
-        if (paused) {
-            pauseTimer += dt
-
-            // If we're still slowing down, apply that
-            val remaining = pauseStopTime - pauseTimer
-            if (remaining > 0f) {
-                val newSpeedMult = remaining / 1.5f
-
-                posX += speedX * dt * newSpeedMult
-                posY += speedY * dt * newSpeedMult
-            }
-
-            return
-        }
         pauseTimer = 0f
 
         val inPosition = updateMovement(dt)
