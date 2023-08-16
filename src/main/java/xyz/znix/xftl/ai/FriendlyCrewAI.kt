@@ -292,6 +292,10 @@ abstract class AITask(val ai: FriendlyCrewAI, val room: Room) {
     }
 
     abstract fun isSuitable(crew: AbstractCrew): Boolean
+
+    override fun toString(): String {
+        return "${javaClass.simpleName}(id=${room.id},sys=${room.system?.codename})"
+    }
 }
 
 class RepairTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
