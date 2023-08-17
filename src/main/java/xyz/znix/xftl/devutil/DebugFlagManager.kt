@@ -72,6 +72,11 @@ class DebugFlagManager {
         "Allow the player to jump to any beacon or sector in the map"
     )
 
+    val noTeleportLimit = DebugFlag(
+        "notl", "No enemy teleport limit", false,
+        "Remove the three-teleport limit from AI ships sending boarders"
+    )
+
     val infiniteMissiles = DebugFlag(
         "infm", "Infinite Missiles", false,
         "Ships (most importantly enemy ships) don't subtract missiles when they fire things."
@@ -97,6 +102,7 @@ class DebugFlagManager {
         continuousSaveLoad,
         noClone,
         anyJump,
+        noTeleportLimit,
         infiniteMissiles,
         infiniteDrones
     )

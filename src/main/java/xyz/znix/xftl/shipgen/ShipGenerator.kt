@@ -67,6 +67,9 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             val softMax = min(softMin + maxExtra, max)
             val amount = (softMin..softMax).random(rand)
 
+            // This is used to send the right number of boarders
+            ship.crewAI.initialCrewCount = amount
+
             for (i in 1..amount) {
                 val crewBP = sys.blueprintManager["human"] as CrewBlueprint
                 val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)

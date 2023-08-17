@@ -2,6 +2,7 @@ package xyz.znix.xftl.game
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
+import xyz.znix.xftl.ai.FriendlyCrewAI
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -37,6 +38,14 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
     val maxHealth = elem.getChild("health").getAttributeValue("amount").toInt()
 
     val startingReactorPower: Int = elem.getChild("maxPower").getAttributeValue("amount").toInt()
+
+    val boardingStrategy: FriendlyCrewAI.BoardingStrategy =
+        when (val name = elem.getChildTextTrim("boardingAI")) {
+            "invasion" -> FriendlyCrewAI.BoardingStrategy.INVASION
+            "sabotage" -> FriendlyCrewAI.BoardingStrategy.SABOTAGE
+            null -> FriendlyCrewAI.BoardingStrategy.NONE
+            else -> error("Invalid boardingAI tag '$name'")
+        }
 
     // These are the paths to the relevant images, to keep this class lightweight.
     val hullImage: String

@@ -31,8 +31,7 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 return false
 
             // There must be an enemy ship
-            // TODO support enemy ships using the teleporter
-            if (ship.sys.enemy == null)
+            if (ship.sys.getEnemyOf(ship) == null)
                 return false
 
             // There must be at least one crew member standing in the room
@@ -44,9 +43,18 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (isPowerLocked || powerSelected == 0)
                 return false
 
-            // There must be an enemy ship
-            // TODO support enemy ships using the teleporter
-            val enemy = ship.sys.enemy ?: return false
+            // There must be another ship present, whether or not it's
+            // currently hostile - if not, we can still teleport crew home
+            // from it.
+            val enemy = when (ship) {
+                ship.sys.enemy -> ship.sys.player
+                else -> ship.sys.enemy ?: return false
+            }
+
+            // If this is somehow run from a ship that's at a different beacon
+            // (which it really shouldn't be!) then block the teleport.
+            if (!ship.sys.isShipPresent(enemy))
+                return false
 
             // There must be at least one crew member in the enemy ship
             require(ship != enemy)

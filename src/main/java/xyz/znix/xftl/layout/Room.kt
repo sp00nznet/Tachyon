@@ -73,13 +73,15 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     val pixelWidth = width * ROOM_SIZE
     val pixelHeight = height * ROOM_SIZE
 
-    val fires: Array<FireInstance?> = Array(width * height) { null }
-    val breaches: Array<BreachInstance?> = Array(width * height) { null }
-    private val fireSpreadTimers: Array<Float?> = Array(width * height) { null }
-    private val fireSpreadUpdated: Array<Boolean> = Array(width * height) { false }
+    val cellCount = width * height
 
-    private val reservedPlayerSlots: Array<AbstractCrew?> = Array(width * height) { null }
-    private val reservedEnemySlots: Array<AbstractCrew?> = Array(width * height) { null }
+    val fires: Array<FireInstance?> = Array(cellCount) { null }
+    val breaches: Array<BreachInstance?> = Array(cellCount) { null }
+    private val fireSpreadTimers: Array<Float?> = Array(cellCount) { null }
+    private val fireSpreadUpdated: Array<Boolean> = Array(cellCount) { false }
+
+    private val reservedPlayerSlots: Array<AbstractCrew?> = Array(cellCount) { null }
+    private val reservedEnemySlots: Array<AbstractCrew?> = Array(cellCount) { null }
 
     val obstructions = HashSet<ConstPoint>()
     private val obstructionSlots = HashSet<Int>()
@@ -476,7 +478,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
 
     fun slotToPoint(slot: Int): IPoint {
-        if (slot !in 0 until width * height)
+        if (slot !in 0 until cellCount)
             throw ArrayIndexOutOfBoundsException("Invalid slot $slot for $width*$height room - range is 0 to ${width * height}")
 
         return ConstPoint(slot % width, slot / width)

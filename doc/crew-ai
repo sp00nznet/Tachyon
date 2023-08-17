@@ -90,7 +90,7 @@ dangerous, they effectively all have the same priority, so you can lock
 up the AI if the ship runs out of oxygen and all the crew are on low health,
 as no-one will ever change their task.
 
-For crew members that are bad at combat (<1x damage or <100hp), healing
+For crew members that are bad at combat (<1x damage or <100hp), combat
 and teleporting tasks also get a priority of 100, if not all of the crew
 are bad at combat, and unless the combat/race override is set (see the end
 of AttemptToAssign).

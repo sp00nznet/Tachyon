@@ -57,3 +57,39 @@ Artillery, Clonebay, Mind Control, Hacking
  that was picked specifically for this purpose - eg, the Advanced Edition
  systems are all at the end)
 
+
+== Crew teleporting ==
+
+First, when the ship is created, one of three boarding modes is selected:
+* None, which seems to be set if there wasn't a boardingAI tag in the ship blueprint
+* Sabotage, used by most ships
+* Invasion, used by the flagship
+
+Sabotage sends half the crew, while invasion sends 3/4 of the crew. Both round down.
+The number of crew that should stay behind is then calculated from this number.
+
+This also sets some flags on the crew: in invasion mode, the crew's minimum health
+is set to 25% (in the BoardingGoal constructor), while for invasion there isn't
+a minimum health.
+
+To send crew, first ShipAI::OnLoop calculates the number of boarders to be sent.
+This is the number of (friendly) crew abord the ship, minus the number that should
+stay behind, as calculated above (this should mean that if you kill crew abord the
+enemy ship, they'll try to teleport at least one of their boarders back).
+
+Once the required number of crew are on the teleporter, they'll be sent over. There's
+a counter for how many times the teleporter is used, and once it reaches 3 then no
+more crew will be teleported over.
+
+To teleport crew back, first ShipAI::RequiredEvac checks whether to force a teleport:
+* The ship is escaping, and has less than 15 seconds left on it's escape timer
+* There are three or more completely broken systems on the (AI-controlled) ship
+
+Next, CrewAI::ReadyForEvac finds the room to teleport crew from. It goes through the
+crew on the player's ship, finding the first one where:
+* The crewmember is not controllable by the player
+* The crewmember is not a drone
+* The crewmember is acting as an intruder (mind-controlled player crew appear to count)
+* Either the crewmember is below their minimum health, or RequiredEvac is forcing a teleport
+
+The crew will then be teleported from this room.

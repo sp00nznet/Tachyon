@@ -20,6 +20,12 @@ import xyz.znix.xftl.systems.*
  * cases are important for tactics.
  */
 class FriendlyCrewAI(private val ship: Ship) {
+    // Set by ShipGenerator
+    var initialCrewCount = 0
+
+    // Don't teleport crew over more than 3 times
+    private var teleportCount = 0
+
     private val aiCrew = ArrayList<AbstractCrew>()
 
     private var assignments = HashMap<AbstractCrew, AITask>()
@@ -90,6 +96,38 @@ class FriendlyCrewAI(private val ship: Ship) {
                     continue
 
                 tasks += CombatTask(this, room)
+            }
+        }
+
+        // Add tasks for teleporting, but don't teleport mind-controlled enemy
+        // crew out in an attempt to board the enemy ship.
+        val teleporter = ship.teleporter
+        var teleportSend = false
+        var teleportForceRecv = false
+        if (teleporter != null && !ship.isPlayerShip) {
+            // Don't create more tasks than the teleporter can fit.
+            var toSend = getNumMoreBoarders().coerceAtMost(teleporter.room!!.cellCount)
+
+            // Don't teleport crew over more than 3 times
+            if (teleportCount > 3 && toSend > 0 && !ship.sys.debugFlags.noTeleportLimit.set) {
+                toSend = 0
+            }
+
+            for (i in 1..toSend) {
+                tasks += TeleportingTask(this, teleporter.room!!)
+            }
+            when {
+                toSend < 0 -> teleportForceRecv = true
+                toSend > 0 -> teleportSend = true
+            }
+
+            val escapeTimer = ship.escapeTimer
+            if (escapeTimer != null && escapeTimer < 15f) {
+                teleportForceRecv = true
+            }
+
+            if (ship.systems.count { it.broken } >= 3) {
+                teleportForceRecv = true
             }
         }
 
@@ -167,6 +205,16 @@ class FriendlyCrewAI(private val ship: Ship) {
                 continue
 
             crew.setTargetRoom(task.room)
+        }
+
+        // If our boarders on the enemy ship are low on health, teleport them back.
+        // Do this first, so receiving low-health crew takes priority over
+        // sending more when the teleporter comes off cooldown.
+        doTeleportRecv(teleportForceRecv)
+
+        // If the crew are ready, activate the teleporter.
+        if (teleportSend) {
+            doTeleportSend()
         }
     }
 
@@ -252,6 +300,91 @@ class FriendlyCrewAI(private val ship: Ship) {
         // Don't set any tasks in inaccessible rooms, since crew can't go there.
         // This prevents flagship crew from getting stuck when sent to the artillery rooms.
         return room.doors.isEmpty()
+    }
+
+    private fun getNumMoreBoarders(): Int {
+        // See doc/ship-ai for information about this.
+
+        // Find the number of boarders to send, from our initial crew.
+        val sendTotal = when (ship.type.boardingStrategy) {
+            BoardingStrategy.NONE -> return 0
+            BoardingStrategy.SABOTAGE -> initialCrewCount / 2
+            BoardingStrategy.INVASION -> initialCrewCount * 3 / 4
+        }
+
+        // Use this to figure out how many crew to keep behind.
+        val toKeep = initialCrewCount - sendTotal
+
+        // Now use this to calculate how many crew we can safely send.
+        // This can be negative if we should recall some boarders, due to
+        // crew on our ship dying.
+        return aiCrew.size - toKeep
+    }
+
+    private fun doTeleportSend() {
+        val teleporter = ship.teleporter!!
+        val enemy = ship.sys.getEnemyOf(ship) ?: return
+
+        var anyCrewWaiting = false
+
+        // Check that there aren't any crew still pathing to the teleporter
+        for (crew in aiCrew) {
+            // Stop if any crew are currently being teleported
+            if (crew.currentAction == AbstractCrew.Action.TELEPORTING)
+                return
+
+            val task = assignments[crew] ?: continue
+            if (task !is TeleportingTask)
+                continue
+
+            // Don't teleport until all the crew are ready
+            if (crew.standingPosition?.room != teleporter.room)
+                return
+
+            anyCrewWaiting = true
+        }
+
+        // Don't try to teleport if there aren't any crew assigned to the teleporter,
+        // as this would increment teleportCount each frame.
+        if (!anyCrewWaiting)
+            return
+
+        teleporter.selectTeleportAction(true, enemy.rooms.random())
+        teleportCount++
+    }
+
+    private fun doTeleportRecv(teleportForceRecv: Boolean) {
+        // See doc/ship-ai for this logic
+
+        val enemy = ship.sys.getEnemyOf(ship) ?: return
+        val boarders = enemy.crew.filterIsInstance<LivingCrew>().filter { it.mode == AbstractCrew.SlotType.INTRUDER }
+
+        val teleporter = ship.teleporter!!
+
+        val minHealthFraction = when (ship.type.boardingStrategy) {
+            BoardingStrategy.INVASION -> -1f // Never teleport back
+            else -> 0.25f
+        }
+
+        for (crew in boarders) {
+            val healthFraction = crew.health / crew.maxHealth
+
+            if (healthFraction > minHealthFraction && !teleportForceRecv)
+                continue
+
+            // Teleport the crew from this room
+            teleporter.selectTeleportAction(false, crew.room)
+            return
+        }
+    }
+
+    // TODO serialisation
+
+    enum class BoardingStrategy {
+        NONE,
+        SABOTAGE, // Most ships
+        INVASION, // Flagship
+        ;
     }
 }
 
@@ -378,6 +511,7 @@ class ManningTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
 
 class CombatTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
     override fun priorityWithoutDanger(crew: AbstractCrew): Int {
+        // TODO bad at combat penalty
         return AIUtils.systemPriority(room.system) + 16
     }
 
@@ -405,4 +539,19 @@ class HealingTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
     }
 }
 
-// TODO teleporting task
+class TeleportingTask(ai: FriendlyCrewAI, room: Room) : AITask(ai, room) {
+    override fun priorityWithoutDanger(crew: AbstractCrew): Int {
+        // TODO bad at combat penalty
+        // There's an urgent teleporting flag in vanilla which forces
+        // a priority of 0, but it seems to never be set.
+        return when {
+            crew.health / crew.maxHealth < 0.5f -> 100
+            room.ship.teleporter!!.ionTimer > 0f -> 65
+            else -> 32
+        }
+    }
+
+    override fun isSuitable(crew: AbstractCrew): Boolean {
+        return crew is LivingCrew && crew.canFight
+    }
+}
