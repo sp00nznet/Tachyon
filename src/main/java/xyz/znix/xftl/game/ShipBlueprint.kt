@@ -285,8 +285,19 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
 
         override val aiMaxPower: Int? = elem.getAttributeValue("max")?.toInt()
 
-        override val interiorImage: String? = elem.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
+        override val interiorImage: String?
 
         override val weapon: String? = elem.getAttributeValue("weapon")
+
+        init {
+            var imagePath = elem.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
+
+            // Use the default image, eg for Engi A's pilot and weapons.
+            if (imagePath == null && systemName != "clonebay" && systemName != "teleporter") {
+                imagePath = "img/ship/interior/room_$systemName.png"
+            }
+
+            interiorImage = imagePath
+        }
     }
 }

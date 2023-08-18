@@ -672,6 +672,11 @@ class SystemInstallConfiguration(
                 defaultCompDir = Direction.LEFT
             }
 
+            Piloting.INFO -> {
+                defaultCompPoint = ConstPoint(0, 0)
+                defaultCompDir = Direction.RIGHT
+            }
+
             else -> {
                 defaultCompDir = null
                 defaultCompPoint = null
