@@ -371,11 +371,13 @@
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_engines.png" width="2" height="2">
+        <computer x="0" y="1" dir="DOWN" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_engines_2.png" width="2" height="2">
         <doorway x="1" y="0" vertical="false" />
+        <computer x="0" y="1" dir="DOWN" />
         <doorway x="1" y="2" vertical="false" />
         <doorway x="2" y="0" vertical="true" />
         <doorway x="2" y="1" vertical="true" />
@@ -383,15 +385,18 @@
     <image path="img/ship/interior/room_engines_3.png" width="2" height="1">
         <doorway x="1" y="0" vertical="false" />
         <doorway x="1" y="1" vertical="false" />
+        <computer x="1" y="0" dir="RIGHT" />
     </image>
     <image path="img/ship/interior/room_engines_4.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
+        <computer x="0" y="1" dir="DOWN" />
         <doorway x="1" y="2" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_engines_5.png" width="1" height="2">
+        <computer x="0" y="0" dir="UP" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="1" y="0" vertical="true" />
         <doorway x="1" y="1" vertical="true" />
@@ -400,6 +405,7 @@
         <doorway x="0" y="0" vertical="false" />
         <doorway x="1" y="0" vertical="false" />
         <doorway x="0" y="2" vertical="false" />
+        <computer x="1" y="1" dir="DOWN" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
     </image>
@@ -410,15 +416,18 @@
         <doorway x="1" y="2" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
+        <computer x="1" y="1" dir="RIGHT" />
     </image>
     <image path="img/ship/interior/room_engines_8.png" width="1" height="2">
         <doorway x="0" y="0" vertical="false" />
         <doorway x="0" y="2" vertical="false" />
+        <computer x="0" y="1" dir="LEFT" />
         <doorway x="1" y="0" vertical="true" />
         <doorway x="1" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_engines_9.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
@@ -680,11 +689,13 @@
     <image path="img/ship/interior/room_pilot.png" width="1" height="2">
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
+        <computer x="0" y="0" dir="RIGHT" />
     </image>
     <image path="img/ship/interior/room_pilot_2.png" width="2" height="1">
         <doorway x="0" y="0" vertical="false" />
         <doorway x="0" y="1" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
+        <computer x="1" y="0" dir="RIGHT" />
     </image>
     <image path="img/ship/interior/room_pilot_3.png" width="2" height="1">
         <doorway x="0" y="0" vertical="false" />
@@ -692,12 +703,14 @@
         <doorway x="0" y="1" vertical="false" />
         <doorway x="1" y="1" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
+        <computer x="1" y="0" dir="RIGHT" />
     </image>
     <image path="img/ship/interior/room_pilot_4.png" width="1" height="2">
         <doorway x="0" y="0" vertical="false" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
+        <computer x="0" y="0" dir="RIGHT" />
     </image>
     <image path="img/ship/interior/room_sensors.png" width="2" height="1">
         <doorway x="0" y="0" vertical="false" />
@@ -723,21 +736,25 @@
     <image path="img/ship/interior/room_shields.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
         <doorway x="1" y="0" vertical="false" />
+        <computer x="0" y="0" dir="LEFT" />
         <doorway x="0" y="1" vertical="true" />
         <doorway x="2" y="0" vertical="true" />
     </image>
     <image path="img/ship/interior/room_shields_10.png" width="2" height="2">
         <doorway x="0" y="2" vertical="false" />
+        <computer x="1" y="1" dir="DOWN" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_shields_11.png" width="2" height="1">
         <doorway x="0" y="0" vertical="false" />
         <doorway x="1" y="0" vertical="false" />
+        <computer x="1" y="0" dir="DOWN" />
     </image>
     <image path="img/ship/interior/room_shields_2.png" width="2" height="2">
         <doorway x="0" y="2" vertical="false" />
         <doorway x="1" y="2" vertical="false" />
+        <computer x="0" y="0" dir="LEFT" />
         <doorway x="0" y="1" vertical="true" />
         <doorway x="2" y="0" vertical="true" />
     </image>
@@ -745,26 +762,31 @@
         <doorway x="0" y="2" vertical="false" />
         <doorway x="1" y="2" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
+        <computer x="0" y="1" dir="LEFT" />
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_shields_4.png" width="2" height="2">
         <doorway x="0" y="2" vertical="false" />
         <doorway x="1" y="2" vertical="false" />
+        <computer x="0" y="0" dir="LEFT" />
         <doorway x="0" y="1" vertical="true" />
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_shields_5.png" width="2" height="2">
+        <computer x="0" y="0" dir="UP" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="2" y="0" vertical="true" />
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_shields_6.png" width="2" height="2">
+        <computer x="0" y="0" dir="LEFT" />
         <doorway x="0" y="1" vertical="true" />
         <doorway x="2" y="0" vertical="true" />
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_shields_7.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="2" y="0" vertical="true" />
         <doorway x="2" y="1" vertical="true" />
@@ -773,18 +795,22 @@
         <doorway x="0" y="0" vertical="false" />
         <doorway x="1" y="0" vertical="false" />
         <doorway x="0" y="2" vertical="false" />
+        <computer x="0" y="0" dir="LEFT" />
         <doorway x="0" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_shields_9.png" width="2" height="2">
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
         <doorway x="2" y="0" vertical="true" />
     </image>
     <image path="img/ship/interior/room_weapons.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="2" vertical="false" />
     </image>
     <image path="img/ship/interior/room_weapons_10.png" width="2" height="2">
+        <computer x="0" y="0" dir="UP" />
         <doorway x="1" y="0" vertical="false" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="0" y="1" vertical="true" />
@@ -793,38 +819,46 @@
     </image>
     <image path="img/ship/interior/room_weapons_2.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="0" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_weapons_3.png" width="2" height="2">
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="1" y="2" vertical="false" />
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_weapons_4.png" width="2" height="2">
+        <computer x="0" y="0" dir="UP" />
         <doorway x="1" y="0" vertical="false" />
         <doorway x="2" y="0" vertical="true" />
     </image>
     <image path="img/ship/interior/room_weapons_5.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
         <doorway x="0" y="2" vertical="false" />
+        <computer x="1" y="0" dir="RIGHT" />
     </image>
     <image path="img/ship/interior/room_weapons_6.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="1" vertical="true" />
         <doorway x="2" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_weapons_7.png" width="2" height="2">
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />
     </image>
     <image path="img/ship/interior/room_weapons_8.png" width="2" height="1">
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="1" vertical="false" />
         <doorway x="1" y="1" vertical="false" />
     </image>
     <image path="img/ship/interior/room_weapons_9.png" width="2" height="2">
         <doorway x="0" y="0" vertical="false" />
+        <computer x="1" y="0" dir="UP" />
         <doorway x="0" y="2" vertical="false" />
         <doorway x="0" y="0" vertical="true" />
         <doorway x="0" y="1" vertical="true" />

@@ -2,6 +2,7 @@ package xyz.znix.xftl.hangar
 
 import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.systems.SystemBlueprint
 import java.io.InputStream
 import java.util.regex.Pattern
@@ -38,7 +39,20 @@ class RoomImageMeta private constructor(input: InputStream) {
                 doorways += Doorway(ConstPoint(x, y), isVertical)
             }
 
-            roomImages += RoomImage(path, ConstPoint(width, height), systemName, doorways)
+            var computerPoint: ConstPoint? = null
+            var computerDirection: Direction? = null
+            elem.getChild("computer")?.let { computerElem ->
+                computerPoint = ConstPoint(
+                    computerElem.getAttributeValue("x").toInt(),
+                    computerElem.getAttributeValue("y").toInt()
+                )
+                computerDirection = Direction.valueOf(computerElem.getAttributeValue("dir"))
+            }
+
+            roomImages += RoomImage(
+                path, ConstPoint(width, height), systemName, doorways,
+                computerPoint, computerDirection
+            )
         }
     }
 
@@ -53,7 +67,10 @@ class RoomImageMeta private constructor(input: InputStream) {
         }
     }
 
-    class RoomImage(val path: String, val size: ConstPoint, val systemType: String, val doorways: List<Doorway>) {
+    class RoomImage(
+        val path: String, val size: ConstPoint, val systemType: String, val doorways: List<Doorway>,
+        val computerPoint: ConstPoint?, val computerDirection: Direction?
+    ) {
         fun matchesSystem(system: SystemBlueprint): Boolean {
             // Match by the type and not the blueprint name, since for any custom
             // system blueprints they should still use the base system images.

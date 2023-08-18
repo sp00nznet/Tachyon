@@ -4,13 +4,17 @@ import org.jdom2.Comment
 import org.jdom2.Document
 import org.jdom2.Element
 import org.jdom2.output.Format
+import org.jdom2.output.LineSeparator
 import org.jdom2.output.XMLOutputter
 import org.lwjgl.BufferUtils
+import org.newdawn.slick.Color
 import org.newdawn.slick.opengl.PNGDecoder
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.Direction
+import xyz.znix.xftl.math.IPoint
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -58,6 +62,9 @@ object BakeRoomImageMeta {
         val xmlOutput = XMLOutputter(Format.getPrettyFormat().apply {
             // Match the Kotlin indentation
             indent = "    "
+
+            // Don't use CRLF on Linux
+            lineSeparator = LineSeparator.SYSTEM.value()
         })
         val xml = xmlOutput.outputString(doc)
         println(xml)
@@ -68,11 +75,11 @@ object BakeRoomImageMeta {
         }
     }
 
-    private class ImageProcessor(val decoder: PNGDecoder, val pixels: ByteBuffer, val stride: Int) {
-        fun processImage(elem: Element) {
-            val imageSize = ConstPoint(decoder.width, decoder.height)
-            val cellSize = imageSize.divideTruncate(ROOM_SIZE.f)
+    private class ImageProcessor(decoder: PNGDecoder, val pixels: ByteBuffer, val stride: Int) {
+        val imageSize = ConstPoint(decoder.width, decoder.height)
+        val cellSize = imageSize.divideTruncate(ROOM_SIZE.f)
 
+        fun processImage(elem: Element) {
             elem.setAttribute("width", cellSize.x.toString())
             elem.setAttribute("height", cellSize.y.toString())
 
@@ -81,23 +88,28 @@ object BakeRoomImageMeta {
 
             // Check for gaps where doors can go on the top side
             for (x in 0 until cellSize.x) {
-                checkDoorSlot(elem, ConstPoint(x, 0), false)
+                processEdge(elem, ConstPoint(x, 0), false)
             }
 
             // Bottom
             for (x in 0 until cellSize.x) {
-                checkDoorSlot(elem, ConstPoint(x, cellSize.y), false)
+                processEdge(elem, ConstPoint(x, cellSize.y), false)
             }
 
             // Left
             for (y in 0 until cellSize.y) {
-                checkDoorSlot(elem, ConstPoint(0, y), true)
+                processEdge(elem, ConstPoint(0, y), true)
             }
 
             // Right
             for (y in 0 until cellSize.y) {
-                checkDoorSlot(elem, ConstPoint(cellSize.x, y), true)
+                processEdge(elem, ConstPoint(cellSize.x, y), true)
             }
+        }
+
+        private fun processEdge(elem: Element, cell: ConstPoint, isVertical: Boolean) {
+            checkDoorSlot(elem, cell, isVertical)
+            checkComputerSlot(elem, cell, isVertical)
         }
 
         private fun checkDoorSlot(elem: Element, cell: ConstPoint, isVertical: Boolean) {
@@ -123,28 +135,92 @@ object BakeRoomImageMeta {
             elem.addContent(newElem)
         }
 
+        private fun checkComputerSlot(elem: Element, cell: ConstPoint, isVertical: Boolean) {
+            // Guess where computer slots are based on their screen colours
+
+            val x = cell.x * ROOM_SIZE
+            val y = cell.y * ROOM_SIZE
+
+            val matchColour = Color(94, 129, 127)
+
+            val colourCount = if (isVertical) {
+                countPixelColour(x - 10, y + 10, 20, 15, matchColour)
+            } else {
+                countPixelColour(x + 10, y - 10, 15, 20, matchColour)
+            }
+
+            if (colourCount < 15)
+                return
+
+            val pos: IPoint
+            val dir: Direction
+
+            // The position is one past the bounds for the right and bottom edges.
+            // Convert this into a position-and-direction.
+            when {
+                cell.x == 0 && isVertical -> {
+                    pos = cell
+                    dir = Direction.LEFT
+                }
+                cell.y == 0 && !isVertical -> {
+                    pos = cell
+                    dir = Direction.UP
+                }
+                isVertical -> {
+                    pos = cell - ConstPoint(1, 0)
+                    dir = Direction.RIGHT
+                }
+                else -> {
+                    pos = cell - ConstPoint(0, 1)
+                    dir = Direction.DOWN
+                }
+            }
+
+            val newElem = Element("computer")
+            newElem.setAttribute("x", pos.x.toString())
+            newElem.setAttribute("y", pos.y.toString())
+            newElem.setAttribute("dir", dir.toString())
+            elem.addContent(newElem)
+        }
+
         private fun hasPixelInBlock(x: Int, y: Int, width: Int, height: Int): Boolean {
             for (py in y until y + height) {
                 for (px in x until x + width) {
-                    if (hasPixel(px, py))
+                    if (getPixel(px, py).alpha != 0)
                         return true
                 }
             }
             return false
         }
 
-        private fun hasPixel(x: Int, y: Int): Boolean {
+        private fun countPixelColour(x: Int, y: Int, width: Int, height: Int, toMatch: Color): Int {
+            var count = 0
+            for (py in y until y + height) {
+                for (px in x until x + width) {
+                    if (getPixel(px, py) == toMatch)
+                        count++
+                }
+            }
+            return count
+        }
+
+        private fun getPixel(x: Int, y: Int): Color {
             // It's easier to just ignore out-of-bound pixels than make sure
             // we're always using in-bound positions.
             if (x < 0 || y < 0)
-                return false
-            if (x >= decoder.width || y >= decoder.height)
-                return false
+                return Color.transparent
+            if (x >= imageSize.x || y >= imageSize.y)
+                return Color.transparent
 
             val index = x * 4 + y * stride
 
             // The 3rd byte is alpha, if it's non-zero consider the pixel occupied
-            return pixels[index + 3].toInt() != 0
+            return Color(
+                pixels[index + 0].toInt() and 0xff,
+                pixels[index + 1].toInt() and 0xff,
+                pixels[index + 2].toInt() and 0xff,
+                pixels[index + 3].toInt() and 0xff
+            )
         }
     }
 }

@@ -7,11 +7,9 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.rendering.Image
 
 class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : EditorMenu {
-    private val imagePaths: List<String>
-    private val images: List<Image>
+    private val imagesMeta: List<RoomImageMeta.RoomImage>
 
     val size = ConstPoint(800, 600)
     val pos = editor.getCentralScreenPosition(size)
@@ -30,12 +28,9 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
         // Show all the images, not just the ones we think are suitable based on
         // which pixels are transparent.
         // Do filter out ones that are the wrong size, though.
-        imagePaths = editor.state.roomImageMeta.roomImages
+        imagesMeta = editor.state.roomImageMeta.roomImages
             .filter { it.matchesSystem(systemType) }
             .filter { it.size.x == room.w && it.size.y == room.h }
-            .map { it.path }
-
-        images = imagePaths.map { editor.state.getImg(it) }
     }
 
     override fun draw(g: Graphics) {
@@ -55,8 +50,8 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
         var y = pos.y + 50
 
         drawOption(g, 0, x, y, null)
-        for ((index, image) in images.withIndex()) {
-            drawOption(g, index + 1, x, y, image)
+        for ((index, meta) in imagesMeta.withIndex()) {
+            drawOption(g, index + 1, x, y, meta)
 
             x += roomPixelWidth * scale + 20
 
@@ -68,7 +63,7 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
         }
     }
 
-    private fun drawOption(g: Graphics, index: Int, x: Int, y: Int, image: Image?) {
+    private fun drawOption(g: Graphics, index: Int, x: Int, y: Int, meta: RoomImageMeta.RoomImage?) {
         val isHovering = mousePos.x - x in 0..roomPixelWidth * scale && mousePos.y - y in 0..roomPixelHeight * scale
         if (isHovering) {
             hovering = index
@@ -80,11 +75,28 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
 
         // Draw the image with its floor
         EditableRoom.drawFloor(g, 0, 0, room.w, room.h)
-        image?.drawNearest(0f, 0f)
+        meta?.let { editor.state.getImg(it.path) }?.drawNearest(0f, 0f)
 
         if (isHovering) {
             g.colour = Color(0.5f, 1f, 1f, 0.25f)
             g.fillRect(0f, 0f, roomPixelWidth.f, roomPixelHeight.f)
+        }
+
+        // Draw an arrow pointing at the computer
+        if (meta?.computerPoint != null && DEBUG_SHOW_COMPUTER_ARROW) {
+            val co = meta.computerPoint
+            g.translate(
+                co.x * ROOM_SIZE.f,
+                co.y * ROOM_SIZE.f
+            )
+            g.rotate(ROOM_SIZE / 2f, ROOM_SIZE / 2f, meta.computerDirection!!.angle.f)
+
+            g.colour = Color.red
+            g.lineWidth = 2f
+            g.drawLine(15f, 15f, 15f, 10f)
+            g.drawLine(15f, 10f, 11f, 14f)
+            g.drawLine(15f, 10f, 19f, 14f)
+            g.lineWidth = 1f
         }
 
         g.popTransform()
@@ -101,7 +113,17 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
         val hoverIndex = hovering ?: return
 
         // 0 is for no image
-        room.system?.interiorImage = imagePaths.getOrNull(hoverIndex - 1)
+        val sys = room.system!!
+        val meta = imagesMeta.getOrNull(hoverIndex - 1)
+        sys.interiorImage = meta?.path
+        sys.computerPoint = meta?.computerPoint
+        sys.computerDirection = meta?.computerDirection
         editor.closeMenu(this)
+    }
+
+    companion object {
+        // Set this to true to show where the game thinks the computers are
+        // This is useful when working on BakeRoomImageMeta
+        private const val DEBUG_SHOW_COMPUTER_ARROW = false
     }
 }
