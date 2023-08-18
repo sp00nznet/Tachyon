@@ -395,7 +395,7 @@ class Ship(
             for ((idx, room) in rooms.withIndex()) {
                 val editable = customised.rooms[idx]
                 val system = editable.system ?: continue
-                val finalised = FinalisedEditableSystem(system, systemIdx++, sys)
+                val finalised = FinalisedEditableSystem(system, systemIdx++, sys, room)
                 room.systemSlots.add(SystemInstallConfiguration(finalised, sys, room))
             }
         } else {

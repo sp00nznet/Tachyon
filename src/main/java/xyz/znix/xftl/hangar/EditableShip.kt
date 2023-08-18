@@ -7,6 +7,8 @@ import xyz.znix.xftl.ISystemConfiguration
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.ShipBlueprint
+import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -164,7 +166,13 @@ class EditableShip(
             for (system in blueprint.systems) {
                 val room = ship.rooms[system.room.id]
                 val type = system.systemName
-                room.system = EditableSystem(type, system.interiorImage)
+                val computerPos = system.slotNumber?.let { idx ->
+                    ConstPoint(
+                        idx % room.w,
+                        idx / room.w
+                    )
+                }
+                room.system = EditableSystem(type, system.interiorImage, computerPos, system.slotDirection)
 
                 // If this is an artillery system, set its weapon.
                 if (system.weapon != null) {
@@ -453,6 +461,8 @@ class EditableDoor(
 data class EditableSystem(
     val type: String, // SystemBlueprint name
     var interiorImage: String? = null,
+    var computerPoint: ConstPoint? = null,
+    var computerDirection: Direction? = null,
     var artilleryWeapon: String? = null // AbstractWeaponBlueprint name
 ) {
     fun getBP(state: SelectShipState): SystemBlueprint = state.blueprints[type] as SystemBlueprint
@@ -461,6 +471,11 @@ data class EditableSystem(
         SaveUtil.addAttr(elem, "type", type)
         interiorImage?.let { img -> SaveUtil.addAttr(elem, "interiorImage", img) }
         artilleryWeapon?.let { name -> SaveUtil.addAttr(elem, "artilleryWeapon", name) }
+        computerPoint?.let { pos ->
+            SaveUtil.addAttrInt(elem, "computerX", pos.x)
+            SaveUtil.addAttrInt(elem, "computerY", pos.y)
+        }
+        computerDirection?.let { dir -> SaveUtil.addAttr(elem, "computerDir", dir.toString()) }
     }
 
     companion object {
@@ -468,7 +483,14 @@ data class EditableSystem(
             val type = SaveUtil.getAttr(elem, "type")
             val interiorImage = elem.getAttributeValue("interiorImage")
             val artilleryWeapon = elem.getAttributeValue("artilleryWeapon")
-            return EditableSystem(type, interiorImage, artilleryWeapon)
+
+            val computerPoint = if (elem.getAttribute("computerX") == null) null else ConstPoint(
+                SaveUtil.getAttrInt(elem, "computerX"),
+                SaveUtil.getAttrInt(elem, "computerY")
+            )
+            val computerDirection = elem.getAttributeValue("computerDir")?.let { Direction.valueOf(it) }
+
+            return EditableSystem(type, interiorImage, computerPoint, computerDirection, artilleryWeapon)
         }
     }
 }
@@ -481,7 +503,8 @@ data class EditableSystem(
 class FinalisedEditableSystem(
     val editableSystem: EditableSystem,
     override val systemIndex: Int,
-    game: InGameState
+    game: InGameState,
+    room: Room
 ) : ISystemConfiguration {
     private val system = game.blueprintManager[editableSystem.type] as SystemBlueprint
 
@@ -491,9 +514,8 @@ class FinalisedEditableSystem(
     override val weapon: String? get() = editableSystem.artilleryWeapon
     override val interiorImage: String? get() = editableSystem.interiorImage
 
-    // TODO implement the computer
-    override val slotNumber: Int? get() = null
-    override val slotDirection: Direction? get() = null
+    override val slotNumber: Int? = editableSystem.computerPoint?.let { room.pointToSlot(it) }
+    override val slotDirection: Direction? get() = editableSystem.computerDirection
 
     override val startingPower: Int get() = system.startPower // TODO make this adjustable
     override val availableByDefault: Boolean get() = true // TODO don't spawn all systems by default
