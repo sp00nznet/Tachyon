@@ -68,7 +68,7 @@ First, when the ship is created, one of three boarding modes is selected:
 Sabotage sends half the crew, while invasion sends 3/4 of the crew. Both round down.
 The number of crew that should stay behind is then calculated from this number.
 
-This also sets some flags on the crew: in invasion mode, the crew's minimum health
+This also sets some flags on the crew: in sabotage mode, the crew's minimum health
 is set to 25% (in the BoardingGoal constructor), while for invasion there isn't
 a minimum health.
 
