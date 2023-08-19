@@ -108,8 +108,8 @@ class FriendlyCrewAI(private val ship: Ship) {
             // Don't create more tasks than the teleporter can fit.
             var toSend = getNumMoreBoarders().coerceAtMost(teleporter.room!!.cellCount)
 
-            // Don't teleport crew over more than 3 times
-            if (teleportCount > 3 && toSend > 0 && !ship.sys.debugFlags.noTeleportLimit.set) {
+            // Don't teleport crew over more than twice
+            if (teleportCount > 2 && toSend > 0 && !ship.sys.debugFlags.noTeleportLimit.set) {
                 toSend = 0
             }
 

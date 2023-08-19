@@ -78,7 +78,7 @@ stay behind, as calculated above (this should mean that if you kill crew abord t
 enemy ship, they'll try to teleport at least one of their boarders back).
 
 Once the required number of crew are on the teleporter, they'll be sent over. There's
-a counter for how many times the teleporter is used, and once it reaches 3 then no
+a counter for how many times the teleporter is used, and once it reaches 2 then no
 more crew will be teleported over.
 
 To teleport crew back, first ShipAI::RequiredEvac checks whether to force a teleport:
