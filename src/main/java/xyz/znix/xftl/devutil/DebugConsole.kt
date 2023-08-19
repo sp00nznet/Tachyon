@@ -70,6 +70,7 @@ class DebugConsole(var game: InGameState) {
         Cmd("fix", null, this::cmdFix, "Fix the ship's hull and all systems, clearing ion damage"),
         Cmd("cld", 0, this::cmdClearDrones, "CLear all Drones - destroys all currently-deployed drone instances"),
         Cmd("crew", 1, this::cmdCrew, "Spawn a new crewmember - one argument, the crew race or 'races'"),
+        Cmd("ecrew", 1, this::cmdEnemyCrew, "Spawn a new crewmember on the enemy ship, same args as 'crew'"),
         Cmd("skills", 0, this::cmdSkills, "Edit the crew's skills"),
         Cmd("kill", 0, this::cmdKill, "Destroy the enemy ship"),
         Cmd("killcrew", 0, this::cmdKillCrew, "Kill one all of your crewmembers"),
@@ -475,6 +476,19 @@ class DebugConsole(var game: InGameState) {
     }
 
     private fun cmdCrew(args: List<String>) {
+        cmdCrewImpl(args, ship)
+    }
+
+    private fun cmdEnemyCrew(args: List<String>) {
+        val enemy = game.enemy
+        if (enemy == null) {
+            addLine("No enemy ship!")
+            return
+        }
+        cmdCrewImpl(args, enemy)
+    }
+
+    private fun cmdCrewImpl(args: List<String>, targetShip: Ship) {
         val race = args[1]
 
         val races = game.blueprintManager.blueprints.values.mapNotNull { it as? CrewBlueprint }
@@ -496,7 +510,7 @@ class DebugConsole(var game: InGameState) {
         // If it's an unknown race, this will replace it with a human.
         // This saves us from having to maintain two lists of the supported crew.
         val info = LivingCrewInfo.generateRandom(blueprint, game)
-        ship.addCrewMember(info, false)
+        targetShip.addCrewMember(info, false)
     }
 
     private fun cmdSkills(@Suppress("UNUSED_PARAMETER") args: List<String>) {
