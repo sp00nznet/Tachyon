@@ -65,6 +65,16 @@ class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
         }
     }
 
+    fun startBattery() {
+        // This is called constantly by the AI, so we have to check if we're ready.
+        if (ionTimer > 0f || timeRemaining != null)
+            return
+        if (isHackActive)
+            return
+
+        timeRemaining = DURATION
+    }
+
     override fun makeExtraButtons(powerPos: IPoint): List<Button> {
         return listOf(BatteryButton(powerPos))
     }
@@ -93,7 +103,7 @@ class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
             if (disabled)
                 return
 
-            this@BackupBattery.timeRemaining = DURATION
+            startBattery()
         }
     }
 

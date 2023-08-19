@@ -32,6 +32,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
         // whenever it's unavailable.
         ship.cloaking?.activateCloak()
 
+        // Same for the backup battery.
+        ship.backupBattery?.startBattery()
+
         updateHacking()
 
         updateMindControl()
