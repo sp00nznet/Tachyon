@@ -54,20 +54,24 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     private var hovered: ShipBlueprint? = null
 
-    private var current: EditableShip
-    private var currentBlueprint: ShipBlueprint
+    private val current: EditableShip get() = editor.ship
+    private val currentBlueprint: ShipBlueprint get() = blueprints[current.baseBlueprint] as ShipBlueprint
+
+    var isShipEdited = false
+        private set
 
     private val images = HashMap<String, Image>()
+
+    private val editFileControls: EditFileControls
 
     private var editor: ShipEditor
 
     private val startGameButton: StartGameButton
 
     init {
-        currentBlueprint = ships.first()
-        current = EditableShip.fromBlueprint(currentBlueprint)
-        editor = ShipEditor(this, current)
+        editor = ShipEditor(this, EditableShip.fromBlueprint(ships.first()))
         startGameButton = StartGameButton(this)
+        editFileControls = EditFileControls(this)
 
         val background = getImg("img/window_base.png")
         val outline = getImg("img/window_outline.png")
@@ -103,6 +107,8 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
         startGameButton.draw(g)
 
+        editFileControls.draw(g)
+
         g.pushTransform()
         shipOffset.x = x + width + 50 - currentBlueprint.hullOffset.x
         shipOffset.y = 100 - currentBlueprint.hullOffset.y
@@ -122,15 +128,18 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
 
     override fun mouseClicked(button: Int, x: Int, y: Int, clickCount: Int) {
         if (hovered != null) {
-            currentBlueprint = hovered!!
-            current = EditableShip.fromBlueprint(currentBlueprint)
-            editor = ShipEditor(this, current)
+            editor = ShipEditor(this, EditableShip.fromBlueprint(hovered!!))
             return
         }
 
-        editor.mouseClicked(button, x - shipOffset.x, y - shipOffset.y, clickCount)
+        // Block editor interactions if we're only inspecting a ship
+        if (isShipEdited) {
+            editor.mouseClicked(button, x - shipOffset.x, y - shipOffset.y, clickCount)
+        }
 
         startGameButton.mouseClicked(button)
+
+        editFileControls.mouseClicked(button)
     }
 
     override fun mousePressed(button: Int, x: Int, y: Int) {
@@ -162,7 +171,18 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     }
 
     fun startGame(selected: Difficulty) {
-        // TODO a way to play the ship unedited
-        main.startNewGame(currentBlueprint.name, selected, editor.ship)
+        val editedShip = if (isShipEdited) editor.ship else null
+        main.startNewGame(currentBlueprint.name, selected, editedShip)
+    }
+
+    fun startEditingShip() {
+        isShipEdited = true
+    }
+
+    fun stopEditingShip() {
+        isShipEdited = false
+
+        // Re-create the editor to throw away the changes
+        editor = ShipEditor(this, EditableShip.fromBlueprint(currentBlueprint))
     }
 }

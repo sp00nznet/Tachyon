@@ -1,6 +1,8 @@
 package xyz.znix.xftl
 
+import org.jdom2.Document
 import org.jdom2.Element
+import org.jdom2.input.SAXBuilder
 
 class Translator(df: Datafile, lang: String) {
     val translations: Map<String, String>
@@ -23,11 +25,26 @@ class Translator(df: Datafile, lang: String) {
             "zh" -> load("data/text-zh-Hans.xml")
             else -> load("data/text-$lang.xml")
         }
+
+        // Put a when block here if/when our strings are translated.
+        parseEmbedded("assets/lang/en.xml", translations)
     }
 
     private fun parseFile(filename: String, df: Datafile, tl: HashMap<String, String>) {
         val doc = df.parseXML(df[filename])
+        parseDoc(doc, tl)
+    }
 
+    private fun parseEmbedded(path: String, tl: HashMap<String, String>) {
+        @Suppress("VulnerableCodeUsages") // we set expandEntities
+        val builder = SAXBuilder()
+        builder.expandEntities = false
+        val doc = builder.build(javaClass.classLoader.getResourceAsStream(path)!!)
+
+        parseDoc(doc, tl)
+    }
+
+    private fun parseDoc(doc: Document, tl: HashMap<String, String>) {
         for (elem in doc.rootElement.children) {
             check(elem.name == "text")
             tl[elem.getAttributeValue("name")] = elem.textTrim.replace("\\n", "\n")

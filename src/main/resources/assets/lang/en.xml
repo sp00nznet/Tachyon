@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FTL>
+    <!--
+    Custom XFTL strings.
+    All string IDs must be prefixed with 'xftl_' to make their origin obvious in code
+    Try to use vanilla strings where possible (eg for ok/cancel) as they're already translated.
+    -->
+
+    <text name="xftl_edit_ship">EDIT SHIP</text>
+    <text name="xftl_clear_edit_ship">DISCARD CHANGES</text>
+</FTL>

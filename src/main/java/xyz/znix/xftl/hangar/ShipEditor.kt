@@ -478,6 +478,10 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
     }
 
     private fun updateHover() {
+        // Don't show anything as being hovered if we're just rendering an un-edited ship
+        if (!state.isShipEdited)
+            return
+
         // Don't update hover if a menu is open, since that's supposed to consume
         // all input and freeze the editor while it's open.
         if (menu != null)
