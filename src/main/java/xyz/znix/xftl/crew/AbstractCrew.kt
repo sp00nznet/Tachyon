@@ -222,6 +222,9 @@ abstract class AbstractCrew(
             if (value != Action.FIRE_FIGHTING) {
                 currentFireSlot = -1
             }
+            if (value != Action.REPAIRING_BREACH) {
+                currentBreachSlot = -1
+            }
         }
 
     init {
