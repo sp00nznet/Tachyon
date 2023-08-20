@@ -251,7 +251,14 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         // If we hit a new room, damage it
                         if (lastRoomId != room.id) {
                             lastRoomId = room.id
-                            targetShip.damage(room, beamPower, beamPower, 0)
+
+                            var hullMult = 1
+                            if (room.system == null) {
+                                // TODO does this properly apply hullBust values other than 1 (vanilla doesn't do that)
+                                hullMult += type.hullBust
+                            }
+
+                            targetShip.damage(room, beamPower * hullMult, beamPower, 0)
                         }
 
                         // Deal crew damage - this is done on entry to a new cell, not only to a new room.

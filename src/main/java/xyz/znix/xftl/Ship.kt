@@ -908,8 +908,14 @@ class Ship(
     }
 
     fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
+        var hullMult = 1
+        if (target.system == null) {
+            // TODO does this properly apply hullBust values other than 1 (vanilla doesn't do that)
+            hullMult += type.hullBust
+        }
+
         val crewDamage = (type.personnelDamage ?: type.damage) * 15
-        damage(target, type.damage, type.sysDamage, type.ionDamage)
+        damage(target, type.damage * hullMult, type.sysDamage, type.ionDamage)
         crewWeaponDamage(target, crewDamage, type)
 
         if (Random.rollChance(type.fireChance * 10) && !sys.debugFlags.noDmg.set) {

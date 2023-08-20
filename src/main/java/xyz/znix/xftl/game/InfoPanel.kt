@@ -46,7 +46,6 @@ class InfoPanel(private val game: InGameState) {
         val lines = ArrayList<String>()
 
         // Build all the weapon attributes that appear when hovering over it
-        // TODO support hull missiles
 
         lines += game.translator["required_power"].replace("\\1", blueprint.power.toString())
         lines += game.translator["charge_time"].replace("\\1", UIUtils.formatFloat(blueprint.chargeTime))
@@ -93,6 +92,9 @@ class InfoPanel(private val game: InGameState) {
         }
         if (blueprint.sysDamage != blueprint.damage) {
             lines += game.translator["system_damage"].replace("\\1", blueprint.sysDamage.toString())
+        }
+        if (blueprint.hullBust != 0) {
+            lines += game.translator["double_damage"]
         }
 
         drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, lines, INFO_HEIGHT_WEAPON)

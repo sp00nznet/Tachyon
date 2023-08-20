@@ -30,6 +30,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val breachChance: Int = xml.getChildTextTrim("breachChance")?.toInt() ?: 0
     val stunChance: Int = xml.getChildTextTrim("stunChance")?.toInt() ?: 0
     val chargeLevels: Int? = xml.getChildTextTrim("chargeLevels")?.toInt()
+    val hullBust: Int = xml.getChildTextTrim("hullBust")?.toInt() ?: 0
 
     // Power, charge time and cost are null for drone blueprints.
     // Use some semi-sane defaults to avoid having to check everywhere.
