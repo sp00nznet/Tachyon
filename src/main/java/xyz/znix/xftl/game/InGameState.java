@@ -760,6 +760,10 @@ public class InGameState extends MainGame.GameState {
         if (enemy != null && enemy.isFlagship()) {
             refs.register(enemy, "flagship");
         }
+        boolean saveDefeatedEnemy = enemy != null && !enemyIsHostile && enemy.hasCrewOwnedByShip(player);
+        if (saveDefeatedEnemy) {
+            refs.register(enemy, "defeatedEnemy");
+        }
 
         // If the player ship has a custom layout, save that.
         if (player.getCustomised() != null) {
@@ -776,6 +780,15 @@ public class InGameState extends MainGame.GameState {
         // Serialise the flagship, as it's not stored at a beacon like normal ships.
         if (enemy != null && enemy.isFlagship()) {
             Element flagshipElem = new Element("flagship");
+            enemy.saveToXML(flagshipElem, refs);
+            root.addContent(flagshipElem);
+        }
+
+        // If there's a neutral ship with some player-owned crew in it, serialise it.
+        // Once you crew-kill a ship it's not saved by the beacon, so without this
+        // the ship would disappear if you save-loaded, taking your crew with it.
+        if (saveDefeatedEnemy) {
+            Element flagshipElem = new Element("defeatedEnemy");
             enemy.saveToXML(flagshipElem, refs);
             root.addContent(flagshipElem);
         }
@@ -798,7 +811,7 @@ public class InGameState extends MainGame.GameState {
         // Save the list of visited sectors, which is used by the sector map.
         Element visitedSectorsXML = new Element("visitedSectors");
         for (GameMap.SectorInfo visited : visitedSectors) {
-            String ref = sectorRefs.get(visited);
+            String ref = refs.get(visited);
             Element visitedElem = new Element("sectorInfo");
             visitedElem.setAttribute("idr", ref);
             visitedSectorsXML.addContent(visitedElem);
@@ -823,15 +836,26 @@ public class InGameState extends MainGame.GameState {
             customised = EditableShip.loadFromXML(customLayout);
         }
 
+        // If there's another ship at this beacon, it's hostile.
+        // Set this now so we can un-set it for crew-killed ships.
+        enemyIsHostile = true;
+
         // Load the player ship
         Element playerShip = root.getChild("playerShip");
         player = deserialiseSingleShip(playerShip, refs, customised);
 
         // Load the flagship, if we're fighting it.
         Element flagshipElem = root.getChild("flagship");
-        Ship flagship = null;
+        Ship overrideCurrentBeacon = null;
         if (flagshipElem != null) {
-            flagship = deserialiseSingleShip(flagshipElem, refs, null);
+            overrideCurrentBeacon = deserialiseSingleShip(flagshipElem, refs, null);
+        }
+
+        // Load a ship we crew-killed but still has our crew
+        Element defeatedElem = root.getChild("defeatedEnemy");
+        if (defeatedElem != null) {
+            overrideCurrentBeacon = deserialiseSingleShip(defeatedElem, refs, null);
+            enemyIsHostile = false;
         }
 
         // Load the game map. The sector needs to reference it's SectorInfo
@@ -867,10 +891,8 @@ public class InGameState extends MainGame.GameState {
         currentBeacon = SaveUtil.INSTANCE.getRefImmediate(root, "currentBeacon", refs, Beacon.class);
 
         // Load in the previous enemy
-        // FIXME keep crew-killed enemy ships around, currently they disappear
-        enemyIsHostile = true;
-        if (flagship != null) {
-            setEnemy(flagship);
+        if (overrideCurrentBeacon != null) {
+            setEnemy(overrideCurrentBeacon);
         } else {
             setEnemy(currentBeacon.getShip());
         }
