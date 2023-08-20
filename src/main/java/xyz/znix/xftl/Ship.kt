@@ -1643,6 +1643,7 @@ class Ship(
 
         updateCrewReservedSlots()
         updateAvailableSystems()
+        cargoUpdated()
     }
 
     fun hasCrewOwnedByShip(otherShip: Ship): Boolean {
