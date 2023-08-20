@@ -356,10 +356,10 @@ class FriendlyCrewAI(private val ship: Ship) {
     private fun doTeleportRecv(teleportForceRecv: Boolean) {
         // See doc/ship-ai for this logic
 
+        val teleporter = ship.teleporter ?: return
+
         val enemy = ship.sys.getEnemyOf(ship) ?: return
         val boarders = enemy.crew.filterIsInstance<LivingCrew>().filter { it.mode == AbstractCrew.SlotType.INTRUDER }
-
-        val teleporter = ship.teleporter!!
 
         val minHealthFraction = when (ship.type.boardingStrategy) {
             BoardingStrategy.INVASION -> -1f // Never teleport back
