@@ -1,21 +1,24 @@
 package xyz.znix.xftl.game
 
 import org.jdom2.Element
+import xyz.znix.xftl.TWO_PI
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.random
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.random.Random
 
 class ShipGib(val ship: ShipBlueprint, node: Element) {
     val imgPath: String
 
-    val velocity = pickRange(node.getChild("velocity"))
-    val direction = -Math.toRadians(pickRange(node.getChild("direction")).toDouble())
-    val angular = pickRange(node.getChild("angular"))
+    val velocityRange = parseRange(node.getChild("velocity"))
+    val directionRange = parseRange(node.getChild("direction"))
+    val angularVelocityRange = parseRange(node.getChild("angular"))
     val offset = ConstPoint(node.getChildTextTrim("x").toInt(), node.getChildTextTrim("y").toInt())
 
     init {
@@ -31,11 +34,10 @@ class ShipGib(val ship: ShipBlueprint, node: Element) {
         // Number of seconds the gibs play for
         val GIB_DURATION = 2f
 
-        fun pickRange(elem: Element): Float {
+        private fun parseRange(elem: Element): ClosedFloatingPointRange<Float> {
             val min = elem.getAttributeValue("min").toFloat()
             val max = elem.getAttributeValue("max").toFloat()
-            val range = max - min
-            return min + range * Math.random().toFloat()
+            return min..max
         }
     }
 
@@ -44,6 +46,10 @@ class ShipGib(val ship: ShipBlueprint, node: Element) {
      * this isn't referenced by [ShipBlueprint] and thus can have mutable variables.
      */
     inner class Instance(private val img: Image) {
+        private val velocity = velocityRange.random(Random)
+        private val direction = -directionRange.random(Random) / 360 * TWO_PI // Deg->rad
+        private val angular = angularVelocityRange.random(Random)
+
         private var time = 0f
 
         val isFinished: Boolean get() = time >= GIB_DURATION

@@ -109,7 +109,6 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
         // Load the room/door layout, as it's required for loading the systems.
         parseLayoutTxt(df.readString(df["data/$layout.txt"]))
 
-        // FIXME get rid of ShipGib's state!
         gibs = layoutElem.getChild("explosion").children.map { ShipGib(this, it) }
 
         // Load the hardpoints
