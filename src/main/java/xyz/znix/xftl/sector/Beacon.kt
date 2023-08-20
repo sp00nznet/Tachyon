@@ -39,6 +39,11 @@ class Beacon(
 ) : ISerialReferencable {
 
     /**
+     * This beacon's position on the 6x4 grid that all the sectors fit within.
+     */
+    val gridPos: ConstPoint = pos.divideTruncate(Sector.CELL_SIZE).const
+
+    /**
      * Without long-range scanners, what should this beacon be displayed as?
      *
      * This stores the state of the beacon as the player left it, so they can see if they've previously visited

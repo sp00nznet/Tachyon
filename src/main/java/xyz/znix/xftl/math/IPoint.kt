@@ -74,4 +74,8 @@ interface IPoint {
     fun divideTruncate(n: Float): IPoint {
         return ConstPoint((x / n).toInt(), (y / n).toInt())
     }
+
+    fun divideTruncate(other: IPoint): IPoint {
+        return ConstPoint(x / other.x, y / other.y)
+    }
 }

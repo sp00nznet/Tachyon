@@ -211,6 +211,7 @@ class Sector {
             }
 
             val beacon = Beacon(pos.const, event, isFinish && !isLastStand, isFinish && isLastStand)
+            require(beacon.gridPos posEq gridPos)
             beacons += beacon
             cells[beacon] = gridPos
 

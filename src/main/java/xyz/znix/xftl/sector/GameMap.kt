@@ -253,8 +253,7 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
                 attemptCount++
 
                 // The flagship goes on one of the two right-most columns.
-                // FIXME this is using the screen position, not the grid position!
-                val flagshipBeacon = sector.beacons.filter { it.pos.x >= 4 }.random()
+                val flagshipBeacon = sector.beacons.filter { it.gridPos.x >= 4 }.random()
 
                 // Make sure we have a path to the base!
                 val path = sector.findShortestPath(flagshipBeacon, sector.finishBeacon) ?: continue
