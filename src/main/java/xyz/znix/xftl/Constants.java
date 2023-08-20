@@ -128,6 +128,8 @@ public class Constants {
     public static final Color CREW_BOX_LOW_HEALTH = new Color(255, 120, 120);
     public static final Color CREW_BOX_STUNNED = new Color(255, 255, 100);
     public static final Color CREW_BOX_MIND_CONTROLLED = new Color(255, 0, 255);
+    public static final Color CREW_BOX_CLONING = SYSTEM_IONISED;
+    public static final Color CREW_BOX_CLONE_DYING_OVERLAY = new Color(255, 0, 0, 128);
     public static final float CREW_BOX_BG_ALPHA = 0.25f;
     public static final Color CREW_BOX_NAME_COLOUR = new Color(200, 200, 200);
 

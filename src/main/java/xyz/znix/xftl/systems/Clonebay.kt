@@ -23,8 +23,8 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     val queue = ArrayList<LivingCrew>()
 
-    private var cloneProgress: Float = 0f
-    private var dyingProgress: Float = 0f
+    var cloneProgress: Float = 0f
+    var dyingProgress: Float = 0f
 
     private val cloneDuration: Float
         get() {

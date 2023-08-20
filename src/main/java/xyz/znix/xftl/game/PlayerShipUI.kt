@@ -46,6 +46,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private var selectWeaponClickEvent: RoomClickListener? = null
     private var targetingSelectedWeapon: Int? = null
 
+    /**
+     * The list of all the crew that the player owns, including those in the
+     * enemy ship, and those that are currently being cloned.
+     */
+    private val playerCrew: MutableList<LivingCrew> = ArrayList()
+
     private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
     private val hoveredCrew: MutableList<AbstractCrew> = ArrayList()
     private var skillsHoveredCrew: AbstractCrew? = null
@@ -275,7 +281,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     fun isCrewHovered(crew: AbstractCrew, mouseX: Int, mouseY: Int, crewPos: IPoint): Boolean {
         // Check if the crewmember's box is being hovered
-        val index = ship.crew.indexOf(crew)
+        val index = playerCrew.indexOf(crew)
         if (index != -1) {
             val boxY = crewBaseY + index * CREW_BOX_SPACING
             if (mouseX in crewX..crewX + CREW_BOX_WIDTH && mouseY in boxY..boxY + CREW_BOX_HEIGHT) {
@@ -413,6 +419,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     fun render(gc: GameContainer, g: Graphics) {
         height = gc.height
 
+        // Update the list of player-controlled crew
+        playerCrew.clear()
+        addPlayerCrew(ship.crew)
+        ship.clonebay?.let { addPlayerCrew(it.queue) }
+        game.enemy?.let { addPlayerCrew(it.crew) }
+
         drawTopBar(g)
         drawSystems(g)
         drawSubSystems(gc)
@@ -424,6 +436,20 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         updatingButtons = false
+    }
+
+    private fun addPlayerCrew(crewList: List<AbstractCrew>) {
+        for (crew in crewList) {
+            // Filter out drones
+            if (crew !is LivingCrew)
+                continue
+
+            // Filter out intruders, not including mind-controlled crew.
+            if (crew.ownerShip != ship)
+                continue
+
+            playerCrew.add(crew)
+        }
     }
 
     private fun drawSystems(g: Graphics) {
@@ -942,19 +968,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 37f, "$avgOxygen%", Color.white)
 
         // Draw all the crew boxes
-        // TODO filter out boarders etc
-        // TODO draw cloning crew
-        // FIXME don't leave gaps for drones etc
         crewBaseY = oxyY + 59
-        for ((index, crew) in ship.crew.withIndex()) {
-            // Filter out drones
-            if (crew !is LivingCrew)
-                continue
-
-            // Filter out intruders, not including mind-controlled crew.
-            if (crew.ownerShip != ship)
-                continue
-
+        for ((index, crew) in playerCrew.withIndex()) {
             val crewY = crewBaseY + index * CREW_BOX_SPACING
 
             drawCrewBox(g, crew, crewX, crewY)
@@ -962,9 +977,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     private fun drawCrewBox(g: Graphics, crew: LivingCrew, x: Int, y: Int) {
+        val clonebay = ship.clonebay
+
         val isMindControlled = crew.mindControlledBy != null
         val isStunned = false // TODO implement when stunning crew is added
         val isFlashingHealth = false // TODO
+        val isCloning = clonebay?.queue?.contains(crew) ?: false
+        val cloneDyingProgress =
+            if (clonebay?.queue?.lastOrNull() == crew)
+                clonebay.dyingProgress
+            else
+                0f
 
         val colour = when {
             isMindControlled -> CREW_BOX_MIND_CONTROLLED
@@ -972,6 +995,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             isStunned -> CREW_BOX_STUNNED
             crew in hoveredCrew -> CREW_BOX_HOVER
             isFlashingHealth -> CREW_BOX_LOW_HEALTH
+            isCloning -> CREW_BOX_CLONING
             else -> CREW_BOX_NORMAL
         }
 
@@ -979,7 +1003,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         if (!drawSkills) {
             // Draw the semi-transparent background
-            g.colour = Color(colour.r, colour.g, colour.b, 0.25f)
+            g.colour = Color(colour.r, colour.g, colour.b, CREW_BOX_BG_ALPHA)
             g.fillRect(x.f, y.f, CREW_BOX_WIDTH.f, CREW_BOX_HEIGHT.f)
 
             // Draw the solid outline, via two unfilled rectangles.
@@ -1014,7 +1038,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // Draw the health bar
         val maxHpWidth = 49
         val hpFraction = crew.health / crew.maxHealth
-        val hpWidth = (maxHpWidth * hpFraction).toInt().coerceAtLeast(1)
+        var hpWidth = (maxHpWidth * hpFraction).toInt()
+
+        // Don't go below one pixel of health unless they're dead.
+        // This is particularly notable when the crew is cloning.
+        if (hpFraction > 0 && hpWidth == 0) {
+            hpWidth = 1
+        }
 
         if (crew.health == crew.maxHealth) {
             g.colour = Color.green
@@ -1032,6 +1062,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         // Draw the crew name
         weaponNameText.drawString(x + 33f, y + 14f, crew.info.name, CREW_BOX_NAME_COLOUR)
+
+        // If the crew is dying in a clonebay, draw the red overlay
+        if (cloneDyingProgress > 0f) {
+            g.colour = CREW_BOX_CLONE_DYING_OVERLAY
+            g.fillRect(x.f, y.f, CREW_BOX_WIDTH.f, CREW_BOX_HEIGHT * cloneDyingProgress)
+        }
     }
 
     private fun drawSkillBar(
