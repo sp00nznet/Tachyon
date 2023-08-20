@@ -31,6 +31,11 @@ class DebugFlagManager {
         "Show how much time is left until the next solar flare/ion pulse"
     )
 
+    val showMapGrid = DebugFlag(
+        "smg", "Show the grid in the beacon map", true,
+        "Show the 6x4 grid that all the beacons in the jump map fit within"
+    )
+
     val fastWeaponCharge = DebugFlag(
         "fwc", "Fast Weapon Charge", false,
         "Weapons charge at ten times their normal speed"
@@ -94,6 +99,7 @@ class DebugFlagManager {
         showFireTimers,
         showBeamVectors,
         showSunTimer,
+        showMapGrid,
         fastWeaponCharge,
         noEnemyFire,
         noDmg,

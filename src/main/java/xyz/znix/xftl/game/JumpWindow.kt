@@ -272,12 +272,14 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         }
 
         // For debugging, this can draw the grid the sectors fit in
-        // for (x in 0 until Sector.GRID_SIZE.x) {
-        //     for (y in 0 until Sector.GRID_SIZE.y) {
-        //         g.color = Color.red
-        //         g.drawRect(mapBase.x + x * 110f, mapBase.y + y * 110f, 110f, 110f)
-        //     }
-        // }
+        if (game.debugFlags.showMapGrid.set) {
+            for (x in 0 until Sector.GRID_SIZE.x) {
+                for (y in 0 until Sector.GRID_SIZE.y) {
+                    g.colour = Color.red
+                    g.drawRect(mapBase.x + x * 110f, mapBase.y + y * 110f, 110f, 110f)
+                }
+            }
+        }
     }
 
     private fun drawDangerZone(g: Graphics) {
