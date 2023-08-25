@@ -88,6 +88,9 @@ public class InGameState extends MainGame.GameState {
 
     private boolean isCurrentlyLoadingSave;
 
+    // Used for animation rendering only
+    private float renderingDeltaTime;
+
     /**
      * The quest events that couldn't be fit in the current sector,
      * and were delayed to the next one.
@@ -231,6 +234,8 @@ public class InGameState extends MainGame.GameState {
 
     @Override
     public void update(@NotNull GameContainer container, float delta) throws SlickException {
+        renderingDeltaTime = delta;
+
         if (!isPaused())
             updateGameState(delta);
 
@@ -1158,6 +1163,17 @@ public class InGameState extends MainGame.GameState {
 
     public Difficulty getDifficulty() {
         return difficulty;
+    }
+
+    /**
+     * Get the delta-time (of wall-clock time) that has elapsed this frame.
+     * <p>
+     * This is for use in animations that play regardless of whether the game
+     * is paused or not. It must NOT be used for anything related to gameplay,
+     * as that would break if we change the game speed.
+     */
+    public float getRenderingDeltaTime() {
+        return renderingDeltaTime;
     }
 
     @NotNull

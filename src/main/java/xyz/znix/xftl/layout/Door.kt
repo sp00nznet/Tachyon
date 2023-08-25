@@ -76,12 +76,6 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         }
 
     /**
-     * Whether this door should appear open or not. Unlike [open], this
-     * is set to true when a crewmember is walking through the door.
-     */
-    var visualOpen: Boolean = false
-
-    /**
      * The amount of health this has. Boarders attack it, once it goes
      * to zero the door is stuck open for a few seconds.
      */
@@ -183,18 +177,9 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     }
 
     fun update(dt: Float) {
-        // TODO update the door when the game is paused, so it animates open when clicked.
-
         // If a crewmember is walking through this door, they'll
         // set crewOpenDemand every update.
-        visualOpen = open || crewOpenDemand
         crewOpenDemand = false
-
-        if (visualOpen) {
-            stateAnimation = (stateAnimation + dt / ANIMATION_TIME).coerceAtMost(1f)
-        } else {
-            stateAnimation = (stateAnimation - dt / ANIMATION_TIME).coerceAtLeast(0f)
-        }
 
         // If this is an airlock, instantly drain the air from this room.
         // Air transfer between non-airlock doors is handled by OxygenTransfer
@@ -267,6 +252,12 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     }
 
     fun render(g: Graphics) {
+        val animationDir = when {
+            open || crewOpenDemand -> 1
+            else -> -1
+        }
+        stateAnimation = (stateAnimation + animationDir * ship.sys.renderingDeltaTime / ANIMATION_TIME).coerceIn(0f..1f)
+
         val doorSheet = ship.sys.getImg("img/effects/door_sheet.png")
         val highlight = ship.sys.getImg("img/effects/door_highlight.png")
 
@@ -360,7 +351,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         // Skip the animation when the door is first opened.
         // Note the crew gets a few updates before this is called, so crew
         // requests will be handled properly.
-        visualOpen = open || crewOpenDemand
+        val visualOpen = open || crewOpenDemand
         stateAnimation = if (visualOpen) 1f else 0f
     }
 
