@@ -19,20 +19,39 @@ class SILFontLoader : Font {
     private val picture: Image
     private val renderer: BulkImageRenderer
 
-    private val height: Int
-    private val baseline: Int
+    /**
+     * The vertical spacing between any two lines of text.
+     */
+    val lineSpacing: Int
+
+    /**
+     * How far the visual top of the line is above the baseline.
+     *
+     * This is set in font-data-override.xml
+     */
+    val baselineToTop: Int
+
+    /**
+     * An offset set in font-data-override.xml for HL2, that moves the baseline
+     * down with a positive value.
+     */
+    val trueBaselineOffset: Int
 
     var scale: Float = 1f
 
     constructor(df: Datafile, file: FTLFile) {
+        val override = FontOverrideData.fonts[file.name]
+
         val seeking = SeekingInputStream(df.read(file))
         val bytes = DataInputStream(seeking)
 
         check(Arrays.equals(bytes.readNBytes(4), "FONT".toByteArray()))
 
         val version = bytes.read()
-        height = bytes.read()
-        baseline = bytes.read()
+        lineSpacing = bytes.read()
+        val fileBaseline = bytes.read()
+        baselineToTop = override?.lineTop ?: fileBaseline
+        trueBaselineOffset = override?.baselineOffset ?: 0
 
         // Pad
         bytes.read()
@@ -125,8 +144,9 @@ class SILFontLoader : Font {
     constructor(other: SILFontLoader) {
         chars = other.chars
         picture = other.picture
-        height = other.height
-        baseline = other.baseline
+        lineSpacing = other.lineSpacing
+        baselineToTop = other.baselineToTop
+        trueBaselineOffset = other.trueBaselineOffset
         renderer = other.renderer
     }
 

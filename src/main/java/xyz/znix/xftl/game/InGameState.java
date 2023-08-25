@@ -5,10 +5,7 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.newdawn.slick.GameContainer;
-import org.newdawn.slick.ImageBuffer;
-import org.newdawn.slick.Input;
-import org.newdawn.slick.SlickException;
+import org.newdawn.slick.*;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
@@ -32,6 +29,9 @@ import xyz.znix.xftl.sector.*;
 import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.systems.*;
+import xyz.znix.xftl.ui.SpecDeserialiser;
+import xyz.znix.xftl.ui.UIProvider;
+import xyz.znix.xftl.ui.Widget;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,6 +50,8 @@ public class InGameState extends MainGame.GameState {
     private final boolean enableAdvancedEdition;
     private final BlueprintManager blueprintManager;
     private final EventManager eventManager;
+
+    private final SpecDeserialiser uiLoader = new SpecDeserialiser(new GameUIProvider());
 
     private GameMap gameMap;
     private Ship player;
@@ -1004,6 +1006,10 @@ public class InGameState extends MainGame.GameState {
         return content.sounds;
     }
 
+    public SpecDeserialiser getUiLoader() {
+        return uiLoader;
+    }
+
     public RoomClickListener getClickEvent() {
         return clickEvent;
     }
@@ -1469,6 +1475,32 @@ public class InGameState extends MainGame.GameState {
             nameManager = new CrewNameManager(datafile);
 
             blueprintManager.finishLoading(this);
+        }
+    }
+
+    private class GameUIProvider implements UIProvider {
+        @NotNull
+        @Override
+        public SILFontLoader getFont(@NotNull String name) {
+            return InGameState.this.getFont(name);
+        }
+
+        @NotNull
+        @Override
+        public Image getImg(@NotNull String path) {
+            return InGameState.this.getImg(path);
+        }
+
+        @Nullable
+        @Override
+        public String translate(@NotNull String key) {
+            return getTranslator().getTranslations().get(key);
+        }
+
+        @Nullable
+        @Override
+        public Color getDebugOutlineColour(@NotNull Widget widget) {
+            return null;
         }
     }
 }

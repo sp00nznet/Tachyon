@@ -5,6 +5,7 @@ import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Datafile
+import xyz.znix.xftl.FontOverrideData
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils
 import xyz.znix.xftl.rendering.Graphics
@@ -34,9 +35,10 @@ object FontPalette {
 
     val DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog"
     val HELP_MSG = "Press F1 to clear the string, F2 for sample, F3 and arrow keys to view rawfonts, F4 for" +
-            " baseline, type to edit, and up/down to scale the font"
+            " baseline, F5 to reload the override XML, type to edit, and up/down to scale the font"
 
     val BASELINE_COLOUR = Color(255, 0, 0, 128)
+    val OFFSET_COLOUR = Color(0, 255, 0, 128)
 
     private class GameImpl(val df: Datafile) : BasicGame("Font Palette") {
         private val fonts = HashMap<String, SILFontLoader>()
@@ -88,6 +90,15 @@ object FontPalette {
                 if (baseline) {
                     g.color = BASELINE_COLOUR
                     g.drawLine(150f, y, 150f + fnt.getWidth(drawStr), y)
+
+                    g.color = OFFSET_COLOUR
+                    val topY = y - fnt.baselineToTop * fontSize
+                    g.drawLine(150f, topY, 150f + fnt.getWidth(drawStr), topY)
+
+                    if (fnt.trueBaselineOffset != 0) {
+                        val baseY = y + fnt.trueBaselineOffset * fontSize
+                        g.drawLine(150f, baseY, 150f + fnt.getWidth(drawStr), baseY)
+                    }
                 }
             }
         }
@@ -100,13 +111,20 @@ object FontPalette {
             val field = SILFontLoader::class.java.getDeclaredField("picture")
             field.isAccessible = true
 
-            for (name in FONT_NAMES) {
-                val font = SILFontLoader(df, df["fonts/$name.font"])
-                fonts[name] = font
+            loadFonts()
+
+            for ((name, font) in fonts.entries) {
                 pictures[name] = field.get(font) as Image
             }
 
             utilFont = SILFontLoader(fonts["JustinFont8"]!!)
+        }
+
+        private fun loadFonts() {
+            for (name in FONT_NAMES) {
+                val font = SILFontLoader(df, df["fonts/$name.font"])
+                fonts[name] = font
+            }
         }
 
         override fun keyPressed(key: Int, c: Char) {
@@ -129,6 +147,10 @@ object FontPalette {
 
                 Input.KEY_F3 -> rawFontMode = !rawFontMode
                 Input.KEY_F4 -> baseline = !baseline
+                Input.KEY_F5 -> {
+                    FontOverrideData.debugReload()
+                    loadFonts()
+                }
                 Input.KEY_UP -> fontSize = min(fontSize + 1, 5)
                 Input.KEY_DOWN -> fontSize = max(fontSize - 1, 1)
                 else -> handled = false
