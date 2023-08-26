@@ -14,8 +14,7 @@ import kotlin.math.max
 class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.SHIELD
 
-    var selectedShieldBars: Int = 0
-        private set
+    val selectedShieldBars: Int get() = powerSelected / 2
 
     var activeShields: Int = 0
         set(value) {
@@ -26,8 +25,6 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 shieldsDownSound.play()
             }
         }
-
-    override val powerSelected: Int get() = selectedShieldBars * 2
 
     var rechargeTimer: Float = 0f
         private set
@@ -142,41 +139,27 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         addSkillPoint(Skill.SHIELDS)
     }
 
-    override fun powerStateChanged() {
-        if (powerAvailable < powerSelected)
-            selectedShieldBars = Math.floorDiv(powerAvailable, 2).coerceAtLeast(0)
-
-        if (activeShields > selectedShieldBars)
-            activeShields = selectedShieldBars
-    }
-
     override fun increasePower() {
         if (isPowerLocked)
             return
 
-        selectedShieldBars++
-        powerStateChanged()
+        setSystemPower(selectedShieldBars * 2 + 2)
     }
 
     override fun decreasePower() {
         if (isPowerLocked)
             return
 
-        if (selectedShieldBars > 0)
-            selectedShieldBars--
-
-        powerStateChanged()
+        setSystemPower(selectedShieldBars * 2 - 2)
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
-        SaveUtil.addAttrInt(elem, "selected", selectedShieldBars)
         SaveUtil.addAttrInt(elem, "active", activeShields)
         SaveUtil.addTagFloat(elem, "rechargeTimer", rechargeTimer, 0f)
         SaveUtil.addTagBoolIfTrue(elem, "discharging", discharging)
     }
 
     override fun loadSystem(elem: Element, refs: RefLoader) {
-        selectedShieldBars = SaveUtil.getAttrInt(elem, "selected")
         activeShields = SaveUtil.getAttrInt(elem, "active")
         rechargeTimer = SaveUtil.getOptionalTagFloat(elem, "rechargeTimer") ?: 0f
         discharging = SaveUtil.getOptionalTagBool(elem, "discharging") ?: false

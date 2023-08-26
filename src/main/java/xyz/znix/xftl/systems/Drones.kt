@@ -31,15 +31,25 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             drones.add(null)
     }
 
-    // Custom power-management (right-clicking turning drones on and off)
-
-    override val powerSelected: Int
+    /**
+     * Shows how much power the currently-powered drones are using.
+     *
+     * This should match [powerSelected], except when drones are being
+     * turned on and off, hence why this is only used for power management.
+     */
+    private val currentDronePower: Int
         get() {
             return drones.filter { it?.instance?.isPowered == true }.sumBy { it!!.type.power }
         }
 
     override fun powerStateChanged() {
-        decrease@ while (powerSelected > powerAvailable) {
+        super.powerStateChanged()
+
+        // Don't adjust the power if the drones haven't yet been loaded.
+        if (ship.sys.isCurrentlyLoadingSave)
+            return
+
+        decrease@ while (currentDronePower > powerSelected) {
             for (i in drones.size - 1 downTo 0) {
                 val drone = drones[i]?.instance ?: continue
 
@@ -55,6 +65,12 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             // power use? This should never happen!
             throw IllegalStateException("Drones cannot meet provided power, selected $powerSelected available $powerAvailable")
         }
+
+        // If the system has too much power - more than the drones are
+        // using - then get rid of that excess.
+        if (powerSelected != currentDronePower) {
+            setSystemPower(currentDronePower)
+        }
     }
 
     override fun increasePower() {
@@ -68,6 +84,10 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
             // Skip already-powered drones
             if (drone.instance?.isPowered == true)
+                continue
+
+            // Skip drones we can't afford to power
+            if (drone.type.power > powerAvailable)
                 continue
 
             // We've found a suitable drone, turn it on.
@@ -116,6 +136,11 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             }
         }
 
+        // If a drone has been turned on or off, find out why and fix it.
+        if (powerSelected != currentDronePower) {
+            powerStateChanged()
+        }
+
         if (playDroneLaunchSound) {
             droneLaunchSound.play()
             playDroneLaunchSound = false
@@ -142,8 +167,11 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // If we're turning the drone on, check there's enough power for it.
         if (power) {
-            val consumedPower = powerSelected + info.type.power
-            if (consumedPower > powerAvailable) {
+            // Try to increase the system power to accommodate this drone.
+            // This increase will be instantly reverted by powerStateChanged,
+            // as the drone isn't actually turned on yet, but it lets us
+            // check if we have the available power or not.
+            if (!setSystemPower(currentDronePower + info.type.power)) {
                 // TODO show a 'not enough system power' or 'not enough reactor power' warning
                 return false
             }
@@ -180,6 +208,7 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         info.instance!!.isPowered = power
+        setSystemPower(currentDronePower)
         return true
     }
 

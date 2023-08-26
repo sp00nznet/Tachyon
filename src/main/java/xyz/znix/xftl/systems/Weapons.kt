@@ -69,7 +69,13 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         selectedTargets.update()
     }
 
-    override val powerSelected: Int
+    /**
+     * Shows how much power the currently-powered weapons are using.
+     *
+     * This should match [powerSelected], except when weapons are being
+     * turned on and off, hence why this is only used for power management.
+     */
+    private val currentWeaponPower: Int
         get() {
             var power = 0
             for (hp in ship.hardpoints) {
@@ -157,9 +163,15 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun powerStateChanged() {
+        super.powerStateChanged()
+
+        // Don't adjust the power if the weapons haven't yet been loaded.
+        if (ship.sys.isCurrentlyLoadingSave)
+            return
+
         // The weapons are arranged in order of priority, so turn the last ones off if possible.
         for (hp in ship.hardpoints.asReversed()) {
-            if (powerAvailable >= powerSelected)
+            if (powerSelected >= currentWeaponPower)
                 break
 
             // Force-turn-off the weapon, even if we have ion damage.
@@ -167,6 +179,12 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             // more weapons than we're allowed to, for example if
             // we took damage while ion-locked.
             hp.weapon?.forceSetPowered(false)
+        }
+
+        // If the system has too much power - more than the weapons are
+        // using - then get rid of that excess.
+        if (powerSelected != currentWeaponPower) {
+            setSystemPower(currentWeaponPower)
         }
     }
 
@@ -214,7 +232,11 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             return false
 
         if (newPower) {
-            if (weapon.type.power > powerUnused)
+            // Try to increase the system power to accommodate this weapon.
+            // This increase will be instantly reverted by powerStateChanged,
+            // as the weapon isn't actually turned on yet, but it lets us
+            // check if we have the available power or not.
+            if (!setSystemPower(currentWeaponPower + weapon.type.power))
                 return false
 
             if (!weapon.hasEnoughMissiles)
@@ -222,7 +244,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         weapon.forceSetPowered(newPower)
-        powerStateChanged()
+        setSystemPower(currentWeaponPower)
         return true
     }
 

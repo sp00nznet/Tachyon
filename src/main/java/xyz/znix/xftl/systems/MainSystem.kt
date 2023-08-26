@@ -5,13 +5,11 @@ import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import kotlin.math.max
 import kotlin.math.min
 
 abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint) {
-    private var simpleSelectedEnergyLevel: Int = 1
-
-    open val powerSelected: Int get() = simpleSelectedEnergyLevel
+    var powerSelected: Int = 1
+        private set
 
     val powerAvailable: Int get() = min(undamagedEnergy, ship.powerAvailable + powerSelected)
 
@@ -30,33 +28,56 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
     override fun powerStateChanged() {
         if (powerSelected > powerAvailable)
-            simpleSelectedEnergyLevel = powerAvailable.coerceAtLeast(0)
+            powerSelected = powerAvailable.coerceAtLeast(0)
     }
 
     open fun increasePower() {
         if (isPowerLocked)
             return
 
-        simpleSelectedEnergyLevel++
-        powerStateChanged()
+        setSystemPower(powerSelected + 1)
     }
 
     open fun decreasePower() {
         if (isPowerLocked)
             return
 
-        simpleSelectedEnergyLevel = max(0, simpleSelectedEnergyLevel - 1)
+        setSystemPower(powerSelected - 1)
+    }
+
+    /**
+     * Attempt to set the power to a given level.
+     *
+     * When increasing the power, this is atomic - the power will either be
+     * increased to [level], or it will be left the same - it won't be partially
+     * increased if it's not possible to increase it all the way.
+     *
+     * This does NOT check [isPowerLocked] - that must be checked by the caller
+     * if appropriate.
+     *
+     * Returns true if the change was made, or false if that was not possible.
+     */
+    protected fun setSystemPower(level: Int): Boolean {
+        // Increasing power is atomic, eg for shields we need to increase or
+        // decrease it by 2, or do nothing.
+        val available = powerAvailable
+        if (level > available && level > powerSelected)
+            return false
+
+        powerSelected = level
         powerStateChanged()
+
+        return true
     }
 
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
         super.saveToXML(elem, refs)
 
-        SaveUtil.addAttrInt(elem, "simpleEnergy", simpleSelectedEnergyLevel)
+        SaveUtil.addAttrInt(elem, "power", powerSelected)
     }
 
     override fun loadFromXML(elem: Element, refs: RefLoader) {
-        simpleSelectedEnergyLevel = SaveUtil.getAttrInt(elem, "simpleEnergy")
+        powerSelected = SaveUtil.getAttrInt(elem, "power")
 
         // Load our stuff before calling the super-method, so that when
         // the system loading code runs it has the correct power level.
