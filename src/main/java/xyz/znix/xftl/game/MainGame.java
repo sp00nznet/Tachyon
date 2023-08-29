@@ -4,7 +4,6 @@ import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
-import org.newdawn.slick.Game;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
@@ -13,6 +12,7 @@ import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
 import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
+import xyz.znix.xftl.sys.Game;
 import xyz.znix.xftl.sys.GameContainer;
 
 import java.io.BufferedReader;
@@ -23,8 +23,6 @@ import java.nio.file.Path;
 public class MainGame implements Game {
     private final Datafile vanillaDatafile;
     private final CommandLineArgs commandLineArgs;
-
-    private Graphics graphics;
 
     private GameContainer gameContainer;
 
@@ -38,11 +36,8 @@ public class MainGame implements Game {
     }
 
     @Override
-    public void init(org.newdawn.slick.GameContainer gc) throws SlickException {
-        gameContainer = new GameContainer(gc);
-
-        graphics = new Graphics();
-        graphics.markCurrentImageTransformSource();
+    public void init(@NotNull GameContainer gc) throws SlickException {
+        gameContainer = gc;
 
         // Load the game content immediately - this will work until
         // we support mods or turning Advanced Edition on or off.
@@ -55,7 +50,6 @@ public class MainGame implements Game {
             Path path = DebugConsole.DEBUG_SAVE_DIR.resolve(commandLineArgs.debugLoad + ".xml");
             Document doc;
             try (BufferedReader reader = Files.newBufferedReader(path)) {
-                @SuppressWarnings("VulnerableCodeUsages") // we set expandEntities
                 SAXBuilder builder = new SAXBuilder();
                 builder.setExpandEntities(true);
                 doc = builder.build(reader);
@@ -85,33 +79,24 @@ public class MainGame implements Game {
     }
 
     @Override
-    public void update(org.newdawn.slick.GameContainer gc, int deltaMS) throws SlickException {
-        // Convert the delta-time to seconds, from milliseconds.
-        float dt = deltaMS / 1000f;
-
-        currentState.update(gameContainer, dt);
+    public void update(@NotNull GameContainer gc, float dt) throws SlickException {
+        currentState.update(gc, dt);
     }
 
     @Override
-    public void render(org.newdawn.slick.GameContainer gc, org.newdawn.slick.Graphics slickG) throws SlickException {
+    public void render(@NotNull GameContainer gc, Graphics g) throws SlickException {
         // When we use shaders, we have to transform from pixels to NDC
         // If this is set wrong, all the text etc will be transformed wrong.
         ShaderProgramme.getSHADER_SCREEN_SIZE().set(gameContainer.getWidth(), gameContainer.getHeight());
 
         // Reset the transform from last frame, in case there was a transform
         // call that wasn't inside a pushTransform block.
-        graphics.loadIdentityMatrix();
+        g.loadIdentityMatrix();
 
-        currentState.render(gameContainer, graphics);
+        currentState.render(gc, g);
 
         // Check there aren't any mismatched pushTransform/popTransform calls.
-        graphics.checkNoPushedTransforms();
-    }
-
-    @Override
-    public boolean closeRequested() {
-        // If we're asked to close, do so.
-        return true;
+        g.checkNoPushedTransforms();
     }
 
     @Override
@@ -159,6 +144,8 @@ public class MainGame implements Game {
 
         gameContainer.getInput().removeAllListeners();
         gameContainer.getInput().addListener(currentState);
+
+        currentState.init(gameContainer);
     }
 
     public void quitGame() {
@@ -167,6 +154,9 @@ public class MainGame implements Game {
     }
 
     public static abstract class GameState extends InputAdapter {
+        public void init(@NotNull GameContainer container) {
+        }
+
         public abstract void update(@NotNull GameContainer container, float delta) throws SlickException;
 
         public abstract void render(@NotNull GameContainer container, @NotNull Graphics g) throws SlickException;

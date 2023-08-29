@@ -1,21 +1,22 @@
 package xyz.znix.xftl.sys;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.Sys;
-import org.lwjgl.openal.AL;
-import org.lwjgl.openal.AL10;
-import org.lwjgl.openal.OpenALException;
+import org.lwjgl.openal.*;
 import org.newdawn.slick.openal.*;
 import org.newdawn.slick.util.Log;
-import org.newdawn.slick.util.ResourceLoader;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
+
+import static org.lwjgl.openal.ALC10.ALC_DEFAULT_DEVICE_SPECIFIER;
+import static org.lwjgl.openal.ALC10.ALC_DEVICE_SPECIFIER;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 // Copied from Slick, modified for XFTL
 
@@ -70,6 +71,11 @@ public class SoundStore {
     private boolean inited = false;
 
     /**
+     * The OpenAL device handle.
+     */
+    private long device;
+
+    /**
      * The stream to be updated
      */
     private OpenALStreamPlayer stream;
@@ -82,15 +88,6 @@ public class SoundStore {
      * True if we're returning deferred versions of resources
      */
     private boolean deferred;
-
-    /**
-     * The buffer used to set the velocity of a source
-     */
-    private FloatBuffer sourceVel = BufferUtils.createFloatBuffer(3).put(new float[]{0.0f, 0.0f, 0.0f});
-    /**
-     * The buffer used to set the position of a source
-     */
-    private FloatBuffer sourcePos = BufferUtils.createFloatBuffer(3);
 
     /**
      * The maximum number of sources
@@ -204,64 +201,64 @@ public class SoundStore {
         Log.info("Initialising sounds..");
         inited = true;
 
-        try {
-            AL.create();
-            soundWorks = true;
-            sounds = true;
-            music = true;
-            Log.info("- Sound works");
-        } catch (Exception e) {
-            Log.error("Sound initialisation failure.");
-            Log.error(e);
-            soundWorks = false;
-            sounds = false;
-            music = false;
+        soundWorks = false;
+        sounds = false;
+        music = false;
+
+        device = ALC10.alcOpenDevice((ByteBuffer) null);
+
+        if (device == NULL) {
+            Log.error("Sound initialisation failure (alcOpenDevice)");
+            return;
         }
+        ALCCapabilities alcCaps = ALC.createCapabilities(device);
 
-        if (soundWorks) {
-            sourceCount = 0;
-            sources = BufferUtils.createIntBuffer(maxSources);
-            while (AL10.alGetError() == AL10.AL_NO_ERROR) {
-                IntBuffer temp = BufferUtils.createIntBuffer(1);
+        long context = ALC10.alcCreateContext(device, (int[]) null);
+        if (!ALC10.alcMakeContextCurrent(context)) {
+            Log.error("Sound initialisation failure (alcMakeContextCurrent)");
+            return;
+        }
+        AL.createCapabilities(alcCaps);
 
-                try {
-                    AL10.alGenSources(temp);
+        // Clear any previous errors.
+        AL10.alGetError();
 
-                    if (AL10.alGetError() == AL10.AL_NO_ERROR) {
-                        sourceCount++;
-                        sources.put(temp.get(0));
-                        if (sourceCount > maxSources - 1) {
-                            break;
-                        }
-                    }
-                } catch (OpenALException e) {
-                    // expected at the end
+        String deviceName = ALC10.alcGetString(device, ALC_DEVICE_SPECIFIER);
+        Log.info("- Sound works, using sound device: " + deviceName);
+        soundWorks = true;
+        sounds = true;
+        music = true;
+
+        sources = BufferUtils.createIntBuffer(maxSources);
+        while (AL10.alGetError() == AL10.AL_NO_ERROR) {
+            IntBuffer temp = BufferUtils.createIntBuffer(1);
+
+            AL10.alGenSources(temp);
+
+            if (AL10.alGetError() == AL10.AL_NO_ERROR) {
+                sourceCount++;
+                sources.put(temp.get(0));
+                if (sourceCount > maxSources - 1) {
                     break;
                 }
             }
-            Log.info("- " + sourceCount + " OpenAL source available");
+        }
+        Log.info("- " + sourceCount + " OpenAL source available");
 
-            if (AL10.alGetError() != AL10.AL_NO_ERROR) {
-                sounds = false;
-                music = false;
-                soundWorks = false;
-                Log.error("- AL init failed");
-            } else {
-                FloatBuffer listenerOri = BufferUtils.createFloatBuffer(6).put(
-                        new float[]{0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f});
-                FloatBuffer listenerVel = BufferUtils.createFloatBuffer(3).put(
-                        new float[]{0.0f, 0.0f, 0.0f});
-                FloatBuffer listenerPos = BufferUtils.createFloatBuffer(3).put(
-                        new float[]{0.0f, 0.0f, 0.0f});
-                listenerPos.flip();
-                listenerVel.flip();
-                listenerOri.flip();
-                AL10.alListener(AL10.AL_POSITION, listenerPos);
-                AL10.alListener(AL10.AL_VELOCITY, listenerVel);
-                AL10.alListener(AL10.AL_ORIENTATION, listenerOri);
+        if (AL10.alGetError() != AL10.AL_NO_ERROR) {
+            sounds = false;
+            music = false;
+            soundWorks = false;
+            Log.error("- AL init failed");
+        } else {
+            FloatBuffer listenerOri = BufferUtils.createFloatBuffer(6).put(
+                    new float[]{0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f});
+            listenerOri.flip();
+            AL10.alListener3f(AL10.AL_POSITION, 0f, 0f, 0f);
+            AL10.alListener3f(AL10.AL_VELOCITY, 0f, 0f, 0f);
+            AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOri);
 
-                Log.info("- Sounds source generated");
-            }
+            Log.info("- Sounds source generated");
         }
     }
 
@@ -319,14 +316,8 @@ public class SoundStore {
                 AL10.alSourcef(sources.get(nextSource), AL10.AL_GAIN, gain);
                 AL10.alSourcei(sources.get(nextSource), AL10.AL_LOOPING, loop ? AL10.AL_TRUE : AL10.AL_FALSE);
 
-                sourcePos.clear();
-                sourceVel.clear();
-                sourceVel.put(new float[]{0, 0, 0});
-                sourcePos.put(new float[]{x, y, z});
-                sourcePos.flip();
-                sourceVel.flip();
-                AL10.alSource(sources.get(nextSource), AL10.AL_POSITION, sourcePos);
-                AL10.alSource(sources.get(nextSource), AL10.AL_VELOCITY, sourceVel);
+                AL10.alSource3f(sources.get(nextSource), AL10.AL_POSITION, x, y, z);
+                AL10.alSource3f(sources.get(nextSource), AL10.AL_VELOCITY, 0f, 0f, 0f);
 
                 AL10.alSourcePlay(sources.get(nextSource));
 
@@ -526,13 +517,7 @@ public class SoundStore {
         }
 
         if (music && stream != null) {
-            try {
-                stream.update();
-            } catch (OpenALException e) {
-                Log.error("Error with OpenGL Streaming Player on this this platform");
-                Log.error(e);
-                stream = null;
-            }
+            stream.update();
         }
     }
 

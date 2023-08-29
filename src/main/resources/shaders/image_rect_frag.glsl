@@ -1,4 +1,4 @@
-#version 130
+#version 330 core
 
 in vec2 varying_uv;
 in vec4 varying_colour;

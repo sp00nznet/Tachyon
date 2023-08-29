@@ -1,12 +1,12 @@
 package xyz.znix.xftl.devutil.uiedit
 
-import org.newdawn.slick.BasicGame
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.ShaderProgramme
+import xyz.znix.xftl.sys.BasicGame
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.ui.SpecDeserialiser
@@ -16,8 +16,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.math.pow
 import kotlin.math.roundToInt
-import org.newdawn.slick.GameContainer as SlickGameContainer
-import org.newdawn.slick.Graphics as SlickGraphics
 
 /**
  * A simple UI 'editor'.
@@ -58,20 +56,15 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
     private var highlighted: Widget? = null
     private var showOutlines: Boolean = true
 
-    override fun init(slickContainer: SlickGameContainer) {
+    override fun init(container: GameContainer) {
         updateZoomScale()
-
-        g = Graphics()
-        g.markCurrentImageTransformSource()
-
-        container = GameContainer(slickContainer)
 
         utilFont = getFont("c&c")
 
         reload()
     }
 
-    override fun update(slickContainer: SlickGameContainer, delta: Int) {
+    override fun update(slickContainer: GameContainer, delta: Float) {
         val input = container.input
 
         if (input.isKeyPressed(Input.KEY_F1)) {
@@ -89,7 +82,7 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         mousePos.set(input.mouseX, input.mouseY)
     }
 
-    override fun render(slickContainer: SlickGameContainer, slickG: SlickGraphics) {
+    override fun render(container: GameContainer, g: Graphics) {
         ShaderProgramme.SHADER_SCREEN_SIZE.set(container.width, container.height)
 
         g.clear(Color.lightGray)

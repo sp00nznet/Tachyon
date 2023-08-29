@@ -14,16 +14,52 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    // This dependency is found on compile classpath of this component and consumers.
-    implementation("org.slick2d:slick2d-core:1.0.2")
+val lwjglNatives = listOf(
+    // No 32-bit support, as nothing uses it.
+    "natives-windows-arm64",
+    "natives-windows",
 
+    "natives-macos-arm64",
+    "natives-macos",
+
+    "natives-linux-arm64",
+    "natives-linux",
+)
+
+dependencies {
+    implementation("org.slick2d:slick2d-core:1.0.2") {
+        // We're only using a few things from Slick, like its image and audio
+        // decoders, so we don't need all it's native libraries. In fact, we
+        // really shouldn't: we don't want both LWJGL 2 and 3!
+        isTransitive = false
+    }
+
+    // There's a few libraries that Slick uses that we do need, though.
+    implementation("org.jcraft:jorbis:0.0.17")
+
+    // JDOM is our XML parser
     implementation("org.jdom:jdom2:2.0.6.1")
 
     // Use JUnit test framework
     testImplementation("junit:junit:4.12")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
+
+    implementation(platform("org.lwjgl:lwjgl-bom:3.3.2"))
+
+    implementation("org.lwjgl", "lwjgl")
+    implementation("org.lwjgl", "lwjgl-glfw")
+    implementation("org.lwjgl", "lwjgl-openal")
+    implementation("org.lwjgl", "lwjgl-opengl")
+
+    // Include all the platform-specific libraries, so our fatJar can run
+    // on any supported platform.
+    for (platform in lwjglNatives) {
+        runtimeOnly("org.lwjgl", "lwjgl", classifier = platform)
+        runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = platform)
+        runtimeOnly("org.lwjgl", "lwjgl-openal", classifier = platform)
+        runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = platform)
+    }
 }
 
 // Define the main class for the application

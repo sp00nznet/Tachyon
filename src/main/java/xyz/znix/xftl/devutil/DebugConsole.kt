@@ -158,6 +158,12 @@ class DebugConsole(var game: InGameState) {
     }
 
     fun keyPressed(key: Int, c: Char) {
+        // Our GLFW-based game sends characters and keycodes separately,
+        // so we have to block the backtick that comes once the console
+        // is opened.
+        if (c == '`' && key != Input.KEY_GRAVE)
+            return
+
         // Check if the continuation UI wants to handle the keypress
         if (continued?.keyPressed(key, c) == true)
             return

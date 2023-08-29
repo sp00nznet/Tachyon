@@ -26,9 +26,7 @@ object TextureLoader {
         val height = imageData.height
         val hasAlpha = imageData.depth == 32
 
-        val temp = BufferUtils.createIntBuffer(16)
-        GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE, temp)
-        val max = temp[0]
+        val max = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)
         if (imageData.texWidth > max || imageData.texHeight > max) {
             throw IOException("Attempt to allocate a texture to big for the current hardware")
         }

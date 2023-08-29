@@ -180,7 +180,7 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
         transformMatData.put(0f)
 
         transformMatData.flip()
-        GL20.glUniformMatrix3(posTransformLoc, false, transformMatData)
+        GL20.glUniformMatrix3fv(posTransformLoc, false, transformMatData)
     }
 
     private fun updateUvTransformMatrix() {
@@ -202,7 +202,7 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
         transformMatData.put(0f)
 
         transformMatData.flip()
-        GL20.glUniformMatrix3(uvTransformLoc, false, transformMatData)
+        GL20.glUniformMatrix3fv(uvTransformLoc, false, transformMatData)
     }
 
     override fun close() {

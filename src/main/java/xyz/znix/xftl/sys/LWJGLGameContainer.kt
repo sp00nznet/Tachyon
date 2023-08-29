@@ -1,0 +1,265 @@
+package xyz.znix.xftl.sys
+
+import org.lwjgl.Version
+import org.lwjgl.glfw.Callbacks
+import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFWCharCallbackI
+import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11.*
+import org.lwjgl.system.MemoryStack.stackPush
+import org.lwjgl.system.MemoryUtil.NULL
+import org.newdawn.slick.InputListener
+import org.newdawn.slick.KeyListener
+import org.newdawn.slick.util.InputAdapter
+import xyz.znix.xftl.rendering.Graphics
+import java.util.*
+import kotlin.collections.ArrayList
+
+
+class LWJGLGameContainer(private val game: Game) : GameContainer {
+    override lateinit var input: Input
+        private set
+
+    override var width: Int = 400
+        private set
+    override var height: Int = 400
+        private set
+
+    private lateinit var g: Graphics
+
+    /**
+     * The GLFW window handle.
+     */
+    private var window: Long = 0
+
+    override fun exit() {
+        glfwSetWindowShouldClose(window, true)
+    }
+
+    fun start() {
+        println("Using LWJGL version ${Version.getVersion()}")
+        init()
+        loop()
+
+        // Free the window callbacks and destroy the window
+        Callbacks.glfwFreeCallbacks(window)
+        glfwDestroyWindow(window)
+
+        // Terminate GLFW and free the error callback
+        glfwTerminate()
+        glfwSetErrorCallback(null)!!.free()
+    }
+
+    private fun init() {
+        // Set up an error callback. The default implementation
+        // will print the error message in System.err.
+        GLFWErrorCallback.createPrint(System.err).set()
+
+        // Initialize GLFW. Most GLFW functions will not work before doing this.
+        check(glfwInit()) { "Unable to initialize GLFW" }
+
+        // Configure GLFW
+        glfwDefaultWindowHints() // optional, the current window hints are already the default
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE) // the window will stay hidden after creation
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE) // the window will be resizable
+
+        // Set the OpenGL stuff
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE)
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE)
+
+        // Create the window
+        window = glfwCreateWindow(width, height, game.title, NULL, NULL)
+        if (window == NULL)
+            throw RuntimeException("Failed to create the GLFW window")
+
+        stackPush().use { stack ->
+            val pWidth = stack.mallocInt(1) // int*
+            val pHeight = stack.mallocInt(1) // int*
+
+            // Get the window size passed to glfwCreateWindow
+            glfwGetWindowSize(window, pWidth, pHeight)
+
+            // Get the resolution of the primary monitor
+            val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor())!!
+
+            // Center the window
+            glfwSetWindowPos(
+                window,
+                (vidmode.width() - pWidth[0]) / 2,
+                (vidmode.height() - pHeight[0]) / 2
+            )
+        }
+
+        // Make the OpenGL context current
+        glfwMakeContextCurrent(window)
+        // Enable v-sync
+        glfwSwapInterval(1)
+
+        // Make the window visible
+        glfwShowWindow(window)
+
+        input = LWJGLInput(window)
+        g = Graphics()
+        g.markCurrentImageTransformSource()
+
+        // Set up OpenGL
+        initOpenGL()
+    }
+
+    private fun initOpenGL() {
+        // This line is critical for LWJGL's interoperation with GLFW's
+        // OpenGL context, or any context that is managed externally.
+        // LWJGL detects the context that is current in the current thread,
+        // creates the GLCapabilities instance and makes the OpenGL
+        // bindings available for use.
+        GL.createCapabilities()
+
+        // From Slick's ImmediateModeOGLRenderer
+        glEnable(GL_TEXTURE_2D);
+        glDisable(GL_DEPTH_TEST);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearDepth(1.0)
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glViewport(0, 0, width, height)
+
+        // From enterOrtho
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0.0, width.toDouble(), height.toDouble(), 0.0, 1.0, -1.0);
+        glMatrixMode(GL_MODELVIEW);
+
+        // glTranslatef((width - xsize) / 2, (height - ysize) / 2, 0);
+    }
+
+    private fun loop() {
+        game.init(this)
+
+        var lastNanos = System.nanoTime()
+
+        // Run the rendering loop until the user has attempted to close
+        // the window, or exit is called.
+        while (!glfwWindowShouldClose(window)) {
+            // Read any changes to the input system
+            (input as LWJGLInput).update()
+
+            // Find the delta-time, in seconds
+            val thisUpdateTime = System.nanoTime()
+            val deltaNS = thisUpdateTime - lastNanos
+            val deltaSec = deltaNS / 1_000_000_000f
+            lastNanos = thisUpdateTime
+
+            // Update the game state
+            game.update(this, deltaSec)
+
+            // Render out the game
+            game.render(this, g)
+
+            // Swap the colour buffers, presenting the newly-drawn one
+            // to the screen.
+            glfwSwapBuffers(window)
+
+            // Poll for window events. The key callback above will only be
+            // invoked during this call.
+            glfwPollEvents()
+        }
+    }
+
+    fun setDisplayMode(width: Int, height: Int, fullScreen: Boolean) {
+        this.width = width
+        this.height = height
+    }
+}
+
+private class LWJGLInput(val window: Long) : Input {
+    override var mouseX: Int = 0
+        private set
+    override var mouseY: Int = 0
+        private set
+
+    private val pendingKeyPresses = BooleanArray(GLFW_KEY_LAST)
+
+    private val keyListeners = ArrayList<KeyListener>()
+
+    init {
+        // Set up a key callback. It will be called every time a key is pressed, repeated or released.
+        glfwSetKeyCallback(
+            window
+        ) { _: Long, key: Int, scancode: Int, action: Int, mods: Int ->
+            keyCallback(key, scancode, action, mods)
+        }
+        glfwSetCharCallback(window) { _, codepoint -> charCallback(codepoint.toChar()) }
+    }
+
+    fun update() {
+        stackPush().use { stack ->
+            val x = stack.mallocDouble(1)
+            val y = stack.mallocDouble(1)
+            glfwGetCursorPos(window, x, y)
+            mouseX = x[0].toInt()
+            mouseY = y[0].toInt()
+        }
+    }
+
+    private fun keyCallback(key: Int, scancode: Int, action: Int, mods: Int) {
+        // Ignore unsupported keys
+        if (key == GLFW_KEY_UNKNOWN) {
+            return
+        }
+
+        if (action == GLFW_PRESS) {
+            pendingKeyPresses[key] = true
+        }
+
+        // Keys don't map 1-1 with characters (most characters on most European
+        // keyboards do, but you can't rely on that!) so send 0 for the character
+        // now, and then send the character by itself as a second press.
+        for (listener in keyListeners) {
+            when (action) {
+                GLFW_PRESS -> listener.keyPressed(key, 0.toChar())
+                GLFW_RELEASE -> listener.keyReleased(key, 0.toChar())
+            }
+        }
+    }
+
+    private fun charCallback(codepoint: Char) {
+        for (listener in keyListeners) {
+            listener.keyPressed(-1, codepoint)
+        }
+    }
+
+    override fun isMouseButtonDown(button: Int): Boolean {
+        return glfwGetMouseButton(window, button) == GLFW_PRESS
+    }
+
+    override fun isKeyPressed(key: Int): Boolean {
+        val oldValue = pendingKeyPresses[key]
+        pendingKeyPresses[key] = false
+        return oldValue
+    }
+
+    override fun isKeyDown(key: Int): Boolean {
+        return glfwGetKey(window, key) == GLFW_PRESS
+    }
+
+    override fun addListener(listener: InputListener) {
+        keyListeners.add(listener)
+    }
+
+    override fun removeAllListeners() {
+        keyListeners.clear()
+    }
+
+    override fun clearInputPressedRecord() {
+        for (i in pendingKeyPresses.indices) {
+            pendingKeyPresses[i] = false
+        }
+    }
+}

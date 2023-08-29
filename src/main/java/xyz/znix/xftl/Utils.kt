@@ -2,12 +2,11 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.AppGameContainer
-import org.newdawn.slick.Game
-import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.sys.Game
+import xyz.znix.xftl.sys.LWJGLGameContainer
 import java.io.File
 import java.util.*
 import kotlin.math.PI
@@ -177,15 +176,12 @@ object Utils {
             }
         }
 
-        // Enable stenciling support
-        GameContainer.enableStencil()
-
         val game = builder(df)
 
-        val gc = AppGameContainer(game)
-        gc.setTargetFrameRate(120)
+        val gc = LWJGLGameContainer(game)
+        // gc.setTargetFrameRate(120)
         gc.setDisplayMode(1250, 720, false)
-        gc.setShowFPS(false)
+        // gc.setShowFPS(false)
         gc.start()
     }
 

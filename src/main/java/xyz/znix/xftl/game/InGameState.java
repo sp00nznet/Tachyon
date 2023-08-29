@@ -176,6 +176,11 @@ public class InGameState extends MainGame.GameState {
             getImg("img/icons/s_" + system.getType() + "_grey1.png");
             getImg("img/icons/s_" + system.getType() + "_green1.png");
         }
+    }
+
+    @Override
+    public void init(@NotNull GameContainer container) {
+        super.init(container);
 
         // Feed inputs to the debug console.
         container.getInput().addListener(new InputAdapter() {
@@ -392,6 +397,8 @@ public class InGameState extends MainGame.GameState {
 
     @Override
     public void render(@NotNull GameContainer container, @NotNull Graphics g) throws SlickException {
+        g.clear(Colour.black);
+
         currentBeacon.getEnvironment(this).renderBackground(container, g);
 
         // Get the player's ship away from the top UI
