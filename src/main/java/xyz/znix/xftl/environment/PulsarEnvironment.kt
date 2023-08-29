@@ -198,9 +198,10 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
         val damage = 1 + (currentPower / 2f).toInt()
 
         if (resist) {
-            // TODO show damage message
+            system.room!!.showDamageText(game.translator["resist"], Color.white)
         } else {
             system.dealDamage(0, damage)
+            system.room!!.showDamageText(damage.toString(), Constants.DAMAGE_COLOUR_ION)
         }
     }
 

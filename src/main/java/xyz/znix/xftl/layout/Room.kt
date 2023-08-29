@@ -684,6 +684,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         fireSpreadTimers[slot] = current
     }
 
+    fun showDamageText(text: String, colour: Color) {
+        ship.showDamageTextAt(pixelCentre, text, colour)
+    }
+
     /**
      * Serialise the door, or return null if there's nothing to save.
      */

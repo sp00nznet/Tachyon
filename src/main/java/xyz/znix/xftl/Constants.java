@@ -159,6 +159,9 @@ public class Constants {
     public static final Colour SOLAR_FLARE_FILTER = new Colour(248, 129, 33);
     public static final Colour PULSAR_PULSE_FILTER = new Colour(133, 231, 237);
 
+    public static final Colour DAMAGE_COLOUR_ION = new Colour(38, 210, 215);
+    public static final Colour DAMAGE_COLOUR_ZOLTAN = new Colour(38, 240, 37);
+
     public static final String MISSING_FILE_PATH = "xftl-missing.png";
 
     private Constants() {

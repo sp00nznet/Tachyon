@@ -30,6 +30,7 @@ import java.util.*
 import java.util.stream.Collectors
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 class Ship(
@@ -132,6 +133,8 @@ class Ship(
 
     val inboundBeams: MutableList<BeamBlueprint.BeamInstance> = ArrayList()
     val animations: MutableList<FloatingAnimation> = ArrayList()
+
+    private val damageNumbers = ArrayList<DamageNumber>()
 
     /**
      * A list of all the drones (friendly or otherwise) that are deployed
@@ -577,6 +580,11 @@ class Ship(
             a.render(g)
 
         animations.removeIf { a -> a.isFinished }
+
+        // Draw the damage numbers that appear when your ship is hit
+        for (num in damageNumbers) {
+            num.draw(g)
+        }
     }
 
     private fun renderShields() {
@@ -914,6 +922,9 @@ class Ship(
         for (a in animations) {
             a.update(dt)
         }
+
+        // update returns false if the number should be removed
+        damageNumbers.removeIf { !it.update(dt) }
     }
 
     fun updateAvailablePower() {
@@ -992,11 +1003,31 @@ class Ship(
     }
 
     fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
+        val damageNumber = maxOf(damage, systemDamage, ionDamage)
+        val damageColour = when {
+            ionDamage > 0 -> DAMAGE_COLOUR_ION
+            else -> Color.white
+        }
+        target.showDamageText(damageNumber.toString(), damageColour)
+
         if (sys.debugFlags.noDmg.set)
             return
 
         health -= damage
         target.system?.dealDamage(systemDamage, ionDamage)
+    }
+
+    /**
+     * Show the damage text, as it relates to a projectile or impact at a given position.
+     *
+     * This doesn't draw the text exactly at said position - it's shown a bit above.
+     */
+    fun showDamageTextAt(damagePos: IPoint, text: String, colour: Color) {
+        val floatingNum = DamageNumber(damagePos.x.f, damagePos.y.f, text, colour)
+        floatingNum.y -= 20f
+        floatingNum.x += Random.nextInt(-10, 10).f
+        floatingNum.x -= floatingNum.width / 2
+        damageNumbers.add(floatingNum)
     }
 
     fun crewWeaponDamage(target: Room, damage: Int, weapon: AbstractWeaponBlueprint) {
@@ -1762,6 +1793,30 @@ class Ship(
 
                 return anim
             }
+        }
+    }
+
+    inner class DamageNumber(var x: Float, var y: Float, val text: String, val colour: Color) {
+        var timer: Float = 0f
+
+        private val LIFETIME = 1.2f
+
+        private val outerFont = sys.getFont("HL2", 2f)
+        private val innerFont = sys.getFont("HL1", 2f)
+
+        // TODO 5px horizontal rand, 20px up from damage
+
+        val width: Int = outerFont.getWidth(text)
+
+        fun draw(g: Graphics) {
+            outerFont.drawStringPaired(innerFont, x, y, text, Color.black, colour)
+        }
+
+        fun update(dt: Float): Boolean {
+            timer += dt
+            y -= dt / LIFETIME * 10
+
+            return timer < LIFETIME
         }
     }
 }

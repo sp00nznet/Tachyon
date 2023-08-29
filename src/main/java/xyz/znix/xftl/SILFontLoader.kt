@@ -181,6 +181,54 @@ class SILFontLoader {
         renderer.flush()
     }
 
+    /**
+     * Draw a string, with characters from another font placed at the same position.
+     *
+     * This is specifically intended for the HL2 font, with the HL1 font being
+     * passed in. This is used for the damage/miss/resist text, which has its
+     * background filled in.
+     */
+    fun drawStringPaired(bgFont: SILFontLoader, x: Float, y: Float, text: String, fg: Color, bg: Color) {
+        // If we don't round off the Y, then at values about half way between
+        // integers we can end up drawing the background a pixel below
+        // the foreground.
+        val roundedY = y.roundToInt()
+
+        var next = x
+        for (ch in text) {
+            // Replace unknown characters with question marks
+            val info = chars[ch] ?: chars['?']!!
+
+            val cy = roundedY + (scale * -info.ascent).roundToInt()
+            next += (info.prekern * scale).roundToInt()
+            val cx = next.roundToInt()
+
+            // Push the image for the main font
+            renderer.pushImage(
+                cx.f, cy.f,
+                cx.f + info.w * scale, cy + info.h * scale,
+                info.x.f, info.y.f,
+                info.x.f + info.w, (info.y + info.h).f, fg
+            )
+
+            // Push the image for the background font
+            val bgInfo = bgFont.chars[ch] ?: bgFont.chars['?']!!
+            val bgCX = cx + 1 * scale // Shift 1px for hl1/hl2 alignment
+            val bgCY = cy + 1 * scale
+            bgFont.renderer.pushImage(
+                bgCX, bgCY,
+                bgCX + bgInfo.w * scale, bgCY + bgInfo.h * scale,
+                bgInfo.x.f, bgInfo.y.f,
+                bgInfo.x.f + bgInfo.w, (bgInfo.y + bgInfo.h).f, bg
+            )
+
+            next += ((info.w + info.postkern) * scale).roundToInt()
+        }
+
+        bgFont.renderer.flush()
+        renderer.flush()
+    }
+
     fun drawStringCentred(x: Float, y: Float, width: Float, text: String, col: Color) {
         val textX = x + (width - getWidth(text)) / 2
         drawString(textX, y, text, col)

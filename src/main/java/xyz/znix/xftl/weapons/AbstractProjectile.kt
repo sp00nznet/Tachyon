@@ -1,6 +1,7 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.f
@@ -372,6 +373,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
 
         if (ionDamage > 0 && ship.superShield == 0) {
             ship.shields!!.dealDamage(0, ionDamage)
+            ship.showDamageTextAt(position, ionDamage.toString(), Constants.DAMAGE_COLOUR_ION)
         } else {
             ship.shields!!.popShieldLayer(type)
         }
@@ -407,6 +409,9 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         if (missed == true) {
             val missSound = type.missSounds?.get() ?: defaultMissSound
             missSound.play()
+
+            target.ship.showDamageTextAt(position, ship.sys.translator["miss"], Color.white)
+
             return
         }
     }
