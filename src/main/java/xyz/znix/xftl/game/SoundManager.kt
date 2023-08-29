@@ -2,9 +2,12 @@ package xyz.znix.xftl.game
 
 import org.jdom2.Element
 import org.lwjgl.openal.AL10
-import org.newdawn.slick.openal.*
+import org.newdawn.slick.openal.OggDecoder
+import org.newdawn.slick.openal.OggInputStream
+import org.newdawn.slick.openal.WaveData
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.sys.SoundStore
 import java.io.InputStream
 
 class SoundManager(private val df: Datafile) {
@@ -303,7 +306,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int) {
             source = NO_SOURCE
         } else {
             val volume = calculateGain(1f)
-            source = SoundAccess.playAsSound(buffer, 1f, volume, loop)
+            source = SoundStore.get().playAsSound(buffer, 1f, volume, loop)
 
             if (source == -1) {
                 println("[WARN] No source available to play sound ${spec.name}")
@@ -319,7 +322,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int) {
     }
 
     private fun calculateGain(volume: Float): Float {
-        return volume * (spec.volume / 10f) * SoundStore.get().soundVolume
+        return volume * (spec.volume / 10f)
     }
 
     /**
@@ -330,7 +333,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int) {
             return
         }
 
-        SoundAccess.stopSource(source)
+        SoundStore.get().stopSource(source)
         source = NO_SOURCE
     }
 
