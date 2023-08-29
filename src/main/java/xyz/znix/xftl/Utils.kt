@@ -131,51 +131,6 @@ object Utils {
     fun startSlick(builder: (Datafile) -> Game) {
         val df = Datafile.createWithDefaultPath()
 
-        // Automatically extract the LWJGL natives, if required
-        if (System.getProperty("org.lwjgl.librarypath") == null) {
-            val nativesPath = File("natives").absoluteFile
-            System.setProperty("org.lwjgl.librarypath", nativesPath.toString())
-
-            // Support jinput, which needs to know where to load it's DLLs from.
-            System.setProperty("net.java.games.input.librarypath", nativesPath.toString())
-
-            if (!nativesPath.exists()) {
-                if (!nativesPath.mkdir())
-                    error("Failed to create natives directory")
-            }
-
-            val osName = System.getProperty("os.name").toLowerCase(Locale.UK)
-            val libraries: List<String> = if (osName.contains("windows")) {
-                // x86_64 only
-                listOf("lwjgl64.dll", "OpenAL64.dll", "jinput-dx8_64.dll", "jinput-raw_64.dll")
-            } else if (osName.contains("linux")) {
-                listOf("liblwjgl64.so", "libopenal64.so", "libjinput-linux64.so")
-            } else if (osName.contains("mac os")) {
-                listOf("liblwjgl.dylib", "openal.dylib", "libjinput-osx.jnilib")
-            } else {
-                error("Cannot compute native library list, unknown OS: '$osName'")
-            }
-
-            for (name in libraries) {
-                val libFile = nativesPath.resolve(name)
-                if (libFile.exists())
-                    continue
-
-                // This library doesn't exist, extract it.
-                // First do so to a temporary file then rename it, to
-                // avoid having a corrupted library with the correct name.
-                val tmp = nativesPath.resolve("$name.tmp")
-
-                javaClass.classLoader.getResourceAsStream(name).use { inStream ->
-                    tmp.outputStream().use { out ->
-                        inStream.copyTo(out)
-                    }
-                }
-
-                tmp.renameTo(libFile)
-            }
-        }
-
         val game = builder(df)
 
         val gc = LWJGLGameContainer(game)
