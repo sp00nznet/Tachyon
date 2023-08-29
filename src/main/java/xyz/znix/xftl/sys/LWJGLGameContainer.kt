@@ -5,13 +5,17 @@ import org.lwjgl.glfw.Callbacks
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWCharCallbackI
 import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.glfw.GLFWMouseButtonCallbackI
+import org.lwjgl.glfw.GLFWScrollCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryStack.stackPush
 import org.lwjgl.system.MemoryUtil.NULL
 import org.newdawn.slick.InputListener
 import org.newdawn.slick.KeyListener
+import org.newdawn.slick.MouseListener
 import org.newdawn.slick.util.InputAdapter
+import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
 import java.util.*
 import kotlin.collections.ArrayList
@@ -184,9 +188,14 @@ private class LWJGLInput(val window: Long) : Input {
     override var mouseY: Int = 0
         private set
 
+    private val mouseClickPos = Point(0, 0)
+
+    private var scrollLeftover: Double = 0.0
+
     private val pendingKeyPresses = BooleanArray(GLFW_KEY_LAST)
 
     private val keyListeners = ArrayList<KeyListener>()
+    private val mouseListeners = ArrayList<MouseListener>()
 
     init {
         // Set up a key callback. It will be called every time a key is pressed, repeated or released.
@@ -196,15 +205,32 @@ private class LWJGLInput(val window: Long) : Input {
             keyCallback(key, scancode, action, mods)
         }
         glfwSetCharCallback(window) { _, codepoint -> charCallback(codepoint.toChar()) }
+        glfwSetMouseButtonCallback(window) { _, button, action, mods -> mouseButtonCallback(button, action, mods) }
+        glfwSetScrollCallback(window) { window, xOffset, yOffset -> mouseWheelCallback(xOffset, yOffset) }
     }
 
     fun update() {
+        val lastX = mouseX
+        val lastY = mouseY
+
         stackPush().use { stack ->
             val x = stack.mallocDouble(1)
             val y = stack.mallocDouble(1)
             glfwGetCursorPos(window, x, y)
             mouseX = x[0].toInt()
             mouseY = y[0].toInt()
+        }
+
+        if (lastX == mouseX && lastY == mouseY)
+            return
+
+        val dragging = isMouseButtonDown(Input.MOUSE_LEFT_BUTTON) || isMouseButtonDown(Input.MOUSE_RIGHT_BUTTON)
+
+        iterateAllowingMutation(mouseListeners) { listener ->
+            when (dragging) {
+                true -> listener.mouseDragged(lastX, lastY, mouseX, mouseY)
+                false -> listener.mouseMoved(lastX, lastY, mouseX, mouseY)
+            }
         }
     }
 
@@ -221,7 +247,7 @@ private class LWJGLInput(val window: Long) : Input {
         // Keys don't map 1-1 with characters (most characters on most European
         // keyboards do, but you can't rely on that!) so send 0 for the character
         // now, and then send the character by itself as a second press.
-        for (listener in keyListeners) {
+        iterateAllowingMutation(keyListeners) { listener ->
             when (action) {
                 GLFW_PRESS -> listener.keyPressed(key, 0.toChar())
                 GLFW_RELEASE -> listener.keyReleased(key, 0.toChar())
@@ -230,8 +256,59 @@ private class LWJGLInput(val window: Long) : Input {
     }
 
     private fun charCallback(codepoint: Char) {
-        for (listener in keyListeners) {
+        iterateAllowingMutation(keyListeners) { listener ->
             listener.keyPressed(-1, codepoint)
+        }
+    }
+
+    private fun mouseButtonCallback(button: Int, action: Int, mods: Int) {
+        iterateAllowingMutation(mouseListeners) { listener ->
+            when (action) {
+                GLFW_PRESS -> listener.mousePressed(button, mouseX, mouseY)
+                GLFW_RELEASE -> listener.mouseReleased(button, mouseX, mouseY)
+            }
+        }
+
+        if (action == GLFW_PRESS) {
+            mouseClickPos.set(mouseX, mouseY)
+        }
+
+        // Check if this is a 'click' event, with little to no dragging.
+        // We don't support double-clicking, but that's not used anywhere.
+        if (action == GLFW_RELEASE) {
+            val dist = mouseClickPos.distToSq(mouseX, mouseY)
+            if (dist <= CLICK_DISTANCE * CLICK_DISTANCE) {
+                iterateAllowingMutation(mouseListeners) { listener ->
+                    listener.mouseClicked(button, mouseX, mouseY, 1)
+                }
+            }
+        }
+    }
+
+    private fun mouseWheelCallback(xOffset: Double, yOffset: Double) {
+        val input = yOffset + scrollLeftover
+        val change = (input * SCROLL_SCALE).toInt()
+
+        // Store any integer round-off away, to be added onto the next scroll.
+        scrollLeftover = input - change / SCROLL_SCALE
+
+        iterateAllowingMutation(mouseListeners) { listener ->
+            listener.mouseWheelMoved(change)
+        }
+    }
+
+    /**
+     * Iterate through a list, while accepting that it might be mutated while doing so.
+     *
+     * If this happens an input might be delivered twice or missed, but in
+     * the case this is dealing with - clicking a button or pressing a key
+     * that causes the game's state to switch - it's not a problem.
+     */
+    private inline fun <T> iterateAllowingMutation(list: List<T>, callback: (T) -> Unit) {
+        var i = 0
+        while (i < list.size) {
+            callback(list[i])
+            i++
         }
     }
 
@@ -251,15 +328,25 @@ private class LWJGLInput(val window: Long) : Input {
 
     override fun addListener(listener: InputListener) {
         keyListeners.add(listener)
+        mouseListeners.add(listener)
     }
 
     override fun removeAllListeners() {
         keyListeners.clear()
+        mouseListeners.clear()
     }
 
     override fun clearInputPressedRecord() {
         for (i in pendingKeyPresses.indices) {
             pendingKeyPresses[i] = false
         }
+    }
+
+    companion object {
+        // The maximum movement in pixels that doesn't count as dragging
+        private const val CLICK_DISTANCE = 4
+
+        // How much one movement of the scroll wheel equates to in Slick's units
+        private const val SCROLL_SCALE = 120
     }
 }
