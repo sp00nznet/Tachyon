@@ -340,7 +340,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
             if (dragging == null) {
                 // If there isn't a selected object at the given point, pick the top one there.
                 if (selected?.canSelectFrom(x, y) != true) {
-                    selected = objects.filter { it.canSelectFrom(x, y) }.maxBy { it.selectPriority }
+                    selected = objects.filter { it.canSelectFrom(x, y) }.maxByOrNull { it.selectPriority }
                 }
 
                 for (obj in objects) {
@@ -376,7 +376,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
                 dragging = objects
                     .filterIsInstance<DragObject>()
                     .filter { it.canStartDragging(x, y) }
-                    .maxBy { it.selectPriority }
+                    .maxByOrNull { it.selectPriority }
             }
 
             val dragStart = dragging
@@ -493,7 +493,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
             // If there's multiple overlapping objects, prefer the selected one.
             hovered = selected
         } else {
-            hovered = objects.filter { it.canHover(mousePixelPos.x, mousePixelPos.y) }.maxBy { it.selectPriority }
+            hovered = objects.filter { it.canHover(mousePixelPos.x, mousePixelPos.y) }.maxByOrNull { it.selectPriority }
         }
     }
 

@@ -22,9 +22,8 @@ class StartGameButton(val state: SelectShipState) {
         val startText = state.translator["start_button"]
         val startTextWidth = startFont.getWidth(startText)
 
-        val maxDiffWidth = Difficulty.values()
-            .map { difficultyFont.getWidth(state.translator[it.startButtonKey]) }
-            .max()!!
+        val maxDiffWidth = Difficulty.entries
+            .maxOf { difficultyFont.getWidth(state.translator[it.startButtonKey]) }
 
         val difficultyButtonX = 5 + 2
         val difficultyButtonWidth = 5 + maxDiffWidth + 5
@@ -65,7 +64,7 @@ class StartGameButton(val state: SelectShipState) {
         )
 
         hovered = null
-        for (difficulty in Difficulty.values()) {
+        for (difficulty in Difficulty.entries) {
             drawDifficultyButton(g, x + 7, y + 7, difficultyButtonWidth, difficulty)
         }
 

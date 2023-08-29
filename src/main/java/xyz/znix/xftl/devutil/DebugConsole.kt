@@ -278,7 +278,7 @@ class DebugConsole(var game: InGameState) {
         }
 
         // Find how wide each column is
-        val widths = columns.map { column -> column.map { font.getWidth(it) }.max()!! }
+        val widths = columns.map { column -> column.map { font.getWidth(it) }.max() }
 
         // Build the positions
         val positions = ArrayList<Int>()

@@ -484,8 +484,8 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             // This is the direction we'll be flying in
             val approachDirection = fromDirection.opposite
 
-            val maxRoomX = rooms.map { it.x + it.width }.max()!!
-            val maxRoomY = rooms.map { it.y + it.height }.max()!!
+            val maxRoomX = rooms.maxOf { it.x + it.width }
+            val maxRoomY = rooms.maxOf { it.y + it.height }
             val bounds = ConstPoint(maxRoomX, maxRoomY)
 
             // Keep track of the best (closest to the target room)

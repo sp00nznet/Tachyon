@@ -151,7 +151,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         when (weapon) {
             is BeamBlueprint.BeamInstance -> {
                 val startRoom = targetShip.rooms.random()
-                val furthestRoom = targetShip.rooms.maxBy { it.pixelCentre.distToSq(startRoom.pixelCentre) }
+                val furthestRoom = targetShip.rooms.maxByOrNull { it.pixelCentre.distToSq(startRoom.pixelCentre) }
 
                 // We know there must be at least one room, since we already picked one.
                 requireNotNull(furthestRoom)

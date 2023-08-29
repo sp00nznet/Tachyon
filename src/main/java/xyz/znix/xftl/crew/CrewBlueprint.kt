@@ -41,7 +41,7 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
      * The number of colour variations this crewmember has, not including
      * gender for humans.
      */
-    val baseNumberOfColours: Int = colourFilters.map { it.size }.max() ?: 0
+    val baseNumberOfColours: Int = colourFilters.maxOfOrNull { it.size } ?: 0
 
     /**
      * The number of colour variations this crewmember has.

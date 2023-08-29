@@ -94,7 +94,7 @@ object OxygenTransfer {
                 val neighbours = openDoorNeighbours(iterRoom)
                 val lowestNeighbour = neighbours
                     .mapNotNull { result[it] }
-                    .min()
+                    .minOrNull()
                     ?: 999
                 val newDist = min(current, lowestNeighbour + 1)
 

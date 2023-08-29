@@ -343,7 +343,7 @@ class Sector {
                 val distance: Int = if (beacon == end) {
                     0
                 } else {
-                    val lowestNeighbour = beacon.neighbours.mapNotNull { distances[it] }.min()
+                    val lowestNeighbour = beacon.neighbours.mapNotNull { distances[it] }.minOrNull()
                     requireNotNull(lowestNeighbour) { "Beacon in path search was in wavefront, but had no set neighbours!" }
                     lowestNeighbour + 1
                 }

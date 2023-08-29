@@ -101,7 +101,7 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
                 base += 8
             }
             return@map base
-        }.max()!! + 2 * MARGIN
+        }.max() + 2 * MARGIN
 
         val height = ENTRY_HEIGHT * entries.size
 

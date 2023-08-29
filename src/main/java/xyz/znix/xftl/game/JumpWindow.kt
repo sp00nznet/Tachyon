@@ -412,7 +412,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             val bp = it.pos + mapBase
             val dist = bp.distToSq(ConstPoint(x, y))
             Pair(it, dist)
-        }.minBy { it.second } ?: return
+        }.minByOrNull { it.second } ?: return
 
         val hoverDist = 12
         if (closest.second > hoverDist * hoverDist)
