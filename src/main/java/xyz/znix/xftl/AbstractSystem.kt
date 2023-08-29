@@ -2,7 +2,6 @@ package xyz.znix.xftl
 
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Color
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.Skill
@@ -14,6 +13,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader

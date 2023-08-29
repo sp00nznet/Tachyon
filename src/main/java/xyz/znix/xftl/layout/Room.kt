@@ -1,12 +1,12 @@
 package xyz.znix.xftl.layout
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.Oxygen

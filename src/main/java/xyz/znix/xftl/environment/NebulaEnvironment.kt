@@ -1,6 +1,5 @@
 package xyz.znix.xftl.environment
 
-import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Ship
@@ -11,6 +10,7 @@ import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.random
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.Beacon
 import kotlin.random.Random

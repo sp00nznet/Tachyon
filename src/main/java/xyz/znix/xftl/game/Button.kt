@@ -1,10 +1,10 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Color
 import org.newdawn.slick.Input
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.systems.SystemBlueprint

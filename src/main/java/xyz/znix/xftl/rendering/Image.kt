@@ -1,8 +1,6 @@
 package xyz.znix.xftl.rendering
 
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Color
-import org.newdawn.slick.Renderable
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -126,9 +124,8 @@ class Image(
         filter: Color,
         textureFiltering: Int
     ) {
-        // Create a new filtering colour, but only if we need it.
         @Suppress("DEPRECATION")
-        val finalAlpha = (this.alpha * filter.alpha) / 255f
+        val finalAlpha = this.alpha * filter.a
 
         // This is copied from Slick's Image.draw and drawEmbedded functions.
         GL11.glColor4f(filter.r, filter.g, filter.b, finalAlpha)

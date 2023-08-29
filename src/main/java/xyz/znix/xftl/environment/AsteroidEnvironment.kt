@@ -1,20 +1,26 @@
 package xyz.znix.xftl.environment
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
-import xyz.znix.xftl.*
+import xyz.znix.xftl.Ship
+import xyz.znix.xftl.TWO_PI
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.random
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.rollChance
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
-import xyz.znix.xftl.weapons.*
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponProjectile
+import xyz.znix.xftl.weapons.MissileBlueprint
+import xyz.znix.xftl.weapons.ProjectileLoadCallback
 import kotlin.random.Random
 import kotlin.random.nextInt
 

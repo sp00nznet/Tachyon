@@ -2,7 +2,6 @@ package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Color
 import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Ship
@@ -13,6 +12,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Texture
 import xyz.znix.xftl.savegame.ObjectRefs

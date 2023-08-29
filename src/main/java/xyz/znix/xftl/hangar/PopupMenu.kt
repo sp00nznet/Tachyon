@@ -1,9 +1,9 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 
 interface EditorMenu {

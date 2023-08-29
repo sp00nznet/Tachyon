@@ -1,7 +1,7 @@
 package xyz.znix.xftl.ui
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.SILFontLoader
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Image
 
 /**

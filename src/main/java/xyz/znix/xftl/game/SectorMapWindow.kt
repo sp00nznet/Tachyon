@@ -1,11 +1,11 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.GameMap
 import java.awt.Rectangle

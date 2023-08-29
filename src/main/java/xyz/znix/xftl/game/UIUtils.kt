@@ -1,9 +1,9 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import kotlin.math.roundToInt

@@ -1,6 +1,5 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
@@ -8,6 +7,7 @@ import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint

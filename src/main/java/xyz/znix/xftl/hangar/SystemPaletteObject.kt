@@ -2,7 +2,6 @@ package xyz.znix.xftl.hangar
 
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
-import xyz.znix.xftl.systems.SystemBlueprint
 
 /**
  * This is a palette containing all the systems not present on the ship.

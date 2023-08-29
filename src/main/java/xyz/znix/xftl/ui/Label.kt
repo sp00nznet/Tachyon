@@ -1,10 +1,10 @@
 package xyz.znix.xftl.ui
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.requireAttributeValue
 import xyz.znix.xftl.requireAttributeValueInt

@@ -1,7 +1,6 @@
 package xyz.znix.xftl.environment
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants
@@ -9,6 +8,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.random
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon

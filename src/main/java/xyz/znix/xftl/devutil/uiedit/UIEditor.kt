@@ -1,11 +1,11 @@
 package xyz.znix.xftl.devutil.uiedit
 
 import org.newdawn.slick.BasicGame
-import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Input
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.ShaderProgramme

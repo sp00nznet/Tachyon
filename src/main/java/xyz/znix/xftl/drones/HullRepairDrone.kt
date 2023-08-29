@@ -1,9 +1,9 @@
 package xyz.znix.xftl.drones
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs

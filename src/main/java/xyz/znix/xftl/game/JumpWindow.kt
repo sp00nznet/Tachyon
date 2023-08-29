@@ -1,7 +1,6 @@
 package xyz.znix.xftl.game
 
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Color
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.PIf
@@ -12,6 +11,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.Texture

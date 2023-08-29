@@ -1,7 +1,6 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.ai.FriendlyCrewAI
 import xyz.znix.xftl.ai.IntruderCrewAI
@@ -17,6 +16,7 @@ import xyz.znix.xftl.layout.OxygenTransfer
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ISerialReferencable

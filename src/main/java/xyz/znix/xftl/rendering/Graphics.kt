@@ -1,7 +1,6 @@
 package xyz.znix.xftl.rendering
 
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Color
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.Matrix3f
 import kotlin.math.abs

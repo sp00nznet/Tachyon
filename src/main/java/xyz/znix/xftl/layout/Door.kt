@@ -1,7 +1,6 @@
 package xyz.znix.xftl.layout
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Ship
@@ -12,6 +11,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.abs

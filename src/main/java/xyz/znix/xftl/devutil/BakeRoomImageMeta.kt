@@ -7,7 +7,6 @@ import org.jdom2.output.Format
 import org.jdom2.output.LineSeparator
 import org.jdom2.output.XMLOutputter
 import org.lwjgl.BufferUtils
-import org.newdawn.slick.Color
 import org.newdawn.slick.opengl.PNGDecoder
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.Datafile
@@ -15,6 +14,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Color
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -186,7 +186,7 @@ object BakeRoomImageMeta {
         private fun hasPixelInBlock(x: Int, y: Int, width: Int, height: Int): Boolean {
             for (py in y until y + height) {
                 for (px in x until x + width) {
-                    if (getPixel(px, py).alpha != 0)
+                    if (getPixel(px, py).a != 0f)
                         return true
                 }
             }

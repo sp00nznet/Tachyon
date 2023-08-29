@@ -1,9 +1,9 @@
 package xyz.znix.xftl
 
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Color
 import org.newdawn.slick.opengl.ImageData
 import xyz.znix.xftl.rendering.BulkImageRenderer
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
 import java.io.ByteArrayInputStream

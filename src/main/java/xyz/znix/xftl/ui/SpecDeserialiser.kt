@@ -3,9 +3,9 @@ package xyz.znix.xftl.ui
 import org.jdom2.Document
 import org.jdom2.Element
 import org.jdom2.input.SAXBuilder
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.requireAttributeValue
 import java.io.InputStream
 

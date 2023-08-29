@@ -1,8 +1,8 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.ui.Label
 import xyz.znix.xftl.ui.WidgetContainer

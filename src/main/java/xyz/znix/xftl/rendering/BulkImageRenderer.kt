@@ -3,7 +3,6 @@ package xyz.znix.xftl.rendering
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15.*
 import org.lwjgl.opengl.GL20
-import org.newdawn.slick.Color
 import xyz.znix.xftl.f
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

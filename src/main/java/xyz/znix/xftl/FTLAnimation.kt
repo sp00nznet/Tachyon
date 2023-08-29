@@ -1,9 +1,9 @@
 package xyz.znix.xftl
 
-import org.newdawn.slick.Color
-import org.newdawn.slick.Renderable
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.rendering.Renderable
 
 class FTLAnimation(
     private val game: InGameState,
@@ -82,7 +82,7 @@ class FTLAnimation(
         currentFrame.draw(x, y, width, height)
     }
 
-    override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Color?) {
-        currentFrame.draw(x, y, width, height, filter ?: Color.white)
+    override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Color) {
+        currentFrame.draw(x, y, width, height, filter)
     }
 }

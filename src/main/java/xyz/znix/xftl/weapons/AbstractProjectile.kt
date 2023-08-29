@@ -1,7 +1,6 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.f
@@ -10,6 +9,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader

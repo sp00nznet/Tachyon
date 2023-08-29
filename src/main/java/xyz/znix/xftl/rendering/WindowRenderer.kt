@@ -1,6 +1,5 @@
 package xyz.znix.xftl.rendering
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils

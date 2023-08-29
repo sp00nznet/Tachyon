@@ -1,13 +1,13 @@
 package xyz.znix.xftl.devutil
 
 import org.newdawn.slick.BasicGame
-import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.FontOverrideData
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.ShaderProgramme
@@ -58,11 +58,10 @@ object FontPalette {
 
         override fun update(container: GameContainer, delta: Int) {}
 
-        override fun render(container: GameContainer, g: SlickGraphics) {
+        override fun render(container: GameContainer, slickG: SlickGraphics) {
             ShaderProgramme.SHADER_SCREEN_SIZE.set(container.width, container.height)
 
-            g.background = Color.white
-            g.clear()
+            g.clear(Color.white)
 
             utilFont.drawString(50f, 20f, HELP_MSG, Color.black)
 
@@ -88,10 +87,10 @@ object FontPalette {
                 fnt.drawString(150f, y, drawStr, Color.black)
 
                 if (baseline) {
-                    g.color = BASELINE_COLOUR
+                    g.colour = BASELINE_COLOUR
                     g.drawLine(150f, y, 150f + fnt.getWidth(drawStr), y)
 
-                    g.color = OFFSET_COLOUR
+                    g.colour = OFFSET_COLOUR
                     val topY = y - fnt.baselineToTop * fontSize
                     g.drawLine(150f, topY, 150f + fnt.getWidth(drawStr), topY)
 

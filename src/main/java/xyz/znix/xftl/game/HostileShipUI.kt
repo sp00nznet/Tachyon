@@ -1,6 +1,5 @@
 package xyz.znix.xftl.game
 
-import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
@@ -9,6 +8,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 
 class HostileShipUI(private val game: InGameState, private val enemy: Ship) {

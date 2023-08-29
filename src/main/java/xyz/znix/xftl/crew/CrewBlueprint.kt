@@ -1,9 +1,9 @@
 package xyz.znix.xftl.crew
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.rendering.Color
 
 class CrewBlueprint(elem: Element) : Blueprint(elem) {
     override val cost: Int = elem.getChildTextTrim("cost").toInt()

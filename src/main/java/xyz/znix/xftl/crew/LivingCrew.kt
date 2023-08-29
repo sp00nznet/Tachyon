@@ -1,11 +1,11 @@
 package xyz.znix.xftl.crew
 
 import org.jdom2.Element
-import org.newdawn.slick.Color
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs

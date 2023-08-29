@@ -1,8 +1,8 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Color
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
 import xyz.znix.xftl.systems.Clonebay

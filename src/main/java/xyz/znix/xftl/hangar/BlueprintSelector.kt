@@ -1,6 +1,5 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Color
 import org.newdawn.slick.Input
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
@@ -8,6 +7,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint

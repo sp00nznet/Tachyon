@@ -5,7 +5,10 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.newdawn.slick.*;
+import org.newdawn.slick.GameContainer;
+import org.newdawn.slick.ImageBuffer;
+import org.newdawn.slick.Input;
+import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
 import xyz.znix.xftl.ai.ShipAI;
@@ -18,10 +21,7 @@ import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
-import xyz.znix.xftl.rendering.Graphics;
-import xyz.znix.xftl.rendering.Image;
-import xyz.znix.xftl.rendering.TextureLoader;
-import xyz.znix.xftl.rendering.WindowRenderer;
+import xyz.znix.xftl.rendering.*;
 import xyz.znix.xftl.savegame.ObjectRefs;
 import xyz.znix.xftl.savegame.RefLoader;
 import xyz.znix.xftl.savegame.SaveUtil;
@@ -1515,7 +1515,7 @@ public class InGameState extends MainGame.GameState {
 
         @Nullable
         @Override
-        public Color getDebugOutlineColour(@NotNull Widget widget) {
+        public Colour getDebugOutlineColour(@NotNull Widget widget) {
             return null;
         }
     }
