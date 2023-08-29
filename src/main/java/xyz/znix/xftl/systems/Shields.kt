@@ -154,6 +154,14 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         setSystemPower((selectedShieldBars * 2 - 2).coerceAtLeast(0))
     }
 
+    override fun getPowerBarSpacing(powerLevel: Int): Int {
+        // Group the power bars into pairs
+        if (powerLevel.mod(2) == 1) {
+            return 6
+        }
+        return 2
+    }
+
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
         SaveUtil.addAttrInt(elem, "active", activeShields)
         SaveUtil.addTagFloat(elem, "rechargeTimer", rechargeTimer, 0f)

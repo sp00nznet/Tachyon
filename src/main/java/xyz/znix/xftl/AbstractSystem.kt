@@ -393,13 +393,14 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         val barX = x + 5
 
         // Draw the power bars, so that systems can override this relatively easily.
-        val topBarY = drawPowerBars(g, barX, y - 11 + 6)
+        val bottomBarBaseY = y - 11 + 6
+        val topBarY = drawPowerBars(g, barX, bottomBarBaseY)
 
         // If a status icon (ion or hacking) is drawn, this is the Y of it's base.
         var statusIconY = topBarY - 3
 
         fun drawIonOrHackBar() {
-            val barsHeight = energyLevels * 8 - 2
+            val barsHeight = bottomBarBaseY - topBarY
 
             // Two-pixel-wide rectangle around the energy bars
             g.drawRect(barX - 3f, topBarY - 3f, 3f + 16f + 2f, 3f + barsHeight + 2f)

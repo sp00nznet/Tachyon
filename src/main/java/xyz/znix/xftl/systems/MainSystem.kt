@@ -52,6 +52,27 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         val scriptedPowerLimit = this.scriptedPowerLimit
 
         var nextLevel = 0
+        var nextBarY = baseY
+        var prevBarY = nextBarY
+
+        var repairY = 0
+        var sabotageY = 0
+
+        fun nextBar() {
+            // The repair bar
+            if (nextLevel == energyLevels - damagedEnergyLevels) {
+                repairY = nextBarY
+            }
+
+            // The sabotage bar
+            if (nextLevel == energyLevels - damagedEnergyLevels - 1) {
+                sabotageY = nextBarY
+            }
+
+            prevBarY = nextBarY
+            nextBarY -= 6 + getPowerBarSpacing(nextLevel)
+            nextLevel++
+        }
 
         // Draw the power sources in priority order - the highest-priority
         // sources go at the bottom, lower priorities go higher up.
@@ -61,27 +82,26 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
                 continue
 
             for (i in 0 until amount) {
-                val y = baseY - nextLevel++ * 8
-
                 // Use the generic power bar visuals
-                type.drawSystemPowerBar(g, this, x, y, 16, 6)
+                type.drawSystemPowerBar(g, this, x, nextBarY, 16, 6)
+
+                nextBar()
             }
         }
 
         // Draw the remaining, non-powered bars
         while (nextLevel < energyLevels) {
-            val level = nextLevel++
-            val y = baseY - level * 8
+            val y = nextBarY
 
             when {
-                level >= energyLevels - damagedEnergyLevels -> {
+                nextLevel >= energyLevels - damagedEnergyLevels -> {
                     // System damaged/broken
                     g.colour = Constants.SYS_ENERGY_BROKEN
                     g.drawRect(x, y, 16 - 1, 6 - 1)
                     g.drawLine(x, y + 6, x + 16, y)
                 }
 
-                scriptedPowerLimit != null && level >= scriptedPowerLimit -> {
+                scriptedPowerLimit != null && nextLevel >= scriptedPowerLimit -> {
                     // System power limited by a scripted event
                     g.colour = Constants.SYS_ENERGY_EVENT_LOCKED
                     g.drawRect(x, y, 16 - 1, 6 - 1)
@@ -94,23 +114,30 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
                     g.drawRect(x, y, 16 - 1, 6 - 1)
                 }
             }
+
+            nextBar()
         }
 
-        val topBarY = baseY - (nextLevel - 1) * 8
-
         // The repair bar
-        val repairY = topBarY + (damagedEnergyLevels - 1) * 8
         g.colour = Constants.SYS_ENERGY_REPAIR
         val repairWidth = (16 * repairProgress).toInt()
         g.fillRect(x + 16 - repairWidth, repairY, repairWidth, 6)
 
         // The sabotage bar
-        val sabotageY = topBarY + damagedEnergyLevels * 8
         g.colour = Constants.SYS_ENERGY_SABOTAGE
         val sabotageWidth = (16 * damageProgress).toInt()
         g.fillRect(x, sabotageY, sabotageWidth, 6)
 
-        return topBarY
+        return prevBarY
+    }
+
+    /**
+     * Get the spacing (in pixels) between a power bar and the one above it.
+     *
+     * This is used to separate the shield power into blocks of two.
+     */
+    protected open fun getPowerBarSpacing(powerLevel: Int): Int {
+        return 2
     }
 
     override fun powerStateChanged() {
