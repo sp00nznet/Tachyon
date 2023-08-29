@@ -22,8 +22,8 @@ import kotlin.collections.ArrayList
 
 
 class LWJGLGameContainer(private val game: Game) : GameContainer {
-    override lateinit var input: Input
-        private set
+    private lateinit var lwjglInput: LWJGLInput
+    override val input: Input get() = lwjglInput
 
     override var width: Int = 400
         private set
@@ -106,9 +106,14 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         // Make the window visible
         glfwShowWindow(window)
 
-        input = LWJGLInput(window)
+        lwjglInput = LWJGLInput(window)
         g = Graphics()
         g.markCurrentImageTransformSource()
+
+        if (game is KeyListener)
+            lwjglInput.keyListeners.add(game)
+        if (game is MouseListener)
+            lwjglInput.mouseListeners.add(game)
 
         // Set up OpenGL
         initOpenGL()
@@ -152,7 +157,7 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         // the window, or exit is called.
         while (!glfwWindowShouldClose(window)) {
             // Read any changes to the input system
-            (input as LWJGLInput).update()
+            lwjglInput.update()
 
             // Find the delta-time, in seconds
             val thisUpdateTime = System.nanoTime()
@@ -194,8 +199,8 @@ private class LWJGLInput(val window: Long) : Input {
 
     private val pendingKeyPresses = BooleanArray(GLFW_KEY_LAST)
 
-    private val keyListeners = ArrayList<KeyListener>()
-    private val mouseListeners = ArrayList<MouseListener>()
+    val keyListeners = ArrayList<KeyListener>()
+    val mouseListeners = ArrayList<MouseListener>()
 
     init {
         // Set up a key callback. It will be called every time a key is pressed, repeated or released.
