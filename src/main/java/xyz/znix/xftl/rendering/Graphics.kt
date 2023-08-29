@@ -43,6 +43,10 @@ class Graphics {
         GL11.glEnd()
     }
 
+    fun drawRect(x: Int, y: Int, widthMinusOne: Int, heightMinusOne: Int) {
+        drawRect(x.f, y.f, widthMinusOne.f, heightMinusOne.f)
+    }
+
     fun drawRect(x: Float, y: Float, widthMinusOne: Float, heightMinusOne: Float) {
         // I don't think the line width is supposed to affect rectangles?
         GL11.glLineWidth(1f)
@@ -62,6 +66,10 @@ class Graphics {
         glVertexTransformed(ox + widthMinusOne, oy)
 
         GL11.glEnd()
+    }
+
+    fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int) {
+        drawLine(x1.f, y1.f, x2.f, y2.f)
     }
 
     fun drawLine(x1: Float, y1: Float, x2: Float, y2: Float) {

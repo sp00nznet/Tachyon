@@ -36,6 +36,7 @@ public class Constants {
     public static final Color SYS_ENERGY_PURCHASE_HOVER = new Color(164, 146, 108);
     public static final Color SYS_ENERGY_PURCHASE_UNDOABLE = new Color(255, 255, 100);
     public static final Color SYS_ENERGY_EVENT_LOCKED = new Color(44, 206, 225);
+    public static final Color SYS_ENERGY_BATTERY_OUTLINE = new Color(226, 114, 31);
 
     public static final Color WEAPONS_ITEM_DESELECTED = new Color(150, 150, 150);
     public static final Color WEAPONS_ITEM_SELECTED = UI_BACKGROUND_GLOW_COLOUR;

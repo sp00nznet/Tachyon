@@ -453,30 +453,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     private fun drawSystems(g: Graphics) {
+        // Draw the power tree's energy bars
+        val powerHeight = drawReactorPower(g)
+
         val powerTreeX = 86 - 53
         val powerTreeY = height - 21 - 302
-        val powerTreeMaskY = powerTreeY + 27 - (ship.purchasedReactorPower - 1) * 9
+        val powerTreeMaskY = powerTreeY + 27 - powerHeight
 
         Utils.drawStenciled(Utils.StencilMode.BLOCKING, {
             game.getImg("img/wire_left_mask.png").draw(powerTreeX.f + 4, powerTreeMaskY.f)
         }) {
             game.getImg("img/wireUI/wire_full.png").draw(powerTreeX.f, powerTreeY.f)
-        }
-
-        // Draw the power tree's energy bars
-        val availablePower = ship.powerAvailable
-        val totalPower = ship.reactorPower
-        for (i in 0 until totalPower) {
-            val x = 12
-            val y = height - 34 - 9 * i
-
-            if (i < availablePower) {
-                g.colour = SYS_ENERGY_ACTIVE
-                g.fillRect(x.f, y.f, 28f, 7f)
-            } else {
-                g.colour = SYS_ENERGY_DEPOWERED
-                g.drawRect(x.f, y.f, 28f - 1f, 7f - 1f)
-            }
         }
 
         // Draw the systems and the wires under them
@@ -760,6 +747,48 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         addSubSys(42, ship.sensors)
         addSubSys(78, ship.doorsSystem)
         addSubSys(129, ship.backupBattery)
+    }
+
+    /**
+     * Draw the stack of reactor power icons.
+     *
+     * Returns the height of the stack of power bars.
+     */
+    private fun drawReactorPower(g: Graphics): Int {
+        // Top-left corner of the bottom power bar
+        val x = 12
+        val baseY = height - 34
+
+        val barHeight = 7
+        val spacing = barHeight + 2
+
+        val availablePower = ship.powerAvailable
+        var totalPower = ship.purchasedReactorPower
+        ship.backupBattery?.let { totalPower += it.contributedPower }
+        var nextPowerIdx = 0
+        for (type in EnergySource.TYPES) {
+            val available = ship.powerAvailableTypes[type] ?: 0
+
+            for (i in 0 until available) {
+                val y = baseY - spacing * nextPowerIdx
+                type.drawReactorPowerBar(g, x, y, 28, barHeight)
+
+                nextPowerIdx++
+            }
+        }
+
+        while (nextPowerIdx < totalPower) {
+            val y = baseY - spacing * nextPowerIdx
+
+            g.colour = SYS_ENERGY_DEPOWERED
+            g.drawRect(x, y, 28 - 1, 7 - 1)
+
+            nextPowerIdx++
+        }
+
+        // TODO properly handle ion storms, once they're implemented
+
+        return (totalPower - 1) * spacing
     }
 
     fun renderMenus(container: GameContainer, g: Graphics) {

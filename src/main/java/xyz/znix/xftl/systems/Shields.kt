@@ -150,7 +150,8 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (isPowerLocked)
             return
 
-        setSystemPower(selectedShieldBars * 2 - 2)
+        // Clamp the power at 0, in case we have an odd number of power bars.
+        setSystemPower((selectedShieldBars * 2 - 2).coerceAtLeast(0))
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {

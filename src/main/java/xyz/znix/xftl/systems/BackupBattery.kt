@@ -2,13 +2,14 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import org.newdawn.slick.Input
-import xyz.znix.xftl.AbstractSystem
-import xyz.znix.xftl.SystemInfo
-import xyz.znix.xftl.Translator
+import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.Button
+import xyz.znix.xftl.game.EnergySource
+import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -16,15 +17,15 @@ import xyz.znix.xftl.savegame.SaveUtil
 class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.BATTERY
 
-    private var timeRemaining: Float? = null
+    var timeRemaining: Float? = null
+        private set
 
     /**
      * The amount of power this system contributes to the ship's reactor.
      */
     val contributedPower: Int
-        get() = when {
-            isHackActive -> -2
-            timeRemaining == null -> 0
+        get() = when (timeRemaining) {
+            null -> 0
             else -> undamagedEnergy * 2
         }
 
@@ -122,5 +123,43 @@ private object BatteryInfo : SystemInfo("battery") {
     override fun getLevelName(level: Int, translator: Translator): String {
         val power = 2 * (level + 1)
         return translator["battery_power"].replace("\\1", power.toString())
+    }
+}
+
+object BatteryEnergySource : EnergySource {
+    override val serialisationId: String get() = "battery"
+
+    override fun adjustShipPower(ship: Ship, power: MutableMap<EnergySource, Int>) {
+        val battery = ship.backupBattery ?: return
+
+        when {
+            battery.isHackActive -> {
+                power[ReactorEnergySource] = power[ReactorEnergySource]!! - 2
+            }
+            else -> {
+                power[BatteryEnergySource] = battery.contributedPower
+            }
+        }
+    }
+
+    override fun getSystemPower(system: MainSystem): Int {
+        return 0
+    }
+
+    override fun drawSystemPowerBar(g: Graphics, system: AbstractSystem, x: Int, y: Int, width: Int, height: Int) {
+        if (system.isHackActive || system.isIonised) {
+            ReactorEnergySource.drawSystemPowerBar(g, system, x, y, width, height)
+            return
+        }
+
+        drawReactorPowerBar(g, x, y, width, height)
+    }
+
+    override fun drawReactorPowerBar(g: Graphics, x: Int, y: Int, width: Int, height: Int) {
+        g.colour = Constants.SYS_ENERGY_BATTERY_OUTLINE
+        g.drawRect(x, y, width - 1, height - 1)
+
+        g.colour = Constants.SYS_ENERGY_ACTIVE
+        g.fillRect(x + 2, y + 2, width - 4, height - 4)
     }
 }

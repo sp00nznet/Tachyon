@@ -185,12 +185,10 @@ class Ship(
     // The amount of reactor power available for use by the player, taking ion storms, events and so on into account
     val reactorPower: Int get() = purchasedReactorPower
 
-    // The amount of unused reactor power
-    val powerAvailable: Int
-        get() {
-            val battPower = backupBattery?.contributedPower ?: 0
-            return reactorPower - powerConsumed + battPower
-        }
+    // The unused reactor/battery power
+    val powerAvailableTypes = HashMap<EnergySource, Int>()
+
+    val powerAvailable: Int get() = powerAvailableTypes.values.sum()
 
     var health = maxHealth
         set(value) {
@@ -746,6 +744,9 @@ class Ship(
     }
 
     fun update(dt: Float) {
+        // Update the power, in case a Zoltan has moved between rooms.
+        updateAvailablePower()
+
         updateExterior(dt)
 
         if (isDead) {
@@ -904,6 +905,38 @@ class Ship(
         // Update the animations
         for (a in animations) {
             a.update(dt)
+        }
+    }
+
+    fun updateAvailablePower() {
+        // Don't update our power during saving/loading, since different types
+        // of power that systems can use (notably batteries, but other mods
+        // might add similar power types) need all the systems to be loaded
+        // first, and this would thus cause a system to pull different types
+        // of power as a replacement during deserialisation.
+        if (sys.isCurrentlyLoadingSave)
+            return
+
+        powerAvailableTypes.clear()
+
+        for (type in EnergySource.TYPES) {
+            type.adjustShipPower(this, powerAvailableTypes)
+        }
+
+        // First make the systems use the power they're already using
+        for (system in systems) {
+            if (system !is MainSystem)
+                continue
+
+            system.consumePowerFirst(powerAvailableTypes)
+        }
+
+        // Then grab any extra for increasing power
+        for (system in systems) {
+            if (system !is MainSystem)
+                continue
+
+            system.consumePowerSecond(powerAvailableTypes)
         }
     }
 

@@ -390,72 +390,10 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             g.popTransform()
         }
 
-        val barX = x + 5f
-        val topBarY = y - 11f - (energyLevels - 1) * 8
+        val barX = x + 5
 
-        // Need to grab this as a local so the compiler knows it won't change
-        val scriptedPowerLimit = this.scriptedPowerLimit
-
-        for (i in 0 until energyLevels) {
-            val y = y - 11 - i * 8
-
-            when {
-                i >= energyLevels - damagedEnergyLevels -> {
-                    // System damaged/broken
-                    g.colour = Constants.SYS_ENERGY_BROKEN
-                    g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
-                    g.drawLine(barX, (y + 6).f, barX + 16f, y.f)
-                }
-
-                scriptedPowerLimit != null && i >= scriptedPowerLimit -> {
-                    // System power limited by a scripted event
-                    g.colour = Constants.SYS_ENERGY_EVENT_LOCKED
-                    g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
-                    g.drawLine(barX, (y + 6).f, barX + 16f, y.f)
-                }
-
-                this is MainSystem && i >= powerSelected -> {
-                    // System depowered
-                    g.colour = Constants.SYS_ENERGY_DEPOWERED
-                    g.drawRect(barX, y.f, (16 - 1).f, (6 - 1).f)
-                }
-
-                isHackActive -> {
-                    // The power bars go purple when hacked, taking
-                    // priority over ion damage.
-                    g.colour = Constants.SYSTEM_HACKED
-                    g.fillRect(barX, y.f, 16f, 6f)
-                }
-
-                isIonised -> {
-                    // The system is powered at this level (or it's
-                    // a subsystem), but ion damage is applied.
-                    // This changes the colour of all the remaining power.
-                    g.colour = Constants.SYSTEM_IONISED
-                    g.fillRect(barX, y.f, 16f, 6f)
-                }
-
-                else -> {
-                    // System powered, or a subsystem that doesn't need powering
-                    g.colour = Constants.SYS_ENERGY_ACTIVE
-                    g.fillRect(barX, y.f, 16f, 6f)
-                }
-            }
-
-            // The repair bar
-            if (i == energyLevels - damagedEnergyLevels) {
-                g.colour = Constants.SYS_ENERGY_REPAIR
-                val width = (16 * repairProgress).toInt()
-                g.fillRect(barX + 16 - width, y.f, width.f, 6f)
-            }
-
-            // The sabotage bar
-            if (i == energyLevels - damagedEnergyLevels - 1) {
-                g.colour = Constants.SYS_ENERGY_SABOTAGE
-                val width = (16 * damageProgress).toInt()
-                g.fillRect(barX, y.f, width.f, 6f)
-            }
-        }
+        // Draw the power bars, so that systems can override this relatively easily.
+        val topBarY = drawPowerBars(g, barX, y - 11 + 6)
 
         // If a status icon (ion or hacking) is drawn, this is the Y of it's base.
         var statusIconY = topBarY - 3
@@ -512,6 +450,13 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             fireIcon.draw(barX - 9, statusIconY - 24)
         }
     }
+
+    /**
+     * Draw the power bars themselves, returning the Y of the top of the top bar.
+     *
+     * @param yOfBottom The Y of the bottom of the lowest bar in the stack.
+     */
+    protected abstract fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int): Int
 
     /**
      * Create any system-specific buttons that go next to the power button in the main UI.
