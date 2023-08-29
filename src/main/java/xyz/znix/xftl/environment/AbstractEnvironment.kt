@@ -2,6 +2,8 @@ package xyz.znix.xftl.environment
 
 import org.jdom2.Element
 import org.newdawn.slick.GameContainer
+import xyz.znix.xftl.Ship
+import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -128,6 +130,14 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
     }
 
     open fun update(dt: Float) {
+    }
+
+    /**
+     * Adjust a ship's available power, before systems use it.
+     *
+     * This is how plasma storms reduce a ship's power.
+     */
+    open fun adjustShipPower(ship: Ship, powerAvailableTypes: HashMap<EnergySource, Int>) {
     }
 
     open fun saveToXML(elem: Element) {

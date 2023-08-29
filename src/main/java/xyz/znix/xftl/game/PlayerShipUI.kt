@@ -780,13 +780,19 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         while (nextPowerIdx < totalPower) {
             val y = baseY - spacing * nextPowerIdx
 
-            g.colour = SYS_ENERGY_DEPOWERED
-            g.drawRect(x, y, 28 - 1, 7 - 1)
+            // If this power is blocked (eg by an ion storm), show it as blue
+            // with a line through it.
+            if (nextPowerIdx >= totalPower - ship.blockedReactorPower) {
+                g.colour = SYS_ENERGY_ION_STORM
+                g.drawRect(x, y, 28 - 1, 7 - 1)
+                g.drawLine(x, y + 7, x + 28, y)
+            } else {
+                g.colour = SYS_ENERGY_DEPOWERED
+                g.drawRect(x, y, 28 - 1, 7 - 1)
+            }
 
             nextPowerIdx++
         }
-
-        // TODO properly handle ion storms, once they're implemented
 
         return (totalPower - 1) * spacing
     }

@@ -28,6 +28,7 @@ import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.*
 import java.util.*
 import java.util.stream.Collectors
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -189,6 +190,13 @@ class Ship(
     val powerAvailableTypes = HashMap<EnergySource, Int>()
 
     val powerAvailable: Int get() = powerAvailableTypes.values.sum()
+
+    /**
+     * The amount of power that's unusable due to events or the environment (in
+     * a plasma storm).
+     */
+    var blockedReactorPower: Int = 0
+        private set
 
     var health = maxHealth
         set(value) {
@@ -922,6 +930,15 @@ class Ship(
         for (type in EnergySource.TYPES) {
             type.adjustShipPower(this, powerAvailableTypes)
         }
+
+        val preEnvPower = powerAvailableTypes.values.sum()
+
+        // Let the environment (for ion storms) deduct power
+        sys.currentBeacon.getEnvironment(sys).adjustShipPower(this, powerAvailableTypes)
+
+        // Remember how much power is unavailable, as it's shown in the UI.
+        val postEnvPower = powerAvailableTypes.values.sum()
+        blockedReactorPower = max(0, preEnvPower - postEnvPower)
 
         // First make the systems use the power they're already using
         for (system in systems) {

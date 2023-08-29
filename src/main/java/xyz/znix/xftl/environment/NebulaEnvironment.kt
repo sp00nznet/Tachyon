@@ -3,14 +3,16 @@ package xyz.znix.xftl.environment
 import org.newdawn.slick.Color
 import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.PIf
+import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.random
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.Beacon
-import kotlin.math.PI
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -95,6 +97,16 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
         }
 
         clouds.removeIf { it.alpha == 0f && !it.isFadingIn }
+    }
+
+    override fun adjustShipPower(ship: Ship, powerAvailableTypes: HashMap<EnergySource, Int>) {
+        if (!ionStorm)
+            return
+
+        var reactorPower = powerAvailableTypes[ReactorEnergySource] ?: 0
+        val toDeduct = reactorPower / 2 // Rounds down
+        reactorPower -= toDeduct
+        powerAvailableTypes[ReactorEnergySource] = reactorPower
     }
 
     private class Cloud(
