@@ -9,7 +9,6 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import kotlin.math.max
 import kotlin.math.min
 
 abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint) {
@@ -177,23 +176,43 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
         var totalRemaining = powerSelected.coerceIn(0, undamagedEnergy)
 
-        // TYPES is in order of priority, so we'll use stuff like Zoltan power
-        // before reactor or battery power.
+        // How much more power we can accept until the system is fully powered.
+        var remainingUntilFull = undamagedEnergy
+
+        // First grab per-room power, eg from Zoltans, since it can't be
+        // turned on or off.
+        // This means that if a Zoltan walks into the room, it'll displace
+        // some other source of power.
+        for (type in EnergySource.TYPES) {
+            val bonusPower = min(type.getSystemPower(this), remainingUntilFull)
+            if (bonusPower == 0)
+                continue
+
+            remainingUntilFull -= bonusPower
+            totalRemaining -= bonusPower
+            selectedPowerSources[type] = bonusPower
+
+            require(bonusPower >= 0)
+            require(remainingUntilFull >= 0)
+        }
+
+        // We can end up with a negative totalRemaining if we're getting more
+        // zoltan power than we want.
+        totalRemaining = totalRemaining.coerceAtLeast(0)
+
+        // TYPES is in order of priority, so we'll use stuff like the reactor
+        // before battery power.
         for (type in EnergySource.TYPES) {
             var remaining = previousSources[type] ?: 0
-            var newPower = 0
+            var newPower = selectedPowerSources[type] ?: 0
 
             // If we've got some new power from one source (eg a Zoltan), that
             // should reduce the amount of power we pull from the
             // lowest-priority source.
             remaining = min(remaining, totalRemaining)
 
-            // If this source is supplying power to this specific system,
-            // separately from the ship's power (ie, Zoltans), then use
-            // that first.
-            val bonusPower = min(type.getSystemPower(this), undamagedEnergy)
-            remaining = max(remaining - bonusPower, 0)
-            newPower += bonusPower
+            if (remaining == 0)
+                continue
 
             // If that's not enough, pull this type of power from the ship.
             val available = powerAvailable[type] ?: continue
@@ -208,6 +227,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
             // These shouldn't be negative
             require(toDeduct >= 0)
+            require(newPower >= 0)
             require(remaining >= 0)
             require(available >= 0)
             require(totalRemaining >= 0)
@@ -229,8 +249,10 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         val currentAmount = selectedPowerSources.values.sum()
         var totalRemaining = previousDemand - currentAmount
 
-        // powerSelected matches how much power we have
-        if (totalRemaining == 0) {
+        // Either powerSelected matches how much power we have, or we're being
+        // forced to use more power via zoltans.
+        if (totalRemaining <= 0) {
+            powerSelected = selectedPowerSources.values.sum()
             return
         }
 
@@ -246,6 +268,8 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
             totalRemaining -= toDeduct
             selectedPowerSources[type] = prevAmount + toDeduct
+
+            require(toDeduct >= 0)
         }
 
         powerSelected = selectedPowerSources.values.sum()

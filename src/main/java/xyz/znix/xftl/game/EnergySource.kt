@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.crew.ZoltanEnergySource
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.BatteryEnergySource
 import xyz.znix.xftl.systems.MainSystem
@@ -49,6 +50,7 @@ interface EnergySource {
          */
         // TODO build this from installed mods
         val TYPES = listOf(
+            ZoltanEnergySource,
             ReactorEnergySource,
             BatteryEnergySource
         )

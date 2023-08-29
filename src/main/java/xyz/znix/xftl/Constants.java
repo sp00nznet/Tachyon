@@ -32,6 +32,7 @@ public class Constants {
     public static final Color SYS_ENERGY_BROKEN = new Color(255, 50, 50);
     public static final Color SYS_ENERGY_SABOTAGE = new Color(252, 53, 49);
     public static final Color SYS_ENERGY_REPAIR = new Color(255, 255, 50);
+    public static final Color SYS_ENERGY_ZOLTAN = new Color(255, 250, 90);
     public static final Color SYS_ENERGY_PURCHASE = new Color(104, 98, 59);
     public static final Color SYS_ENERGY_PURCHASE_HOVER = new Color(164, 146, 108);
     public static final Color SYS_ENERGY_PURCHASE_UNDOABLE = new Color(255, 255, 100);
@@ -48,7 +49,7 @@ public class Constants {
     public static final Color WEAPONS_ITEM_ENERGY_UNPOWERED = WEAPONS_ITEM_DESELECTED;
     public static final Color WEAPONS_ITEM_ENERGY_POWERED = WEAPONS_ITEM_SELECTED;
     public static final Color WEAPONS_ITEM_ENERGY_CHARGED = WEAPONS_ITEM_CHARGED;
-    public static final Color WEAPONS_ITEM_ENERGY_ZOLTAN = new Color(255, 250, 90);
+    public static final Color WEAPONS_ITEM_ENERGY_ZOLTAN = SYS_ENERGY_ZOLTAN;
 
     public static final Color DRONE_COOLDOWN_BACKGROUND = new Color(255, 0, 0, 64);
 

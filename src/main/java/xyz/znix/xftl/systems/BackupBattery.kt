@@ -59,8 +59,6 @@ class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
         ionTimer += duration
 
         // Update all the systems, to pull power from them as required.
-        // TODO treat and show battery power as a separate type of power.
-        // TODO do this when we're hacked.
         for (system in ship.systems) {
             system.powerStateChanged()
         }

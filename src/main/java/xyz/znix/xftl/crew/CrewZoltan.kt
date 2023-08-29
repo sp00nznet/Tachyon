@@ -1,9 +1,10 @@
 package xyz.znix.xftl.crew
 
-import xyz.znix.xftl.Animations
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
+import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.systems.MainSystem
 
 class CrewZoltan(blueprint: CrewBlueprint, animations: Animations, room: Room, mode: SlotType) :
     LivingCrew(blueprint, animations, room, mode) {
@@ -33,6 +34,26 @@ class CrewZoltan(blueprint: CrewBlueprint, animations: Animations, room: Room, m
             crew.dealDamage(ZoltanDeathDamage(15f, this))
         }
     }
+}
 
-    // TODO implement power
+object ZoltanEnergySource : EnergySource {
+    override val serialisationId: String get() = "zoltan"
+
+    override fun adjustShipPower(ship: Ship, power: MutableMap<EnergySource, Int>) {
+        // No effect on whole-ship power
+    }
+
+    override fun getSystemPower(system: MainSystem): Int {
+        return system.room!!.crew.count { it is CrewZoltan && it.mode == AbstractCrew.SlotType.CREW }
+    }
+
+    override fun drawSystemPowerBar(g: Graphics, system: AbstractSystem, x: Int, y: Int, width: Int, height: Int) {
+        // Always show the zoltan bar, regardless of ion/hacking/etc
+        drawReactorPowerBar(g, x, y, width, height)
+    }
+
+    override fun drawReactorPowerBar(g: Graphics, x: Int, y: Int, width: Int, height: Int) {
+        g.colour = Constants.SYS_ENERGY_ZOLTAN
+        g.fillRect(x, y, width, height)
+    }
 }
