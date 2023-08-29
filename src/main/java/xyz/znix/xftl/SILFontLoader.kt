@@ -2,7 +2,6 @@ package xyz.znix.xftl
 
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.Color
-import org.newdawn.slick.Font
 import org.newdawn.slick.opengl.ImageData
 import xyz.znix.xftl.rendering.BulkImageRenderer
 import xyz.znix.xftl.rendering.Image
@@ -14,7 +13,7 @@ import java.util.*
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class SILFontLoader : Font {
+class SILFontLoader {
     private val chars: Map<Char, Charinfo>
     private val picture: Image
     private val renderer: BulkImageRenderer
@@ -150,15 +149,7 @@ class SILFontLoader : Font {
         renderer = other.renderer
     }
 
-    override fun getHeight(str: String?): Int {
-        throw UnsupportedOperationException("not implemented")
-    }
-
-    override fun drawString(x: Float, y: Float, text: String?) {
-        throw UnsupportedOperationException("not implemented")
-    }
-
-    override fun drawString(x: Float, y: Float, text: String, col: Color) {
+    fun drawString(x: Float, y: Float, text: String, col: Color) {
         drawStringTruncated(x, y, Float.MAX_VALUE, text, col)
     }
 
@@ -199,11 +190,7 @@ class SILFontLoader : Font {
         drawString(x - getWidth(text), y, text, colour)
     }
 
-    override fun drawString(x: Float, y: Float, text: String?, col: Color?, startIndex: Int, endIndex: Int) {
-        throw UnsupportedOperationException("not implemented")
-    }
-
-    override fun getWidth(str: String): Int {
+    fun getWidth(str: String): Int {
         var next = 0
         for ((i, ch) in str.withIndex()) {
             val info = chars[ch] ?: error("Unknown char $ch")
@@ -214,10 +201,6 @@ class SILFontLoader : Font {
             next += ((info.w + postKern) * scale).roundToInt()
         }
         return next
-    }
-
-    override fun getLineHeight(): Int {
-        throw UnsupportedOperationException("not implemented")
     }
 
     fun supportsCharacter(c: Char): Boolean {

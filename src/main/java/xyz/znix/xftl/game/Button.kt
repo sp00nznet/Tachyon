@@ -1,12 +1,8 @@
 package xyz.znix.xftl.game
 
 import org.newdawn.slick.Color
-import org.newdawn.slick.Font
 import org.newdawn.slick.Input
-import xyz.znix.xftl.Blueprint
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
@@ -205,7 +201,7 @@ object Buttons {
 
     open class BasicButton(
         game: InGameState, pos: IPoint, size: IPoint, val label: String,
-        private val radius: Int, private val font: Font, private val yOffset: Int,
+        private val radius: Int, private val font: SILFontLoader, private val yOffset: Int,
         private val cb: () -> Unit
     ) : Button(game, pos, size) {
 
