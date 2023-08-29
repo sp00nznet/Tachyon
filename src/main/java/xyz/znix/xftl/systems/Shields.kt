@@ -49,6 +49,11 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             return
         }
 
+        // Check if our power has been reduced
+        if (activeShields > selectedShieldBars) {
+            activeShields = selectedShieldBars
+        }
+
         if (activeShields == selectedShieldBars) {
             rechargeTimer = 0f
             return
