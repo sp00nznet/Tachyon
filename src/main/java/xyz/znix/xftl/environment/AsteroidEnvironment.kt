@@ -1,7 +1,6 @@
 package xyz.znix.xftl.environment
 
 import org.jdom2.Element
-import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.TWO_PI
 import xyz.znix.xftl.game.FTLSound
@@ -17,6 +16,7 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
+import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponProjectile
 import xyz.znix.xftl.weapons.MissileBlueprint

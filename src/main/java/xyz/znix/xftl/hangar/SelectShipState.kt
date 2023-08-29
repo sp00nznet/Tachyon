@@ -1,6 +1,5 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.*
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.MainGame
@@ -10,6 +9,7 @@ import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.WindowRenderer
+import xyz.znix.xftl.sys.GameContainer
 
 class SelectShipState(private val vanillaDF: Datafile, private val main: MainGame) : MainGame.GameState() {
 

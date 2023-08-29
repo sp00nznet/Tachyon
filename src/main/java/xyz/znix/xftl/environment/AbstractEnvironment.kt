@@ -1,7 +1,6 @@
 package xyz.znix.xftl.environment
 
 import org.jdom2.Element
-import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.InGameState
@@ -12,6 +11,7 @@ import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.EnvironmentImage
 import xyz.znix.xftl.sector.FleetBackground
 import xyz.znix.xftl.sector.ImageList
+import xyz.znix.xftl.sys.GameContainer
 import kotlin.math.roundToInt
 import kotlin.random.Random
 

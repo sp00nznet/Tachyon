@@ -1,12 +1,12 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.sys.Input
 
 class StartGameButton(val state: SelectShipState) {
     private val startFont = SILFontLoader(state.fontHL2).apply { scale = 4f }

@@ -1,6 +1,5 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
@@ -10,6 +9,7 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.Rectangle
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint

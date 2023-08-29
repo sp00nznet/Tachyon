@@ -4,8 +4,6 @@ import org.jdom2.Document
 import org.jdom2.input.SAXBuilder
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
-import org.newdawn.slick.GameContainer
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
@@ -20,6 +18,8 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.shipgen.ShipGenerator
+import xyz.znix.xftl.sys.GameContainer
+import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import java.io.IOException

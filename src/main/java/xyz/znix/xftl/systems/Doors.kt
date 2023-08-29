@@ -1,7 +1,6 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import org.newdawn.slick.Input
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.game.Button
@@ -12,6 +11,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.sys.Input
 
 class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override val sortingType = SortingType.DOORS

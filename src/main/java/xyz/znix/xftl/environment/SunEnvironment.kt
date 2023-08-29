@@ -1,7 +1,6 @@
 package xyz.znix.xftl.environment
 
 import org.jdom2.Element
-import org.newdawn.slick.GameContainer
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.InGameState
@@ -12,6 +11,7 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rollChance
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
+import xyz.znix.xftl.sys.GameContainer
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random

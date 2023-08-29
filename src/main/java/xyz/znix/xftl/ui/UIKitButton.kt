@@ -1,7 +1,6 @@
 package xyz.znix.xftl.ui
 
 import org.jdom2.Element
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.Buttons
@@ -9,6 +8,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.sys.Input
 import kotlin.math.max
 
 class UIKitButton(

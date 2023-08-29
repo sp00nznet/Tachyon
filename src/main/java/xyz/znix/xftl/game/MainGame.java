@@ -5,7 +5,6 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.Game;
-import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
@@ -14,6 +13,7 @@ import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
 import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
+import xyz.znix.xftl.sys.GameContainer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,8 +38,8 @@ public class MainGame implements Game {
     }
 
     @Override
-    public void init(GameContainer gc) throws SlickException {
-        this.gameContainer = gc;
+    public void init(org.newdawn.slick.GameContainer gc) throws SlickException {
+        gameContainer = new GameContainer(gc);
 
         graphics = new Graphics();
         graphics.markCurrentImageTransformSource();
@@ -85,24 +85,24 @@ public class MainGame implements Game {
     }
 
     @Override
-    public void update(GameContainer gc, int deltaMS) throws SlickException {
+    public void update(org.newdawn.slick.GameContainer gc, int deltaMS) throws SlickException {
         // Convert the delta-time to seconds, from milliseconds.
         float dt = deltaMS / 1000f;
 
-        currentState.update(gc, dt);
+        currentState.update(gameContainer, dt);
     }
 
     @Override
-    public void render(GameContainer gc, org.newdawn.slick.Graphics slickG) throws SlickException {
+    public void render(org.newdawn.slick.GameContainer gc, org.newdawn.slick.Graphics slickG) throws SlickException {
         // When we use shaders, we have to transform from pixels to NDC
         // If this is set wrong, all the text etc will be transformed wrong.
-        ShaderProgramme.getSHADER_SCREEN_SIZE().set(gc.getWidth(), gc.getHeight());
+        ShaderProgramme.getSHADER_SCREEN_SIZE().set(gameContainer.getWidth(), gameContainer.getHeight());
 
         // Reset the transform from last frame, in case there was a transform
         // call that wasn't inside a pushTransform block.
         graphics.loadIdentityMatrix();
 
-        currentState.render(gc, graphics);
+        currentState.render(gameContainer, graphics);
 
         // Check there aren't any mismatched pushTransform/popTransform calls.
         graphics.checkNoPushedTransforms();

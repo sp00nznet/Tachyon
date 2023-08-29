@@ -1,7 +1,6 @@
 package xyz.znix.xftl.game
 
 import org.lwjgl.opengl.GL11
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Utils
@@ -17,6 +16,7 @@ import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.Texture
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Sector
+import xyz.znix.xftl.sys.Input
 import kotlin.math.*
 
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix

@@ -1,7 +1,6 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
@@ -14,6 +13,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.sys.Input
 
 class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.MIND_CONTROL

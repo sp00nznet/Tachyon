@@ -1,9 +1,6 @@
 package xyz.znix.xftl.game
 
 import org.jdom2.Element
-import org.newdawn.slick.GameContainer
-import org.newdawn.slick.Input.MOUSE_LEFT_BUTTON
-import org.newdawn.slick.Input.MOUSE_RIGHT_BUTTON
 import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.*
@@ -24,6 +21,8 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.Event
+import xyz.znix.xftl.sys.GameContainer
+import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.systems.*
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.BeamBlueprint
@@ -197,9 +196,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         // When we're in beam targeting mode, block other mouse input.
         if (beamTargeting != null) {
-            if (button == MOUSE_LEFT_BUTTON) {
+            if (button == Input.MOUSE_LEFT_BUTTON) {
                 targetBeamWeapon()
-            } else if (button == MOUSE_RIGHT_BUTTON) {
+            } else if (button == Input.MOUSE_RIGHT_BUTTON) {
                 beamTargeting = null
             }
             return
@@ -211,7 +210,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         // Check if we're clicking on a door
-        if (button == MOUSE_LEFT_BUTTON) {
+        if (button == Input.MOUSE_LEFT_BUTTON) {
             for (door in ship.doors) {
                 val hit = door.click(x - playerShipPosition.x, y - playerShipPosition.y)
                 if (hit)
@@ -220,7 +219,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         // Select players
-        if (button == MOUSE_LEFT_BUTTON) {
+        if (button == Input.MOUSE_LEFT_BUTTON) {
             crewSelectionRectangle = Pair(ConstPoint(x, y), Point(x, y))
         }
 
@@ -235,7 +234,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (!room.containsAbsolute(roomPoint))
                 continue
 
-            if (button == MOUSE_RIGHT_BUTTON) {
+            if (button == Input.MOUSE_RIGHT_BUTTON) {
                 for (crew in selectedCrew) {
                     // Skip mind-controlled crew that remained selected.
                     if (!crew.playerControllable)
@@ -259,7 +258,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         crewSelectionRectangle?.let {
-            if (button != MOUSE_LEFT_BUTTON) return@let
+            if (button != Input.MOUSE_LEFT_BUTTON) return@let
 
             updateHoveredCrew(x, y, playerShipPosition)
 
@@ -574,10 +573,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 override val droneCooldownProgress: Float? get() = null
 
                 override fun click(button: Int) {
-                    if (button == MOUSE_LEFT_BUTTON) {
+                    if (button == Input.MOUSE_LEFT_BUTTON) {
                         weaponHotkeyPressed(i)
                     }
-                    if (weapon != null && weapon.isPowered && button == MOUSE_RIGHT_BUTTON) {
+                    if (weapon != null && weapon.isPowered && button == Input.MOUSE_RIGHT_BUTTON) {
                         if (ship.weapons!!.setWeaponPower(weapon, false)) {
                             powerDownSound.play()
                         }
@@ -690,10 +689,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                     override fun click(button: Int) {
                         val wasPowered = info?.instance?.isPowered ?: false
 
-                        if (button == MOUSE_LEFT_BUTTON) {
+                        if (button == Input.MOUSE_LEFT_BUTTON) {
                             drones.setDronePower(i, true)
                         }
-                        if (button == MOUSE_RIGHT_BUTTON) {
+                        if (button == Input.MOUSE_RIGHT_BUTTON) {
                             drones.setDronePower(i, false)
                         }
 
@@ -701,7 +700,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                         when {
                             wasPowered && !nowPowered -> powerDownSound.play()
                             !wasPowered && nowPowered -> powerUpSound.play()
-                            !wasPowered && button == MOUSE_LEFT_BUTTON -> powerUpFailSound.play()
+                            !wasPowered && button == Input.MOUSE_LEFT_BUTTON -> powerUpFailSound.play()
                         }
                     }
                 }
@@ -1622,9 +1621,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (system !is MainSystem)
                 return
 
-            if (button == MOUSE_LEFT_BUTTON) {
+            if (button == Input.MOUSE_LEFT_BUTTON) {
                 changeSystemPower(system, true)
-            } else if (button == MOUSE_RIGHT_BUTTON) {
+            } else if (button == Input.MOUSE_RIGHT_BUTTON) {
                 changeSystemPower(system, false)
             }
         }

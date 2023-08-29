@@ -1,7 +1,6 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import org.newdawn.slick.Input
 import xyz.znix.xftl.*
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.game.*
@@ -16,6 +15,7 @@ import xyz.znix.xftl.rendering.Renderable
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.weapons.AbstractProjectile
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint

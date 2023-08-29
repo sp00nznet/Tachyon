@@ -1,12 +1,12 @@
 package xyz.znix.xftl.hangar
 
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.sys.Input
 
 class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : EditorMenu {
     private val imagesMeta: List<RoomImageMeta.RoomImage>

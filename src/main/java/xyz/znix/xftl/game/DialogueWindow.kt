@@ -1,7 +1,6 @@
 package xyz.znix.xftl.game
 
 import org.jdom2.Element
-import org.newdawn.slick.Input
 import org.newdawn.slick.geom.Rectangle
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
@@ -17,6 +16,7 @@ import xyz.znix.xftl.sector.Choice
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.sector.EventStatus
 import xyz.znix.xftl.sector.EventSystemUpgrade
+import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.max

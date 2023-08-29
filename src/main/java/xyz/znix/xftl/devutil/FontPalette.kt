@@ -1,8 +1,6 @@
 package xyz.znix.xftl.devutil
 
 import org.newdawn.slick.BasicGame
-import org.newdawn.slick.GameContainer
-import org.newdawn.slick.Input
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.FontOverrideData
 import xyz.znix.xftl.SILFontLoader
@@ -11,8 +9,11 @@ import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.ShaderProgramme
+import xyz.znix.xftl.sys.GameContainer
+import xyz.znix.xftl.sys.Input
 import kotlin.math.max
 import kotlin.math.min
+import org.newdawn.slick.GameContainer as SlickGameContainer
 import org.newdawn.slick.Graphics as SlickGraphics
 
 object FontPalette {
@@ -55,10 +56,11 @@ object FontPalette {
         private var baseline = false
 
         private lateinit var g: Graphics
+        private lateinit var container: GameContainer
 
-        override fun update(container: GameContainer, delta: Int) {}
+        override fun update(container: SlickGameContainer, delta: Int) {}
 
-        override fun render(container: GameContainer, slickG: SlickGraphics) {
+        override fun render(slickContainer: SlickGameContainer, slickG: SlickGraphics) {
             ShaderProgramme.SHADER_SCREEN_SIZE.set(container.width, container.height)
 
             g.clear(Color.white)
@@ -102,9 +104,11 @@ object FontPalette {
             }
         }
 
-        override fun init(container: GameContainer) {
+        override fun init(slickContainer: SlickGameContainer) {
             g = Graphics()
             g.markCurrentImageTransformSource()
+
+            container = GameContainer(slickContainer)
 
             // Hack here so we don't have to make it public, won't be used anywhere else
             val field = SILFontLoader::class.java.getDeclaredField("picture")
@@ -150,6 +154,7 @@ object FontPalette {
                     FontOverrideData.debugReload()
                     loadFonts()
                 }
+
                 Input.KEY_UP -> fontSize = min(fontSize + 1, 5)
                 Input.KEY_DOWN -> fontSize = max(fontSize - 1, 1)
                 else -> handled = false

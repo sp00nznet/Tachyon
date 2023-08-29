@@ -5,9 +5,7 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.ImageBuffer;
-import org.newdawn.slick.Input;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
@@ -28,6 +26,8 @@ import xyz.znix.xftl.savegame.SaveUtil;
 import xyz.znix.xftl.sector.*;
 import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
+import xyz.znix.xftl.sys.GameContainer;
+import xyz.znix.xftl.sys.Input;
 import xyz.znix.xftl.systems.*;
 import xyz.znix.xftl.ui.SpecDeserialiser;
 import xyz.znix.xftl.ui.UIProvider;
@@ -244,7 +244,7 @@ public class InGameState extends MainGame.GameState {
         // For debugging, this lets you either step or fast-forward through time.
         if (container.getInput().isKeyDown(Input.KEY_TAB))
             updateGameState(delta * 4);
-        if (container.getInput().isKeyPressed(Input.KEY_PERIOD))
+        if (container.getInput().isKeyPressed(Input.KEY_FULL_STOP))
             updateGameState(0.01f);
 
         shipUI.updateAlways(delta);
@@ -258,9 +258,7 @@ public class InGameState extends MainGame.GameState {
 
             // Clear out any pending key presses, so keys pressed while
             // the console is open don't have an effect once it's closed.
-            in.clearControlPressedRecord();
-            in.clearKeyPressedRecord();
-            in.clearMousePressedRecord();
+            in.clearInputPressedRecord();
         }
 
         // Block all key inputs if the debug console is open
