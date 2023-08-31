@@ -38,6 +38,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val numberFont = game.getFont("num_font")
     private val oxygenEvadeFont = game.getFont("JustinFont10")
 
+    private val numberDeltaFont = game.getFont("HL2", 3f)
+    private val numberDeltaFontBg = game.getFont("HL1", 3f)
+
     private val powerUpSound = game.sounds.getSample("powerUpSystem")
     private val powerUpFailSound = game.sounds.getSample("powerUpFail")
     private val powerDownSound = game.sounds.getSample("powerDownSystem")
@@ -91,6 +94,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private var lastHealth: Int = -1
 
     val isWindowOpen: Boolean get() = currentWindow != null
+
+    private val lastResources = ResourceSet()
+    private val resourceDeltaAnimations = ArrayList<ResourceDeltaText>()
 
     private var crewSelectionRectangle: Pair<ConstPoint, Point>? = null
     private val isCrewSelectionPoint: Boolean
@@ -413,6 +419,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         insufficientScrapTimer -= dt
         if (insufficientScrapTimer < 0)
             insufficientScrapTimer = 0f
+
+        // The resource number animations run while paused
+        for (anim in resourceDeltaAnimations) {
+            anim.update(dt)
+        }
+        resourceDeltaAnimations.removeIf { it.finished }
     }
 
     fun render(gc: GameContainer, g: Graphics) {
@@ -432,6 +444,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // when they're updated.
         for (button in buttons) {
             button.draw(g)
+        }
+
+        // Draw the floating numbers that show a change in a resource
+        for (anim in resourceDeltaAnimations) {
+            anim.draw(g)
         }
 
         updatingButtons = false
@@ -879,6 +896,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         game.getImg(scrapPath).draw(374f + 8 - 5, 0f)
         numberFont.drawStringCentred(416f, 35f, 87f, ship.scrap.toString(), UI_SCRAP_TEXT_COLOUR)
 
+        val deltaScrap = ship.scrap - lastResources.scrap
+        if (deltaScrap != 0) {
+            lastResources.scrap = ship.scrap
+            val rdt = ResourceDeltaText(460f, 30f, deltaScrap)
+            rdt.x += Random.nextInt(-10, 10)
+            resourceDeltaAnimations.add(rdt)
+        }
+
         // Going down the side, for the shields/oxygen
         val shieldY = 43
 
@@ -948,7 +973,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             shieldsWarning.draw(g)
         }
 
-        fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int, redThreshold: Int = 0) {
+        fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int, delta: Int, redThreshold: Int) {
             val suffix = when {
                 count <= redThreshold -> "_red"
                 else -> ""
@@ -962,6 +987,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val textInternalX = ceil((areaWidth - textWidth) / 2f).toInt()
 
             numberFont.drawString(areaStart + textInternalX, shieldY + 27f, count.toString(), Color.white)
+
+            if (delta != 0) {
+                val rdt = ResourceDeltaText(x + 40f, 65f, delta)
+                resourceDeltaAnimations.add(rdt)
+            }
         }
 
         val shieldsEndX = 122
@@ -979,14 +1009,21 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             }
         }
 
+        val deltaFuel = ship.fuelCount - lastResources.fuel
+        val deltaMissiles = ship.missilesCount - lastResources.missiles
+        val deltaDrones = ship.dronesCount - lastResources.droneParts
+        lastResources.fuel = ship.fuelCount
+        lastResources.missiles = ship.missilesCount
+        lastResources.droneParts = ship.dronesCount
+
         // Fuel shows as red when there's three or less left.
-        drawSmallCounter("fuel", shieldsEndX, 0, ship.fuelCount, 3)
+        drawSmallCounter("fuel", shieldsEndX, 0, ship.fuelCount, deltaFuel, 3)
 
         // Missiles only show as red when there's none left.
-        drawSmallCounter("missiles", shieldsEndX + 66, 1, ship.missilesCount)
+        drawSmallCounter("missiles", shieldsEndX + 66, 1, ship.missilesCount, deltaMissiles, 0)
 
-        // TODO drone red threshold.
-        drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, ship.dronesCount)
+        // Same for drones.
+        drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, ship.dronesCount, deltaDrones, 0)
 
         // Oxygen and evasion indicator
         val oxyY = 96
@@ -1652,6 +1689,31 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private inner class MindControlRoomListener : RoomClickListener {
         override fun roomClicked(room: Room, gc: GameContainer) {
             ship.mindControl!!.selectRoom(room)
+        }
+    }
+
+    private inner class ResourceDeltaText(var x: Float, var y: Float, amount: Int) {
+        private var age: Float = 0f
+
+        private val text: String = when {
+            amount > 0 -> "+$amount"
+            else -> amount.toString()
+        }
+
+        val finished: Boolean get() = age >= 1f
+
+        init {
+            x -= numberDeltaFont.getWidth(text) / 2f
+            y += numberDeltaFont.baselineToTop * numberDeltaFont.scale
+        }
+
+        fun draw(g: Graphics) {
+            numberDeltaFont.drawStringPaired(numberDeltaFontBg, x, y, text, Color.black, Color.white)
+        }
+
+        fun update(dt: Float) {
+            y += 15f * dt
+            age += dt
         }
     }
 
