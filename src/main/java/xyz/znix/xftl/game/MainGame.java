@@ -101,8 +101,7 @@ public class MainGame implements Game {
 
     @Override
     public String getTitle() {
-        // TODO come up with a proper name
-        return "Codename XFTL";
+        return "Project Wormhole";
     }
 
     /**

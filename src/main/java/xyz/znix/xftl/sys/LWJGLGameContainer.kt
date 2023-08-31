@@ -1,12 +1,8 @@
 package xyz.znix.xftl.sys
 
 import org.lwjgl.Version
-import org.lwjgl.glfw.Callbacks
+import org.lwjgl.glfw.*
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.glfw.GLFWCharCallbackI
-import org.lwjgl.glfw.GLFWErrorCallback
-import org.lwjgl.glfw.GLFWMouseButtonCallbackI
-import org.lwjgl.glfw.GLFWScrollCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryStack.stackPush
@@ -14,10 +10,10 @@ import org.lwjgl.system.MemoryUtil.NULL
 import org.newdawn.slick.InputListener
 import org.newdawn.slick.KeyListener
 import org.newdawn.slick.MouseListener
-import org.newdawn.slick.util.InputAdapter
+import org.newdawn.slick.opengl.ImageDataFactory
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
-import java.util.*
+import java.io.BufferedInputStream
 import kotlin.collections.ArrayList
 
 
@@ -98,6 +94,9 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
             )
         }
 
+        // Set the window's icon
+        setupWindowIcon()
+
         // Make the OpenGL context current
         glfwMakeContextCurrent(window)
         // Enable v-sync
@@ -117,6 +116,24 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
 
         // Set up OpenGL
         initOpenGL()
+    }
+
+    private fun setupWindowIcon() {
+        val path = "assets/img/xftl_icon.png"
+
+        val imageData = ImageDataFactory.getImageDataFor(path)
+        javaClass.classLoader.getResourceAsStream(path).use { stream ->
+            imageData.loadImage(BufferedInputStream(stream), false, null)
+        }
+
+        stackPush().use { stack ->
+            val imageArray = GLFWImage.Buffer(stack.malloc(GLFWImage.SIZEOF))
+            val image = imageArray[0]
+
+            image.set(imageData.width, imageData.height, imageData.imageBufferData)
+
+            glfwSetWindowIcon(window, imageArray)
+        }
     }
 
     private fun initOpenGL() {
