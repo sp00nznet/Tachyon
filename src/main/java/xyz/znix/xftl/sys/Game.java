@@ -25,6 +25,13 @@ public interface Game {
     void init(@NotNull GameContainer container) throws SlickException;
 
     /**
+     * Called when the game is being shut down, after the last render.
+     * <p>
+     * This is when native resources should be deallocated.
+     */
+    void shutdown();
+
+    /**
      * Update the game logic here. No rendering should take place in this method
      * though it won't do any harm.
      *

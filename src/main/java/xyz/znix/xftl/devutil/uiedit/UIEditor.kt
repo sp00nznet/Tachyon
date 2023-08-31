@@ -9,6 +9,7 @@ import xyz.znix.xftl.rendering.ShaderProgramme
 import xyz.znix.xftl.sys.BasicGame
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
+import xyz.znix.xftl.sys.ResourceContext
 import xyz.znix.xftl.ui.SpecDeserialiser
 import xyz.znix.xftl.ui.UIProvider
 import xyz.znix.xftl.ui.Widget
@@ -25,8 +26,7 @@ import kotlin.math.roundToInt
  * zooming and highlighting elements to get everything lined up quickly.
  */
 class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Editor"), UIProvider {
-    private lateinit var g: Graphics
-    private lateinit var container: GameContainer
+    private val resourceContext = ResourceContext()
 
     private val fonts = HashMap<String, SILFontLoader>()
     private val images = HashMap<String, Image>()
@@ -64,7 +64,11 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         reload()
     }
 
-    override fun update(slickContainer: GameContainer, delta: Float) {
+    override fun shutdown() {
+        resourceContext.freeAll()
+    }
+
+    override fun update(container: GameContainer, delta: Float) {
         val input = container.input
 
         if (input.isKeyPressed(Input.KEY_F1)) {
@@ -95,19 +99,19 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         g.translate(PREVIEW_POS_X.f, PREVIEW_POS_Y.f)
         g.scale(zoomScale, zoomScale)
         g.translate(-panOffsetX, -panOffsetY)
-        renderUI()
+        renderUI(g)
         g.popTransform()
 
         g.pushTransform()
         g.translate(10f, 10f)
-        drawTree()
+        drawTree(g)
         g.popTransform()
 
         // Check there aren't any mismatched pushTransform/popTransform calls.
         g.checkNoPushedTransforms()
     }
 
-    private fun renderUI() {
+    private fun renderUI(g: Graphics) {
         val ui = ui ?: return
 
         ui.mainWidget.draw(g)
@@ -120,7 +124,7 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         g.drawRect(hl.position.x.f, hl.position.y.f, hl.size.x - 1f, hl.size.y - 1f)
     }
 
-    private fun drawTree() {
+    private fun drawTree(g: Graphics) {
         val ui = ui
         if (ui == null) {
             var y = utilFont.baselineToTop
@@ -191,7 +195,7 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         // like that.
         fonts[name]?.let { return SILFontLoader(it) }
 
-        val font = SILFontLoader(df, df["fonts/$name.font"])
+        val font = SILFontLoader(resourceContext, df, df["fonts/$name.font"])
         fonts[name] = font
         return SILFontLoader(font)
     }
@@ -199,7 +203,7 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
     override fun getImg(path: String): Image {
         images[path]?.let { return it }
 
-        val image = df.readImage(path)
+        val image = df.readImage(resourceContext, df[path])
         images[path] = image
         return image
     }

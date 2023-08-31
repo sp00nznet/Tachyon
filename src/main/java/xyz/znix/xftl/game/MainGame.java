@@ -63,6 +63,13 @@ public class MainGame implements Game {
         }
     }
 
+    @Override
+    public void shutdown() {
+        currentState.shutdown();
+
+        content.freeResources();
+    }
+
     public void switchToShipSelect() {
         SelectShipState state = new SelectShipState(vanillaDatafile, this);
         setCurrentState(state);
@@ -139,6 +146,10 @@ public class MainGame implements Game {
     }
 
     public void setCurrentState(GameState currentState) {
+        if (this.currentState != null) {
+            this.currentState.shutdown();
+        }
+
         this.currentState = currentState;
 
         gameContainer.getInput().removeAllListeners();
@@ -155,6 +166,8 @@ public class MainGame implements Game {
     public static abstract class GameState extends InputAdapter {
         public void init(@NotNull GameContainer container) {
         }
+
+        public abstract void shutdown();
 
         public abstract void update(@NotNull GameContainer container, float delta) throws SlickException;
 

@@ -4,6 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -124,10 +125,11 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         // Draw the charging glow, if present
         if (isCurrentCharged)
             return
-        val glow = animation.chargeImage ?: return
+        val glowPath = animation.chargeImage ?: return
+        val glow = ship.sys.getImg(glowPath)
 
-        glow.alpha = chargeProgress
-        glow.draw(0f, 0f)
+        val filter = Color(1f, 1f, 1f, chargeProgress)
+        glow.draw(0f, 0f, filter)
     }
 
     fun renderChainChargeLights() {

@@ -196,6 +196,8 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
             // invoked during this call.
             glfwPollEvents()
         }
+
+        game.shutdown()
     }
 
     fun setDisplayMode(width: Int, height: Int, fullScreen: Boolean) {

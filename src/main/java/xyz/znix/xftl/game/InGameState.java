@@ -28,6 +28,7 @@ import xyz.znix.xftl.shipgen.EnemyShipSpec;
 import xyz.znix.xftl.shipgen.ShipGenerator;
 import xyz.znix.xftl.sys.GameContainer;
 import xyz.znix.xftl.sys.Input;
+import xyz.znix.xftl.sys.ResourceContext;
 import xyz.znix.xftl.systems.*;
 import xyz.znix.xftl.ui.SpecDeserialiser;
 import xyz.znix.xftl.ui.UIProvider;
@@ -218,6 +219,11 @@ public class InGameState extends MainGame.GameState {
                     debugConsole.mouseDragged(oldX, oldY, newX, newY);
             }
         });
+    }
+
+    @Override
+    public void shutdown() {
+        // Our resource context is owned by the game data, so we don't need to free it here.
     }
 
     private void createNewPlayerShip(String shipName, EditableShip customised) {
@@ -952,7 +958,7 @@ public class InGameState extends MainGame.GameState {
         if (name.equals(Constants.MISSING_FILE_PATH))
             return getMissingImage();
 
-        img = df.readImage(name);
+        img = df.readImage(content.resourceContext, df.get(name));
         content.images.put(name, img);
         return img;
     }
@@ -973,7 +979,7 @@ public class InGameState extends MainGame.GameState {
         if (file == null)
             return null;
 
-        img = df.readImage(file);
+        img = df.readImage(content.resourceContext, file);
         content.images.put(name, img);
         return img;
     }
@@ -993,7 +999,7 @@ public class InGameState extends MainGame.GameState {
             return new SILFontLoader(font);
         }
 
-        font = new SILFontLoader(df, df.get("fonts/" + name + ".font"));
+        font = new SILFontLoader(content.resourceContext, df, df.get("fonts/" + name + ".font"));
         content.fonts.put(name, font);
         return new SILFontLoader(font);
     }
@@ -1199,7 +1205,7 @@ public class InGameState extends MainGame.GameState {
                 buffer.setRGBA(x, y, rg, rg, 0, 255);
             }
         }
-        missingImage = TextureLoader.INSTANCE.loadImage(buffer);
+        missingImage = TextureLoader.INSTANCE.loadImage(content.resourceContext, buffer);
         return missingImage;
     }
 
@@ -1480,6 +1486,9 @@ public class InGameState extends MainGame.GameState {
         private final Map<String, Image> images = new HashMap<>();
         private final Map<String, SILFontLoader> fonts = new HashMap<>();
 
+        // The context that owns the images and fonts
+        private final ResourceContext resourceContext = new ResourceContext();
+
         // This is only here to avoid wasting heaps of resources in cont-save-load mode.
         private WindowRenderer windowRenderer;
 
@@ -1496,6 +1505,10 @@ public class InGameState extends MainGame.GameState {
             nameManager = new CrewNameManager(datafile);
 
             blueprintManager.finishLoading(this);
+        }
+
+        public void freeResources() {
+            resourceContext.freeAll();
         }
     }
 

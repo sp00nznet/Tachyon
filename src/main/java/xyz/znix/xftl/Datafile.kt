@@ -4,6 +4,7 @@ import org.jdom2.Document
 import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
+import xyz.znix.xftl.sys.ResourceContext
 import java.io.*
 
 const val HEADER_SIZE = 16
@@ -126,11 +127,9 @@ constructor(private val data_file: File) {
         return ByteArrayInputStream(read(file))
     }
 
-    fun readImage(file: FTLFile): Image {
-        return TextureLoader.loadImage(open(file), file.name)
+    fun readImage(context: ResourceContext, file: FTLFile): Image {
+        return TextureLoader.loadImage(context, open(file), file.name)
     }
-
-    fun readImage(path: String) = readImage(this[path])
 
     fun getAllFiles(): List<FTLFile> {
         return files.values.toList()

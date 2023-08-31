@@ -6,6 +6,7 @@ import xyz.znix.xftl.rendering.BulkImageRenderer
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
+import xyz.znix.xftl.sys.ResourceContext
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer
@@ -38,7 +39,7 @@ class SILFontLoader {
 
     var scale: Float = 1f
 
-    constructor(df: Datafile, file: FTLFile) {
+    constructor(context: ResourceContext, df: Datafile, file: FTLFile) {
         val override = FontOverrideData.fonts[file.name]
 
         val seeking = SeekingInputStream(df.read(file))
@@ -128,7 +129,7 @@ class SILFontLoader {
 
         val img = MonochromeImage(texWidth, texHeight, data)
 
-        picture = TextureLoader.loadImage(img)
+        picture = TextureLoader.loadImage(context, img)
         renderer = BulkImageRenderer(picture)
 
         // Enlarged fonts are supposed to be pixelated.

@@ -72,7 +72,7 @@ class Animations(df: Datafile) {
             val firePoint = Utils.parsePosElem(xml.getChild("firePoint"))
             val chargeOffset = xml.getChild("firePoint").getAttributeValue("charge")?.toInt() ?: 0
 
-            val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { i -> df.readImage("img/$i") }
+            val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { "img/$it" }
 
             val boostAnim = xml.getChildTextTrim("boost")?.let { animations.getValue(it) }
 
@@ -130,7 +130,7 @@ class Animations(df: Datafile) {
     class WeaponAnimationSpec(
         val sheet: SpriteSheetSpec, val x: Int, val y: Int, val length: Int, val chargedFrame: Int,
         val fireFrame: Int, val mountPoint: ConstPoint, val firePoint: ConstPoint,
-        val chargeImage: Image?,
+        val chargeImage: String?,
 
         /**
          * For charge weapons, this is how far the firing point moves for each projectile.

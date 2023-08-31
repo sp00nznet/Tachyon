@@ -1,10 +1,10 @@
 package xyz.znix.xftl.rendering
 
-import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.opengl.ImageData
 import org.newdawn.slick.opengl.ImageDataFactory
 import org.newdawn.slick.opengl.InternalTextureLoader
+import xyz.znix.xftl.sys.ResourceContext
 import java.io.BufferedInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -12,7 +12,7 @@ import java.io.InputStream
 // Note: bits of this are copy/pasted from Slick's InternalTextureLoader.
 
 object TextureLoader {
-    fun loadTexture(imageData: ImageData): Texture {
+    fun loadTexture(context: ResourceContext, imageData: ImageData): Texture {
         // Very heavily copied from InternalTextureLoader.
 
         val textureID = GL11.glGenTextures()
@@ -49,7 +49,7 @@ object TextureLoader {
             textureBuffer
         )
 
-        return Texture(
+        val tex = Texture(
             imageData.texWidth,
             imageData.texHeight,
 
@@ -58,10 +58,15 @@ object TextureLoader {
 
             textureID
         )
+
+        // Delete the OpenGL image when appropriate
+        context.register(tex)
+
+        return tex
     }
 
-    fun loadImage(imageData: ImageData): Image {
-        val texture = loadTexture(imageData)
+    fun loadImage(context: ResourceContext, imageData: ImageData): Image {
+        val texture = loadTexture(context, imageData)
         return Image(
             0, 0,
             texture.imageWidth, texture.imageHeight,
@@ -69,12 +74,12 @@ object TextureLoader {
         )
     }
 
-    fun loadImage(stream: InputStream, path: String): Image {
+    fun loadImage(context: ResourceContext, stream: InputStream, path: String): Image {
         val imageData = ImageDataFactory.getImageDataFor(path)
 
         // Discard the result, we'll get the same thing by calling imageBufferData later
         imageData.loadImage(BufferedInputStream(stream), false, null)
 
-        return loadImage(imageData)
+        return loadImage(context, imageData)
     }
 }

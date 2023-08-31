@@ -11,6 +11,7 @@ import xyz.znix.xftl.rendering.ShaderProgramme
 import xyz.znix.xftl.sys.BasicGame
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
+import xyz.znix.xftl.sys.ResourceContext
 import kotlin.math.max
 import kotlin.math.min
 
@@ -43,6 +44,8 @@ object FontPalette {
         private val fonts = HashMap<String, SILFontLoader>()
         private val pictures = HashMap<String, Image>()
         private var text = DEFAULT_TEXT
+
+        val resourceContext = ResourceContext()
 
         // Store the utility font separately,
         private lateinit var utilFont: SILFontLoader
@@ -118,9 +121,13 @@ object FontPalette {
             utilFont = SILFontLoader(fonts["JustinFont8"]!!)
         }
 
+        override fun shutdown() {
+            resourceContext.freeAll()
+        }
+
         private fun loadFonts() {
             for (name in FONT_NAMES) {
-                val font = SILFontLoader(df, df["fonts/$name.font"])
+                val font = SILFontLoader(resourceContext, df, df["fonts/$name.font"])
                 fonts[name] = font
             }
         }
