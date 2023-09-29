@@ -454,7 +454,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             return value
         }
 
-        override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter? {
+        override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
             if (previous is BlueprintAndExtrasCompleter && previous.owner == this)
                 return previous
 
@@ -467,15 +467,10 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "spawn-ship")
     @CmdHelp("Spawn an enemy ship directly from a seed")
-    private fun cmdSpawnShip(@ParName("spec") specName: String, @ParName("difficulty/seed") seedB64: String) {
-        // TODO spec autocompletion
-
-        if (!game.eventManager.hasShip(specName)) {
-            addLine("Unknown ship spec '$specName'.")
-            return
-        }
-        val spec: EnemyShipSpec = game.eventManager.getShip(specName)
-
+    private fun cmdSpawnShip(
+        @ParName("spec") spec: EnemyShipSpec,
+        @ParName("difficulty/seed") seedB64: String
+    ) {
         if (seedB64.getOrNull(1) == '.') {
             // sector.difficulty mode, with a random seed
 

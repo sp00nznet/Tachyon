@@ -56,6 +56,7 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     fun getImageList(name: String): ImageList = imageLists[name] ?: error("Missing image list '$name'")
 
     fun hasShip(name: String): Boolean = ships.containsKey(name)
+    fun getShips(): Collection<EnemyShipSpec> = ships.values
 
     private fun loadEvents(doc: Document, resourcePass: Boolean) {
         val root = doc.rootElement

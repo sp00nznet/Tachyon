@@ -7,6 +7,7 @@ import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
@@ -246,5 +247,15 @@ class BlueprintAndExtrasCompleter(
 
     override fun getCompletionString(item: Pair<String, Blueprint?>): String {
         return item.first
+    }
+}
+
+class EnemyShipSpecCompleter(console: DebugConsole, owner: ArgumentTypeProcessor?) :
+    BasicCompletionEngine<EnemyShipSpec>(console, owner) {
+
+    override val items = console.game.eventManager.getShips().toList()
+
+    override fun getItemName(item: EnemyShipSpec): String {
+        return item.name
     }
 }

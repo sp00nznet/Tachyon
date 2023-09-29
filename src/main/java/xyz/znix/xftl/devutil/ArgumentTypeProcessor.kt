@@ -1,6 +1,7 @@
 package xyz.znix.xftl.devutil
 
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.shipgen.EnemyShipSpec
 import java.lang.reflect.Parameter
 
 /**
@@ -43,7 +44,7 @@ object StringTypeProcessor : ArgumentTypeProcessor {
         check(param.type == String::class.java)
     }
 
-    override fun process(value: String, console: DebugConsole): Any? {
+    override fun process(value: String, console: DebugConsole): Any {
         return value
     }
 }
@@ -90,6 +91,23 @@ class BlueprintTypeProcessor(val type: Class<out Blueprint>) : ArgumentTypeProce
             return previous
 
         return BlueprintCompleter(debugConsole, this, type)
+    }
+}
+
+object EnemyShipSpecProcessor : ArgumentTypeProcessor {
+    override fun validate(param: Parameter) {
+        check(param.type == EnemyShipSpec::class.java)
+    }
+
+    override fun process(value: String, console: DebugConsole): Any {
+        return console.game.eventManager.getShip(value)
+    }
+
+    override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
+        if (previous is EnemyShipSpecCompleter && previous.owner == this)
+            return previous
+
+        return EnemyShipSpecCompleter(debugConsole, this)
     }
 }
 
