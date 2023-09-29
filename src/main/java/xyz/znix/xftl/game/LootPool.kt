@@ -3,12 +3,13 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.sector.SectorType
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.min
 
-class LootPool(bpManager: BlueprintManager, sector: SectorType?) {
+class LootPool(private val bpManager: BlueprintManager, sector: SectorType?) {
     val pool: List<Blueprint>
 
     init {
@@ -39,6 +40,14 @@ class LootPool(bpManager: BlueprintManager, sector: SectorType?) {
     fun getDrone() = getRandom { it is DroneBlueprint } ?: error("No available drones!")
 
     fun getAugment() = getRandom { it is AugmentBlueprint } ?: error("No available augments!")
+
+    fun getCrewOrRandom(race: String): CrewBlueprint {
+        if (race != "random") {
+            return bpManager[race].resolve() as CrewBlueprint
+        }
+
+        return getRandom { it is CrewBlueprint } as CrewBlueprint? ?: error("No available crew!")
+    }
 
     fun getRandom(filter: (Blueprint) -> Boolean): Blueprint? {
         val candidates = pool.asSequence().filter(filter).toList()

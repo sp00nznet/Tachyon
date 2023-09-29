@@ -332,12 +332,7 @@ class Event(
         if (boarderRace != null) {
             val count = boarderCount.random()
             for (i in 0 until count) {
-                val effectiveRace = when (boarderRace) {
-                    "random" -> game.lootPool.getRandom { it is CrewBlueprint }!!.name
-                    else -> boarderRace
-                }
-                val race = game.blueprintManager[effectiveRace] as CrewBlueprint
-
+                val race = game.lootPool.getCrewOrRandom(boarderRace)
                 resourcesGained.intruders.add(LivingCrewInfo.generateRandom(race, game))
             }
         }

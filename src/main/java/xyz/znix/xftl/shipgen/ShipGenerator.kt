@@ -2,7 +2,6 @@ package xyz.znix.xftl.shipgen
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
-import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.InGameState
@@ -50,31 +49,43 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             ship.escapeHealth = ship.surrenderHealth - 1
         }
 
-        // TODO rewrite this to use the reverse-engineed base-game system
         val crewCount = elem.getChild("crewCount")
         crewCount?.let {
-            // TODO crew types
-            @Suppress("UNUSED_VARIABLE")
-            val type = crewCount.getAttributeValue("class") ?: "human"
-
             // See the link to the guide below, calculated same as system power
             val min = crewCount.requireAttributeValueInt("amount")
             val max = crewCount.requireAttributeValueInt("max")
 
-            val maxExtra = if (sector < 2) 1 else 2
-            val range = max - min
-            val softMin = min + (range * sector / 8f).toInt()
-            val softMax = min(softMin + maxExtra, max)
-            val amount = (softMin..softMax).random(rand)
+            val baseAmount = min + ((max - min) / 8f * effectiveSector).toInt()
+
+            val crewOverride = spec.crewOverride?.specifiers ?: emptyList()
+
+            if (crewOverride.isEmpty()) {
+                val type = crewCount.getAttributeValue("class") ?: "human"
+
+                for (i in 1..baseAmount) {
+                    val crewBP = sys.lootPool.getCrewOrRandom(type)
+                    val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)
+                    ship.addCrewMember(crewInfo, true)
+                }
+            } else {
+                for (crew in crewOverride) {
+                    val count = when {
+                        crew.prop > 0 -> (crew.prop * baseAmount).toInt().coerceAtLeast(1)
+                        else -> crew.amount
+                    }
+
+                    for (i in 1..count) {
+                        val crewBP = sys.lootPool.getCrewOrRandom(crew.race)
+                        val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)
+                        ship.addCrewMember(crewInfo, true)
+                    }
+                }
+            }
 
             // This is used to send the right number of boarders
-            ship.crewAI.initialCrewCount = amount
-
-            for (i in 1..amount) {
-                val crewBP = sys.blueprintManager["human"] as CrewBlueprint
-                val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)
-                ship.addCrewMember(crewInfo, true)
-            }
+            // Note we count the crew we added, since for overrides we can
+            // get some other number if the prop values don't sum to 1.
+            ship.crewAI.initialCrewCount = ship.crew.size
         }
 
         // Not 100% sure about this, but it looks like we remove zoltan shields
@@ -385,7 +396,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
                 if (fallback.isEmpty()) {
                     println("Warning: wasn't able to find any more suitable drones for ship '${ship.name}'")
-                    println("  Current drones: " + drones.drones.mapNotNull { it?.type })
+                    println("  Current drones: " + drones.drones.mapNotNull { it?.type?.name })
                     println("  Drone system power: ${drones.energyLevels}")
                     break
                 }
@@ -538,6 +549,7 @@ class EnemyShipSpec(elem: Element, bp: BlueprintManager, ev: EventManager) {
     val escapeHealth: RandomWithChance? = elem.getChild("escape")?.let(::RandomWithChance)
     val surrenderHealth: RandomWithChance? = elem.getChild("surrender")?.let(::RandomWithChance)
 
+    val crewOverride: ShipCrewOverride? = elem.getChild("crew")?.let { ShipCrewOverride(it, bp) }
     val weaponOverride: ShipBlueprintOverride? = elem.getChild("weaponOverride")?.let { ShipBlueprintOverride(it, bp) }
     val droneOverride: ShipBlueprintOverride? = elem.getChild("droneOverride")?.let { ShipBlueprintOverride(it, bp) }
 
@@ -547,6 +559,18 @@ class EnemyShipSpec(elem: Element, bp: BlueprintManager, ev: EventManager) {
             val elem = root.getChild(evName) ?: return lazyOf(null)
             return ev.loadEmbeddedEvent(elem, name)
         }
+    }
+}
+
+class ShipCrewOverride(elem: Element, bp: BlueprintManager) {
+    val specifiers: List<Spec> = elem.getChildren("crewMember").map { Spec(it) }
+
+    class Spec(elem: Element) {
+        // GHOST_SHIP doesn't set this, so we can't require it
+        val race: String = elem.getAttributeValue("type") ?: "human"
+
+        val prop: Float = elem.getAttributeValue("prop")?.toFloat() ?: 0f
+        val amount: Int = elem.getAttributeValue("amount")?.toInt() ?: 0
     }
 }
 

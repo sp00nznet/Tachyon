@@ -498,7 +498,6 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                     if (weapon == null)
                         return
 
-                    // TODO draw weapon stats
                     infoPanel.drawWeapon(weapon)
                 }
             })
