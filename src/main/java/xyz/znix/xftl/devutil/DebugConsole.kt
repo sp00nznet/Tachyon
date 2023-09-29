@@ -292,12 +292,37 @@ class DebugConsole(var game: InGameState) {
         }
 
         val numArgs = args.size - 1 // Exclude the command itself
-        if (cmd.argCount != null && cmd.argCount != numArgs) {
-            addLine("Command '${command}' takes ${cmd.argCount} arguments, but $numArgs were supplied.")
+
+        if (cmd.isVarArg) {
+            if (cmd.args.size > numArgs) {
+                addLine("Command '${command}' takes at least ${cmd.args.size} arguments, but $numArgs were supplied.")
+                return
+            }
+        } else if (cmd.args.size != numArgs) {
+            addLine("Command '${command}' takes ${cmd.args.size} arguments, but $numArgs were supplied.")
             return
         }
 
-        cmd.func(args)
+        val parsedArgs = ArrayList<Any>(cmd.args.size)
+        for (i in 0 until cmd.args.size) {
+            val str = args[i + 1] // +1 to exclude the command name
+
+            val result = cmd.args[i].process(str, this)
+            if (result == null) {
+                // Parsing failure, main message already printed
+                addLine(" (error found in argument ${i + 1})")
+                return
+            }
+
+            parsedArgs.add(result)
+        }
+
+        if (cmd.isVarArg) {
+            val varArgList = args.subList(cmd.args.size + 1, args.size) // +1 to exclude command name
+            parsedArgs.add(varArgList)
+        }
+
+        cmd.func(parsedArgs)
     }
 
     fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {
@@ -892,7 +917,13 @@ class DebugConsole(var game: InGameState) {
         addLine("Details are in the console, the game has been paused.")
     }
 
-    data class Cmd(val name: String, val argCount: Int?, val func: (List<String>) -> Unit, val helpText: String)
+    data class Cmd(
+        val name: String,
+        val args: List<ArgumentTypeProcessor>,
+        val isVarArg: Boolean,
+        val func: (List<Any>) -> Unit,
+        val helpText: String
+    )
 
     private class FuzzySearcher(query: String) {
         // Split up the words

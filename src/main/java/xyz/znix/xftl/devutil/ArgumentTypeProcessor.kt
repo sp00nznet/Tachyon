@@ -1,0 +1,96 @@
+package xyz.znix.xftl.devutil
+
+import xyz.znix.xftl.Blueprint
+import java.lang.reflect.Parameter
+
+/**
+ * Represents the type of an argument that is passed to a console command.
+ *
+ * This converts the string value into a type that's passed to the command
+ * handler method, and optionally provides an auto-completion handler.
+ */
+interface ArgumentTypeProcessor {
+    /**
+     * Checks the given parameter is suitable for this type, for example
+     * checking that the parameter's type matches the output of this processor.
+     */
+    fun validate(param: Parameter)
+
+    /**
+     * Parses a string value that was entered in the given console.
+     *
+     * This should print out an error message and return null if
+     * the value is malformed, otherwise it should return the value
+     * that is passed to the command function.
+     */
+    fun process(value: String, console: DebugConsole): Any?
+}
+
+object StringTypeProcessor : ArgumentTypeProcessor {
+    override fun validate(param: Parameter) {
+        check(param.type == String::class.java)
+    }
+
+    override fun process(value: String, console: DebugConsole): Any? {
+        return value
+    }
+}
+
+object IntTypeProcessor : ArgumentTypeProcessor {
+    override fun validate(param: Parameter) {
+        check(param.type == Integer.TYPE)
+    }
+
+    override fun process(value: String, console: DebugConsole): Any? {
+        val result = value.toIntOrNull()
+
+        if (result == null) {
+            console.addLine("Invalid integer value '$value'")
+        }
+
+        return result
+    }
+}
+
+class BlueprintTypeProcessor(val type: Class<out Blueprint>) : ArgumentTypeProcessor {
+    override fun validate(param: Parameter) {
+        check(type.isAssignableFrom(param.type))
+    }
+
+    override fun process(value: String, console: DebugConsole): Any? {
+        val result = console.game.blueprintManager.blueprints[value]
+
+        if (result == null) {
+            console.addLine("No such blueprint '$value'")
+            return null
+        }
+
+        if (!type.isAssignableFrom(result.javaClass)) {
+            val resultType = result.javaClass.simpleName
+            console.addLine("Blueprint '$value' is the wrong type: expected ${type.simpleName}, found $resultType")
+        }
+
+        return result
+    }
+}
+
+class EnumTypeProcessor(val type: Class<*>) : ArgumentTypeProcessor {
+    override fun validate(param: Parameter) {
+        check(type.isAssignableFrom(param.type))
+    }
+
+    override fun process(value: String, console: DebugConsole): Any? {
+        val options = type.enumConstants.map { it as Enum<*> }
+        val result = options.firstOrNull { it.name.equals(value, ignoreCase = true) }
+
+        if (result == null) {
+            console.addLine("No such enum constant '$value', possible options:")
+            for (option in options) {
+                console.addLine("   " + option.name)
+            }
+            return null
+        }
+
+        return result
+    }
+}

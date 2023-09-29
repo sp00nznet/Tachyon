@@ -17,6 +17,7 @@ import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.shipgen.ShipGenerator
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
+import xyz.znix.xftl.systems.SystemBlueprint
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.file.Files
@@ -28,9 +29,9 @@ import kotlin.random.Random
 
 
 class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
-    @ConsoleCommand(name = "rich", argCount = 0)
+    @ConsoleCommand(name = "rich")
     @CmdHelp("Get a huge amount of scrap, fuel, drones, and missiles")
-    private fun cmdRich(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdRich() {
         addLine("Resources added.")
 
         ship.scrap = 5000
@@ -39,9 +40,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         ship.dronesCount = 99
     }
 
-    @ConsoleCommand(name = "weapon", argCount = 0)
+    @ConsoleCommand(name = "weapon")
     @CmdHelp("Select a weapon, and add it to the ship's cargo area")
-    private fun cmdWeapon(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdWeapon() {
         console.getWeapon { weapon ->
             if (ship.addBlueprint(weapon, false)) {
                 addLine("Added weapon ${weapon.translateTitle(game)} to ship inventory.")
@@ -51,9 +52,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "drone", argCount = 0)
+    @ConsoleCommand(name = "drone")
     @CmdHelp("Select a drone, and add it to the ship's cargo area")
-    private fun cmdDrone(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdDrone() {
         console.getDrone { drone ->
             if (ship.addBlueprint(drone, false)) {
                 addLine("Added drone ${drone.translateTitle(game)} to ship inventory.")
@@ -63,9 +64,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "aug", argCount = 0)
+    @ConsoleCommand(name = "aug")
     @CmdHelp("Select an augment, and add it to the ship's cargo area")
-    private fun cmdAugment(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdAugment() {
         console.getAugment { augment ->
             if (ship.addBlueprint(augment, false)) {
                 addLine("Added augment ${augment.translateTitle(game)} to ship inventory.")
@@ -75,18 +76,18 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "store", argCount = 0)
+    @ConsoleCommand(name = "store")
     @CmdHelp("Create a store at this beacon")
-    private fun cmdStore(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdStore() {
         game.currentBeacon.hasStore = true
         game.shipUI.updateButtons()
 
         addLine("A store is now available at this beacon.")
     }
 
-    @ConsoleCommand(name = "event", argCount = 0)
+    @ConsoleCommand(name = "event")
     @CmdHelp("Load an event at this beacon")
-    private fun cmdEvent(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdEvent() {
         console.getEvent { event ->
             // Clear any previously-set beacon power limits, left over
             // from a previous event.
@@ -99,14 +100,14 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "fix", argCount = -1)
+    @ConsoleCommand(name = "fix")
     @CmdHelp("Fix the ship's hull and all systems, clearing ion damage")
-    private fun cmdFix(args: List<String>) {
+    private fun cmdFix(@CmdVarArg args: List<String>) {
         val targetShip: Ship
 
-        if (args.size == 1) {
+        if (args.isEmpty()) {
             targetShip = ship
-        } else if (args.size == 2 && args[1].lowercase(Locale.UK) == "enemy") {
+        } else if (args.size == 1 && args[0].lowercase(Locale.UK) == "enemy") {
             targetShip = game.enemy ?: run {
                 addLine("No enemy ship present.")
                 return
@@ -134,9 +135,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("The ship has been repaired, all regular and ion damage was removed.")
     }
 
-    @ConsoleCommand(name = "cld", argCount = 0)
+    @ConsoleCommand(name = "cld")
     @CmdHelp("CLear all Drones - destroys all currently-deployed drone instances")
-    private fun cmdClearDrones(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdClearDrones() {
         fun clearFor(target: Ship) {
             val drones = target.drones
             if (drones != null) {
@@ -169,51 +170,31 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("All drones have been cleared from all ships")
     }
 
-    @ConsoleCommand(name = "crew", argCount = 1)
-    @CmdHelp("Spawn a new crewmember - one argument, the crew race or 'races'")
-    private fun cmdCrew(args: List<String>) {
-        cmdCrewImpl(args, ship)
+    @ConsoleCommand(name = "crew")
+    @CmdHelp("Spawn a new crewmember - one argument, the crew race")
+    private fun cmdCrew(race: CrewBlueprint) {
+        cmdCrewImpl(race, ship)
     }
 
-    @ConsoleCommand(name = "ecrew", argCount = 1)
+    @ConsoleCommand(name = "ecrew")
     @CmdHelp("Spawn a new crewmember on the enemy ship, same args as 'crew'")
-    private fun cmdEnemyCrew(args: List<String>) {
+    private fun cmdEnemyCrew(race: CrewBlueprint) {
         val enemy = game.enemy
         if (enemy == null) {
             addLine("No enemy ship!")
             return
         }
-        cmdCrewImpl(args, enemy)
+        cmdCrewImpl(race, enemy)
     }
 
-    private fun cmdCrewImpl(args: List<String>, targetShip: Ship) {
-        val race = args[1]
-
-        val races = game.blueprintManager.blueprints.values.mapNotNull { it as? CrewBlueprint }
-
-        if (race == "races") {
-            addLine("Supported crew races:")
-            for (r in races) {
-                addLine("  $r")
-            }
-            return
-        }
-
-        val blueprint = races.firstOrNull { it.name == race }
-        if (blueprint == null) {
-            addLine("Unknown crew race '$race', try 'crew races' for a list.")
-            return
-        }
-
-        // If it's an unknown race, this will replace it with a human.
-        // This saves us from having to maintain two lists of the supported crew.
-        val info = LivingCrewInfo.generateRandom(blueprint, game)
+    private fun cmdCrewImpl(race: CrewBlueprint, targetShip: Ship) {
+        val info = LivingCrewInfo.generateRandom(race, game)
         targetShip.addCrewMember(info, false)
     }
 
-    @ConsoleCommand(name = "skills", argCount = 0)
+    @ConsoleCommand(name = "skills")
     @CmdHelp("Edit the crew's skills")
-    private fun cmdSkills(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdSkills() {
         class SkillBox(val x: Int, val y: Int, val width: Int, val height: Int, val crew: LivingCrew, val skill: Skill)
 
         console.continued = object : DebugConsole.ContinuedCommand() {
@@ -330,9 +311,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "kill", argCount = 0)
+    @ConsoleCommand(name = "kill")
     @CmdHelp("Destroy the enemy ship")
-    private fun cmdKill(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdKill() {
         val enemy = game.enemy
         if (enemy == null) {
             addLine("No enemy ship")
@@ -347,9 +328,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("Added 100 points of damage to the enemy ship")
     }
 
-    @ConsoleCommand(name = "killcrew", argCount = 0)
+    @ConsoleCommand(name = "killcrew")
     @CmdHelp("Kill one all of your crewmembers")
-    private fun cmdKillCrew(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdKillCrew() {
         val options = ArrayList<Pair<String, () -> Unit>>()
 
         val allCrew = ship.crew.mapNotNull { it as? LivingCrew }
@@ -398,17 +379,17 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         console.pickFromList("KILL CREW", options) { it() }
     }
 
-    @ConsoleCommand(name = "sectors", argCount = 0)
+    @ConsoleCommand(name = "sectors")
     @CmdHelp("Open the sector map, regardless of the current beacon")
-    private fun cmdSectors(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdSectors() {
         game.shipUI.openSectorMap()
         addLine("Sector map window opened.")
     }
 
-    @ConsoleCommand(name = "system", argCount = 1)
+    @ConsoleCommand(name = "system")
     @CmdHelp("Unlock a system on the current ship, or 'list' or 'all'")
-    private fun cmdSystem(args: List<String>) {
-        val systemName = args[1]
+    private fun cmdSystem(systemName: String) {
+        // TODO arg type for completion
 
         if (systemName == "list") {
             addLine("Systems on the player ship:")
@@ -464,11 +445,10 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("Unlocked system $systemName")
     }
 
-    @ConsoleCommand(name = "spawn-ship", argCount = 2)
+    @ConsoleCommand(name = "spawn-ship")
     @CmdHelp("Spawn an enemy ship directly from a seed")
-    private fun cmdSpawnShip(args: List<String>) {
-        val specName = args[1]
-        val seedB64 = args[2]
+    private fun cmdSpawnShip(specName: String, seedB64: String) {
+        // TODO spec autocompletion
 
         if (!game.eventManager.hasShip(specName)) {
             addLine("Unknown ship spec '$specName'.")
@@ -525,10 +505,10 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         game.debugSpawnShip(spec, difficulty, sector, seed)
     }
 
-    @ConsoleCommand(name = "enemy-weapon", argCount = -1)
+    @ConsoleCommand(name = "enemy-weapon")
     @CmdHelp("Add or remove (the the remove argument) an enemy weapon")
-    private fun cmdEnemyWeapon(args: List<String>) {
-        if (args.size > 2) {
+    private fun cmdEnemyWeapon(@CmdVarArg args: List<String>) {
+        if (args.size > 1) {
             addLine("Too many arguments - see the 'help' subcommand.")
             return
         }
@@ -539,7 +519,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             return
         }
 
-        if (args.size == 1 || args[1] == "add") {
+        if (args.isEmpty() || args[0] == "add") {
             // Pick a weapon and add it to the enemy cargo
             console.getWeapon { weapon ->
                 for (i in 0 until (enemy.weaponSlots ?: enemy.hardpoints.size)) {
@@ -556,7 +536,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
                 addLine("No free hardpoints on the enemy ship")
             }
-        } else if (args[1] == "remove") {
+        } else if (args[0] == "remove") {
             val weapons = enemy.hardpoints.mapNotNull { it.weapon }
             val namedWeapons = weapons.map { Pair(it.type.name, it) }
             console.pickFromList("TO REMOVE", namedWeapons) { toRemove ->
@@ -572,7 +552,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
                 addLine("The weapon has already disappeared!?")
             }
-        } else if (args[1] == "clear") {
+        } else if (args[0] == "clear") {
             // Remove all the enemy weapons
             for (hp in enemy.hardpoints) {
                 hp.weapon = null
@@ -581,7 +561,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             addLine("Removed all enemy weapons")
             return
         } else {
-            addLine("Usage: ${args[0]} [add|clear]")
+            addLine("Usage: enemy-weapon [add|remove|clear]")
             addLine("The add mode (default if no arguments are set) lets you select a weapon")
             addLine("to give the enemy ship.")
             addLine("The remove mode lets you remove enemy weapons via a list.")
@@ -590,9 +570,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "upall", argCount = 0)
+    @ConsoleCommand(name = "upall")
     @CmdHelp("UPgrade ALL systems on the player ship to the maximum level")
-    private fun cmdUpgradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdUpgradeAll() {
         for (system in ship.systems) {
             system.energyLevels = system.blueprint.maxPower
         }
@@ -600,9 +580,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("Upgraded all systems to maximum level")
     }
 
-    @ConsoleCommand(name = "downall", argCount = 0)
+    @ConsoleCommand(name = "downall")
     @CmdHelp("Downgrade all systems on the player ship to their starting level")
-    private fun cmdDowngradeAll(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdDowngradeAll() {
         for (system in ship.systems) {
             system.energyLevels = system.blueprint.startPower
         }
@@ -610,14 +590,14 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("Downgraded all systems to their starting level")
     }
 
-    @ConsoleCommand(name = "set", argCount = 1)
+    @ConsoleCommand(name = "set")
     @CmdHelp("Turn on or off debug flags")
-    private fun cmdSet(args: List<String>) {
-        var name = args[1]
+    private fun cmdSet(arg: String) {
+        // TODO typing
 
         val flagManager = game.debugFlags
 
-        if (name == "help") {
+        if (arg == "help") {
             addLine("Use 'set <name>' to enable a debug flag, or 'set !<name>' to disable it.")
             addLine("Or use 'set all' or 'set !all' to turn everything on or off.")
             addLine("Use 'set vis' or 'set !vis' to turn all debug visuals on or off.")
@@ -633,8 +613,8 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
 
         // If the name starts with '!', then it means to turn the effect off
-        val status = name.getOrNull(0) != '!'
-        name = name.trimStart('!')
+        val status = arg.getOrNull(0) != '!'
+        val name = arg.trimStart('!')
 
         when (name) {
             "all" -> {
@@ -668,25 +648,17 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("Unknown debug flag name '$name', see 'set help' for more information.")
     }
 
-    @ConsoleCommand(name = "damage", argCount = 1)
+    @ConsoleCommand(name = "damage")
     @CmdHelp("Apply a given amount of damage to the player ship (or negative to heal)")
-    private fun cmdDamage(args: List<String>) {
-        val amountStr = args[1]
-        val amount = amountStr.toIntOrNull()
-
-        if (amount == null) {
-            addLine("Invalid amount of damage number '$amountStr'.")
-            return
-        }
-
+    private fun cmdDamage(amount: Int) {
         ship.health -= amount
 
         addLine("Applied $amount points of damage to the player ship")
     }
 
-    @ConsoleCommand(name = "force-hack", argCount = 1)
+    @ConsoleCommand(name = "force-hack")
     @CmdHelp("Forces the enemy to hack a given player system")
-    private fun cmdForceHack(args: List<String>) {
+    private fun cmdForceHack(blueprint: SystemBlueprint) {
         val enemy = game.enemy
         if (enemy == null) {
             addLine("No enemy ship.")
@@ -699,10 +671,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             return
         }
 
-        val sysName = args[1]
-        val system = ship.systems.firstOrNull { it.codename == sysName }
+        val system = ship.systems.firstOrNull { it.blueprint == blueprint }
         if (system == null) {
-            addLine("No player system '$sysName'.")
+            addLine("No such player system: ${blueprint.name}")
             return
         }
 
@@ -716,12 +687,12 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         // the hacking system does.
         hacking.update(0f)
 
-        addLine("Launched hacking probe at player system $sysName")
+        addLine("Launched hacking probe at player system ${blueprint.name}")
     }
 
-    @ConsoleCommand(name = "super-shield", argCount = -1)
+    @ConsoleCommand(name = "super-shield")
     @CmdHelp("Give the player (or enemy) a super-shield (see help sub-cmd)")
-    private fun cmdSuperShield(args: List<String>) {
+    private fun cmdSuperShield(@CmdVarArg args: List<String>) {
         var amount = 5
         var max = 5
 
@@ -729,8 +700,8 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
         // With no arguments, give the player a normal super-shield
 
-        if (args.getOrNull(1) == "help") {
-            addLine("Usage: ${args[0]} [amount[/max]] [player|enemy]")
+        if (args.getOrNull(0) == "help") {
+            addLine("Usage: super-shield [amount[/max]] [player|enemy]")
             addLine("The amount should be either a single number (the shield strength), or")
             addLine("two numbers in the form amount/max to set the max super-shield level.")
             addLine("The target ship can be optionally specified, but defaults to the player ship.")
@@ -738,29 +709,29 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             return
         }
 
-        if (args.size >= 2) {
-            val parts = args[1].split("/")
+        if (args.isNotEmpty()) {
+            val parts = args[0].split("/")
 
             if (parts.size > 2) {
-                addLine("Invalid super-shield amount '${args[1]}' - 'see ${args[0]} help'.")
+                addLine("Invalid super-shield amount '${args[0]}' - 'see 'super-shield help'.")
                 return
             }
 
             amount = parts[0].toIntOrNull() ?: run {
-                addLine("Invalid super-shield amount '${args[1]}' - see '${args[0]} help'")
+                addLine("Invalid super-shield amount '${args[0]}' - see 'super-shield help'.")
                 return
             }
 
             if (parts.size == 2) {
                 max = parts[1].toIntOrNull() ?: run {
-                    addLine("Invalid super-shield max amount '${args[1]}' - see '${args[0]} help'")
+                    addLine("Invalid super-shield max amount '${args[0]}' - see 'super-shield help'.")
                     return
                 }
             }
         }
 
-        if (args.size >= 3) {
-            target = when (args[2]) {
+        if (args.size >= 2) {
+            target = when (args[1]) {
                 "player" -> ship
 
                 "enemy" -> game.enemy ?: run {
@@ -769,7 +740,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
                 }
 
                 else -> {
-                    addLine("Invalid target ship '${args[1]}' (should be 'player' or 'enemy') - see '${args[0]} help'")
+                    addLine("Invalid target ship '${args[1]}' (should be 'player' or 'enemy') - see 'super-shield help'")
                     return
                 }
             }
@@ -783,9 +754,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("Added $amount/$max super-shield to ship ${target.name}.")
     }
 
-    @ConsoleCommand(name = "env", argCount = -1)
+    @ConsoleCommand(name = "env")
     @CmdHelp("Change the environment at the current beacon")
-    private fun cmdEnvironment(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdEnvironment() {
         val items = Beacon.EnvironmentType.entries.map { Pair(it.name, it) }
 
         console.pickFromList("Environment", items) { type ->
@@ -795,9 +766,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "dump-save", argCount = -1)
+    @ConsoleCommand(name = "dump-save")
     @CmdHelp("Save the game to XML, and print it to standard output")
-    private fun cmdDumpSave(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdDumpSave() {
         val doc = try {
             game.saveGameState()
         } catch (ex: Exception) {
@@ -815,25 +786,25 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         addLine("Savegame dumped to standard output.")
     }
 
-    @ConsoleCommand(name = "save-load", argCount = -1)
+    @ConsoleCommand(name = "save-load")
     @CmdHelp("Save the game to XML, and load it back in.")
-    private fun cmdSaveLoad(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdSaveLoad() {
         val successful = game.mainGame.doSaveLoadGame()
         if (!successful) {
             addLine("Failed to reload game, more details are in the console.")
         }
     }
 
-    @ConsoleCommand(name = "gc", argCount = -1)
+    @ConsoleCommand(name = "gc")
     @CmdHelp("Manually trigger Java's Garbage Collector.")
-    private fun cmdGC(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdGC() {
         System.gc()
         addLine("Finished Java GC operation.")
     }
 
-    @ConsoleCommand(name = "save", argCount = 1)
+    @ConsoleCommand(name = "save")
     @CmdHelp("Save the game to a file of a custom name.")
-    private fun cmdSave(args: List<String>) {
+    private fun cmdSave(name: String) {
         // First, try serialising the game.
         val doc = try {
             game.saveGameState()
@@ -854,7 +825,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             }
         }
 
-        val file = DebugConsole.DEBUG_SAVE_DIR.resolve(args[1] + ".xml")
+        val file = DebugConsole.DEBUG_SAVE_DIR.resolve(name + ".xml")
 
         fun doSave() {
             val xmlOutput = XMLOutputter(Format.getPrettyFormat())
@@ -878,21 +849,21 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             )
             console.pickFromList("A save with this name exists, overwrite it?", options) {
                 if (it) {
-                    addLine("Overwriting save '${args[1]}'")
+                    addLine("Overwriting save '$name'")
                     doSave()
                 } else {
                     addLine("Save cancelled.")
                 }
             }
         } else {
-            addLine("Writing save '${args[1]}'")
+            addLine("Writing save '$name'")
             doSave()
         }
     }
 
-    @ConsoleCommand(name = "load", argCount = 0)
+    @ConsoleCommand(name = "load")
     @CmdHelp("Load a game saved via the 'save' command.")
-    private fun cmdLoad(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdLoad() {
         val files: List<Path> = try {
             Files.list(DebugConsole.DEBUG_SAVE_DIR).filter { it.fileName.toString().endsWith(".xml") }.collect(
                 Collectors.toList()
@@ -934,33 +905,22 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
     }
 
-    @ConsoleCommand(name = "gameover", argCount = 1)
+    @ConsoleCommand(name = "gameover")
     @CmdHelp("End the game with the win/loose screen.")
-    private fun cmdGameOver(args: List<String>) {
-        val success: GameOverWindow.Outcome = when (args[1]) {
-            "win" -> GameOverWindow.Outcome.WIN
-            "crew" -> GameOverWindow.Outcome.LOOSE_CREW
-            "hull" -> GameOverWindow.Outcome.LOOSE_HULL
-            "base" -> GameOverWindow.Outcome.LOOSE_BASE_DESTROYED
-            else -> {
-                addLine("Invalid argument '${args[1]}', must be 'win', 'crew', 'hull' or 'base'.")
-                return
-            }
-        }
-
-        game.shipUI.showGameOverScreen(success)
+    private fun cmdGameOver(outcome: GameOverWindow.Outcome) {
+        game.shipUI.showGameOverScreen(outcome)
     }
 
-    @ConsoleCommand(name = "reset-ftl", argCount = 0)
+    @ConsoleCommand(name = "reset-ftl")
     @CmdHelp("Reset the player's FTL charge timer")
-    private fun cmdResetFTL(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdResetFTL() {
         ship.ftlChargeProgress = 0f
         addLine("Reset the player's FTL charge progress.")
     }
 
-    @ConsoleCommand(name = "reload-console", argCount = 0)
+    @ConsoleCommand(name = "reload-console")
     @CmdHelp("Reload the console (useful with Java HotSwap)")
-    private fun cmdReloadConsole(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdReloadConsole() {
         // This is useful for development if you add a new console command
         // and don't want to restart the game - you can use HotSwap to add
         // your changes, but the command map is only created when the debug
@@ -980,17 +940,17 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         // Don't bother adding a line, it'll immediately be lost.
     }
 
-    @ConsoleCommand(name = "reload-flags", argCount = 0)
+    @ConsoleCommand(name = "reload-flags")
     @CmdHelp("Reload the debug flags (useful with Java HotSwap)")
-    private fun cmdReloadFlags(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdReloadFlags() {
         // Same idea and notes as the reload-console command. Read its comment.
         game.reloadDebugFlags()
         addLine("Reloaded debug flags")
     }
 
-    @ConsoleCommand(name = "help", argCount = 0)
+    @ConsoleCommand(name = "help")
     @CmdHelp("Show the available commands")
-    private fun cmdHelp(@Suppress("UNUSED_PARAMETER") args: List<String>) {
+    private fun cmdHelp() {
         addLine("Available commands:")
 
         val grid = ArrayList<List<String>>()
