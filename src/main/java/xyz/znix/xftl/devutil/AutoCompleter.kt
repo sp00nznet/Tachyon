@@ -1,10 +1,16 @@
 package xyz.znix.xftl.devutil
 
+import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.ButtonImageSet
+import xyz.znix.xftl.game.Buttons
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 
 /**
  * An auto-completion engine for the debug console.
@@ -24,6 +30,7 @@ abstract class BasicCompletionEngine<T>(console: DebugConsole) : AutoCompleter(c
     private var positionInInput: Int = 0
 
     protected abstract fun getItemName(item: T): String
+    protected open fun getCompletionString(item: T): String = getItemName(item)
 
     override val autoCompleteSuggestion: String? get() = sortedEntries.firstOrNull()?.let { getItemName(it) }
 
@@ -72,10 +79,13 @@ abstract class BasicCompletionEngine<T>(console: DebugConsole) : AutoCompleter(c
 
         if (currentToken.isBlank()) {
             // If there's no search term, leave the items in their original order.
+            itemUpdateFinished(sortedEntries)
             return
         }
 
         sortEntries(sortedEntries, currentToken)
+
+        itemUpdateFinished(sortedEntries)
     }
 
     protected open fun sortEntries(entries: ArrayList<T>, currentToken: String) {
@@ -84,8 +94,10 @@ abstract class BasicCompletionEngine<T>(console: DebugConsole) : AutoCompleter(c
         sortedEntries.sortByDescending { searcher.rank(getItemName(it)) }
     }
 
+    protected open fun itemUpdateFinished(sortedEntries: List<T>) = Unit
+
     protected open fun itemSelected(item: T) {
-        console.input = console.input.substring(0, positionInInput) + getItemName(item) + " "
+        console.input = console.input.substring(0, positionInInput) + getCompletionString(item) + " "
     }
 
     override fun applyAutoCompletion() {
@@ -114,5 +126,93 @@ class CommandCompleter(console: DebugConsole) : BasicCompletionEngine<DebugConso
         // Move them to the front
         entries.removeAll(matches.toSet())
         entries.addAll(0, matches)
+    }
+}
+
+class BlueprintCompleter(console: DebugConsole, val target: BlueprintTypeProcessor) :
+    BasicCompletionEngine<Blueprint>(console) {
+
+    private val isWeapons = AbstractWeaponBlueprint::class.java.isAssignableFrom(target.type)
+    private val isDrones = DroneBlueprint::class.java.isAssignableFrom(target.type)
+
+    private var lastLeftClick = false
+    private var buttons: List<CompletionButton> = emptyList()
+
+    override val items = console.game.blueprintManager.blueprints.values
+        .filterIsInstance(Blueprint::class.java)
+        .filter { target.type.isAssignableFrom(it.javaClass) }
+
+    override fun getItemName(item: Blueprint): String {
+        return item.translateTitle(console.game)
+    }
+
+    override fun getCompletionString(item: Blueprint): String {
+        return item.name
+    }
+
+    override fun itemUpdateFinished(sortedEntries: List<Blueprint>) {
+        if (isWeapons) {
+            val images = ButtonImageSet.select2(console.game, "img/storeUI/store_buy_weapons")
+            buttons = sortedEntries.map { CompletionButton(it, images) }
+        }
+        if (isDrones) {
+            val images = ButtonImageSet.select2(console.game, "img/storeUI/store_buy_drones")
+            buttons = sortedEntries.map { CompletionButton(it, images) }
+        }
+    }
+
+    override fun render(gc: GameContainer, g: Graphics, height: Float) {
+        if (isWeapons || isDrones) {
+            renderButtons(gc, g, height)
+        } else {
+            super.render(gc, g, height)
+        }
+    }
+
+    fun renderButtons(gc: GameContainer, g: Graphics, height: Float) {
+        val mouseX = gc.input.mouseX
+        val mouseY = gc.input.mouseY
+
+        val leftDown = gc.input.isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)
+        val clicking = leftDown && !lastLeftClick
+        lastLeftClick = leftDown
+
+        val baseX = 10
+        var x = baseX
+        var y = height.toInt() + 10
+
+        for ((i, button) in buttons.withIndex()) {
+            button.windowOffset = ConstPoint(x, y)
+            button.update(mouseX, mouseY)
+            button.draw(g)
+
+            if (clicking) {
+                button.mouseDown(Input.MOUSE_LEFT_BUTTON, mouseX, mouseY)
+            }
+
+
+            // Move along to the next position
+            val img = button.image.normal
+            x += img.width + 5
+
+            // Wrap around
+            if (x + img.width > gc.width) {
+                x = baseX
+                y += img.height + 5
+            }
+
+            if (y > gc.height) {
+                break
+            }
+        }
+    }
+
+    // Use BlueprintButton's rendering for weapons/drones
+    private inner class CompletionButton(override val blueprint: Blueprint, images: ButtonImageSet) :
+        Buttons.BlueprintButton(ConstPoint.ZERO, console.game, images) {
+
+        override fun click(button: Int) {
+            itemSelected(blueprint)
+        }
     }
 }

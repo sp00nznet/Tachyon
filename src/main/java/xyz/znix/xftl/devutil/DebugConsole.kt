@@ -15,7 +15,6 @@ import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
-import xyz.znix.xftl.weapons.DroneBlueprint
 import java.nio.file.Path
 import java.util.*
 import kotlin.math.max
@@ -407,17 +406,27 @@ class DebugConsole(var game: InGameState) {
             return
         }
 
-        // Too many arguments?
-        if (paramIdx >= command.params.size) {
+        // If we're past the last argument in a non-vararg function, continue
+        // completing the last argument. This lets you use spaces when
+        // fuzzy-searching the last argument, which is a common case for stuff
+        // like the 'weapon' command.
+        if (paramIdx >= command.params.size && (command.isVarArg || command.params.isEmpty())) {
             completion = null
             return
         }
+        val effectiveParamIdx = paramIdx.coerceAtMost(command.params.size - 1)
 
-        val currentParam = command.params[paramIdx]
+        val currentParam = command.params[effectiveParamIdx]
 
         completion = currentParam.type.getCompleter(this, completion)
 
-        val startPos = input.lastIndexOf(' ') + 1
+        // Find the start position for this argument. We can't use lastIndexOf,
+        // since that wouldn't work for the last space-containing effective arg.
+        var startPos = 0
+        for (i in 0..effectiveParamIdx) {
+            startPos = input.indexOf(' ', startPos) + 1
+        }
+
         val currentToken = input.substring(startPos)
         completion?.update(currentToken, startPos)
     }
@@ -511,100 +520,6 @@ class DebugConsole(var game: InGameState) {
 
                 visibleWeapons.clear()
                 visibleWeapons.addAll(weapons)
-            }
-        }
-    }
-
-    fun getDrone(callback: (DroneBlueprint) -> Unit) {
-        // FIXME this is mostly copy-pasted from getWeapon
-        continued = object : ContinuedCommand {
-            // A little caching for the search
-            var lastInput: String? = null
-            val visibleDrones = ArrayList<Buttons.BlueprintButton>()
-
-            override val prompt: String get() = "DRONE> "
-
-            var lastLeftClick = false
-
-            override fun run(line: String) {
-                val drone = game.blueprintManager.blueprints[line]
-                if (drone == null) {
-                    addLine("No such blueprint '$line'")
-                    return
-                }
-                if (drone !is DroneBlueprint) {
-                    addLine("Blueprint '$line' is not a drone - ${drone.javaClass.name}")
-                    return
-                }
-                callback(drone)
-            }
-
-            override fun render(gc: GameContainer, g: Graphics, height: Float) {
-                updateSearch()
-
-                val mouseX = gc.input.mouseX
-                val mouseY = gc.input.mouseY
-
-                val leftDown = gc.input.isMouseButtonDown(Input.MOUSE_LEFT_BUTTON)
-                val clicking = leftDown && !lastLeftClick
-                lastLeftClick = leftDown
-
-                for ((i, button) in visibleDrones.withIndex()) {
-                    val x = 10 + (button.image.normal.width + 5) * i
-                    val y = height.toInt() + 10
-
-                    if (x > gc.width)
-                        break
-
-                    button.windowOffset = ConstPoint(x, y)
-                    button.update(mouseX, mouseY)
-                    button.draw(g)
-
-                    if (clicking) {
-                        button.mouseDown(Input.MOUSE_LEFT_BUTTON, mouseX, mouseY)
-                    }
-                }
-            }
-
-            private fun updateSearch() {
-                val line = currentLine
-
-                if (lastInput == line)
-                    return
-                lastInput = line
-
-                val searcher = FuzzySearcher(line)
-
-                val names = game.blueprintManager.blueprints.keys.mapNotNull {
-                    val score = searcher.rank(it)
-
-                    return@mapNotNull if (score == 0) {
-                        null
-                    } else {
-                        Pair(it, score)
-                    }
-                }.sortedByDescending { it.second }.map { it.first }
-
-                val images = ButtonImageSet.select2(game, "img/storeUI/store_buy_drones")
-
-                // Use BlueprintButton's rendering
-                class DummyButton(override val blueprint: Blueprint) :
-                    Buttons.BlueprintButton(ConstPoint.ZERO, game, images) {
-                    override fun click(button: Int) {
-                        historyCursor = -1
-                        input = blueprint.name
-                        runCommand()
-                    }
-                }
-
-                val drones: List<DummyButton> = names.mapNotNull {
-                    val bp = game.blueprintManager.blueprints[it]
-                    val drone = bp as? DroneBlueprint ?: return@mapNotNull null
-                    return@mapNotNull DummyButton(drone)
-                }
-
-                visibleDrones.clear()
-                visibleDrones.addAll(drones)
             }
         }
     }

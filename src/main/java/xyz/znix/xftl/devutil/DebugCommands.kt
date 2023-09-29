@@ -18,6 +18,8 @@ import xyz.znix.xftl.shipgen.ShipGenerator
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.file.Files
@@ -42,25 +44,21 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "weapon")
     @CmdHelp("Select a weapon, and add it to the ship's cargo area")
-    private fun cmdWeapon() {
-        console.getWeapon { weapon ->
-            if (ship.addBlueprint(weapon, false)) {
-                addLine("Added weapon ${weapon.translateTitle(game)} to ship inventory.")
-            } else {
-                addLine("No space in cargo hold, can't add weapon.")
-            }
+    private fun cmdWeapon(@ParName("name") weapon: AbstractWeaponBlueprint) {
+        if (ship.addBlueprint(weapon, false)) {
+            addLine("Added weapon ${weapon.translateTitle(game)} to ship inventory.")
+        } else {
+            addLine("No space in cargo hold, can't add weapon.")
         }
     }
 
     @ConsoleCommand(name = "drone")
     @CmdHelp("Select a drone, and add it to the ship's cargo area")
-    private fun cmdDrone() {
-        console.getDrone { drone ->
-            if (ship.addBlueprint(drone, false)) {
-                addLine("Added drone ${drone.translateTitle(game)} to ship inventory.")
-            } else {
-                addLine("No space in cargo hold, can't add drone.")
-            }
+    private fun cmdDrone(@ParName("drone") drone: DroneBlueprint) {
+        if (ship.addBlueprint(drone, false)) {
+            addLine("Added drone ${drone.translateTitle(game)} to ship inventory.")
+        } else {
+            addLine("No space in cargo hold, can't add drone.")
         }
     }
 

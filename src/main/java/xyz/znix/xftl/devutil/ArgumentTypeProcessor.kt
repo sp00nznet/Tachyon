@@ -84,6 +84,13 @@ class BlueprintTypeProcessor(val type: Class<out Blueprint>) : ArgumentTypeProce
 
         return result
     }
+
+    override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
+        if (previous is BlueprintCompleter && previous.target == this)
+            return previous
+
+        return BlueprintCompleter(debugConsole, this)
+    }
 }
 
 class EnumTypeProcessor(val type: Class<*>) : ArgumentTypeProcessor {
