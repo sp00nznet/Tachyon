@@ -37,6 +37,13 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      */
     private val selectedPowerSources = HashMap<EnergySource, Int>()
 
+    /**
+     * The power sources that were in use before [consumePowerFirst] was called.
+     *
+     * This must only be used by [consumePowerFirst] and [consumePowerSecond].
+     */
+    private val previousPowerSources = HashMap<EnergySource, Int>()
+
     val powerAvailable: Int get() = min(undamagedEnergy, ship.powerAvailable + powerSelected)
 
     val powerUnused: Int get() = min(undamagedEnergy - powerSelected, ship.powerAvailable)
@@ -148,9 +155,9 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         return 2
     }
 
-    override fun powerStateChanged() {
+    override fun powerLimitChanged() {
         // This ultimately calls consumePower, which will reduce our selected
-        // power if there isn't enough.
+        // power if there isn't enough, in turn calling powerStateChanged.
         ship.updateAvailablePower()
     }
 
@@ -203,7 +210,9 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
             return false
 
         powerSelected = clamped
-        powerStateChanged()
+
+        // This indirectly calls powerStateChanged.
+        ship.updateAvailablePower()
 
         return true
     }
@@ -218,7 +227,8 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      * This should only be called by Ship.updateAvailablePower.
      */
     fun consumePowerFirst(powerAvailable: HashMap<EnergySource, Int>) {
-        val previousSources = HashMap(selectedPowerSources)
+        previousPowerSources.clear()
+        previousPowerSources.putAll(selectedPowerSources)
         selectedPowerSources.clear()
 
         var totalRemaining = powerSelected.coerceIn(0, undamagedEnergy)
@@ -250,7 +260,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         // TYPES is in order of priority, so we'll use stuff like the reactor
         // before battery power.
         for (type in EnergySource.GLOBAL_TYPES) {
-            var remaining = previousSources[type] ?: 0
+            var remaining = previousPowerSources[type] ?: 0
 
             // If we've got some new power from one source (eg a Zoltan), that
             // should reduce the amount of power we pull from the
@@ -293,17 +303,13 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         val currentAmount = selectedPowerSources.values.sum()
         var totalRemaining = previousDemand - currentAmount
 
-        // Either powerSelected matches how much power we have, or we're being
-        // forced to use more power via zoltans.
-        if (totalRemaining <= 0) {
-            updateCachedSelectedPower()
-            return
-        }
-
-        // One or more power sources couldn't supply as much as they used to,
-        // or setSystemPower is demanding a bit more.
+        // Maybe one or more power sources couldn't supply as much as they
+        // used to, or setSystemPower is demanding a bit more.
         // In either case, grab as much of it as we can in order of priority.
         for (type in EnergySource.GLOBAL_TYPES) {
+            if (totalRemaining <= 0)
+                break
+
             val prevAmount = selectedPowerSources[type] ?: 0
 
             val available = powerAvailable[type] ?: continue
@@ -317,6 +323,11 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         }
 
         updateCachedSelectedPower()
+
+        // Alert the subclass if anything has changed.
+        if (selectedPowerSources != previousPowerSources) {
+            powerStateChanged()
+        }
     }
 
     private fun updateCachedSelectedPower() {

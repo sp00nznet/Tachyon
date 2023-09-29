@@ -580,7 +580,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 override val requiredPower: Int get() = weapon!!.type.power
                 override val chargeTime: Float get() = weapon!!.chargeTime
                 override val chargeProgress: Float get() = weapon!!.chargeProgress
-                override val zoltanPower: Int get() = 0 // TODO
+                override val zoltanPower: Int get() = ship.weapons!!.getWeaponForcedPower(i)
                 override val isPowered: Boolean get() = weapon!!.isPowered
                 override val isCharged: Boolean get() = weapon!!.isCharged
                 override val isTargeted: Boolean get() = ship.weapons!!.selectedTargets.getTarget(i) != null

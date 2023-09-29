@@ -51,7 +51,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     var scriptedPowerLimit: Int? = null
         set(value) {
             field = value?.coerceIn(0..energyLevels)
-            powerStateChanged()
+            powerLimitChanged()
         }
 
     /**
@@ -211,16 +211,26 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         ionPowerLimit = basePower - ionDamage
         ionTimer += 5f * ionDamage
 
-        powerStateChanged()
+        powerLimitChanged()
     }
 
     open fun onJump() {
     }
 
-    // Something - anything - happened to the system's power level.
-    // Systems should generally override this rather than dealDamage, to include stuff like ionisation or
-    // a Zoltan leaving the room.
+    /**
+     * Something - anything - happened to the system's power level.
+     * Systems should generally override this rather than dealDamage,
+     * to include stuff like ionisation or a Zoltan leaving the room.
+     */
     open fun powerStateChanged() {
+    }
+
+    /**
+     * Called when this system's maximum power limit changed, such
+     * as from taking damage.
+     */
+    open fun powerLimitChanged() {
+        powerStateChanged()
     }
 
     /**
@@ -540,7 +550,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
         loadSystem(elem, refs)
 
-        powerStateChanged()
+        powerLimitChanged()
     }
 
     /**

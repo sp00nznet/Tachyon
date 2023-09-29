@@ -27,6 +27,16 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     val selectedTargets = TargetList()
 
+    /**
+     * The amount of Zoltan power each hardpoint receives.
+     *
+     * This is effectively just for caching, as it can be found purely
+     * from the current [forcedPower] value, and iterating through
+     * all the weapons.
+     */
+    private val weaponForcedPower: IntArray
+            by lazy { IntArray(ship.hardpoints.size) }
+
     override fun update(dt: Float) {
         super.update(dt)
 
@@ -77,13 +87,17 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
      */
     private val currentWeaponPower: Int
         get() {
-            var power = 0
-            for (hp in ship.hardpoints) {
+            // Only add up the non-forced power, so we don't have to account
+            // for power that's put into powered-off weapons.
+            var reactorPower = 0
+            for ((idx, hp) in ship.hardpoints.withIndex()) {
                 val weapon = hp.weapon ?: continue
                 if (weapon.isPowered)
-                    power += weapon.type.power
+                    reactorPower += weapon.type.power - weaponForcedPower[idx]
             }
-            return power
+
+            // And add the forced power back on at the end.
+            return reactorPower + forcedPower
         }
 
     override fun drawBackground(g: Graphics) {
@@ -125,6 +139,10 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         throw IllegalArgumentException("No matching hardpoint for weapon $weapon")
+    }
+
+    fun getWeaponForcedPower(slot: Int): Int {
+        return weaponForcedPower[slot]
     }
 
 
@@ -169,6 +187,25 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (ship.sys.isCurrentlyLoadingSave)
             return
 
+        // First, turn on any weapons that are fully powered by Zoltans.
+        // These ones can't be powered off by the player.
+        // This also updates weaponForcedPower.
+        weaponForcedPower.fill(0)
+        var remainingForcedPower = forcedPower
+        for ((idx, hp) in ship.hardpoints.withIndex()) {
+            val weapon = hp.weapon ?: continue
+
+            weaponForcedPower[idx] = remainingForcedPower.coerceAtMost(weapon.type.power)
+            remainingForcedPower -= weaponForcedPower[idx]
+            if (weaponForcedPower[idx] != weapon.type.power)
+                break
+
+            // TODO does this match vanilla behaviour with ions?
+            if (!weapon.isPowered) {
+                weapon.forceSetPowered(true)
+            }
+        }
+
         // The weapons are arranged in order of priority, so turn the last ones off if possible.
         for (hp in ship.hardpoints.asReversed()) {
             if (powerSelected >= currentWeaponPower)
@@ -189,13 +226,14 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun increasePower() {
-        for (hp in ship.hardpoints) {
+        for ((idx, hp) in ship.hardpoints.withIndex()) {
             val weapon = hp.weapon ?: continue
 
             if (weapon.isPowered)
                 continue
 
-            if (weapon.type.power > powerUnused)
+            val powerRequired = weapon.type.power - weaponForcedPower[idx]
+            if (powerRequired > powerUnused)
                 continue
 
             if (!weapon.hasEnoughMissiles)
@@ -207,10 +245,14 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun decreasePower() {
-        for (hp in ship.hardpoints.asReversed()) {
+        for ((idx, hp) in ship.hardpoints.withIndex().reversed()) {
             val weapon = hp.weapon ?: continue
 
             if (!weapon.isPowered)
+                continue
+
+            // Purely Zoltan-powered, can't disable manually.
+            if (weaponForcedPower[idx] == weapon.type.power)
                 continue
 
             setWeaponPower(weapon, false)
@@ -231,12 +273,18 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (isPowerLocked)
             return false
 
+        // Purely Zoltan-powered, can't disable manually.
+        val idx = ship.hardpoints.indexOfFirst { it.weapon == weapon }
+        val nonZoltanPower = weapon.type.power - weaponForcedPower[idx]
+        if (!newPower && nonZoltanPower == 0)
+            return false
+
         if (newPower) {
             // Try to increase the system power to accommodate this weapon.
             // This increase will be instantly reverted by powerStateChanged,
             // as the weapon isn't actually turned on yet, but it lets us
             // check if we have the available power or not.
-            if (!setSystemPower(currentWeaponPower + weapon.type.power))
+            if (!setSystemPower(currentWeaponPower + nonZoltanPower))
                 return false
 
             if (!weapon.hasEnoughMissiles)
