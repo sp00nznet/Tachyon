@@ -782,7 +782,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         var totalPower = ship.purchasedReactorPower
         ship.backupBattery?.let { totalPower += it.contributedPower }
         var nextPowerIdx = 0
-        for (type in EnergySource.TYPES) {
+        for (type in EnergySource.GLOBAL_TYPES) {
             val available = ship.powerAvailableTypes[type] ?: 0
 
             for (i in 0 until available) {

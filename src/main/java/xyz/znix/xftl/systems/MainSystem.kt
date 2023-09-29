@@ -25,6 +25,14 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         private set
 
     /**
+     * The amount of power this system is forced to use, and can't decrease below.
+     *
+     * This is set by Zoltan power sources.
+     */
+    var forcedPower: Int = 0
+        private set
+
+    /**
      * The power this system is supplied with, broken down by where it's coming from.
      */
     private val selectedPowerSources = HashMap<EnergySource, Int>()
@@ -173,6 +181,10 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      * Returns true if the change was made, or false if that was not possible.
      */
     protected fun setSystemPower(level: Int): Boolean {
+        // Are we already there?
+        if (level == powerSelected)
+            return true
+
         // Increasing power is atomic, eg for shields we need to increase or
         // decrease it by 2, or do nothing.
         val available = powerAvailable
@@ -182,7 +194,15 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         if (level < 0 || level > undamagedEnergy)
             return false
 
-        powerSelected = level
+        // Decreasing power is not atomic, to avoid getting stuck in a state
+        // where we can neither increase nor decrease power.
+        val clamped = level.coerceAtLeast(forcedPower)
+
+        // Already clamped.
+        if (clamped == powerSelected)
+            return false
+
+        powerSelected = clamped
         powerStateChanged()
 
         return true
@@ -210,7 +230,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         // turned on or off.
         // This means that if a Zoltan walks into the room, it'll displace
         // some other source of power.
-        for (type in EnergySource.TYPES) {
+        for (type in EnergySource.PER_SYSTEM_TYPES) {
             val bonusPower = min(type.getSystemPower(this), remainingUntilFull)
             if (bonusPower == 0)
                 continue
@@ -229,9 +249,8 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
         // TYPES is in order of priority, so we'll use stuff like the reactor
         // before battery power.
-        for (type in EnergySource.TYPES) {
+        for (type in EnergySource.GLOBAL_TYPES) {
             var remaining = previousSources[type] ?: 0
-            var newPower = selectedPowerSources[type] ?: 0
 
             // If we've got some new power from one source (eg a Zoltan), that
             // should reduce the amount of power we pull from the
@@ -247,14 +266,12 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
             powerAvailable[type] = available - toDeduct
 
             remaining -= toDeduct
-            newPower += toDeduct
 
-            selectedPowerSources[type] = newPower
-            totalRemaining -= newPower
+            selectedPowerSources[type] = toDeduct
+            totalRemaining -= toDeduct
 
             // These shouldn't be negative
             require(toDeduct >= 0)
-            require(newPower >= 0)
             require(remaining >= 0)
             require(available >= 0)
             require(totalRemaining >= 0)
@@ -279,14 +296,14 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         // Either powerSelected matches how much power we have, or we're being
         // forced to use more power via zoltans.
         if (totalRemaining <= 0) {
-            powerSelected = selectedPowerSources.values.sum()
+            updateCachedSelectedPower()
             return
         }
 
         // One or more power sources couldn't supply as much as they used to,
         // or setSystemPower is demanding a bit more.
         // In either case, grab as much of it as we can in order of priority.
-        for (type in EnergySource.TYPES) {
+        for (type in EnergySource.GLOBAL_TYPES) {
             val prevAmount = selectedPowerSources[type] ?: 0
 
             val available = powerAvailable[type] ?: continue
@@ -299,7 +316,14 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
             require(toDeduct >= 0)
         }
 
+        updateCachedSelectedPower()
+    }
+
+    private fun updateCachedSelectedPower() {
         powerSelected = selectedPowerSources.values.sum()
+
+        // Store our forced power value, which we can't decrease below
+        forcedPower = selectedPowerSources.entries.filter { it.key.isPerSystem }.sumOf { it.value }
     }
 
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
@@ -339,7 +363,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
             selectedPowerSources[type] = amount
         }
 
-        powerSelected = selectedPowerSources.values.sum()
+        updateCachedSelectedPower()
 
         // Load our stuff before calling the super-method, so that when
         // the system loading code runs it has the correct power level.

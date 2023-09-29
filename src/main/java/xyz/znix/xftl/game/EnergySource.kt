@@ -11,6 +11,10 @@ import xyz.znix.xftl.systems.MainSystem
 /**
  * Represents a source of power for systems, such as a reactor or zoltan.
  *
+ * A single energy source may either use [adjustShipPower] or [getSystemPower],
+ * but never both for a single energy source. If you want to use both, simply
+ * use two different [EnergySource]s.
+ *
  * This interface should be implemented by singletons; the only reason it's
  * not an enum is for modding, as mods might want to add their own power sources.
  */
@@ -19,6 +23,13 @@ interface EnergySource {
      * A unique ID, used for serialisation.
      */
     val serialisationId: String
+
+    /**
+     * If true, [getSystemPower] may return a non-zero value.
+     *
+     * If false, [adjustShipPower] may do something.
+     */
+    val isPerSystem: Boolean get() = false
 
     fun adjustShipPower(ship: Ship, power: MutableMap<EnergySource, Int>)
 
@@ -54,6 +65,17 @@ interface EnergySource {
             ReactorEnergySource,
             BatteryEnergySource
         )
+
+        /**
+         * The list of per-system energy sources, such as Zoltan power.
+         */
+        val PER_SYSTEM_TYPES = TYPES.filter { it.isPerSystem }
+
+        /**
+         * The list of energy sources that add reactor-style power, such
+         * as the reactor and backup battery.
+         */
+        val GLOBAL_TYPES = TYPES.filter { !it.isPerSystem }
     }
 }
 

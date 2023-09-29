@@ -38,6 +38,7 @@ class CrewZoltan(blueprint: CrewBlueprint, animations: Animations, room: Room, m
 
 object ZoltanEnergySource : EnergySource {
     override val serialisationId: String get() = "zoltan"
+    override val isPerSystem: Boolean get() = true
 
     override fun adjustShipPower(ship: Ship, power: MutableMap<EnergySource, Int>) {
         // No effect on whole-ship power

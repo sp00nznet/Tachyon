@@ -938,7 +938,7 @@ class Ship(
 
         powerAvailableTypes.clear()
 
-        for (type in EnergySource.TYPES) {
+        for (type in EnergySource.GLOBAL_TYPES) {
             type.adjustShipPower(this, powerAvailableTypes)
         }
 
