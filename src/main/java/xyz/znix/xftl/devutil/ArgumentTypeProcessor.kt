@@ -24,6 +24,18 @@ interface ArgumentTypeProcessor {
      * that is passed to the command function.
      */
     fun process(value: String, console: DebugConsole): Any?
+
+    /**
+     * Validate or create an autocompletion engine to use for this argument type.
+     *
+     * [previous] is the completion engine from last frame, and it should
+     * be reused if it's suitable.
+     *
+     * Return null to indicate no auto-completion is available.
+     */
+    fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter? {
+        return null
+    }
 }
 
 object StringTypeProcessor : ArgumentTypeProcessor {

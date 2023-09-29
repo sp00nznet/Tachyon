@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
  * for their arguments.
  *
  * Each parameter must either be of a specially-known type, or be annotated
- * with [ArgType] to manually set their type.
+ * with [ParType] to manually set their type.
  *
  * The specially-known types are:
  *
@@ -47,6 +47,15 @@ annotation class CmdHelp(
 annotation class CmdVarArg
 
 /**
+ * Sets the user-visible name of the parameter, as shown in the greyed-out
+ * parameter hints.
+ */
+@Target(AnnotationTarget.VALUE_PARAMETER)
+annotation class ParName(
+    val name: String
+)
+
+/**
  * Specifies the type processor that should be used to parse a given argument.
  *
  * The referred class can either have a getInstance(Parameter) static method,
@@ -55,7 +64,7 @@ annotation class CmdVarArg
  * When using Kotlin, be sure to annotate methods and fields with [JvmStatic].
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
-annotation class ArgType(
+annotation class ParType(
     val type: KClass<ArgumentTypeProcessor>
 )
 
@@ -80,7 +89,7 @@ abstract class ConsoleCommandProvider(val console: DebugConsole) {
             val cmdAnnotation = method.getAnnotation(ConsoleCommand::class.java) ?: continue
             val helpString = method.getAnnotation(CmdHelp::class.java)?.help ?: "No help message provided."
 
-            val argTypes = ArrayList<ArgumentTypeProcessor>()
+            val params = ArrayList<DebugConsole.CmdParameter>()
             var isVarArg = false
 
             for (param in method.parameters) {
@@ -94,7 +103,7 @@ abstract class ConsoleCommandProvider(val console: DebugConsole) {
                     continue
                 }
 
-                val typeAnnotation = param.getAnnotation(ArgType::class.java)
+                val typeAnnotation = param.getAnnotation(ParType::class.java)
 
                 val type: ArgumentTypeProcessor
 
@@ -115,7 +124,15 @@ abstract class ConsoleCommandProvider(val console: DebugConsole) {
 
                 type.validate(param)
 
-                argTypes.add(type)
+                // Note we use param.name, which isn't included in bytecode by default.
+                // For Java, pass -parameters to javac
+                // For Kotlin, set javaParameters
+                // We don't set this in the interests of file size, but
+                // we'll use it if it's available for mod convenience.
+                val nameAnnotation = param.getAnnotation(ParName::class.java)
+                val name = nameAnnotation?.name ?: param.name ?: "param${params.size}"
+
+                params.add(DebugConsole.CmdParameter(type, name))
             }
 
             // Allow private methods
@@ -125,7 +142,7 @@ abstract class ConsoleCommandProvider(val console: DebugConsole) {
                 method.invoke(this, *it.toTypedArray())
             }
 
-            val cmd = DebugConsole.Cmd(cmdAnnotation.name, argTypes, isVarArg, caller, helpString)
+            val cmd = DebugConsole.Cmd(cmdAnnotation.name, params, isVarArg, caller, helpString)
 
             commands.add(cmd)
         }
@@ -135,7 +152,7 @@ abstract class ConsoleCommandProvider(val console: DebugConsole) {
         console.addLine(line)
     }
 
-    private fun getArgTypeInstance(typeAnnotation: ArgType, parameter: Parameter): ArgumentTypeProcessor {
+    private fun getArgTypeInstance(typeAnnotation: ParType, parameter: Parameter): ArgumentTypeProcessor {
         val type: Class<*> = typeAnnotation.type.java
 
         val getInstance = type.getMethod("getInstance", Parameter::class.java)

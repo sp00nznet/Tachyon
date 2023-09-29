@@ -29,7 +29,11 @@ class DebugConsole(var game: InGameState) {
     private var historyCursor: Int = -1
 
     var continued: ContinuedCommand? = null
-    private var input: String = ""
+    var input: String = ""
+
+    private var completion: AutoCompleter? = null
+    private val parameterHints = ArrayList<String>()
+    private val overlay: Overlay? get() = continued ?: completion
 
     private val lines = ArrayList<ILine>()
 
@@ -70,11 +74,31 @@ class DebugConsole(var game: InGameState) {
         val lineSpacing = fontHeight + 5 // Some letters are a bit outside the font height
 
         // Draw the prompt line
-        var inputLine = prompt + currentLine
+        val inputWithoutCursur = prompt + currentLine
+        var inputLine = inputWithoutCursur
         if (flashTimer.rem(FLASH_TIME) > FLASH_TIME / 2) {
             inputLine += "_"
         }
+
+        // Draw the lighter auto-completion suggestion, if applicable
+        // This is drawn under the main input line, so the cursor draws on top.
+        var hintPos = 20f + font.getWidth(inputWithoutCursur) + 1f
+        val suggestion = overlay?.autoCompleteSuggestion
+        if (suggestion != null && suggestion.startsWith(currentLine)) {
+            val additional = suggestion.removePrefix(currentLine)
+            font.drawString(hintPos, y.f, additional, Color.lightGray)
+            hintPos += font.getWidth(additional)
+        }
+
         font.drawString(20f, y.f, inputLine, Color.white)
+
+        // Draw the remaining (eg parameter name) hints
+        for (hint in parameterHints) {
+            hintPos += 10 // Add a gap from the last text
+            font.drawString(hintPos, y.f, hint, Color.lightGray)
+            hintPos += font.getWidth(hint)
+        }
+
         y -= lineSpacing + 4
 
         // Draw all the history lines, which can be scrolled.
@@ -105,7 +129,10 @@ class DebugConsole(var game: InGameState) {
             lines.removeAt(0)
         }
 
-        continued?.render(gc, g, height.f)
+        // Make sure we're using a suitable auto-completion engine
+        updateAutoCompleter()
+
+        overlay?.render(gc, g, height.f)
     }
 
     fun update(@Suppress("UNUSED_PARAMETER") gc: GameContainer, dt: Float) {
@@ -120,7 +147,7 @@ class DebugConsole(var game: InGameState) {
             return
 
         // Check if the continuation UI wants to handle the keypress
-        if (continued?.keyPressed(key, c) == true)
+        if (overlay?.keyPressed(key, c) == true)
             return
 
         when (key) {
@@ -160,6 +187,11 @@ class DebugConsole(var game: InGameState) {
                 input = ""
             }
 
+            // Triggers autocompletion
+            Input.KEY_TAB -> {
+                (overlay as? AutoCompleter)?.applyAutoCompletion()
+            }
+
             Input.KEY_GRAVE -> {
                 // This key opens and closes the console, so ignore it to prevent
                 // it ending up in commands.
@@ -179,15 +211,15 @@ class DebugConsole(var game: InGameState) {
     }
 
     fun mousePressed(button: Int, x: Int, y: Int) {
-        continued?.mousePressed(button, x, y)
+        overlay?.mousePressed(button, x, y)
     }
 
     fun mouseReleased(button: Int, x: Int, y: Int) {
-        continued?.mouseReleased(button, x, y)
+        overlay?.mouseReleased(button, x, y)
     }
 
     fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) {
-        continued?.mouseDragged(oldX, oldY, newX, newY)
+        overlay?.mouseDragged(oldX, oldY, newX, newY)
     }
 
     fun mouseWheelMoved(amount: Int) {
@@ -294,20 +326,20 @@ class DebugConsole(var game: InGameState) {
         val numArgs = args.size - 1 // Exclude the command itself
 
         if (cmd.isVarArg) {
-            if (cmd.args.size > numArgs) {
-                addLine("Command '${command}' takes at least ${cmd.args.size} arguments, but $numArgs were supplied.")
+            if (cmd.params.size > numArgs) {
+                addLine("Command '${command}' takes at least ${cmd.params.size} arguments, but $numArgs were supplied.")
                 return
             }
-        } else if (cmd.args.size != numArgs) {
-            addLine("Command '${command}' takes ${cmd.args.size} arguments, but $numArgs were supplied.")
+        } else if (cmd.params.size != numArgs) {
+            addLine("Command '${command}' takes ${cmd.params.size} arguments, but $numArgs were supplied.")
             return
         }
 
-        val parsedArgs = ArrayList<Any>(cmd.args.size)
-        for (i in 0 until cmd.args.size) {
+        val parsedArgs = ArrayList<Any>(cmd.params.size)
+        for (i in 0 until cmd.params.size) {
             val str = args[i + 1] // +1 to exclude the command name
 
-            val result = cmd.args[i].process(str, this)
+            val result = cmd.params[i].type.process(str, this)
             if (result == null) {
                 // Parsing failure, main message already printed
                 addLine(" (error found in argument ${i + 1})")
@@ -318,15 +350,80 @@ class DebugConsole(var game: InGameState) {
         }
 
         if (cmd.isVarArg) {
-            val varArgList = args.subList(cmd.args.size + 1, args.size) // +1 to exclude command name
+            val varArgList = args.subList(cmd.params.size + 1, args.size) // +1 to exclude command name
             parsedArgs.add(varArgList)
         }
 
         cmd.func(parsedArgs)
     }
 
+    private fun updateAutoCompleter() {
+        parameterHints.clear()
+
+        // A continuation can delegate to its own auto-completer,
+        // if it really needs to.
+        if (continued != null) {
+            completion = null
+            return
+        }
+
+        // Don't auto-complete history
+        if (historyCursor != -1) {
+            completion = null
+            return
+        }
+
+        // No auto-completion for an empty input
+        if (input.isBlank()) {
+            completion = null
+            return
+        }
+
+        // Count the number of spaces, to find out our argument number
+        // Note that idx=0 is the command name itself, so arguments need -1
+        val partIdx = input.count { it == ' ' }
+        val paramIdx = partIdx - 1
+
+        val commandName = input.substringBefore(' ')
+        val command = commands.firstOrNull { it.name == commandName }
+
+        // Add hints for all the remaining parameters
+        if (command != null) {
+            for (i in paramIdx + 1 until command.params.size) {
+                parameterHints.add(command.params[i].name)
+            }
+        }
+
+        if (partIdx == 0) {
+            if (completion !is CommandCompleter)
+                completion = CommandCompleter(this)
+            completion!!.update(input, 0)
+            return
+        }
+
+        // Unknown command?
+        if (command == null) {
+            completion = null
+            return
+        }
+
+        // Too many arguments?
+        if (paramIdx >= command.params.size) {
+            completion = null
+            return
+        }
+
+        val currentParam = command.params[paramIdx]
+
+        completion = currentParam.type.getCompleter(this, completion)
+
+        val startPos = input.lastIndexOf(' ') + 1
+        val currentToken = input.substring(startPos)
+        completion?.update(currentToken, startPos)
+    }
+
     fun getWeapon(callback: (AbstractWeaponBlueprint) -> Unit) {
-        continued = object : ContinuedCommand() {
+        continued = object : ContinuedCommand {
             // A little caching for the search
             var lastInput: String? = null
             val visibleWeapons = ArrayList<Buttons.BlueprintButton>()
@@ -420,7 +517,7 @@ class DebugConsole(var game: InGameState) {
 
     fun getDrone(callback: (DroneBlueprint) -> Unit) {
         // FIXME this is mostly copy-pasted from getWeapon
-        continued = object : ContinuedCommand() {
+        continued = object : ContinuedCommand {
             // A little caching for the search
             var lastInput: String? = null
             val visibleDrones = ArrayList<Buttons.BlueprintButton>()
@@ -563,7 +660,7 @@ class DebugConsole(var game: InGameState) {
         }
 
         // FIXME this is partially copy-pasted from getWeapon
-        continued = object : ContinuedCommand() {
+        continued = object : ContinuedCommand {
             // A little caching for the search
             var lastInput: String? = null
             val visibleAugments = ArrayList<AugmentButton>()
@@ -663,7 +760,7 @@ class DebugConsole(var game: InGameState) {
     fun getEvent(callback: (IEvent) -> Unit) {
         data class EventInfo(val event: IEvent, val text: String?)
 
-        continued = object : ContinuedCommand() {
+        continued = object : ContinuedCommand {
             // A little caching for the search
             var lastInput: String? = null
             val visibleEvents = ArrayList<EventInfo>()
@@ -836,7 +933,7 @@ class DebugConsole(var game: InGameState) {
     }
 
     fun <T> pickFromList(prompt: String, items: List<Pair<String, T>>, callback: (T) -> Unit) {
-        continued = object : ContinuedCommand() {
+        continued = object : ContinuedCommand {
             // A little caching for the search
             var lastInput: String? = null
             val sortedEntries = ArrayList<Pair<String, T>>()
@@ -919,13 +1016,18 @@ class DebugConsole(var game: InGameState) {
 
     data class Cmd(
         val name: String,
-        val args: List<ArgumentTypeProcessor>,
+        val params: List<CmdParameter>,
         val isVarArg: Boolean,
         val func: (List<Any>) -> Unit,
         val helpText: String
     )
 
-    private class FuzzySearcher(query: String) {
+    data class CmdParameter(
+        val type: ArgumentTypeProcessor,
+        val name: String
+    )
+
+    class FuzzySearcher(query: String) {
         // Split up the words
         private val query = query.toLowerCase(Locale.UK)
         private val inputParts = query.split(" ", "_").filter { it.isNotBlank() }
@@ -962,14 +1064,19 @@ class DebugConsole(var game: InGameState) {
         }
     }
 
-    abstract class ContinuedCommand {
-        abstract val prompt: String
-        open fun render(gc: GameContainer, g: Graphics, height: Float) {}
-        open fun keyPressed(key: Int, c: Char): Boolean = false
-        open fun mousePressed(button: Int, x: Int, y: Int) = Unit
-        open fun mouseReleased(button: Int, x: Int, y: Int) = Unit
-        open fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) = Unit
-        abstract fun run(line: String)
+    interface ContinuedCommand : Overlay {
+        val prompt: String
+        fun run(line: String)
+    }
+
+    interface Overlay {
+        val autoCompleteSuggestion: String? get() = null
+
+        fun render(gc: GameContainer, g: Graphics, height: Float) {}
+        fun keyPressed(key: Int, c: Char): Boolean = false
+        fun mousePressed(button: Int, x: Int, y: Int) = Unit
+        fun mouseReleased(button: Int, x: Int, y: Int) = Unit
+        fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) = Unit
     }
 
     // Represents a line of console output

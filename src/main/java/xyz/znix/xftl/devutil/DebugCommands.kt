@@ -172,13 +172,13 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "crew")
     @CmdHelp("Spawn a new crewmember - one argument, the crew race")
-    private fun cmdCrew(race: CrewBlueprint) {
+    private fun cmdCrew(@ParName("race") race: CrewBlueprint) {
         cmdCrewImpl(race, ship)
     }
 
     @ConsoleCommand(name = "ecrew")
     @CmdHelp("Spawn a new crewmember on the enemy ship, same args as 'crew'")
-    private fun cmdEnemyCrew(race: CrewBlueprint) {
+    private fun cmdEnemyCrew(@ParName("race") race: CrewBlueprint) {
         val enemy = game.enemy
         if (enemy == null) {
             addLine("No enemy ship!")
@@ -197,7 +197,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
     private fun cmdSkills() {
         class SkillBox(val x: Int, val y: Int, val width: Int, val height: Int, val crew: LivingCrew, val skill: Skill)
 
-        console.continued = object : DebugConsole.ContinuedCommand() {
+        console.continued = object : DebugConsole.ContinuedCommand {
             val boxes = ArrayList<SkillBox>()
             var dragging: SkillBox? = null
 
@@ -388,7 +388,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "system")
     @CmdHelp("Unlock a system on the current ship, or 'list' or 'all'")
-    private fun cmdSystem(systemName: String) {
+    private fun cmdSystem(@ParName("name") systemName: String) {
         // TODO arg type for completion
 
         if (systemName == "list") {
@@ -447,7 +447,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "spawn-ship")
     @CmdHelp("Spawn an enemy ship directly from a seed")
-    private fun cmdSpawnShip(specName: String, seedB64: String) {
+    private fun cmdSpawnShip(@ParName("spec") specName: String, @ParName("difficulty/seed") seedB64: String) {
         // TODO spec autocompletion
 
         if (!game.eventManager.hasShip(specName)) {
@@ -592,7 +592,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "set")
     @CmdHelp("Turn on or off debug flags")
-    private fun cmdSet(arg: String) {
+    private fun cmdSet(@ParName("flag") arg: String) {
         // TODO typing
 
         val flagManager = game.debugFlags
@@ -650,7 +650,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "damage")
     @CmdHelp("Apply a given amount of damage to the player ship (or negative to heal)")
-    private fun cmdDamage(amount: Int) {
+    private fun cmdDamage(@ParName("amount") amount: Int) {
         ship.health -= amount
 
         addLine("Applied $amount points of damage to the player ship")
@@ -658,7 +658,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "force-hack")
     @CmdHelp("Forces the enemy to hack a given player system")
-    private fun cmdForceHack(blueprint: SystemBlueprint) {
+    private fun cmdForceHack(@ParName("system") blueprint: SystemBlueprint) {
         val enemy = game.enemy
         if (enemy == null) {
             addLine("No enemy ship.")
@@ -804,7 +804,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "save")
     @CmdHelp("Save the game to a file of a custom name.")
-    private fun cmdSave(name: String) {
+    private fun cmdSave(@ParName("filename") name: String) {
         // First, try serialising the game.
         val doc = try {
             game.saveGameState()
@@ -907,7 +907,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "gameover")
     @CmdHelp("End the game with the win/loose screen.")
-    private fun cmdGameOver(outcome: GameOverWindow.Outcome) {
+    private fun cmdGameOver(@ParName("outcome") outcome: GameOverWindow.Outcome) {
         game.shipUI.showGameOverScreen(outcome)
     }
 
