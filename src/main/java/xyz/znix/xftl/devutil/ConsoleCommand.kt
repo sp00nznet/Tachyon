@@ -59,13 +59,14 @@ annotation class ParName(
  * Specifies the type processor that should be used to parse a given argument.
  *
  * The referred class can either have a getInstance(Parameter) static method,
- * or have an INSTANCE field.
+ * or have an INSTANCE field (the latter of which is automatically defined
+ * for Kotlin's top-level objects).
  *
  * When using Kotlin, be sure to annotate methods and fields with [JvmStatic].
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 annotation class ParType(
-    val type: KClass<ArgumentTypeProcessor>
+    val type: KClass<out ArgumentTypeProcessor>
 )
 
 /**
@@ -155,12 +156,14 @@ abstract class ConsoleCommandProvider(val console: DebugConsole) {
     private fun getArgTypeInstance(typeAnnotation: ParType, parameter: Parameter): ArgumentTypeProcessor {
         val type: Class<*> = typeAnnotation.type.java
 
-        val getInstance = type.getMethod("getInstance", Parameter::class.java)
+        val getInstance = type.methods.firstOrNull {
+            it.name == "getInstance" && it.parameters.contentEquals(arrayOf(Parameter::class.java))
+        }
         if (getInstance != null) {
             return getInstance.invoke(null, parameter) as ArgumentTypeProcessor
         }
 
-        val instanceField = type.getField("INSTANCE")
+        val instanceField = type.fields.firstOrNull { it.name == "INSTANCE" }
         if (instanceField != null) {
             return instanceField.get(null) as ArgumentTypeProcessor
         }

@@ -21,6 +21,7 @@ import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import java.io.IOException
+import java.lang.reflect.Parameter
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -386,8 +387,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "system")
     @CmdHelp("Unlock a system on the current ship, or 'list' or 'all'")
-    private fun cmdSystem(@ParName("name") systemName: String) {
-        // TODO arg type for completion
+    private fun cmdSystem(
+        @ParName("name") @ParType(SystemArgCompleter::class) systemName: String
+    ) {
 
         if (systemName == "list") {
             addLine("Systems on the player ship:")
@@ -441,6 +443,26 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         selectedSystem.room.setSystem(selectedSystem)
 
         addLine("Unlocked system $systemName")
+    }
+
+    private object SystemArgCompleter : ArgumentTypeProcessor {
+        override fun validate(param: Parameter) {
+            check(param.type == String::class.java)
+        }
+
+        override fun process(value: String, console: DebugConsole): Any {
+            return value
+        }
+
+        override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter? {
+            if (previous is BlueprintAndExtrasCompleter && previous.owner == this)
+                return previous
+
+            return BlueprintAndExtrasCompleter(
+                debugConsole, this, SystemBlueprint::class.java,
+                listOf("list", "all")
+            )
+        }
     }
 
     @ConsoleCommand(name = "spawn-ship")

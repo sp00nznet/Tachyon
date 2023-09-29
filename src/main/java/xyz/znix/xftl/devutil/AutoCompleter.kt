@@ -20,7 +20,9 @@ abstract class AutoCompleter(val console: DebugConsole) : DebugConsole.Overlay {
     abstract fun applyAutoCompletion()
 }
 
-abstract class BasicCompletionEngine<T>(console: DebugConsole) : AutoCompleter(console) {
+abstract class BasicCompletionEngine<T>(console: DebugConsole, val owner: ArgumentTypeProcessor?) :
+    AutoCompleter(console) {
+
     abstract val items: List<T>
 
     // A little caching for the search
@@ -106,7 +108,8 @@ abstract class BasicCompletionEngine<T>(console: DebugConsole) : AutoCompleter(c
     }
 }
 
-class CommandCompleter(console: DebugConsole) : BasicCompletionEngine<DebugConsole.Cmd>(console) {
+class CommandCompleter(console: DebugConsole) : BasicCompletionEngine<DebugConsole.Cmd>(console, null) {
+
     override val items: List<DebugConsole.Cmd> get() = console.commands
 
     override fun getItemName(item: DebugConsole.Cmd): String {
@@ -129,18 +132,18 @@ class CommandCompleter(console: DebugConsole) : BasicCompletionEngine<DebugConso
     }
 }
 
-class BlueprintCompleter(console: DebugConsole, val target: BlueprintTypeProcessor) :
-    BasicCompletionEngine<Blueprint>(console) {
+class BlueprintCompleter(console: DebugConsole, owner: ArgumentTypeProcessor?, val type: Class<out Blueprint>) :
+    BasicCompletionEngine<Blueprint>(console, owner) {
 
-    private val isWeapons = AbstractWeaponBlueprint::class.java.isAssignableFrom(target.type)
-    private val isDrones = DroneBlueprint::class.java.isAssignableFrom(target.type)
+    private val isWeapons = AbstractWeaponBlueprint::class.java.isAssignableFrom(type)
+    private val isDrones = DroneBlueprint::class.java.isAssignableFrom(type)
 
     private var lastLeftClick = false
     private var buttons: List<CompletionButton> = emptyList()
 
     override val items = console.game.blueprintManager.blueprints.values
         .filterIsInstance(Blueprint::class.java)
-        .filter { target.type.isAssignableFrom(it.javaClass) }
+        .filter { type.isAssignableFrom(it.javaClass) }
 
     override fun getItemName(item: Blueprint): String {
         return item.translateTitle(console.game)
@@ -214,5 +217,34 @@ class BlueprintCompleter(console: DebugConsole, val target: BlueprintTypeProcess
         override fun click(button: Int) {
             itemSelected(blueprint)
         }
+    }
+}
+
+/**
+ * An auto-completer that shows matching blueprints, along with a selection
+ * of additional items.
+ *
+ * The blueprints are always drawn in a list, as the extra values can't cleanly
+ * be shown in drone/weapon button tiles.
+ */
+class BlueprintAndExtrasCompleter(
+    console: DebugConsole,
+    owner: ArgumentTypeProcessor?,
+    val type: Class<out Blueprint>,
+    extras: List<String>
+) :
+    BasicCompletionEngine<Pair<String, Blueprint?>>(console, owner) {
+
+    override val items = console.game.blueprintManager.blueprints.values
+        .filterIsInstance(Blueprint::class.java)
+        .filter { type.isAssignableFrom(it.javaClass) }
+        .map { Pair(it.name, it) } + extras.map { Pair(it, null) }
+
+    override fun getItemName(item: Pair<String, Blueprint?>): String {
+        return item.second?.translateTitle(console.game) ?: item.first
+    }
+
+    override fun getCompletionString(item: Pair<String, Blueprint?>): String {
+        return item.first
     }
 }

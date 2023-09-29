@@ -86,10 +86,10 @@ class BlueprintTypeProcessor(val type: Class<out Blueprint>) : ArgumentTypeProce
     }
 
     override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
-        if (previous is BlueprintCompleter && previous.target == this)
+        if (previous is BlueprintCompleter && previous.owner == this)
             return previous
 
-        return BlueprintCompleter(debugConsole, this)
+        return BlueprintCompleter(debugConsole, this, type)
     }
 }
 
