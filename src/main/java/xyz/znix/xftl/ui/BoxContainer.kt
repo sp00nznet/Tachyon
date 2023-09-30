@@ -93,7 +93,7 @@ class BoxContainer(provider: UIProvider, val layoutDirection: Direction) : Widge
 
         // Copy-paste of the above, but for Y
         val extraY = availableHeight - size.y
-        if (extraY > 0 && layoutDirection.isHorizontal) {
+        if (extraY > 0 && layoutDirection.isVertical) {
             val totalStretch = children.sumByDouble { it.yStretch.toDouble() }.toFloat()
 
             for ((i, child) in children.withIndex()) {

@@ -19,7 +19,6 @@ class SpecDeserialiser(private val provider: UIProvider) {
     }
 
     fun load(reader: InputStream): LoadedUI {
-        @Suppress("VulnerableCodeUsages") // we set expandEntities
         val builder = SAXBuilder()
         builder.expandEntities = false
         return load(builder.build(reader))
@@ -53,6 +52,7 @@ class SpecDeserialiser(private val provider: UIProvider) {
             "label" -> Label.fromXML(provider, elem)
             "vbox" -> BoxContainer.fromXML(provider, elem, true)
             "hbox" -> BoxContainer.fromXML(provider, elem, false)
+            "free" -> FreeContainer.fromXML(provider, elem)
             "image" -> ImageView.fromXML(provider, elem)
             "button" -> UIKitButton.fromXML(provider, elem)
             else -> throw IllegalUISpecException("Unknown widget type '$type'")
