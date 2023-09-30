@@ -15,6 +15,8 @@ import xyz.znix.xftl.ui.UIProvider
 import xyz.znix.xftl.ui.Widget
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchService
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -47,6 +49,12 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
             updateZoomScale()
         }
 
+    private val filePath = Path.of("src/main/resources/assets/ui/$filename.xml")
+    private val fileWatcher: WatchService = filePath.fileSystem.newWatchService()
+    private var autoReload: Boolean = false
+    private var reloaderThread: Thread? = null
+    private var hasChangeOccurred: Boolean = false
+
     // How much things on the screen are scaled by
     private var zoomScale: Float = 0f
 
@@ -60,6 +68,8 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         updateZoomScale()
 
         utilFont = getFont("c&c")
+
+        setupFileWatcher()
 
         reload()
     }
@@ -82,6 +92,18 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
             panOffsetX = 0f
             panOffsetY = 0f
         }
+        if (input.isKeyPressed(Input.KEY_F4)) {
+            autoReload = !autoReload
+        }
+
+        if (reloaderThread?.isAlive != true) {
+            // Stop the user from thinking auto-reload is working when it's not
+            autoReload = false
+        }
+        if (hasChangeOccurred && autoReload) {
+            reload()
+        }
+        hasChangeOccurred = false
 
         mousePos.set(input.mouseX, input.mouseY)
     }
@@ -141,6 +163,9 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         utilFont.drawString(0f, y.f + height, "Scale (F3 to reset): %.2fx".format(zoomScale), Color.black)
         y += utilFont.lineSpacing
 
+        utilFont.drawString(0f, y.f + height, "Auto-reload (F4 to toggle): $autoReload", Color.black)
+        y += utilFont.lineSpacing
+
         val mouseY = mousePos.y - Graphics.getTextureTransformMatrix().m12.roundToInt()
 
         highlighted = null
@@ -184,9 +209,39 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
     }
 
     private fun doReload() {
-        val path = Path.of("src/main/resources/assets/ui/$filename.xml")
+        ui = Files.newInputStream(filePath).use { SpecDeserialiser(this).load(it) }
+    }
 
-        ui = Files.newInputStream(path).use { SpecDeserialiser(this).load(it) }
+    private fun setupFileWatcher() {
+        // We can only watch directories, not individual files
+        filePath.parent.register(
+            fileWatcher,
+            StandardWatchEventKinds.ENTRY_MODIFY,
+            StandardWatchEventKinds.ENTRY_CREATE
+        )
+
+        reloaderThread = Thread {
+            while (true) {
+                val key = fileWatcher.take()
+
+                for (event in key.pollEvents()) {
+                    val path = event.context() as Path
+                    if (!filePath.endsWith(path))
+                        continue
+
+                    hasChangeOccurred = true
+                }
+
+                val nowValid = key.reset()
+                if (!nowValid) {
+                    break
+                }
+            }
+            autoReload = false
+        }
+        reloaderThread!!.name = "auto-reloader"
+        reloaderThread!!.isDaemon = true
+        reloaderThread!!.start()
     }
 
     override fun getFont(name: String): SILFontLoader {
