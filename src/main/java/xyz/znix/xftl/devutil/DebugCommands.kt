@@ -607,8 +607,9 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
 
     @ConsoleCommand(name = "set")
     @CmdHelp("Turn on or off debug flags")
-    private fun cmdSet(@ParName("flag") arg: String) {
-        // TODO typing
+    private fun cmdSet(
+        @ParName("flag") @ParType(DebugFlagProcessor::class) arg: String
+    ) {
 
         val flagManager = game.debugFlags
 
@@ -661,6 +662,61 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         }
 
         addLine("Unknown debug flag name '$name', see 'set help' for more information.")
+    }
+
+    private object DebugFlagProcessor : ArgumentTypeProcessor {
+        override fun validate(param: Parameter) = check(param.type == String::class.java)
+        override fun process(value: String, console: DebugConsole): Any = value
+
+        override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
+            if (previous is DebugFlagCompleter && previous.owner == this)
+                return previous
+
+            return DebugFlagCompleter(debugConsole, this)
+        }
+    }
+
+    private class DebugFlagCompleter(console: DebugConsole, owner: ArgumentTypeProcessor?) :
+        BasicCompletionEngine<DebugFlagManager.DebugFlag>(console, owner) {
+
+        private var isNegating = false
+
+        override val items get() = console.game.debugFlags.all
+        override fun getItemName(item: DebugFlagManager.DebugFlag): String = item.fullName
+        override val autoCompleteSuggestion: String?
+            get() = bestSuggestion?.let {
+                priorCommandText + getCompletionString(it)
+            }
+
+        override fun getCompletionString(item: DebugFlagManager.DebugFlag): String {
+            var result = item.shortName
+            if (isNegating)
+                result = "!$result"
+            return result
+        }
+
+        override fun update(currentToken: String, positionInInput: Int) {
+            // Strip out the ! at the start (used to disable a flag), so
+            // it doesn't interfere with the search.
+            val withoutNegate = currentToken.removePrefix("!")
+            isNegating = currentToken.startsWith("!")
+
+            super.update(withoutNegate, positionInInput)
+        }
+
+        override fun sortEntries(entries: ArrayList<DebugFlagManager.DebugFlag>, currentToken: String) {
+            super.sortEntries(entries, currentToken)
+
+            // Move options that match exactly to the top, if there's enough
+            // characters to do so meaningfully.
+            if (currentToken.length <= 2)
+                return
+
+            val exactMatches = entries.filter { it.shortName.startsWith(currentToken) }.toMutableList()
+            exactMatches.sortBy { it.shortName }
+            entries.removeAll(exactMatches.toSet())
+            entries.addAll(0, exactMatches)
+        }
     }
 
     @ConsoleCommand(name = "damage")

@@ -35,7 +35,9 @@ abstract class BasicCompletionEngine<T>(console: DebugConsole, val owner: Argume
     protected abstract fun getItemName(item: T): String
     protected open fun getCompletionString(item: T): String = getItemName(item)
 
-    override val autoCompleteSuggestion: String? get() = sortedEntries.firstOrNull()?.let { getItemName(it) }
+    override val autoCompleteSuggestion: String? get() = bestSuggestion?.let { priorCommandText + getItemName(it) }
+    protected val bestSuggestion: T? get() = sortedEntries.firstOrNull()
+    protected val priorCommandText: String get() = console.input.substring(0, positionInInput)
 
     override fun render(gc: GameContainer, g: Graphics, height: Float) {
         val mouseX = gc.input.mouseX

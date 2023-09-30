@@ -308,6 +308,10 @@ class DebugConsole(var game: InGameState) {
             return
         }
 
+        // If there's an auto-completer active, dismiss it.
+        // (it could crash if the entire line goes away)
+        completion = null
+
         // Ignore empty commands
         if (input.isBlank())
             return
