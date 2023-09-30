@@ -29,6 +29,10 @@ class SpecDeserialiser(private val provider: UIProvider) {
         if (root.name != "ui")
             throw IllegalUISpecException("Invalid root element name")
 
+        val styleElem = root.getChild("style")
+        val styleSheet = styleElem?.let { StyleSheet(styleElem) }
+        styleSheet?.injectAttributes(root)
+
         val widgets = loadWidgets(root)
         if (widgets.isEmpty())
             throw IllegalUISpecException("No root widget!")
