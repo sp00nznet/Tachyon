@@ -80,6 +80,11 @@ public class MainGame implements Game {
         setCurrentState(inGameState);
     }
 
+    public void restartGame() {
+        InGameState state = (InGameState) currentState;
+        startNewGame(state.getPlayer().getName(), state.getDifficulty(), state.getPlayer().getCustomised());
+    }
+
     public void loadSavedGame(Document savedGame) {
         InGameState inGameState = new InGameState(this, content, gameContainer, savedGame);
         setCurrentState(inGameState);
