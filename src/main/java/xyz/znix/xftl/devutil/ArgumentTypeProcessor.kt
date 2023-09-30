@@ -130,4 +130,11 @@ class EnumTypeProcessor(val type: Class<*>) : ArgumentTypeProcessor {
 
         return result
     }
+
+    override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
+        if (previous is EnumCompleter && previous.owner == this)
+            return previous
+
+        return EnumCompleter(debugConsole, this, type)
+    }
 }

@@ -259,3 +259,14 @@ class EnemyShipSpecCompleter(console: DebugConsole, owner: ArgumentTypeProcessor
         return item.name
     }
 }
+
+class EnumCompleter(console: DebugConsole, owner: ArgumentTypeProcessor?, type: Class<*>) :
+    BasicCompletionEngine<Any>(console, owner) {
+
+    override val items = type.enumConstants.toList()
+
+    override fun getItemName(item: Any): String {
+        check(item is Enum<*>)
+        return item.name
+    }
+}
