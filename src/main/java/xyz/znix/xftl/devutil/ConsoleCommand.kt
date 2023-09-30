@@ -75,8 +75,8 @@ annotation class ParType(
  * Represents a class that adds console commands.
  */
 abstract class ConsoleCommandProvider(val console: DebugConsole) {
-    open val ship: Ship = console.game.player
-    open val game: InGameState = console.game
+    open val ship: Ship get() = console.game.player
+    open val game: InGameState get() = console.game
 
     /**
      * A big list of commands, generated from the [ConsoleCommand]-annotated
