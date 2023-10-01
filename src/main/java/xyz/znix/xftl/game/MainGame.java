@@ -3,6 +3,8 @@ package xyz.znix.xftl.game;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
@@ -14,11 +16,16 @@ import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
 import xyz.znix.xftl.sys.Game;
 import xyz.znix.xftl.sys.GameContainer;
+import xyz.znix.xftl.sys.PlatformSpecific;
 
+import javax.swing.*;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public class MainGame implements Game {
     private final Datafile vanillaDatafile;
@@ -30,6 +37,8 @@ public class MainGame implements Game {
 
     private InGameState.GameContent content;
 
+    private SaveProfile profile;
+
     public MainGame(Datafile datafile, CommandLineArgs args) {
         this.vanillaDatafile = datafile;
         this.commandLineArgs = args;
@@ -38,6 +47,8 @@ public class MainGame implements Game {
     @Override
     public void init(@NotNull GameContainer gc) throws SlickException {
         gameContainer = gc;
+
+        profile = loadProfile();
 
         // Load the game content immediately - this will work until
         // we support mods or turning Advanced Edition on or off.
@@ -93,6 +104,12 @@ public class MainGame implements Game {
     @Override
     public void update(@NotNull GameContainer gc, float dt) throws SlickException {
         currentState.update(gc, dt);
+
+        // If the profile needs saving, do that now. This means that if there's
+        // a bunch of changes in the same update, we won't save multiple times.
+        if (profile.getDirty()) {
+            saveProfile();
+        }
     }
 
     @Override
@@ -114,6 +131,10 @@ public class MainGame implements Game {
     @Override
     public String getTitle() {
         return "Project Wormhole";
+    }
+
+    public SaveProfile getProfile() {
+        return profile;
     }
 
     /**
@@ -166,6 +187,67 @@ public class MainGame implements Game {
     public void quitGame() {
         // Do we need to do anything else?
         gameContainer.exit();
+    }
+
+    private SaveProfile loadProfile() {
+        Path profilePath = PlatformSpecific.INSTANCE.getSaveProfilePath();
+
+        if (!Files.exists(profilePath)) {
+            return SaveProfile.createBlank();
+        }
+
+        // If the profile file does exist, either load it or fail.
+        // We *really* don't want to save over the top of it.
+        SaveProfile profile = SaveProfile.load(profilePath);
+
+        if (profile == null) {
+            // TODO some better behaviour for if/when users encounter this
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Failed to load profile at: " + profilePath,
+                    "Failed to load profile",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            System.exit(0);
+        }
+
+        return profile;
+    }
+
+    private void saveProfile() {
+        // First, save to a temporary file
+        Path tempFile = PlatformSpecific.INSTANCE.getSaveGamePath().resolve("profile-save-temp.xml");
+        Document doc = profile.save();
+
+        // If we fail to save, don't try again every frame.
+        profile.markSaveComplete();
+
+        // Make sure the directory exists
+        if (!Files.exists(tempFile.getParent())) {
+            try {
+                Files.createDirectories(tempFile.getParent());
+            } catch (IOException e) {
+                // Fine to crash, should happen on startup when we try
+                // and save the new, blank profile.
+                // If we don't crash, the player might try and play without
+                // being able to save their game.
+                throw new RuntimeException("Failed to create savegame directory", e);
+            }
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
+            XMLOutputter xmlOutput = new XMLOutputter(Format.getPrettyFormat());
+            xmlOutput.output(doc, writer);
+
+            // Overwrite the main save file with the newly-written one
+            // On most OSes this should be atomic, so we shouldn't be able
+            // to get a corrupted profile with this.
+            Files.move(tempFile, PlatformSpecific.INSTANCE.getSaveProfilePath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            // Hopefully the profile will be saved again, and succeed.
+            System.err.println("Failed to save profile:");
+            ex.printStackTrace(System.err);
+        }
     }
 
     public static abstract class GameState extends InputAdapter {

@@ -2,6 +2,7 @@ package xyz.znix.xftl.devutil
 
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.Achievement
 import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.math.ConstPoint
@@ -37,7 +38,12 @@ abstract class BasicCompletionEngine<T>(console: DebugConsole, val owner: Argume
 
     override val autoCompleteSuggestion: String? get() = bestSuggestion?.let { priorCommandText + getItemName(it) }
     protected val bestSuggestion: T? get() = sortedEntries.firstOrNull()
-    protected val priorCommandText: String get() = console.input.substring(0, positionInInput)
+    protected val priorCommandText: String
+        get() {
+            if (console.input.length <= positionInInput)
+                return ""
+            return console.input.substring(0, positionInInput)
+        }
 
     override fun render(gc: GameContainer, g: Graphics, height: Float) {
         val mouseX = gc.input.mouseX
@@ -259,6 +265,20 @@ class EnemyShipSpecCompleter(console: DebugConsole, owner: ArgumentTypeProcessor
 
     override fun getItemName(item: EnemyShipSpec): String {
         return item.name
+    }
+}
+
+class AchievementCompleter(console: DebugConsole, owner: ArgumentTypeProcessor?) :
+    BasicCompletionEngine<Achievement>(console, owner) {
+
+    override val items = console.game.content.achievements.achievements.values.sortedBy { it.id }
+
+    override fun getItemName(item: Achievement): String {
+        return console.game.translator[item.name]
+    }
+
+    override fun getCompletionString(item: Achievement): String {
+        return item.id
     }
 }
 

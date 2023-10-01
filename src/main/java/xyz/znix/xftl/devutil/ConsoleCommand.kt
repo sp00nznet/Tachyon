@@ -2,6 +2,7 @@ package xyz.znix.xftl.devutil
 
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.game.Achievement
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import java.lang.reflect.Parameter
@@ -23,6 +24,7 @@ import kotlin.reflect.KClass
  * - String
  * - [Blueprint] and it's subclasses
  * - [EnemyShipSpec]
+ * - [Achievement]
  * - Any enum
  *
  * The last parameter can also be annotated with [CmdVarArg] (which requires
@@ -120,6 +122,7 @@ abstract class ConsoleCommandProvider(val console: DebugConsole) {
                 } else {
                     type = when (param.type) {
                         EnemyShipSpec::class.java -> EnemyShipSpecProcessor
+                        Achievement::class.java -> AchievementProcessor
                         String::class.java -> StringTypeProcessor
                         Integer.TYPE -> IntTypeProcessor
                         else -> error("Invalid parameter type ${param.type} for console command $method")

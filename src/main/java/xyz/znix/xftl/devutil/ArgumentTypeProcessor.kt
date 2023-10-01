@@ -1,6 +1,7 @@
 package xyz.znix.xftl.devutil
 
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.game.Achievement
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import java.lang.reflect.Parameter
 
@@ -99,7 +100,12 @@ object EnemyShipSpecProcessor : ArgumentTypeProcessor {
         check(param.type == EnemyShipSpec::class.java)
     }
 
-    override fun process(value: String, console: DebugConsole): Any {
+    override fun process(value: String, console: DebugConsole): EnemyShipSpec? {
+        if (!console.game.eventManager.hasShip(value)) {
+            console.addLine("No such ship specification '$value'")
+            return null
+        }
+
         return console.game.eventManager.getShip(value)
     }
 
@@ -108,6 +114,29 @@ object EnemyShipSpecProcessor : ArgumentTypeProcessor {
             return previous
 
         return EnemyShipSpecCompleter(debugConsole, this)
+    }
+}
+
+object AchievementProcessor : ArgumentTypeProcessor {
+    override fun validate(param: Parameter) {
+        check(param.type == Achievement::class.java)
+    }
+
+    override fun process(value: String, console: DebugConsole): Achievement? {
+        val ach = console.game.content.achievements.achievements[value]
+
+        if (ach == null) {
+            console.addLine("No such achievement '$value'")
+        }
+
+        return ach
+    }
+
+    override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
+        if (previous is AchievementCompleter && previous.owner == this)
+            return previous
+
+        return AchievementCompleter(debugConsole, this)
     }
 }
 

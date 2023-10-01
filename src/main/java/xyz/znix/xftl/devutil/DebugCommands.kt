@@ -8,6 +8,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.*
 import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.Achievement
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.GameOverWindow
 import xyz.znix.xftl.rendering.Colour
@@ -980,6 +981,26 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
     @CmdHelp("End the game with the win/loose screen.")
     private fun cmdGameOver(@ParName("outcome") outcome: GameOverWindow.Outcome) {
         game.shipUI.showGameOverScreen(outcome)
+    }
+
+    @ConsoleCommand(name = "ach-set")
+    @CmdHelp("Set the difficulty an achievement was achieved with")
+    private fun cmdAchSet(
+        @ParName("achievement") ach: Achievement,
+        @ParName("difficulty") difficulty: Difficulty
+    ) {
+        // Get rid of the achievement first, since unlockAchievement won't
+        // do anything if we try to decrease the difficulty an achievement
+        // was unlocked with.
+        game.mainGame.profile.deleteAchievement(ach)
+
+        game.mainGame.profile.unlockAchievement(ach, difficulty)
+    }
+
+    @ConsoleCommand(name = "ach-del")
+    @CmdHelp("Remove an achievement")
+    private fun cmdAchSet(@ParName("achievement") ach: Achievement) {
+        game.mainGame.profile.deleteAchievement(ach)
     }
 
     @ConsoleCommand(name = "reset-ftl")

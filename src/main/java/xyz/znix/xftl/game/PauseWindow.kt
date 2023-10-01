@@ -34,12 +34,7 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
         // Set the difficulty label
         val difficultyLabel = widgetTree.byId["difficulty"] as Label
-        val difficultyKey = when (game.difficulty) {
-            Difficulty.EASY -> "easy_button"
-            Difficulty.NORMAL -> "normal_button"
-            Difficulty.HARD -> "hard_button"
-        }
-        difficultyLabel.text = game.translator[difficultyKey]
+        difficultyLabel.text = game.translator[game.difficulty.startButtonKey]
 
         // Set the advanced edition status
         val aeLabel = widgetTree.byId["ae-status"] as Label
@@ -93,10 +88,15 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
     private fun decorateAchievement(g: Graphics, img: ImageView, index: Int) {
         val hovering = mousePos.containedInBox(img.position, img.size)
-        val locked = index < 1 // TODO
+
+        // If the achievement isn't populated - such as for modded ships - then
+        // there's nothing to draw.
+        val achievementId = shipFamily.achievements.getOrNull(index) ?: return
+        val achievement = game.content.achievements[achievementId]
+        val unlockInfo = game.mainGame.profile.getAchievement(achievement)
 
         // Draw the padlock icon, if this achievement is locked
-        if (locked) {
+        if (unlockInfo == null) {
             g.colour = Colour(0, 0, 0, 200)
             g.fillRect(img.position.x, img.position.y, img.size.x, img.size.y)
 
