@@ -162,6 +162,9 @@ public class Constants {
     public static final Colour DAMAGE_COLOUR_ION = new Colour(38, 210, 215);
     public static final Colour DAMAGE_COLOUR_ZOLTAN = new Colour(38, 240, 37);
 
+    public static final Colour ACHIEVEMENT_OUTLINE = CREW_BOX_NAME_COLOUR;
+    public static final Colour ACHIEVEMENT_OUTLINE_HIGHLIGHT = UI_BUTTON_HOVER;
+
     public static final String MISSING_FILE_PATH = "xftl-missing.png";
 
     private Constants() {

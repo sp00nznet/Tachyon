@@ -78,4 +78,12 @@ interface IPoint {
     fun divideTruncate(other: IPoint): IPoint {
         return ConstPoint(x / other.x, y / other.y)
     }
+
+    /**
+     * Returns true if this position is contained within the rectangle
+     * denoted by a given position/size pair.
+     */
+    fun containedInBox(pos: IPoint, size: IPoint): Boolean {
+        return pos.x <= x && pos.y <= y && x < pos.x + size.x && y < pos.y + size.y
+    }
 }

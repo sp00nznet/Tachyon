@@ -81,6 +81,11 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
         scoreFont.drawStringCentred(centreX.f, position.y + 208f, 0f, scoreText, Color.white)
     }
 
+    override fun escapePressed() {
+        // Do nothing, as the player can't dismiss this window, nor
+        // open the pause screen.
+    }
+
     private fun restartClicked() {
         game.mainGame.restartGame()
     }
@@ -107,9 +112,5 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
         LOOSE_HULL,
         LOOSE_CREW,
         LOOSE_BASE_DESTROYED,
-    }
-
-    companion object {
-        private const val GLOW: Int = 7
     }
 }

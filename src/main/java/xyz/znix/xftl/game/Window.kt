@@ -38,9 +38,13 @@ abstract class Window {
     open fun mouseReleased(button: Int, x: Int, y: Int) {
     }
 
-    open fun escapePressed() {
-        // Subclasses may close the window
-    }
+    /**
+     * Called whenever the escape key is pressed.
+     *
+     * Subclasses should either close the window, or call
+     * [PlayerShipUI.showPauseWindow] to overlay the pause menu.
+     */
+    abstract fun escapePressed()
 
     protected open fun positionUpdated() {
         for (button in buttons) {

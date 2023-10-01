@@ -689,6 +689,10 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         selectOption(idx)
     }
 
+    override fun escapePressed() {
+        game.shipUI.showPauseWindow()
+    }
+
     fun selectOption(idx: Int) {
         // Pressing continue on a synthetic event closes it
         val syntheticEvent = syntheticEvents.firstOrNull()

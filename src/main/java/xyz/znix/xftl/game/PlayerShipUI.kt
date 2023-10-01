@@ -66,6 +66,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
      */
     private var currentWindow: Window? = null
 
+    /**
+     * The currently-open pause menu.
+     *
+     * This is handled separately from all other windows, since it can
+     * be opened on top of them.
+     */
+    private var pauseWindow: PauseWindow? = null
+
     private val hullWarningLines = listOf(
         ConstPoint(361, 51),
         ConstPoint(393, 82),
@@ -93,7 +101,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     private var lastHealth: Int = -1
 
-    val isWindowOpen: Boolean get() = currentWindow != null
+    val isWindowOpen: Boolean get() = currentWindow != null || pauseWindow != null
 
     private val lastResources = ResourceSet()
     private val resourceDeltaAnimations = ArrayList<ResourceDeltaText>()
@@ -186,7 +194,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             game.getImg("img/statusUI/top_optionswrench_on.png"),
             game.getImg("img/statusUI/top_optionswrench_select2.png")
         ) {
-            TODO("Settings menu not implemented")
+            showPauseWindow()
         }
 
         buttons += jump
@@ -195,6 +203,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun mouseClick(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
+        pauseWindow?.let { win ->
+            win.mouseClick(button, x, y)
+            return
+        }
+
         currentWindow?.let { win ->
             win.mouseClick(button, x, y)
             return
@@ -258,6 +271,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun mouseUp(button: Int, x: Int, y: Int, playerShipPosition: IPoint) {
+        pauseWindow?.let { win ->
+            win.mouseReleased(button, x, y)
+            return
+        }
+
         currentWindow?.let { win ->
             win.mouseReleased(button, x, y)
             return
@@ -313,6 +331,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun weaponHotkeyPressed(id: Int) {
+        if (pauseWindow != null) return
+
         // Temporary hack to make the option hotkeys work
         (currentWindow as? DialogueWindow)?.let {
             it.selectOption(id)
@@ -814,8 +834,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun renderMenus(container: GameContainer, g: Graphics) {
-        val window = currentWindow ?: return
+        currentWindow?.let { renderSingleMenu(container, g, it) }
+        pauseWindow?.let { renderSingleMenu(container, g, it) }
+    }
 
+    private fun renderSingleMenu(container: GameContainer, g: Graphics, window: Window) {
         // Add the tint over all the regular game stuff to make the window clearer.
         g.colour = Color(0f, 0f, 0f, 0.65f)
         g.fillRect(0f, 0f, container.width.f, container.height.f)
@@ -1187,6 +1210,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun updateUI(x: Int, y: Int, playerShipPosition: ConstPoint) {
+        pauseWindow?.let { win ->
+            win.updateUI(x, y)
+            return
+        }
+
         currentWindow?.let { win ->
             win.updateUI(x, y)
             return
@@ -1273,18 +1301,27 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
+    fun showPauseWindow() {
+        pauseWindow = PauseWindow(game) { pauseWindow = null }
+    }
+
     // Hack used to draw the selected crew from the ship, rather than some cleaner solution
     fun isCrewHighlighted(crew: AbstractCrew): Boolean {
         return selectedCrew.contains(crew) || hoveredCrew.contains(crew)
     }
 
     fun escapePressed() {
+        pauseWindow?.let { win ->
+            win.escapePressed()
+            return
+        }
+
         currentWindow?.let { win ->
             win.escapePressed()
             return
         }
 
-        // TODO open settings menu
+        showPauseWindow()
     }
 
     fun playInsufficientScrapAnimation() {

@@ -1172,6 +1172,7 @@ public class InGameState extends MainGame.GameState {
         return isCurrentlyLoadingSave;
     }
 
+    @NotNull
     public Difficulty getDifficulty() {
         return difficulty;
     }
