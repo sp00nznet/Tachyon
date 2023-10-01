@@ -143,7 +143,7 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
                 ?.let { Direction.valueOf(it.toUpperCase(Locale.UK)) }
             val slotNumber: Int? = slotElem?.getChildTextTrim("number")?.toInt()
 
-            systems += ParsedSystem(room, slotNumber, slotDirection, index, systemElem)
+            systems += ParsedSystem(room, slotNumber, slotDirection, index, systemElem, isPlayerShip)
         }
 
         // Load the starting equipment
@@ -271,7 +271,8 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
         override val slotDirection: Direction?,
         override val systemIndex: Int,
 
-        elem: Element
+        elem: Element,
+        useDefaultImage: Boolean
     ) : ISystemConfiguration {
         // The system name comes from the name of the element declaring it
         override val systemName: String = elem.name
@@ -292,7 +293,7 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
             var imagePath = elem.getAttributeValue("img")?.let { "img/ship/interior/$it.png" }
 
             // Use the default image, eg for Engi A's pilot and weapons.
-            if (imagePath == null && systemName != "clonebay" && systemName != "teleporter") {
+            if (imagePath == null && useDefaultImage && systemName != "clonebay" && systemName != "teleporter") {
                 imagePath = "img/ship/interior/room_$systemName.png"
             }
 
