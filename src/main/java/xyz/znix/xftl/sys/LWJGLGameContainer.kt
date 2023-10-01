@@ -1,8 +1,10 @@
 package xyz.znix.xftl.sys
 
 import org.lwjgl.Version
-import org.lwjgl.glfw.*
+import org.lwjgl.glfw.Callbacks
 import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.glfw.GLFWImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryStack.stackPush
@@ -14,7 +16,6 @@ import org.newdawn.slick.opengl.ImageDataFactory
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Graphics
 import java.io.BufferedInputStream
-import kotlin.collections.ArrayList
 
 
 class LWJGLGameContainer(private val game: Game) : GameContainer {
@@ -40,7 +41,14 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
     fun start() {
         println("Using LWJGL version ${Version.getVersion()}")
         init()
-        loop()
+
+        try {
+            loop()
+        } finally {
+            // Call shutdown if there was an exception, to avoid a VM crash
+            // from not freeing native resources.
+            game.shutdown()
+        }
 
         // Free the window callbacks and destroy the window
         Callbacks.glfwFreeCallbacks(window)
@@ -196,8 +204,6 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
             // invoked during this call.
             glfwPollEvents()
         }
-
-        game.shutdown()
     }
 
     fun setDisplayMode(width: Int, height: Int, fullScreen: Boolean) {
