@@ -3,6 +3,8 @@ package xyz.znix.xftl.game;
 import kotlin.random.Random;
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.newdawn.slick.ImageBuffer;
@@ -34,6 +36,7 @@ import xyz.znix.xftl.ui.SpecDeserialiser;
 import xyz.znix.xftl.ui.UIProvider;
 import xyz.znix.xftl.ui.Widget;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1482,6 +1485,8 @@ public class InGameState extends MainGame.GameState {
         public final SoundManager sounds;
         public final Translator translator;
         public final ShipGenerator generator;
+        public final Achievement.AchievementTable achievements;
+        public final ShipFamily.FamilyTable shipFamilies;
 
         // These are loaded on-demand
         private final Map<String, Image> images = new HashMap<>();
@@ -1504,8 +1509,19 @@ public class InGameState extends MainGame.GameState {
             translator = new Translator(datafile, "en");
             eventManager = new EventManager(datafile, translator, blueprintManager);
             nameManager = new CrewNameManager(datafile);
+            achievements = new Achievement.AchievementTable(datafile);
 
             blueprintManager.finishLoading(this);
+
+            // TODO load this via the usual asset system, so mods can override it
+            SAXBuilder builder = new SAXBuilder();
+            builder.setExpandEntities(false);
+            try {
+                Document doc = builder.build(getClass().getResourceAsStream("/assets/data/xftl_ships.xml"));
+                shipFamilies = new ShipFamily.FamilyTable(doc);
+            } catch (JDOMException | IOException e) {
+                throw new RuntimeException("Failed to load ship data", e);
+            }
         }
 
         public void freeResources() {

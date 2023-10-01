@@ -16,6 +16,8 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
     private val widgetTree: WidgetContainer = game.uiLoader.load("escape_menu").mainWidget
     private val lockIcon: Image = game.getImg("img/customizeUI/box_lock_on.png")
     private val mousePos = Point(0, 0)
+    private val shipFamily: ShipFamily = game.content.shipFamilies.byShipId.getValue(game.player.type.name)
+    private val achievements: List<Achievement> = shipFamily.achievements.map { game.content.achievements[it] }
 
     override val size: IPoint = widgetTree.root.size
 
@@ -46,6 +48,15 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
             false -> "advanced_off_button"
         }
         aeLabel.text = game.translator[aeKey]
+
+        // Set the achievement icons
+        for ((idx, ach) in achievements.withIndex()) {
+            val img = widgetTree.byId["ach${idx + 1}"] as ImageView
+            img.image = game.getImg(ach.img)
+        }
+
+        val questWidget = widgetTree.byId["quest"]!!
+        questWidget.isVisible = shipFamily.hasQuest
     }
 
     override fun draw(g: Graphics) {
@@ -55,14 +66,12 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
         // Draw the base UI
         widgetTree.draw(g)
 
-        // TODO use the correct achivement icons for this ship
-
         decorateAchievement(g, widgetTree.byId["ach1"] as ImageView, 0)
         decorateAchievement(g, widgetTree.byId["ach2"] as ImageView, 1)
         decorateAchievement(g, widgetTree.byId["ach3"] as ImageView, 2)
 
         val questBox = widgetTree.byId["quest"]!!
-        if (mousePos.containedInBox(questBox.position, questBox.size)) {
+        if (mousePos.containedInBox(questBox.position, questBox.size) && questBox.isVisible) {
             g.colour = Constants.UI_BUTTON_HOVER
             drawOutline(g, questBox)
 

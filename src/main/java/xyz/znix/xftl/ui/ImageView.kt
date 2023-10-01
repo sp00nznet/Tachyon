@@ -11,7 +11,7 @@ import kotlin.math.max
 
 class ImageView(
     provider: UIProvider,
-    val image: Image,
+    var image: Image,
     val offset: IPoint,
     val baseSize: IPoint,
     val tile: Boolean

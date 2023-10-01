@@ -35,6 +35,9 @@ class WidgetContainer(val root: Widget) {
 
     fun draw(g: Graphics) {
         for (widget in sortedWidgets) {
+            if (!widget.isVisible)
+                continue
+
             widget.draw(g)
         }
     }

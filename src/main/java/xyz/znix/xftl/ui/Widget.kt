@@ -23,6 +23,14 @@ abstract class Widget(val provider: UIProvider) {
     var id: String? = null
         private set
 
+    /**
+     * Whether or not this widget is visible.
+     *
+     * This is not inherited: setting this to false for a widget won't
+     * hide its children.
+     */
+    var isVisible: Boolean = true
+
     // If there's some excess space, it's split between widgets based on this.
     // Zero means the widget doesn't resize.
     var xStretch: Float = 0f
