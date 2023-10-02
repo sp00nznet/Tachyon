@@ -1504,7 +1504,7 @@ public class InGameState extends MainGame.GameState {
 
             blueprintManager = new BlueprintManager(datafile, enableAdvancedEdition);
             animations = new Animations(datafile);
-            sounds = new SoundManager(datafile);
+            sounds = new SoundManager(datafile, resourceContext);
             generator = new ShipGenerator(datafile, blueprintManager);
             translator = new Translator(datafile, "en");
             eventManager = new EventManager(datafile, translator, blueprintManager);

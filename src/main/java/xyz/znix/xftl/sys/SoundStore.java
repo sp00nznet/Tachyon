@@ -2,19 +2,19 @@ package xyz.znix.xftl.sys;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.*;
-import org.newdawn.slick.openal.*;
+import org.newdawn.slick.openal.Audio;
+import org.newdawn.slick.openal.NullAudio;
+import org.newdawn.slick.openal.OpenALStreamPlayer;
+import org.newdawn.slick.openal.StreamSound;
 import org.newdawn.slick.util.Log;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 
-import static org.lwjgl.openal.ALC10.ALC_DEFAULT_DEVICE_SPECIFIER;
 import static org.lwjgl.openal.ALC10.ALC_DEVICE_SPECIFIER;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -269,6 +269,16 @@ public class SoundStore {
      */
     public void stopSource(int index) {
         AL10.alSourceStop(sources.get(index));
+    }
+
+    /**
+     * Stop a particular sound source, and release the associated buffer[s].
+     *
+     * @param index The index of the source to stop
+     */
+    public void stopAndResetSource(int index) {
+        AL10.alSourceStop(sources.get(index));
+        AL10.alSourcei(sources.get(index), AL10.AL_BUFFER, AL10.AL_NONE);
     }
 
     /**

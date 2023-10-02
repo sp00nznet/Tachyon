@@ -7,10 +7,12 @@ import org.newdawn.slick.openal.OggInputStream
 import org.newdawn.slick.openal.WaveData
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.sys.INativeResource
+import xyz.znix.xftl.sys.ResourceContext
 import xyz.znix.xftl.sys.SoundStore
 import java.io.InputStream
 
-class SoundManager(private val df: Datafile) {
+class SoundManager(private val df: Datafile, context: ResourceContext) : INativeResource {
     private val sounds = HashMap<SoundSpec, FTLSound>()
     private val rawBuffers = HashMap<String, Int>()
 
@@ -22,12 +24,17 @@ class SoundManager(private val df: Datafile) {
     private val loopSounds = HashMap<SoundSpec, SoundInstance>()
     private val loopCounts = HashMap<SoundSpec, Int>()
 
+    override var freed: Boolean = false
+        private set
+
     init {
         // Make sure we've classloaded our modified copy of OggInputStream
         OggInputStream.FTL_MARKER = 2
 
         loadXml("data/sounds.xml")
         loadXml("data/dlcSounds.xml")
+
+        context.register(this)
     }
 
     private fun loadXml(path: String) {
@@ -127,6 +134,21 @@ class SoundManager(private val df: Datafile) {
         // the map while it's being iterated over.
         if (toRemove != null) {
             loopSounds.remove(toRemove)
+        }
+    }
+
+    override fun free() {
+        require(!freed)
+        freed = true
+
+        // Stop all the sources, otherwise we can't remove the buffers
+        for (i in 0 until SoundStore.get().sourceCount) {
+            SoundStore.get().stopAndResetSource(i)
+        }
+
+        // Delete all the buffers, to save memory.
+        for (buffer in rawBuffers.values) {
+            AL10.alDeleteBuffers(buffer)
         }
     }
 
