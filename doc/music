@@ -1,0 +1,33 @@
+
+WorldManager::CheckMusic
+
+Starts/stops the combat music, playing the combat music if any of
+the following are present:
+* A hostile, non-destroyed enemy ship
+* A hostile environment
+* Intruders
+* Mind-controlled crew
+
+
+SoundControl::StartPlaylist
+
+When switching playlists (eg from changing sectors), fade the current music
+out over 750ms, and two seconds after the fade starts, start the new
+playlist's first track.
+
+
+SoundControl::StartCombat and ::StopCombat
+
+These fade (across two seconds) between the current track's combat and explore
+versions. It seems both of them are tied together, so the explore version
+will continue playing muted while in combat (thus the times match up exactly).
+
+The explore track is only played at 80% of the volume of the combat track.
+
+
+SoundControl::SwitchTracks
+
+This switches to the next song in the playlist, going through linearly and
+repeating once it reaches the end.
+
+This is called by OnLoop whenever the current song ends.

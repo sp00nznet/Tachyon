@@ -153,6 +153,17 @@ public class InGameState extends MainGame.GameState {
                 beacon.getShip().update(0f);
         }
         player.update(0f);
+
+        // Start the music up again.
+        // We need a special exception here for the continuous-save-load mode,
+        // as otherwise it'll be restarting the music every frame. As the music
+        // isn't saved, this would use a lot of CPU for no benefit.
+        // To do this, just check if it's already playing something. Since
+        // the sound manager is part of the game content, it's not cleared
+        // across a reload.
+        if (getSounds().getCurrentMusic() == null) {
+            loadSectorMusic(currentBeacon.getSector().getType());
+        }
     }
 
     private InGameState(MainGame mainGame, GameContent content, GameContainer container) {
@@ -266,6 +277,8 @@ public class InGameState extends MainGame.GameState {
         hoveredRoom = null;
 
         content.sounds.updateLoopedSounds(isPaused());
+        content.sounds.setCombatMusic(isInDanger());
+        content.sounds.updateMusic(delta);
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
             debugConsoleVisible = !debugConsoleVisible;
@@ -542,13 +555,17 @@ public class InGameState extends MainGame.GameState {
 
     public void setCurrentBeacon(Beacon currentBeacon) {
         if (this.currentBeacon == null || this.currentBeacon.getSector() != currentBeacon.getSector()) {
-            lootPool = new LootPool(blueprintManager, currentBeacon.getSector().getType());
+            SectorType sectorType = currentBeacon.getSector().getType();
+            lootPool = new LootPool(blueprintManager, sectorType);
 
             // Add any quests we didn't have time for last time
             for (Event quest : delayedQuests) {
                 currentBeacon.getSector().addQuest(currentBeacon, quest, true);
             }
             delayedQuests.clear();
+
+            // Switch to the new sector's music
+            loadSectorMusic(sectorType);
         }
 
         this.currentBeacon = currentBeacon;
@@ -679,6 +696,19 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
+    /**
+     * Switch to using a new sector's music.
+     * <p>
+     * This switches to the start of the first track in this sector, so it
+     * shouldn't be called unless there's a new sector.
+     */
+    private void loadSectorMusic(SectorType type) {
+        List<MusicSpec> tracks = type.getSoundtracks().stream()
+                .map(name -> getSounds().getTrack(name))
+                .toList();
+        getSounds().switchMusicList(tracks);
+    }
+
     public void loadEventShip(Event event) {
         if (event.getLoadShipName() != null) {
             EnemyShipSpec spec = eventManager.getShip(event.getLoadShipName());
@@ -733,6 +763,9 @@ public class InGameState extends MainGame.GameState {
 
     public boolean isInDanger() {
         if (enemy != null && enemyIsHostile)
+            return true;
+
+        if (!player.getIntruders().isEmpty())
             return true;
 
         return currentBeacon.getEnvironmentType().isDangerous();

@@ -1,16 +1,16 @@
 package xyz.znix.xftl.sys;
 
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.AL11;
 import org.newdawn.slick.openal.OggInputStream;
 import org.newdawn.slick.util.Log;
-import org.newdawn.slick.util.ResourceLoader;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.Objects;
 
 // Copied from Slick, modified for XFTL
 
@@ -21,6 +21,7 @@ import java.nio.IntBuffer;
  * @author Kevin Glass
  * @author Nathan Sweet <misc@n4te.com>
  * @author Rockstar play and setPosition cleanup
+ * @author Campbell Suter - XFTL modifications
  */
 public class OpenALStreamPlayer {
     /**
@@ -35,7 +36,7 @@ public class OpenALStreamPlayer {
     /**
      * The buffer read from the data stream
      */
-    private byte[] buffer = new byte[sectionSize];
+    private final byte[] buffer = new byte[sectionSize];
     /**
      * Holds the OpenAL buffer names
      */
@@ -43,23 +44,15 @@ public class OpenALStreamPlayer {
     /**
      * The byte buffer passed to OpenAL containing the section
      */
-    private ByteBuffer bufferData = BufferUtils.createByteBuffer(sectionSize);
+    private final ByteBuffer bufferData = BufferUtils.createByteBuffer(sectionSize);
     /**
      * The buffer holding the names of the OpenAL buffer thats been fully played back
      */
-    private IntBuffer unqueued = BufferUtils.createIntBuffer(1);
+    private final IntBuffer unqueued = BufferUtils.createIntBuffer(1);
     /**
      * The source we're playing back on
      */
-    private int source;
-    /**
-     * The number of buffers remaining
-     */
-    private int remainingBufferCount;
-    /**
-     * True if we should loop the track
-     */
-    private boolean loop;
+    private final int source;
     /**
      * True if we've completed play back
      */
@@ -69,79 +62,44 @@ public class OpenALStreamPlayer {
      */
     private OggInputStream audio;
     /**
-     * The source of the data
-     */
-    private String ref;
-    /**
-     * The source of the data
-     */
-    private URL url;
-    /**
      * The pitch of the music
      */
-    private float pitch;
+    private float pitch = 1;
+    /**
+     * The volume of the music
+     */
+    private float volume = 1;
     /**
      * Position in seconds of the previously played buffers
      */
     private float positionOffset;
+    /**
+     * The rate (in volume/second) to adjust the volume at.
+     * <p>
+     * This is only applied while {@link #volumeFadeTimer} is non-zero.
+     */
+    private float volumeFadeRate;
+    /**
+     * The amount of time during which the volume should be faded for.
+     * <p>
+     * This counts down towards zero.
+     */
+    private float volumeFadeTimer;
 
     /**
      * Create a new player to work on an audio stream
      *
      * @param source The source on which we'll play the audio
-     * @param ref    A reference to the audio file to stream
      */
-    public OpenALStreamPlayer(int source, String ref) {
+    public OpenALStreamPlayer(int source) {
+        if (source == -1) {
+            throw new IllegalArgumentException("Invalid OpenAL source: " + source);
+        }
+
         this.source = source;
-        this.ref = ref;
 
         bufferNames = BufferUtils.createIntBuffer(BUFFER_COUNT);
         AL10.alGenBuffers(bufferNames);
-    }
-
-    /**
-     * Create a new player to work on an audio stream
-     *
-     * @param source The source on which we'll play the audio
-     * @param url    A reference to the audio file to stream
-     */
-    public OpenALStreamPlayer(int source, URL url) {
-        this.source = source;
-        this.url = url;
-
-        bufferNames = BufferUtils.createIntBuffer(BUFFER_COUNT);
-        AL10.alGenBuffers(bufferNames);
-    }
-
-    /**
-     * Initialise our connection to the underlying resource
-     *
-     * @throws IOException Indicates a failure to open the underling resource
-     */
-    private void initStreams() throws IOException {
-        if (audio != null) {
-            audio.close();
-        }
-
-        OggInputStream audio;
-
-        if (url != null) {
-            audio = new OggInputStream(url.openStream());
-        } else {
-            audio = new OggInputStream(ResourceLoader.getResourceAsStream(ref));
-        }
-
-        this.audio = audio;
-        positionOffset = 0;
-    }
-
-    /**
-     * Get the source of this stream
-     *
-     * @return The name of the source of string
-     */
-    public String getSource() {
-        return (url == null) ? ref : url.toString();
     }
 
     /**
@@ -160,28 +118,69 @@ public class OpenALStreamPlayer {
     /**
      * Start this stream playing
      *
-     * @param loop True if the stream should loop
+     * @param stream The source of the sound data to play
      * @throws IOException Indicates a failure to read from the stream
      */
-    public void play(boolean loop) throws IOException {
-        this.loop = loop;
-        initStreams();
+    public void play(@NotNull OggInputStream stream) throws IOException {
+        if (audio != null) {
+            audio.close();
+        }
 
+        audio = Objects.requireNonNull(stream);
+        positionOffset = 0;
         done = false;
 
         AL10.alSourceStop(source);
         removeBuffers();
 
-        startPlayback();
+        startPlayback(0);
+    }
+
+    public void stop() {
+        AL10.alSourceStop(source);
+        removeBuffers();
+        done = true;
     }
 
     /**
-     * Setup the playback properties
+     * Set up the playback properties
      *
-     * @param pitch The pitch to play back at
+     * @param pitch  The pitch to play back at
+     * @param volume The volume to play at
      */
-    public void setup(float pitch) {
+    public void setup(float pitch, float volume) {
         this.pitch = pitch;
+        this.volume = volume;
+
+        // Stop fading
+        volumeFadeTimer = 0f;
+
+        applyAudioSettings();
+    }
+
+    private void applyAudioSettings() {
+        AL10.alSourcef(source, AL10.AL_PITCH, pitch);
+        AL10.alSourcef(source, AL10.AL_GAIN, volume);
+    }
+
+    /**
+     * Linearly fade the volume towards the given level, over the given duration.
+     */
+    public void fadeVolume(float finalVolume, float duration) {
+        if (finalVolume == volume) {
+            volumeFadeTimer = 0f;
+            return;
+        }
+
+        if (duration == 0) {
+            volume = finalVolume;
+            volumeFadeTimer = 0f;
+            applyAudioSettings();
+            return;
+        }
+
+        volumeFadeTimer = duration;
+        volumeFadeRate = (finalVolume - volume) / duration;
     }
 
     /**
@@ -200,7 +199,7 @@ public class OpenALStreamPlayer {
      * <p>
      * Most of the time this should be reasonably quick
      */
-    public void update() {
+    public void update(float deltaTime) {
         if (done) {
             return;
         }
@@ -226,10 +225,9 @@ public class OpenALStreamPlayer {
             if (stream(bufferIndex)) {
                 AL10.alSourceQueueBuffers(source, unqueued);
             } else {
-                remainingBufferCount--;
-                if (remainingBufferCount == 0) {
-                    done = true;
-                }
+                // We're playing the last few buffers, can't queue any more.
+                // Since stream() has now set done=true, this won't be called repeatedly.
+                break;
             }
             processed--;
         }
@@ -237,7 +235,19 @@ public class OpenALStreamPlayer {
         int state = AL10.alGetSourcei(source, AL10.AL_SOURCE_STATE);
 
         if (state != AL10.AL_PLAYING) {
+            // Switch back to playing if we stopped. This can happen if we run
+            // out of buffers because something else is using all the CPU time.
             AL10.alSourcePlay(source);
+        }
+
+        if (volumeFadeTimer != 0f) {
+            volumeFadeTimer -= deltaTime;
+            if (volumeFadeTimer < 0f) {
+                volumeFadeTimer = 0f;
+            }
+
+            volume += volumeFadeRate * deltaTime;
+            applyAudioSettings();
         }
     }
 
@@ -252,20 +262,10 @@ public class OpenALStreamPlayer {
             int count = audio.read(buffer);
 
             if (count != -1) {
-                bufferData.clear();
-                bufferData.put(buffer, 0, count);
-                bufferData.flip();
-
-                int format = audio.getChannels() > 1 ? AL10.AL_FORMAT_STEREO16 : AL10.AL_FORMAT_MONO16;
-                AL10.alBufferData(bufferId, format, bufferData, audio.getRate());
+                loadBufferToAL(bufferId, count);
             } else {
-                if (loop) {
-                    initStreams();
-                    stream(bufferId);
-                } else {
-                    done = true;
-                    return false;
-                }
+                done = true;
+                return false;
             }
 
             return true;
@@ -273,6 +273,20 @@ public class OpenALStreamPlayer {
             Log.error(e);
             return false;
         }
+    }
+
+    /**
+     * Move the contents of {@link #buffer} to the given OpenAL buffer.
+     *
+     * @param count The number of bytes to copy.
+     */
+    private void loadBufferToAL(int bufferId, int count) {
+        bufferData.clear();
+        bufferData.put(buffer, 0, count);
+        bufferData.flip();
+
+        int format = audio.getChannels() > 1 ? AL10.AL_FORMAT_STEREO16 : AL10.AL_FORMAT_MONO16;
+        AL10.alBufferData(bufferId, format, bufferData, audio.getRate());
     }
 
     /**
@@ -284,7 +298,8 @@ public class OpenALStreamPlayer {
     public boolean setPosition(float position) {
         try {
             if (getPosition() > position) {
-                initStreams();
+                // We can't restart the stream ourselves, so do nothing.
+                return false;
             }
 
             float sampleRate = audio.getRate();
@@ -295,22 +310,29 @@ public class OpenALStreamPlayer {
                 sampleSize = 2; // AL10.AL_FORMAT_MONO16
             }
 
+            int count = 0;
+            float bufferLength = 0f;
             while (positionOffset < position) {
-                int count = audio.read(buffer);
+                count = audio.read(buffer);
                 if (count != -1) {
-                    float bufferLength = (count / sampleSize) / sampleRate;
+                    bufferLength = (count / sampleSize) / sampleRate;
                     positionOffset += bufferLength;
                 } else {
-                    if (loop) {
-                        initStreams();
-                    } else {
-                        done = true;
-                    }
+                    done = true;
                     return false;
                 }
             }
 
-            startPlayback();
+            // Use the first buffer we just loaded, so we end up earlier than intended (rather than later).
+            positionOffset -= bufferLength;
+            loadBufferToAL(bufferNames.get(0), count);
+            startPlayback(1); // Use an offset of 1 to not clobber the buffer we just loaded
+
+            // Seek forwards a little bit, to get to the final position within
+            // this sample. Without this, we always start a little behind.
+            float timeError = position - positionOffset;
+            int sampleOffset = (int) (timeError * sampleRate);
+            AL11.alSourcei(source, AL11.AL_SAMPLE_OFFSET, sampleOffset);
 
             return true;
         } catch (IOException e) {
@@ -321,14 +343,19 @@ public class OpenALStreamPlayer {
 
     /**
      * Starts the streaming.
+     *
+     * @param bufferOffset The index of the first buffer to populate. This is used by {@link #setPosition(float)}.
      */
-    private void startPlayback() {
+    private void startPlayback(int bufferOffset) {
+        // If we don't remove the buffers here, we'll end up in a big mess
+        // due to queueing them twice.
+        stop();
+        done = false;
+
         AL10.alSourcei(source, AL10.AL_LOOPING, AL10.AL_FALSE);
-        AL10.alSourcef(source, AL10.AL_PITCH, pitch);
+        applyAudioSettings();
 
-        remainingBufferCount = BUFFER_COUNT;
-
-        for (int i = 0; i < BUFFER_COUNT; i++) {
+        for (int i = bufferOffset; i < BUFFER_COUNT; i++) {
             stream(bufferNames.get(i));
         }
 
@@ -343,5 +370,32 @@ public class OpenALStreamPlayer {
      */
     public float getPosition() {
         return positionOffset + AL10.alGetSourcef(source, AL11.AL_SEC_OFFSET);
+    }
+
+    /**
+     * Returns true if this stream is currently playing, and a volume fade is ongoing.
+     */
+    public boolean isVolumeFading() {
+        return !done && volumeFadeTimer != 0f;
+    }
+
+    /**
+     * Stop playing, and release all of the resources for this stream.
+     * <p>
+     * This player cannot be used again after this call.
+     */
+    public void close() {
+        // First un-queue the buffers, otherwise we can't delete them.
+        AL10.alSourceStop(source);
+        removeBuffers();
+
+        // Then delete them.
+        AL10.alDeleteBuffers(bufferNames);
+
+        // Make sure we can't accidentally use them again.
+        bufferNames = null;
+
+        positionOffset = 0;
+        done = true;
     }
 }

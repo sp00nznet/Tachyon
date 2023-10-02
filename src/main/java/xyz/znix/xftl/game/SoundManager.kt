@@ -8,6 +8,7 @@ import org.newdawn.slick.openal.WaveData
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.sys.INativeResource
+import xyz.znix.xftl.sys.OpenALStreamPlayer
 import xyz.znix.xftl.sys.ResourceContext
 import xyz.znix.xftl.sys.SoundStore
 import java.io.InputStream
@@ -20,9 +21,40 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
     private val samples = HashMap<String, SoundSpec>()
     private val loops = HashMap<String, SoundSpec>()
 
+    private val musicTracks = HashMap<String, MusicSpec>()
+
     private val playingLoops = ArrayList<LoopHandle>()
     private val loopSounds = HashMap<SoundSpec, SoundInstance>()
     private val loopCounts = HashMap<SoundSpec, Int>()
+
+    /**
+     * The currently-playing music track.
+     */
+    var currentMusic: MusicSpec? = null
+        private set
+
+    private var usingCombatMusic: Boolean = false
+
+    private val trackList = ArrayList<MusicSpec>()
+
+    /**
+     * The players for playing our music. We need two for cross-fading.
+     *
+     * The main one (which is the next one during a crossfade) is in index 0,
+     * while the inactive (outgoing during a crossfade) one is in index 1.
+     */
+    private val musicPlayers: Array<OpenALStreamPlayer>
+
+    /**
+     * The current primary music player.
+     *
+     * This is exposed in case mods want to read the current music time or
+     * something like that, if there's no cleaner way to do it.
+     *
+     * Be careful when poking around at this (and in particular, don't
+     * write to it) - it's an implementation detail of the sound manager.
+     */
+    val activeMusicPlayer: OpenALStreamPlayer get() = musicPlayers[0]
 
     override var freed: Boolean = false
         private set
@@ -34,6 +66,13 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         loadXml("data/sounds.xml")
         loadXml("data/dlcSounds.xml")
 
+        SoundStore.get().init()
+
+        musicPlayers = arrayOf(
+            OpenALStreamPlayer(SoundStore.get().getMusicSource(0)),
+            OpenALStreamPlayer(SoundStore.get().getMusicSource(1)),
+        )
+
         context.register(this)
     }
 
@@ -41,7 +80,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         val doc = df.parseXML(df[path])
         for (elem in doc.rootElement.children) {
             if (elem.name == "music") {
-                // TODO load music
+                loadMusic(elem)
                 continue
             }
 
@@ -60,6 +99,13 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         }
     }
 
+    private fun loadMusic(elem: Element) {
+        for (child in elem.getChildren("track")) {
+            val track = MusicSpec(child)
+            musicTracks[track.name] = track
+        }
+    }
+
     fun getSample(name: String): FTLSound {
         val spec = samples[name] ?: error("No sound sample listed in sounds.xml for '$name'")
         return get(spec)
@@ -73,6 +119,15 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
     fun getLoop(name: String): LoopHandle {
         val spec = loops[name] ?: error("No sound loop listed in sounds.xml for '$name'")
         return LoopHandle(spec, this)
+    }
+
+    /**
+     * Gets the description of a music track by its ID.
+     *
+     * This doesn't create any resources, but it can be passed to [switchToMusic].
+     */
+    fun getTrack(name: String): MusicSpec {
+        return musicTracks[name] ?: error("No music track listed in sounds.xml for '$name'")
     }
 
     // Should only be called by SoundInstance!
@@ -137,6 +192,100 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         }
     }
 
+    fun updateMusic(dt: Float) {
+        // Decode and queue up the next buffer of audio as required.
+        for (player in musicPlayers) {
+            player.update(dt)
+        }
+
+        // If the 2nd player has finished fading, pause it to save CPU.
+        if (!musicPlayers[1].isVolumeFading) {
+            musicPlayers[1].stop()
+        }
+
+        // If the main player has stopped, move onto the next track in
+        // this sector's playlist.
+        if (musicPlayers[0].done() && trackList.isNotEmpty()) {
+            // The index of the current track, or -1 if it's not there
+            val currentIdx = currentMusic?.let { trackList.indexOf(it) } ?: -1
+
+            val nextIdx = (currentIdx + 1).mod(trackList.size)
+            switchToMusic(trackList[nextIdx], usingCombatMusic, 0f, 0f)
+        }
+    }
+
+    /**
+     * Switch to a new track.
+     *
+     * This must NOT be used to switch between the combat/non-combat versions
+     * of the same track, as that needs special handling for it's timing.
+     */
+    fun switchToMusic(track: MusicSpec, combat: Boolean, fadeOut: Float, fadeIn: Float) {
+        currentMusic = track
+        switchMusicInternal(track, combat, fadeOut, fadeIn)
+    }
+
+    /**
+     * Set the list of soundtracks to loop through, as specified by the current sector.
+     */
+    fun switchMusicList(tracks: List<MusicSpec>) {
+        trackList.clear()
+        trackList.addAll(tracks)
+        switchToMusic(tracks.first(), usingCombatMusic, 0.75f, 2f)
+    }
+
+    private fun switchMusicInternal(track: MusicSpec, combat: Boolean, fadeOut: Float, fadeIn: Float) {
+        // Move the current player to the 2nd slot, so we fade away from it.
+        val previous = musicPlayers[0]
+        musicPlayers[0] = musicPlayers[1]
+        musicPlayers[1] = previous
+
+        val fileName = when (combat) {
+            true -> track.combat
+            false -> track.explore
+        }
+        val finalVolume = when (combat) {
+            true -> 1f
+            false -> 0.8f
+        }
+
+        // TODO don't load the whole thing into memory!
+        //  Since we're only loading compressed audio it's not *that* terrible,
+        //  wasting about 7-10MiB depending on the track, but we can do better.
+        val dataStream = df.open(df[fileName])
+        val oggStream = OggInputStream(dataStream)
+
+        // Start muted, and we'll fade in
+        musicPlayers[0].setup(1f, 0f)
+        musicPlayers[0].play(oggStream)
+
+        // Set up the cross-fade
+        musicPlayers[0].fadeVolume(finalVolume, fadeIn)
+        musicPlayers[1].fadeVolume(0f, fadeOut)
+    }
+
+    /**
+     * Switch between the combat and explore versions of the current music track.
+     */
+    fun setCombatMusic(combat: Boolean) {
+        val track = currentMusic ?: return
+
+        if (combat == usingCombatMusic)
+            return
+        usingCombatMusic = combat
+
+        switchMusicInternal(track, combat, 2f, 2f)
+
+        // The combat and explore tracks match up with each other, so we fade
+        // between the two versions while they're synced up in time.
+        musicPlayers[0].position = musicPlayers[1].position
+
+        // Use this for debugging the OGG and streaming code:
+        // println("Times:")
+        // println("New: " + musicPlayers[0].position)
+        // println("Old: " + musicPlayers[1].position)
+    }
+
     override fun free() {
         require(!freed)
         freed = true
@@ -171,10 +320,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
     private fun loadBuffer(path: String): Int {
         rawBuffers[path]?.let { return it }
 
-        val soundStore = SoundStore.get()
-        soundStore.init()
-
-        if (!soundStore.soundWorks()) {
+        if (!SoundStore.get().soundWorks()) {
             return SoundInstance.NO_SOUND_BUFFER
         }
 
@@ -427,4 +573,11 @@ class SoundSpec(elem: Element) {
      * So with fire set with a maxCount of 5, one fire would only play at 20% volume.
      */
     val maxCount: Int = elem.getAttributeValue("count")?.toInt() ?: 1
+}
+
+class MusicSpec(elem: Element) {
+    val name: String = elem.getChildTextTrim("name")
+
+    val explore: String = "audio/music/" + elem.getChildTextTrim("explore")
+    val combat: String = "audio/music/" + elem.getChildTextTrim("combat")
 }

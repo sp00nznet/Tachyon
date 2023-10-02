@@ -95,6 +95,11 @@ public class SoundStore {
     private int maxSources = 64;
 
     /**
+     * The number of sources to reserve for music tracks.
+     */
+    private final int musicSourceCount = 2;
+
+    /**
      * Create a new sound store
      */
     private SoundStore() {
@@ -155,6 +160,23 @@ public class SoundStore {
             return -1;
         }
         if (index < 0) {
+            return -1;
+        }
+        return sources.get(index);
+    }
+
+    /**
+     * Get the ID of a given source, verifying that it's reserved
+     * for playing music.
+     *
+     * @param index The ID of a given source
+     * @return The ID of the given source
+     */
+    public int getMusicSource(int index) {
+        if (!soundWorks) {
+            return -1;
+        }
+        if (index < 0 || index >= musicSourceCount) {
             return -1;
         }
         return sources.get(index);
@@ -356,7 +378,7 @@ public class SoundStore {
      * @return The index of the free sound source
      */
     private int findFreeSource() {
-        for (int i = 1; i < sourceCount - 1; i++) {
+        for (int i = musicSourceCount; i < sourceCount - 1; i++) {
             int state = AL10.alGetSourcei(sources.get(i), AL10.AL_SOURCE_STATE);
 
             if ((state != AL10.AL_PLAYING) && (state != AL10.AL_PAUSED)) {
