@@ -26,70 +26,48 @@ class Animations(df: Datafile) {
 
         val doc = df.parseXML(df[filePath])
 
-        // Parse the sheets
-        for (elem in doc.rootElement.getChildren("animSheet")) {
-            val name = elem.getAttributeValue("name")
+        // Parse everything
+        // Sadly, duplicate sprite sheets exist in vanilla (eg for the ion bomb,
+        // where both the projectile and launcher have the same name). Animations
+        // will then use whatever one is used last, which means we have to parse
+        // everything in one big loop.
+        for (elem in doc.rootElement.children) {
+            when (elem.name) {
+                "animSheet" -> {
+                    val name = elem.getAttributeValue("name")
+                    sheets[name] = buildSheet(elem, name) ?: continue
+                }
 
-            if (this.sheets.containsKey(name)) {
-                println("Warning: duplicate spritesheet $name, using first one")
-                continue
+                "anim" -> {
+                    val name = elem.getAttributeValue("name")
+                    animations[name] = buildAnimation(elem, name) ?: continue
+                }
+
+                "weaponAnim" -> {
+                    val name = elem.getAttributeValue("name")
+                    weaponAnimations[name] = buildWeaponAnimation(elem) ?: continue
+                }
+
+                else -> error("Invalid element name '${elem.name}' in animations XML")
             }
-
-            // These have image sizes which don't match the XML, skip verification of them for now
-            if (TMP_BROKEN_IMAGES.contains(name))
-                continue
-
-            // The filename is the text inside the element
-            val path = "img/${elem.textTrim}"
-
-            val imgWidth = elem.requireAttributeValueInt("w")
-            val imgHeight = elem.requireAttributeValueInt("h")
-
-            val frameWidth = elem.getAttributeValue("fw").toInt()
-            val frameHeight = elem.getAttributeValue("fh").toInt()
-
-            sheets[name] = SpriteSheetSpec(path, frameWidth, frameHeight, imgWidth, imgHeight)
         }
+    }
 
-        for (xml in doc.rootElement.getChildren("anim")) {
-            val name = xml.getAttributeValue("name")
-            animations[name] = buildAnimation(xml, name) ?: continue
-        }
+    private fun buildSheet(elem: Element, name: String): SpriteSheetSpec? {
+        // These have image sizes which don't match the XML, skip verification of them for now
+        if (TMP_BROKEN_IMAGES.contains(name))
+            return null
 
-        for (xml in doc.rootElement.getChildren("weaponAnim")) {
-            val name = xml.getAttributeValue("name")
+        // The filename is the text inside the element
+        val path = "img/${elem.textTrim}"
 
-            // Add this here since weapon animations don't have time elements
-            // Supply some fixed name that'll be easy to identify if this somehow
-            // ends up being used - it shouldn't, we throw it away very soon.
-            xml.addContent(Element("time").apply { text = "-1" })
-            val anim = buildAnimation(xml, "<unnamed-weapon-anim>") ?: continue
+        val imgWidth = elem.requireAttributeValueInt("w")
+        val imgHeight = elem.requireAttributeValueInt("h")
 
-            val chargedFrame = xml.getChild("chargedFrame").textTrim.toInt()
-            val fireFrame = xml.getChild("fireFrame").textTrim.toInt()
+        val frameWidth = elem.getAttributeValue("fw").toInt()
+        val frameHeight = elem.getAttributeValue("fh").toInt()
 
-            val mountPoint = Utils.parsePosElem(xml.getChild("mountPoint"))
-            val firePoint = Utils.parsePosElem(xml.getChild("firePoint"))
-            val chargeOffset = xml.getChild("firePoint").getAttributeValue("charge")?.toInt() ?: 0
-
-            val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { "img/$it" }
-
-            val boostAnim = xml.getChildTextTrim("boost")?.let { animations.getValue(it) }
-
-            weaponAnimations[name] = WeaponAnimationSpec(
-                anim.sheet,
-                anim.x,
-                anim.y,
-                anim.length,
-                chargedFrame,
-                fireFrame,
-                mountPoint,
-                firePoint,
-                chargeImage,
-                chargeOffset,
-                boostAnim
-            )
-        }
+        return SpriteSheetSpec(path, frameWidth, frameHeight, imgWidth, imgHeight)
     }
 
     private fun buildAnimation(xml: Element, name: String): AnimationSpec? {
@@ -116,6 +94,39 @@ class Animations(df: Datafile) {
         val time = xml.getChild("time").textTrim.toFloat() / realLength
 
         return AnimationSpec(sheet, name, x, y, realLength, time)
+    }
+
+    private fun buildWeaponAnimation(xml: Element): WeaponAnimationSpec? {
+        // Add this here since weapon animations don't have time elements
+        // Supply some fixed name that'll be easy to identify if this somehow
+        // ends up being used - it shouldn't, we throw it away very soon.
+        xml.addContent(Element("time").apply { text = "-1" })
+        val anim = buildAnimation(xml, "<unnamed-weapon-anim>") ?: return null
+
+        val chargedFrame = xml.getChild("chargedFrame").textTrim.toInt()
+        val fireFrame = xml.getChild("fireFrame").textTrim.toInt()
+
+        val mountPoint = Utils.parsePosElem(xml.getChild("mountPoint"))
+        val firePoint = Utils.parsePosElem(xml.getChild("firePoint"))
+        val chargeOffset = xml.getChild("firePoint").getAttributeValue("charge")?.toInt() ?: 0
+
+        val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { "img/$it" }
+
+        val boostAnim = xml.getChildTextTrim("boost")?.let { animations.getValue(it) }
+
+        return WeaponAnimationSpec(
+            anim.sheet,
+            anim.x,
+            anim.y,
+            anim.length,
+            chargedFrame,
+            fireFrame,
+            mountPoint,
+            firePoint,
+            chargeImage,
+            chargeOffset,
+            boostAnim
+        )
     }
 
     operator fun get(name: String): AnimationSpec {
