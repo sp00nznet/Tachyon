@@ -5,6 +5,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Achievement
 import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.Buttons
+import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -279,6 +280,27 @@ class AchievementCompleter(console: DebugConsole, owner: ArgumentTypeProcessor?)
 
     override fun getCompletionString(item: Achievement): String {
         return item.id
+    }
+}
+
+class ShipFamilyCompleter(console: DebugConsole, owner: ArgumentTypeProcessor?) :
+    BasicCompletionEngine<ShipBlueprint>(console, owner) {
+
+    override val items = console.game.blueprintManager.blueprints.values
+        .filterIsInstance(ShipBlueprint::class.java)
+        .sortedBy { it.name } // Stable ordering
+        // Only use one ship per class
+        .associateBy { console.game.content.shipFamilies.byShipId[it.name] }
+        .filterKeys { it != null } // Exclude the ship representing a null family
+        .values
+        .toList()
+
+    override fun getItemName(item: ShipBlueprint): String {
+        return item.shipClass?.get(console.game.translator) ?: item.name
+    }
+
+    override fun getCompletionString(item: ShipBlueprint): String {
+        return item.name
     }
 }
 

@@ -2,6 +2,8 @@ package xyz.znix.xftl.devutil
 
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.game.Achievement
+import xyz.znix.xftl.game.ShipBlueprint
+import xyz.znix.xftl.game.ShipFamily
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import java.lang.reflect.Parameter
 
@@ -137,6 +139,36 @@ object AchievementProcessor : ArgumentTypeProcessor {
             return previous
 
         return AchievementCompleter(debugConsole, this)
+    }
+}
+
+object ShipFamilyProcessor : ArgumentTypeProcessor {
+    override fun validate(param: Parameter) {
+        check(param.type == ShipFamily::class.java)
+    }
+
+    override fun process(value: String, console: DebugConsole): ShipFamily? {
+        val ship = console.game.content.blueprintManager.blueprints[value] as? ShipBlueprint
+
+        if (ship == null) {
+            console.addLine("No such ship blueprint '$value' (when reading family)")
+            return null
+        }
+
+        val family = console.game.content.shipFamilies.byShipId[ship.name]
+
+        if (family == null) {
+            console.addLine("Ship '${ship.name}' does not belong to a ship family")
+        }
+
+        return family
+    }
+
+    override fun getCompleter(debugConsole: DebugConsole, previous: AutoCompleter?): AutoCompleter {
+        if (previous is ShipFamilyCompleter && previous.owner == this)
+            return previous
+
+        return ShipFamilyCompleter(debugConsole, this)
     }
 }
 

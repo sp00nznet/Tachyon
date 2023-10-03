@@ -50,8 +50,15 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
             img.image = game.getImg(ach.img)
         }
 
-        val questWidget = widgetTree.byId["quest"]!!
+        val questWidget = widgetTree.byId["quest"] as ImageView
         questWidget.isVisible = shipFamily.hasQuest
+        if (shipFamily.hasQuest) {
+            val questImagePath = when (game.mainGame.profile.getShipUnlock(shipFamily)) {
+                null -> "img/achievements/S_Q_off.png"
+                else -> "img/achievements/S_Q_on.png"
+            }
+            questWidget.image = game.getImg(questImagePath)
+        }
     }
 
     override fun draw(g: Graphics) {

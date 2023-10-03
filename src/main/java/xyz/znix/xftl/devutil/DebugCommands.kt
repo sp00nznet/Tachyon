@@ -11,6 +11,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Achievement
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.GameOverWindow
+import xyz.znix.xftl.game.ShipFamily
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.Beacon
@@ -1001,6 +1002,34 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
     @CmdHelp("Remove an achievement")
     private fun cmdAchSet(@ParName("achievement") ach: Achievement) {
         game.mainGame.profile.deleteAchievement(ach)
+    }
+
+    @ConsoleCommand(name = "ship-unlock")
+    @CmdHelp("Set the difficulty a ship family's unlock quest was completed with")
+    private fun cmdUnlockShip(
+        @ParName("ship") family: ShipFamily,
+        @ParName("difficulty") difficulty: Difficulty
+    ) {
+        if (family.unlockId == null) {
+            addLine("Ship family doesn't have an unlock quest")
+            return
+        }
+
+        // Same as achievements, remove the old higher-difficulty unlock
+        game.mainGame.profile.deleteShipUnlock(family)
+        game.mainGame.profile.unlockShip(family, difficulty)
+    }
+
+    @ConsoleCommand(name = "ship-lock")
+    @CmdHelp("Un-completes a ship unlock quest")
+    private fun cmdLockShip(@ParName("ship") family: ShipFamily) {
+        if (family.unlockId == null) {
+            addLine("Ship family doesn't have an unlock quest")
+            return
+        }
+
+        // Same as achievements, remove the old higher-difficulty unlock
+        game.mainGame.profile.deleteShipUnlock(family)
     }
 
     @ConsoleCommand(name = "reset-ftl")
