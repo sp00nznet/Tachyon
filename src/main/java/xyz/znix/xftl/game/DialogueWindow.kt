@@ -32,6 +32,8 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
     private val augmentStringWidth = font.getWidth(game.translator["augment"])
 
+    private val shipUnlockSound = game.sounds.getSample("unlock")
+
     /**
      * The currently-shown event. This is null if there's only [syntheticEvents]
      * remaining.
@@ -95,6 +97,22 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
                 InGameState.QuestAddResult.TOO_LATE -> "no_time"
             }
             extraText += "\n\n" + game.translator[messageId]
+        }
+
+        // When ships are first unlocked, they add on an extra line.
+        // We also need to play the unlock sound now, so we might as well also
+        // update the user's profile while we're here.
+        val unlockShip = event.event.unlockShip
+        if (unlockShip != null) {
+            val family = game.content.shipFamilies.families.firstOrNull { it.unlockId == unlockShip }
+            checkNotNull(family) { "No ship family with unlock ID: '$unlockShip'" }
+            val oldStatus = game.mainGame.profile.getShipUnlock(family)
+            game.mainGame.profile.unlockShip(family, game.difficulty)
+
+            if (oldStatus == null) {
+                shipUnlockSound.play()
+                extraText += "\n\n" + game.translator["unlock_ship_$unlockShip"]
+            }
         }
 
         // Events that have no text are valid, usually they are the result of a choice

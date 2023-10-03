@@ -54,6 +54,7 @@ class Event(
     val systemUpgrades: List<EventSystemUpgrade>
 
     val modifyPursuit: Int = elem.getChild("modifyPursuit")?.getAttributeValue("amount")?.toInt() ?: 0
+    val unlockShip: String? = elem.getChild("unlockShip")?.getAttributeValue("id")
 
     val boarderRace: String?
     val boarderCount: IntRange
@@ -376,6 +377,7 @@ class Event(
             "ship", "img", "environment", "damage",
             "upgrade", "modifyPursuit", "status",
             "quest", "reveal_map", "remove", "fleet",
+            "unlockShip",
 
             // Used by the code loading the event
             "text", "choice"
