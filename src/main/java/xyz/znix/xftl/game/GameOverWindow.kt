@@ -22,7 +22,7 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
     override val size: IPoint = widgetTree.root.size
 
     init {
-        buttons += widgetTree.buildButtons(game)
+        buttons += widgetTree.buildButtons(game, this)
 
         widgetTree.addButtonListener("stats", this::statsClicked)
         widgetTree.addButtonListener("restart", this::restartClicked)

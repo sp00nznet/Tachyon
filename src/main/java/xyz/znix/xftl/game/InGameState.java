@@ -279,6 +279,8 @@ public class InGameState extends MainGame.GameState {
         content.sounds.updateLoopedSounds(isPaused());
         content.sounds.setCombatMusic(isInDanger());
         content.sounds.updateMusic(delta);
+        content.sounds.setSoundEffectVolume(mainGame.getProfile().getSoundVolume());
+        content.sounds.setMusicVolume(mainGame.getProfile().getMusicVolume());
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
             debugConsoleVisible = !debugConsoleVisible;
@@ -1585,6 +1587,12 @@ public class InGameState extends MainGame.GameState {
         @Override
         public Colour getDebugOutlineColour(@NotNull Widget widget) {
             return null;
+        }
+
+        @NotNull
+        @Override
+        public WindowRenderer getWindowRenderer() {
+            return content.windowRenderer;
         }
     }
 }

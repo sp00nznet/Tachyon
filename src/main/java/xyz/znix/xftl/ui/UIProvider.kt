@@ -3,6 +3,7 @@ package xyz.znix.xftl.ui
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.rendering.WindowRenderer
 
 /**
  * Represents an object that is responsible in some way for rendering UIs,
@@ -20,4 +21,6 @@ interface UIProvider {
     fun translate(key: String): String?
 
     fun getDebugOutlineColour(widget: Widget): Color?
+
+    fun getWindowRenderer(): WindowRenderer
 }

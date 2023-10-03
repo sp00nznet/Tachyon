@@ -2,6 +2,7 @@ package xyz.znix.xftl.ui
 
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.Window
 import xyz.znix.xftl.rendering.Graphics
 
 class WidgetContainer(val root: Widget) {
@@ -47,7 +48,7 @@ class WidgetContainer(val root: Widget) {
         button.clickListener = listener
     }
 
-    fun buildButtons(game: InGameState): List<Button> {
-        return sortedWidgets.filterIsInstance(UIKitButton::class.java).map { it.createGameButton(game) }
+    fun buildButtons(game: InGameState, window: Window): List<Button> {
+        return sortedWidgets.flatMap { it.createGameButtons(game, window) }
     }
 }

@@ -5,6 +5,7 @@ import xyz.znix.xftl.Constants
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.Window
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
@@ -56,10 +57,10 @@ class UIKitButton(
         stretchToFitChildren()
     }
 
-    fun createGameButton(game: InGameState): Button {
+    override fun createGameButtons(game: InGameState, window: Window): List<Button> {
         val btn = InGameButton(game)
         gameButton = btn
-        return btn
+        return listOf(btn)
     }
 
     companion object {

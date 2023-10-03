@@ -22,7 +22,7 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
     override val size: IPoint = widgetTree.root.size
 
     init {
-        buttons += widgetTree.buildButtons(game)
+        buttons += widgetTree.buildButtons(game, this)
 
         widgetTree.addButtonListener("continue", this::continueClicked)
         widgetTree.addButtonListener("main_menu", this::mainMenuClicked)
@@ -161,7 +161,7 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
     }
 
     private fun optionsClicked() {
-        // TODO implement
+        game.shipUI.showOptionsWindow()
     }
 
     private fun controlsClicked() {

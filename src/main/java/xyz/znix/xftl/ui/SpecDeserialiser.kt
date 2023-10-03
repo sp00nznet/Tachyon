@@ -59,6 +59,8 @@ class SpecDeserialiser(private val provider: UIProvider) {
             "free" -> FreeContainer.fromXML(provider, elem)
             "image" -> ImageView.fromXML(provider, elem)
             "button" -> UIKitButton.fromXML(provider, elem)
+            "window" -> StyledWindowView.fromXML(provider, elem)
+            "slider" -> Slider.fromXML(provider, elem)
             else -> throw IllegalUISpecException("Unknown widget type '$type'")
         }
 

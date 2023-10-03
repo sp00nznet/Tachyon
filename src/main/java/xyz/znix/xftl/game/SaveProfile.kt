@@ -30,6 +30,11 @@ class SaveProfile private constructor() {
      */
     private val unlockedShips = HashMap<String, AchievementUnlockInfo>()
 
+    // These must be manually marked as dirty, since they can change quite
+    // a lot when the slider is being moved.
+    var musicVolume: Float = 1f
+    var soundVolume: Float = 1f
+
     /**
      * Set to true if this profile needs saving.
      */
@@ -107,7 +112,19 @@ class SaveProfile private constructor() {
             elem.setAttribute("diff", info.difficulty.name)
         }
 
+        val volumes = Element("soundVolume")
+        root.addContent(volumes)
+        volumes.setAttribute("sfx", soundVolume.toString())
+        volumes.setAttribute("music", musicVolume.toString())
+
         return doc
+    }
+
+    /**
+     * Request that the profile should be saved.
+     */
+    fun markDirty() {
+        dirty = true
     }
 
     fun markSaveComplete() {
@@ -134,6 +151,12 @@ class SaveProfile private constructor() {
             unlockedShips[id] = AchievementUnlockInfo(
                 Difficulty.valueOf(difficultyName)
             )
+        }
+
+        val volumes = root.getChild("soundVolume")
+        if (volumes != null) {
+            soundVolume = volumes.getAttributeValue("sfx").toFloat()
+            musicVolume = volumes.getAttributeValue("music").toFloat()
         }
     }
 

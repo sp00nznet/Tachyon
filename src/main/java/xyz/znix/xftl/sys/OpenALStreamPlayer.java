@@ -70,6 +70,10 @@ public class OpenALStreamPlayer {
      */
     private float volume = 1;
     /**
+     * The non-fading master volume, which is multiplied into the regular volume.
+     */
+    private float masterVolume = 1;
+    /**
      * Position in seconds of the previously played buffers
      */
     private float positionOffset;
@@ -147,9 +151,10 @@ public class OpenALStreamPlayer {
      * @param pitch  The pitch to play back at
      * @param volume The volume to play at
      */
-    public void setup(float pitch, float volume) {
+    public void setup(float pitch, float volume, float masterVolume) {
         this.pitch = pitch;
         this.volume = volume;
+        this.masterVolume = masterVolume;
 
         // Stop fading
         volumeFadeTimer = 0f;
@@ -157,9 +162,14 @@ public class OpenALStreamPlayer {
         applyAudioSettings();
     }
 
+    public void setMasterVolume(float masterVolume) {
+        this.masterVolume = masterVolume;
+        applyAudioSettings();
+    }
+
     private void applyAudioSettings() {
         AL10.alSourcef(source, AL10.AL_PITCH, pitch);
-        AL10.alSourcef(source, AL10.AL_GAIN, volume);
+        AL10.alSourcef(source, AL10.AL_GAIN, volume * masterVolume);
     }
 
     /**

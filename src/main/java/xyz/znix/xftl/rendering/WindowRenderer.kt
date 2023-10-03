@@ -68,7 +68,7 @@ class WindowRenderer(
     fun renderWithTitleTab(
         g: Graphics, tabImage: Image, font: SILFontLoader,
         x: Int, y: Int, width: Int, height: Int,
-        text: String
+        text: String, textColour: Colour = Constants.JUMP_DISABLED_TEXT
     ) {
         val startWidth = 20
         val endWidth = 38
@@ -81,7 +81,7 @@ class WindowRenderer(
         }, {})
 
         UIUtils.drawTab(font, text, tabImage, x.f - GLOW, y.f - GLOW, startWidth.f, endWidth.f)
-        font.drawString(x.f - GLOW + startWidth, y + 24f, text, Constants.JUMP_DISABLED_TEXT)
+        font.drawString(x.f - GLOW + startWidth, y + 24f, text, textColour)
     }
 
     // This draws more than the specified width/height, so it must be masked.

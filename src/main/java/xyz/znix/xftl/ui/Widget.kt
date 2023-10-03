@@ -2,6 +2,9 @@ package xyz.znix.xftl.ui
 
 import org.jdom2.Element
 import xyz.znix.xftl.f
+import xyz.znix.xftl.game.Button
+import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.Window
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
@@ -170,6 +173,16 @@ abstract class Widget(val provider: UIProvider) {
 
     open fun attemptStretch(availableWidth: Int, availableHeight: Int) {
         // Do nothing, subclasses can implement
+    }
+
+    /**
+     * The widget system itself doesn't have any kind of interactivity.
+     *
+     * For this, in-game buttons can be created, but they only work with
+     * the in-game state.
+     */
+    open fun createGameButtons(game: InGameState, window: Window): List<Button> {
+        return emptyList()
     }
 
     protected fun loadXML(elem: Element) {

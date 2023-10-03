@@ -62,6 +62,30 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
     override var freed: Boolean = false
         private set
 
+    // The SFX/music volumes, as set in the UI
+    var soundEffectVolume: Float = 1f
+        set(value) {
+            if (field == value)
+                return
+
+            field = value
+
+            // Update the volumes of any currently-playing sounds
+            SoundInstance.updateVolumes()
+        }
+
+    var musicVolume: Float = 1f
+        set(value) {
+            if (field == value)
+                return
+
+            field = value
+
+            for (player in musicPlayers) {
+                player.setMasterVolume(musicVolume)
+            }
+        }
+
     init {
         // Make sure we've classloaded our modified copy of OggInputStream
         OggInputStream.FTL_MARKER = 2
@@ -175,14 +199,14 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
 
             // Clamp to ensure that having more than maxCount sources
             // doesn't adjust the volume.
-            sound.setVolume((1f * count / spec.maxCount).coerceIn(0f..1f))
+            sound.volume = (1f * count / spec.maxCount).coerceIn(0f..1f)
         }
 
         // Start any new sounds
         if (loopCounts.isNotEmpty()) {
             for ((spec, count) in loopCounts.entries) {
                 val sound = get(spec).internalPlayRawLoop()
-                sound.setVolume(1f * count / spec.maxCount)
+                sound.volume = 1f * count / spec.maxCount
                 loopSounds[spec] = sound
             }
             loopCounts.clear()
@@ -257,7 +281,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         val file = VorbisFile(inputStream, null, 0)
 
         // Start muted, and we'll fade in
-        musicPlayers[0].setup(1f, 0f)
+        musicPlayers[0].setup(1f, 0f, musicVolume)
         musicPlayers[0].play(file)
 
         // Set up the cross-fade
@@ -315,7 +339,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
 
         val buffer = loadBuffer(path)
 
-        return FTLSound(spec, buffer)
+        return FTLSound(spec, buffer, this)
     }
 
     private fun loadBuffer(path: String): Int {
@@ -378,13 +402,13 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
  * a sound can be playing twice at once, [SoundInstance]s are
  * used for that purpose.
  */
-class FTLSound(val spec: SoundSpec, private val buffer: Int) {
+class FTLSound(val spec: SoundSpec, private val buffer: Int, private val manager: SoundManager) {
     /**
      * Play a non-looping sound.
      */
     fun play(): SoundInstance {
         require(!spec.loop)
-        return SoundInstance(spec, buffer)
+        return SoundInstance(spec, buffer, manager)
     }
 
     /**
@@ -394,7 +418,7 @@ class FTLSound(val spec: SoundSpec, private val buffer: Int) {
      */
     fun internalPlayRawLoop(): SoundInstance {
         require(spec.loop)
-        return SoundInstance(spec, buffer)
+        return SoundInstance(spec, buffer, manager)
     }
 }
 
@@ -405,7 +429,7 @@ class FTLSound(val spec: SoundSpec, private val buffer: Int) {
  *
  * Instances of this class should be created via [FTLSound.play].
  */
-class SoundInstance(private val spec: SoundSpec, buffer: Int) {
+class SoundInstance(private val spec: SoundSpec, buffer: Int, private val manager: SoundManager) {
     // This is only used by the single instance for a loop that the
     // sound manager owns and controls.
     private val loop: Boolean = spec.loop
@@ -468,14 +492,21 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int) {
             isPausedInternal = value
         }
 
+    var volume: Float = 1f
+        set(value) {
+            if (value == field)
+                return
+            field = value
+            updateVolume()
+        }
+
     init {
         // If this is a placeholder sound because audio isn't
         // working or something like that, do nothing.
         if (buffer == NO_SOUND_BUFFER) {
             source = NO_SOURCE
         } else {
-            val volume = calculateGain(1f)
-            source = SoundStore.get().playAsSound(buffer, 1f, volume, loop)
+            source = SoundStore.get().playAsSound(buffer, 1f, calculateGain(), loop)
 
             if (source == -1) {
                 println("[WARN] No source available to play sound ${spec.name}")
@@ -485,13 +516,13 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int) {
         }
     }
 
-    fun setVolume(volume: Float) {
+    private fun updateVolume() {
         val sourceHandle = SoundStore.get().getSource(source)
-        AL10.alSourcef(sourceHandle, AL10.AL_GAIN, calculateGain(volume))
+        AL10.alSourcef(sourceHandle, AL10.AL_GAIN, calculateGain())
     }
 
-    private fun calculateGain(volume: Float): Float {
-        return volume * (spec.volume / 10f)
+    private fun calculateGain(): Float {
+        return volume * manager.soundEffectVolume * (spec.volume / 10f)
     }
 
     /**
@@ -516,6 +547,15 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int) {
         // if our buffer is marked as playing we may have finished and
         // another sound started.
         private val SOURCE_PLAYBACK = HashMap<Int, SoundInstance>()
+
+        fun updateVolumes() {
+            for (sound in SOURCE_PLAYBACK.values) {
+                if (sound.isStopped)
+                    return
+
+                sound.updateVolume()
+            }
+        }
     }
 }
 

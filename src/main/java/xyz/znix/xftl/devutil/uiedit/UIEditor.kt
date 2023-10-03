@@ -2,10 +2,7 @@ package xyz.znix.xftl.devutil.uiedit
 
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
-import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.rendering.Image
-import xyz.znix.xftl.rendering.ShaderProgramme
+import xyz.znix.xftl.rendering.*
 import xyz.znix.xftl.sys.BasicGame
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
@@ -34,6 +31,8 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
     private val images = HashMap<String, Image>()
 
     private lateinit var utilFont: SILFontLoader
+
+    private lateinit var windowRenderer: WindowRenderer
 
     private val translator = Translator(df, "en")
 
@@ -68,6 +67,11 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         updateZoomScale()
 
         utilFont = getFont("c&c")
+
+        val background = getImg("img/window_base.png")
+        val outline = getImg("img/window_outline.png")
+        val mask = getImg("img/window_mask.png")
+        windowRenderer = WindowRenderer(background, outline, mask)
 
         setupFileWatcher()
 
@@ -265,6 +269,10 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
 
     override fun translate(key: String): String? {
         return translator.translations[key]
+    }
+
+    override fun getWindowRenderer(): WindowRenderer {
+        return windowRenderer
     }
 
     override fun getDebugOutlineColour(widget: Widget): Color? {

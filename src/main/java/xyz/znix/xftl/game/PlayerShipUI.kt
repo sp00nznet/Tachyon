@@ -67,12 +67,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private var currentWindow: Window? = null
 
     /**
-     * The currently-open pause menu.
+     * The currently-open pause or options menu.
      *
      * This is handled separately from all other windows, since it can
      * be opened on top of them.
      */
-    private var pauseWindow: PauseWindow? = null
+    private var pauseWindow: Window? = null
 
     private val hullWarningLines = listOf(
         ConstPoint(361, 51),
@@ -1303,6 +1303,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     fun showPauseWindow() {
         pauseWindow = PauseWindow(game) { pauseWindow = null }
+    }
+
+    fun showOptionsWindow() {
+        // This uses the pause window slot, so it doesn't dismiss
+        // a regular window, such as the dialogue or game-over windows.
+        pauseWindow = OptionsWindow(game) { pauseWindow = null }
     }
 
     // Hack used to draw the selected crew from the ship, rather than some cleaner solution
