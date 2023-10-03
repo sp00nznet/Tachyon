@@ -1,17 +1,20 @@
 package xyz.znix.xftl.game
 
+import com.jcraft.jorbis.VorbisFile
 import org.jdom2.Element
 import org.lwjgl.openal.AL10
 import org.newdawn.slick.openal.OggDecoder
 import org.newdawn.slick.openal.OggInputStream
 import org.newdawn.slick.openal.WaveData
 import xyz.znix.xftl.Datafile
+import xyz.znix.xftl.FTLFile
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.sys.INativeResource
 import xyz.znix.xftl.sys.OpenALStreamPlayer
 import xyz.znix.xftl.sys.ResourceContext
 import xyz.znix.xftl.sys.SoundStore
 import java.io.InputStream
+import java.io.RandomAccessFile
 
 class SoundManager(private val df: Datafile, context: ResourceContext) : INativeResource {
     private val sounds = HashMap<SoundSpec, FTLSound>()
@@ -62,6 +65,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
     init {
         // Make sure we've classloaded our modified copy of OggInputStream
         OggInputStream.FTL_MARKER = 2
+        VorbisFile.XFTL_MARKER = 2
 
         loadXml("data/sounds.xml")
         loadXml("data/dlcSounds.xml")
@@ -249,15 +253,12 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
             false -> 0.8f
         }
 
-        // TODO don't load the whole thing into memory!
-        //  Since we're only loading compressed audio it's not *that* terrible,
-        //  wasting about 7-10MiB depending on the track, but we can do better.
-        val dataStream = df.open(df[fileName])
-        val oggStream = OggInputStream(dataStream)
+        val inputStream = VorbisInputStream(df, df[fileName])
+        val file = VorbisFile(inputStream, null, 0)
 
         // Start muted, and we'll fade in
         musicPlayers[0].setup(1f, 0f)
-        musicPlayers[0].play(oggStream)
+        musicPlayers[0].play(file)
 
         // Set up the cross-fade
         musicPlayers[0].fadeVolume(finalVolume, fadeIn)
@@ -580,4 +581,54 @@ class MusicSpec(elem: Element) {
 
     val explore: String = "audio/music/" + elem.getChildTextTrim("explore")
     val combat: String = "audio/music/" + elem.getChildTextTrim("combat")
+}
+
+private class VorbisInputStream(df: Datafile, val file: FTLFile) : VorbisFile.SeekableInputStream() {
+    /**
+     * To avoid loading the whole track into memory (which is quite unnecessary),
+     * we open the raw FTL database.
+     *
+     * TODO this will need special-casing for mods.
+     */
+    private val fi: RandomAccessFile = RandomAccessFile(df.underlyingFile, "r")
+
+    init {
+        // Without this, we start before the OGG file's position in the DAT file.
+        seek(0)
+    }
+
+    override fun read(): Int {
+        // VorbisFile doesn't use this
+        error("Single-byte reading not is supported")
+    }
+
+    override fun read(data: ByteArray, off: Int, len: Int): Int {
+        val remaining = file.offset + file.length - fi.filePointer
+        assert(remaining >= 0) // Negatives mean we've gone past EOF
+        if (remaining <= 0)
+            return -1
+
+        val clampedLen = len.coerceAtMost(remaining.toInt())
+        return fi.read(data, off, clampedLen)
+    }
+
+    override fun getLength(): Long {
+        return file.length.toLong()
+    }
+
+    override fun tell(): Long {
+        return fi.filePointer - file.offset
+    }
+
+    override fun seek(pos: Long) {
+        if (pos < 0 || pos > file.length) {
+            throw IllegalArgumentException("Illegal seek position $pos, file length ${file.length}")
+        }
+
+        fi.seek(file.offset + pos)
+    }
+
+    override fun close() {
+        fi.close()
+    }
 }

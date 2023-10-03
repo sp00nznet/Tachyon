@@ -1,11 +1,11 @@
 package xyz.znix.xftl.sys;
 
+import com.jcraft.jorbis.Info;
+import com.jcraft.jorbis.VorbisFile;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.AL11;
-import org.newdawn.slick.openal.OggInputStream;
-import org.newdawn.slick.util.Log;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -58,9 +58,9 @@ public class OpenALStreamPlayer {
      */
     private boolean done = true;
     /**
-     * The stream we're currently reading from
+     * The file we're currently playing
      */
-    private OggInputStream audio;
+    private VorbisFile audio;
     /**
      * The pitch of the music
      */
@@ -118,22 +118,21 @@ public class OpenALStreamPlayer {
     /**
      * Start this stream playing
      *
-     * @param stream The source of the sound data to play
+     * @param file The source of the sound data to play
      * @throws IOException Indicates a failure to read from the stream
      */
-    public void play(@NotNull OggInputStream stream) throws IOException {
+    public void play(@NotNull VorbisFile file) throws IOException {
         if (audio != null) {
             audio.close();
         }
 
-        audio = Objects.requireNonNull(stream);
+        audio = Objects.requireNonNull(file);
         positionOffset = 0;
-        done = false;
 
         AL10.alSourceStop(source);
         removeBuffers();
 
-        startPlayback(0);
+        startPlayback();
     }
 
     public void stop() {
@@ -204,9 +203,16 @@ public class OpenALStreamPlayer {
             return;
         }
 
-        float sampleRate = audio.getRate();
+        // If we just seeked somewhere, the current link ID won't yet be known,
+        // so use the first link's info for now.
+        Info info = audio.getInfo(-1);
+        if (info == null) {
+            info = audio.getInfo(0);
+        }
+
+        float sampleRate = info.rate;
         float sampleSize;
-        if (audio.getChannels() > 1) {
+        if (info.channels > 1) {
             sampleSize = 4; // AL10.AL_FORMAT_STEREO16
         } else {
             sampleSize = 2; // AL10.AL_FORMAT_MONO16
@@ -258,35 +264,42 @@ public class OpenALStreamPlayer {
      * @return True if another section was available
      */
     public boolean stream(int bufferId) {
-        try {
-            int count = audio.read(buffer);
+        // Read at least 80% of the buffer.
+        // We can't go all the way since VorbisFile doesn't have its own
+        // internal buffer, so once our buffer fills up we'll lose samples.
+        // Note that if we don't have enough (for example, only a single
+        // read of 500-to-4k-ish bytes) then we can end up running out of
+        // buffers faster than we can add new ones, which makes some hard
+        // to debug clicking sounds.
+        int minimumCount = (int) (buffer.length * 0.8);
 
-            if (count != -1) {
-                loadBufferToAL(bufferId, count);
-            } else {
+        int totalCount = 0;
+        while (totalCount < minimumCount) {
+            int lenRemaining = buffer.length - totalCount;
+            int count = audio.read(buffer, totalCount, lenRemaining, 0, 2, 1, null);
+
+            // If we hit EOF, don't return here - we might still
+            // have the previous reads to put into a buffer.
+            if (count <= 0) {
                 done = true;
-                return false;
+                break;
             }
 
-            return true;
-        } catch (IOException e) {
-            Log.error(e);
+            totalCount += count;
+        }
+
+        if (totalCount == 0) {
             return false;
         }
-    }
 
-    /**
-     * Move the contents of {@link #buffer} to the given OpenAL buffer.
-     *
-     * @param count The number of bytes to copy.
-     */
-    private void loadBufferToAL(int bufferId, int count) {
         bufferData.clear();
-        bufferData.put(buffer, 0, count);
+        bufferData.put(buffer, 0, totalCount);
         bufferData.flip();
 
-        int format = audio.getChannels() > 1 ? AL10.AL_FORMAT_STEREO16 : AL10.AL_FORMAT_MONO16;
-        AL10.alBufferData(bufferId, format, bufferData, audio.getRate());
+        int format = audio.getInfo(-1).channels > 1 ? AL10.AL_FORMAT_STEREO16 : AL10.AL_FORMAT_MONO16;
+        AL10.alBufferData(bufferId, format, bufferData, audio.getInfo(-1).rate);
+
+        return true;
     }
 
     /**
@@ -296,57 +309,31 @@ public class OpenALStreamPlayer {
      * @return True if the setting of the position was successful
      */
     public boolean setPosition(float position) {
-        try {
-            if (getPosition() > position) {
-                // We can't restart the stream ourselves, so do nothing.
-                return false;
-            }
-
-            float sampleRate = audio.getRate();
-            float sampleSize;
-            if (audio.getChannels() > 1) {
-                sampleSize = 4; // AL10.AL_FORMAT_STEREO16
-            } else {
-                sampleSize = 2; // AL10.AL_FORMAT_MONO16
-            }
-
-            int count = 0;
-            float bufferLength = 0f;
-            while (positionOffset < position) {
-                count = audio.read(buffer);
-                if (count != -1) {
-                    bufferLength = (count / sampleSize) / sampleRate;
-                    positionOffset += bufferLength;
-                } else {
-                    done = true;
-                    return false;
-                }
-            }
-
-            // Use the first buffer we just loaded, so we end up earlier than intended (rather than later).
-            positionOffset -= bufferLength;
-            loadBufferToAL(bufferNames.get(0), count);
-            startPlayback(1); // Use an offset of 1 to not clobber the buffer we just loaded
-
-            // Seek forwards a little bit, to get to the final position within
-            // this sample. Without this, we always start a little behind.
-            float timeError = position - positionOffset;
-            int sampleOffset = (int) (timeError * sampleRate);
-            AL11.alSourcei(source, AL11.AL_SAMPLE_OFFSET, sampleOffset);
-
-            return true;
-        } catch (IOException e) {
-            Log.error(e);
+        if (audio.time_seek(position) != 0) {
             return false;
         }
+
+        // time_seek takes us to the packet (which is usually around
+        // 500 samples long) that the target time is contained in.
+        positionOffset = audio.time_tell();
+
+        // Clear out and re-populate the buffers
+        startPlayback();
+
+        // Seek forwards a little bit, to get to the final position within
+        // this sample. Without this, we always start a little behind.
+        float timeError = position - positionOffset;
+        if (timeError > 0) {
+            AL11.alSourcef(source, AL11.AL_SEC_OFFSET, timeError);
+        }
+
+        return true;
     }
 
     /**
      * Starts the streaming.
-     *
-     * @param bufferOffset The index of the first buffer to populate. This is used by {@link #setPosition(float)}.
      */
-    private void startPlayback(int bufferOffset) {
+    private void startPlayback() {
         // If we don't remove the buffers here, we'll end up in a big mess
         // due to queueing them twice.
         stop();
@@ -355,7 +342,7 @@ public class OpenALStreamPlayer {
         AL10.alSourcei(source, AL10.AL_LOOPING, AL10.AL_FALSE);
         applyAudioSettings();
 
-        for (int i = bufferOffset; i < BUFFER_COUNT; i++) {
+        for (int i = 0; i < BUFFER_COUNT; i++) {
             stream(bufferNames.get(i));
         }
 
@@ -384,7 +371,7 @@ public class OpenALStreamPlayer {
      * <p>
      * This player cannot be used again after this call.
      */
-    public void close() {
+    public void close() throws IOException {
         // First un-queue the buffers, otherwise we can't delete them.
         AL10.alSourceStop(source);
         removeBuffers();
@@ -397,5 +384,10 @@ public class OpenALStreamPlayer {
 
         positionOffset = 0;
         done = true;
+
+        if (audio != null) {
+            audio.close();
+            audio = null;
+        }
     }
 }

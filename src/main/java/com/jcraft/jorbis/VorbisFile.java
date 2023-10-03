@@ -5,6 +5,13 @@
  *
  * Written by: 2000 ymnk<ymnk@jcraft.com>
  *
+ * XFTL modifications:
+ *   Make the read and time_seek function public
+ *   Converting SeekableInputStream to an abstract class
+ *   Fix close crashing when datasource is null
+ *   Add an offset parameter to the read function
+ *   Rewrote the float->int conversion, it had some glaring bugs
+ *
  * Many thanks to
  *   Monty <monty@xiph.org> and
  *   The XIPHOPHORUS Company http://www.xiph.org/ .
@@ -32,10 +39,14 @@ import com.jcraft.jogg.Page;
 import com.jcraft.jogg.StreamState;
 import com.jcraft.jogg.SyncState;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 public class VorbisFile {
+    /**
+     * Read/write to this to ensure this modified class is loaded.
+     */
+    public static int XFTL_MARKER;
+
     static final int CHUNKSIZE = 8500;
     static final int SEEK_SET = 0;
     static final int SEEK_CUR = 1;
@@ -94,7 +105,7 @@ public class VorbisFile {
         super();
         InputStream is = null;
         try {
-            is = new SeekableInputStream(file);
+            is = new FileSeekableInputStream(file);
             int ret = open(is, null, 0);
             if (ret == -1) {
                 throw new JOrbisException("VorbisFile: open return -1");
@@ -102,13 +113,7 @@ public class VorbisFile {
         } catch (Exception e) {
             throw new JOrbisException("VorbisFile: " + e.toString());
         } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            // znix: This used to close the input stream here!
         }
     }
 
@@ -116,7 +121,8 @@ public class VorbisFile {
             throws JOrbisException {
         super();
         int ret = open(is, initial, ibytes);
-        if (ret == -1) {
+        if (ret != 0) {
+            throw new JOrbisException("Failed to open stream");
         }
     }
 
@@ -129,10 +135,12 @@ public class VorbisFile {
         } catch (Exception e) {
             return OV_EREAD;
         }
-        oy.wrote(bytes);
         if (bytes == -1) {
             bytes = 0;
         }
+        // znix: this used to come before the zero-check, but that broke
+        // everything when an EOF was found.
+        oy.wrote(bytes);
         return bytes;
     }
 
@@ -233,7 +241,8 @@ public class VorbisFile {
         if (ret == OV_EREAD)
             return OV_EREAD;
 
-        if (searched >= end || ret == -1) {
+        // Was checking ret == -1 instead of OV_EOF, which didn't make any sense
+        if (searched >= end || ret == OV_EOF) {
             links = m + 1;
             offsets = new long[m + 2];
             offsets[m + 1] = searched;
@@ -415,7 +424,12 @@ public class VorbisFile {
             }
         }
         prefetch_all_headers(initial_i, initial_c, dataoffset);
-        return 0;
+
+        // znix: This was missing, and instead returning zero!
+        // Thus the stream would start at EOF, from having last found
+        // the end granule position.
+        // This was then copied from vorbisfile.c
+        return raw_seek(dataoffset);
     }
 
     int open_nonseekable() {
@@ -997,7 +1011,7 @@ public class VorbisFile {
 
     // seek to a playback time relative to the decompressed pcm stream
     // returns zero on success, nonzero on failure
-    int time_seek(float seconds) {
+    public int time_seek(float seconds) {
         // translate time to PCM position and call pcm_seek
 
         int link = -1;
@@ -1165,11 +1179,8 @@ public class VorbisFile {
     //
     // *section) set to the logical bitstream number
 
-    int read(byte[] buffer, int length, int bigendianp, int word, int sgned,
-             int[] bitstream) {
-        int host_endian = host_is_big_endian();
-        int index = 0;
-
+    public int read(byte[] buffer, int offset, int length, int bigendianp, int word, int sgned,
+                    int[] bitstream) {
         while (true) {
             if (decode_ready) {
                 float[][] pcm;
@@ -1188,6 +1199,7 @@ public class VorbisFile {
                     {
                         int val;
                         if (word == 1) {
+                            int index = offset;
                             int off = (sgned != 0 ? 0 : 128);
                             for (int j = 0; j < samples; j++) {
                                 for (int i = 0; i < channels; i++) {
@@ -1202,64 +1214,35 @@ public class VorbisFile {
                         } else {
                             int off = (sgned != 0 ? 0 : 32768);
 
-                            if (host_endian == bigendianp) {
-                                if (sgned != 0) {
-                                    for (int i = 0; i < channels; i++) { // It's faster in this order
-                                        int src = _index[i];
-                                        int dest = i;
-                                        for (int j = 0; j < samples; j++) {
-                                            val = (int) (pcm[i][src + j] * 32768. + 0.5);
-                                            if (val > 32767)
-                                                val = 32767;
-                                            else if (val < -32768)
-                                                val = -32768;
-                                            buffer[dest] = (byte) (val >>> 8);
-                                            buffer[dest + 1] = (byte) (val);
-                                            dest += channels * 2;
-                                        }
-                                    }
-                                } else {
-                                    for (int i = 0; i < channels; i++) {
-                                        float[] src = pcm[i];
-                                        int dest = i;
-                                        for (int j = 0; j < samples; j++) {
-                                            val = (int) (src[j] * 32768. + 0.5);
-                                            if (val > 32767)
-                                                val = 32767;
-                                            else if (val < -32768)
-                                                val = -32768;
-                                            buffer[dest] = (byte) ((val + off) >>> 8);
-                                            buffer[dest + 1] = (byte) (val + off);
-                                            dest += channels * 2;
-                                        }
-                                    }
-                                }
-                            } else if (bigendianp != 0) {
+                            // znix: Since the host endianness doesn't matter since
+                            // we're not doing raw memory access, I ended up deleting
+                            // about half of the conversion code here.
+
+                            for (int i = 0; i < channels; i++) {
+                                float[] src = pcm[i];
+                                // znix: These two cases clipped the channel data
+                                // into each other, since they set dest=i.
+                                // This error was presumably carried from vorbisfile.c,
+                                // where the buffer is casted to short* and thus the
+                                // offset is implicitly multiplied by sizeof(short)=2.
+                                int dest = offset + i * word;
                                 for (int j = 0; j < samples; j++) {
-                                    for (int i = 0; i < channels; i++) {
-                                        val = (int) (pcm[i][j] * 32768. + 0.5);
-                                        if (val > 32767)
-                                            val = 32767;
-                                        else if (val < -32768)
-                                            val = -32768;
-                                        val += off;
-                                        buffer[index++] = (byte) (val >>> 8);
-                                        buffer[index++] = (byte) val;
+                                    val = (int) (src[_index[i] + j] * 32768. + 0.5);
+                                    if (val > 32767)
+                                        val = 32767;
+                                    else if (val < -32768)
+                                        val = -32768;
+
+                                    val += off;
+
+                                    if (bigendianp == 1) {
+                                        buffer[dest] = (byte) (val >>> 8);
+                                        buffer[dest + 1] = (byte) val;
+                                    } else {
+                                        buffer[dest + 1] = (byte) (val >>> 8);
+                                        buffer[dest] = (byte) val;
                                     }
-                                }
-                            } else {
-                                //int val;
-                                for (int j = 0; j < samples; j++) {
-                                    for (int i = 0; i < channels; i++) {
-                                        val = (int) (pcm[i][j] * 32768. + 0.5);
-                                        if (val > 32767)
-                                            val = 32767;
-                                        else if (val < -32768)
-                                            val = -32768;
-                                        val += off;
-                                        buffer[index++] = (byte) val;
-                                        buffer[index++] = (byte) (val >>> 8);
-                                    }
+                                    dest += channels * 2;
                                 }
                             }
                         }
@@ -1294,14 +1277,24 @@ public class VorbisFile {
     }
 
     public void close() throws java.io.IOException {
-        datasource.close();
+        if (datasource != null) {
+            datasource.close();
+        }
     }
 
-    class SeekableInputStream extends InputStream {
+    public abstract static class SeekableInputStream extends InputStream {
+        public abstract long getLength() throws java.io.IOException;
+
+        public abstract long tell() throws java.io.IOException;
+
+        public abstract void seek(long pos) throws java.io.IOException;
+    }
+
+    private static class FileSeekableInputStream extends SeekableInputStream {
         java.io.RandomAccessFile raf = null;
         final String mode = "r";
 
-        SeekableInputStream(String file) throws java.io.IOException {
+        FileSeekableInputStream(String file) throws java.io.IOException {
             raf = new java.io.RandomAccessFile(file, mode);
         }
 
@@ -1351,5 +1344,4 @@ public class VorbisFile {
             raf.seek(pos);
         }
     }
-
 }

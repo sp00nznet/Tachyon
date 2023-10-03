@@ -11,10 +11,10 @@ const val HEADER_SIZE = 16
 const val ENTRY_SIZE = 20
 
 class Datafile @Throws(FileNotFoundException::class)
-constructor(private val data_file: File) {
+constructor(val underlyingFile: File) {
 
     private val files: MutableMap<Int, FTLFile> = HashMap()
-    private val fi: RandomAccessFile = RandomAccessFile(data_file, "r")
+    private val fi: RandomAccessFile = RandomAccessFile(underlyingFile, "r")
 
     init {
         // Skip the 'PKG\n' header
