@@ -6,12 +6,14 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
+import xyz.znix.xftl.rendering.Cursor;
 import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
 import xyz.znix.xftl.sys.Game;
@@ -38,6 +40,8 @@ public class MainGame implements Game {
     private InGameState.GameContent content;
 
     private SaveProfile profile;
+
+    private Cursor currentCursor;
 
     public MainGame(Datafile datafile, CommandLineArgs args) {
         this.vanillaDatafile = datafile;
@@ -126,6 +130,13 @@ public class MainGame implements Game {
 
         // Check there aren't any mismatched pushTransform/popTransform calls.
         g.checkNoPushedTransforms();
+
+        // Update the mouse cursor, if required.
+        Cursor newCursor = currentState.getCurrentCursor();
+        if (newCursor != currentCursor) {
+            gc.setCursor(newCursor);
+            currentCursor = newCursor;
+        }
     }
 
     @Override
@@ -259,6 +270,11 @@ public class MainGame implements Game {
         public abstract void update(@NotNull GameContainer container, float delta) throws SlickException;
 
         public abstract void render(@NotNull GameContainer container, @NotNull Graphics g) throws SlickException;
+
+        @Nullable
+        public Cursor getCurrentCursor() {
+            return null;
+        }
     }
 
     public static class CommandLineArgs {

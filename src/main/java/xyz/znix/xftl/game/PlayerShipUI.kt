@@ -17,6 +17,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Cursor
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -44,6 +45,16 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val powerUpSound = game.sounds.getSample("powerUpSystem")
     private val powerUpFailSound = game.sounds.getSample("powerUpFail")
     private val powerDownSound = game.sounds.getSample("powerDownSystem")
+
+    private val cursorNormal = game.getCursor("img/mouse/pointerInvalid.png")
+    private val cursorHover = game.getCursor("img/mouse/pointerValid.png")
+    private val cursorTeleRetrieveInvalid = game.getCursor("img/mouse/mouse_teleport_in2.png")
+    private val cursorTeleRetrieveValid = game.getCursor("img/mouse/mouse_teleport_in1.png")
+    private val cursorTeleSendInvalid = game.getCursor("img/mouse/mouse_teleport_out2.png")
+    private val cursorTeleSendValid = game.getCursor("img/mouse/mouse_teleport_out1.png")
+    private val cursorMindInvalid = game.getCursor("img/mouse/mouse_mind_valid.png")
+    private val cursorMindValid = game.getCursor("img/mouse/mouse_mind.png") // Valid doesn't have the _valid path
+    private val cursorHacking = game.getCursor("img/mouse/mouse_hacking.png")
 
     private var selectWeaponClickEvent: RoomClickListener? = null
     private var targetingSelectedWeapon: Int? = null
@@ -1468,7 +1479,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val hovered = if (rect != null) {
                 // If we're in rectangle mode, check that it intersects the centre of the player's body
                 // TODO also check if the player is selecting the crew name box
-                rect.contains(crewPos.x.f, crewPos.y.f)
+                rect.contains(crewPos.x + ROOM_SIZE / 2f, crewPos.y + ROOM_SIZE / 2f)
             } else {
                 // Otherwise check the point overlaps the player
                 isCrewHovered(crew, mouseX, mouseY, crewPos)
@@ -1500,6 +1511,36 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     fun showGameOverScreen(outcome: GameOverWindow.Outcome) {
         currentWindow = GameOverWindow(game, outcome)
+    }
+
+    fun getCurrentCursor(): Cursor {
+        // Use the hacking/teleport/mind control cursor
+        (game.clickEvent as? RoomClickCursor)?.getCursor()?.let { return it }
+
+        targetingSelectedWeapon?.let { id ->
+            val valid = game.hoveredRoom != null
+            val autofire = false // TODO
+
+            // Combine the cursor and crosshairs icon
+            val baseName = when {
+                valid -> "img/mouse/mouse_crosshairs.png"
+                autofire -> "img/mouse/mouse_crosshairs_valid2.png"
+                else -> "img/mouse/mouse_crosshairs_valid.png"
+            }
+            val overlayName = when {
+                autofire -> "img/mouse/mouse_crosshairs3_${id + 1}.png"
+                else -> "img/mouse/mouse_crosshairs2_${id + 1}.png"
+            }
+            return game.getCursor("$baseName,$overlayName")
+        }
+
+        // TODO the door open/close animation cursor
+
+        return when {
+            buttons.any { it.hovered } -> cursorHover
+            hoveredCrew.isNotEmpty() -> cursorHover
+            else -> cursorNormal
+        }
     }
 
     private abstract inner class WeaponDroneButton(pos: IPoint, slotNumber: Int, size: ConstPoint) :
@@ -1709,7 +1750,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
-    private inner class TeleportRoomListener(val send: Boolean) : RoomClickListener {
+    /**
+     * A version of [RoomClickListener] that also sets the mouse cursor.
+     */
+    private interface RoomClickCursor : RoomClickListener {
+        fun getCursor(): Cursor?
+    }
+
+    private inner class TeleportRoomListener(val send: Boolean) : RoomClickCursor {
         override fun roomClicked(room: Room, gc: GameContainer) {
             // Can't teleport to/from our own ship
             if (room.ship == ship)
@@ -1717,9 +1765,25 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             ship.teleporter!!.selectTeleportAction(send, room)
         }
+
+        override fun getCursor(): Cursor {
+            val valid = game.hoveredRoom != null
+
+            return when {
+                send && valid -> cursorTeleSendValid
+                send -> cursorTeleSendInvalid
+                valid -> cursorTeleRetrieveValid
+                else -> cursorTeleRetrieveInvalid
+            }
+        }
+
+        override fun canTargetRoom(room: Room): Boolean {
+            // We can only teleport to/from the enemy ship
+            return room.ship != ship
+        }
     }
 
-    private inner class HackingRoomListener : RoomClickListener {
+    private inner class HackingRoomListener : RoomClickCursor {
         override fun roomClicked(room: Room, gc: GameContainer) {
             // Can't hack our own ship
             if (room.ship == ship)
@@ -1727,11 +1791,22 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             ship.hacking!!.selectTarget(room)
         }
+
+        override fun getCursor(): Cursor {
+            return cursorHacking
+        }
     }
 
-    private inner class MindControlRoomListener : RoomClickListener {
+    private inner class MindControlRoomListener : RoomClickCursor {
         override fun roomClicked(room: Room, gc: GameContainer) {
             ship.mindControl!!.selectRoom(room)
+        }
+
+        override fun getCursor(): Cursor {
+            return when {
+                game.hoveredRoom?.ship == game.enemy -> cursorMindValid
+                else -> cursorMindInvalid
+            }
         }
     }
 

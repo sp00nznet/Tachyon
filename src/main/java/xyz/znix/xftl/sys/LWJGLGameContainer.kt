@@ -14,6 +14,7 @@ import org.newdawn.slick.KeyListener
 import org.newdawn.slick.MouseListener
 import org.newdawn.slick.opengl.ImageDataFactory
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.Cursor
 import xyz.znix.xftl.rendering.Graphics
 import java.io.BufferedInputStream
 
@@ -36,6 +37,14 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
 
     override fun exit() {
         glfwSetWindowShouldClose(window, true)
+    }
+
+    override fun setCursor(cursor: Cursor?) {
+        if (cursor != null) {
+            cursor.setActive(window)
+        } else {
+            glfwSetCursor(window, NULL)
+        }
     }
 
     fun start() {

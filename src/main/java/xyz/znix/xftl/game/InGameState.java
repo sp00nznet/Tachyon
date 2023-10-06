@@ -267,9 +267,10 @@ public class InGameState extends MainGame.GameState {
         Input in = container.getInput();
 
         // For debugging, this lets you either step or fast-forward through time.
-        if (container.getInput().isKeyDown(Input.KEY_TAB))
+        // Don't do this in response to typing on the debug console, though.
+        if (container.getInput().isKeyDown(Input.KEY_TAB) && !debugConsoleVisible)
             updateGameState(delta * 4);
-        if (container.getInput().isKeyPressed(Input.KEY_FULL_STOP))
+        if (container.getInput().isKeyPressed(Input.KEY_FULL_STOP) && !debugConsoleVisible)
             updateGameState(0.01f);
 
         shipUI.updateAlways(delta);
@@ -348,6 +349,12 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
+    @Nullable
+    @Override
+    public Cursor getCurrentCursor() {
+        return shipUI.getCurrentCursor();
+    }
+
     private void updateClickEvent(GameContainer container) {
         // Handle stuff like weapon targeting where the player
         // highlights a room on the enemy (or their) ship.
@@ -375,6 +382,10 @@ public class InGameState extends MainGame.GameState {
         RoomPoint rp = player.shipToRoomPos(tempPoint);
         if (rp != null)
             hoveredRoom = rp.getRoom();
+
+        if (hoveredRoom != null && !clickEvent.canTargetRoom(hoveredRoom)) {
+            hoveredRoom = null;
+        }
 
         if (hoveredRoom != null && clickEvent != null && mouseDownPrev[Input.MOUSE_LEFT_BUTTON]) {
             var prev = clickEvent;
@@ -1052,6 +1063,26 @@ public class InGameState extends MainGame.GameState {
         return font;
     }
 
+    /**
+     * Get or create a cursor for a given image path.
+     */
+    @NotNull
+    public Cursor getCursor(String path) {
+        Cursor cursor = content.cursors.get(path);
+        if (cursor != null) {
+            return cursor;
+        }
+
+        // For overlaying cursors
+        String[] parts = path.split(",");
+        FTLFile main = df.get(parts[0]);
+        FTLFile overlay = parts.length == 2 ? df.get(parts[1]) : null;
+
+        cursor = new Cursor(content.resourceContext, df, main, overlay);
+        content.cursors.put(path, cursor);
+        return cursor;
+    }
+
     public Animations getAnimations() {
         return content.animations;
     }
@@ -1224,6 +1255,17 @@ public class InGameState extends MainGame.GameState {
      */
     public float getRenderingDeltaTime() {
         return renderingDeltaTime;
+    }
+
+    /**
+     * If there's currently a room click listener, this returns the room that is
+     * currently being hovered.
+     *
+     * @see #setClickEvent(RoomClickListener)
+     */
+    @Nullable
+    public Room getHoveredRoom() {
+        return hoveredRoom;
     }
 
     @NotNull
@@ -1495,6 +1537,10 @@ public class InGameState extends MainGame.GameState {
 
     public interface RoomClickListener {
         void roomClicked(Room room, GameContainer gc);
+
+        default boolean canTargetRoom(@NotNull Room room) {
+            return true;
+        }
     }
 
     public enum QuestAddResult {
@@ -1526,6 +1572,7 @@ public class InGameState extends MainGame.GameState {
         // These are loaded on-demand
         private final Map<String, Image> images = new HashMap<>();
         private final Map<String, SILFontLoader> fonts = new HashMap<>();
+        private final Map<String, Cursor> cursors = new HashMap<>();
 
         // The context that owns the images and fonts
         private final ResourceContext resourceContext = new ResourceContext();
