@@ -114,7 +114,7 @@ public class InGameState extends MainGame.GameState {
         // Be sure we do this after creating the player ship, it's used by the enemy AI
         // Note that we don't store the current sector anywhere - it's determined via
         // the current beacon.
-        Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0));
+        Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0), difficulty);
         setCurrentBeacon(firstSector.getStartBeacon());
     }
 

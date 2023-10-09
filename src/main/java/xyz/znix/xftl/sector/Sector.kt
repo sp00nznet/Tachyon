@@ -1,6 +1,7 @@
 package xyz.znix.xftl.sector
 
 import org.jdom2.Element
+import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -107,15 +108,14 @@ class Sector {
          */
         events: List<Event>,
 
-        specialEvents: GameMap.SpecialEvents
+        specialEvents: GameMap.SpecialEvents,
+        difficulty: Difficulty
     ) {
         this.info = info
 
         val eventPool = ArrayDeque(events.shuffled())
 
         val rand = Random.Default
-
-        val isHard = false // TODO use the correct difficulty
 
         // Generate a random 6x6 grid. Each beacon to be placed will be offset from one position on the grid.
         val grid = ArrayList<IPoint>()
@@ -180,7 +180,7 @@ class Sector {
             // TODO support nebula exits.
             val exitRange = when {
                 !isLastStand -> 4..5
-                isHard -> 3..4
+                difficulty == Difficulty.HARD -> 3..4
                 else -> 2..3
             }
             if (gridPos.x in exitRange && tmpFinishBeacon == null) {

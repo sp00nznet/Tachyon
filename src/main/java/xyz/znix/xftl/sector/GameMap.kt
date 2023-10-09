@@ -3,6 +3,7 @@ package xyz.znix.xftl.sector
 import org.jdom2.Element
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
+import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.mapChildrenText
 import xyz.znix.xftl.requireAttributeValue
@@ -213,7 +214,7 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         sectorTypes[name] = sector
     }
 
-    fun generateSector(sectorInfo: SectorInfo): Sector {
+    fun generateSector(sectorInfo: SectorInfo, difficulty: Difficulty): Sector {
         val eventPool = ArrayList<Event>()
         for (ev in sectorInfo.type.events) {
             val count = ev.count.random()
@@ -226,7 +227,7 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         var attemptCount = 0
         var sector: Sector
         while (true) {
-            sector = Sector(sectorInfo, eventPool, specialEvents)
+            sector = Sector(sectorInfo, eventPool, specialEvents, difficulty)
 
             val path = sector.findShortestPath(sector.startBeacon, sector.finishBeacon)
 
