@@ -3,10 +3,7 @@ package xyz.znix.xftl.rendering
 import org.lwjgl.opengl.GL11
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.Matrix3f
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.min
-import kotlin.math.sin
+import kotlin.math.*
 
 /**
  * A custom graphics class, whose functions generally match that of [org.newdawn.slick.Graphics].
@@ -98,6 +95,68 @@ class Graphics {
 
     fun drawOval(x: Float, y: Float, width: Float, height: Float) {
         drawArc(x, y, width, height, 50, 0f, 360f)
+    }
+
+    /**
+     * Draw a 'pie slice' of an image, where any pixel between given angles
+     * from the centre is drawn. The 'pie'-ness doesn't imply the outside
+     * of the image is round, merely that the angles are set.
+     *
+     * This is used for rendering the system ion 'clock' (the blue ring around
+     * the timer number of an ionised system), but mods can re-use it for
+     * other stuff too.
+     */
+    fun drawImagePieSlice(image: Image, x: Float, y: Float, startAngle: Float, endAngle: Float, filter: Colour) {
+        fun point(px: Float, py: Float) {
+            imageRenderer.pushVert(
+                px + x, py + y,
+                px, py,
+                filter.r, filter.g, filter.b, filter.a
+            )
+        }
+
+        fun pointByAngle(angle: Float) {
+            val px = (cos(angle) * 0.5f + 0.5f) * image.width
+            val py = (-sin(angle) * 0.5f + 0.5f) * image.height
+            point(px, py)
+        }
+
+        // Draw a bunch of triangles covering different parts of the image,
+        // each one covering a specific angle.
+        fun drawTriangle(offset: Int, minAngleDeg: Int, maxAngleDeg: Int) {
+            val minAngle = Math.toRadians((offset + minAngleDeg).toDouble()).toFloat()
+            val maxAngle = Math.toRadians((offset + maxAngleDeg).toDouble()).toFloat()
+
+            // If this triangle doesn't intersect the desired area, skip it
+            if (endAngle < minAngle || maxAngle < startAngle)
+                return
+
+            val thisStartAngle = max(minAngle, startAngle)
+            val thisEndAngle = min(maxAngle, endAngle)
+
+            point(image.width / 2f, image.height / 2f)
+            pointByAngle(thisEndAngle)
+            pointByAngle(thisStartAngle)
+        }
+
+        // Draw a bunch of triangles. The constraint with how
+        // large they can each be is that the line between
+        // their two points can't cut through the middle of the image.
+        // Go around twice, to support sections that wrap almost all
+        // the way around and end in their original section.
+        drawTriangle(0, 0, 45)
+        drawTriangle(0, 45, 135)
+        drawTriangle(0, 135, 225)
+        drawTriangle(0, 225, 270)
+        drawTriangle(0, 270, 360)
+        drawTriangle(360, 0, 45)
+        drawTriangle(360, 45, 135)
+        drawTriangle(360, 135, 225)
+        drawTriangle(360, 225, 270)
+        drawTriangle(360, 270, 360)
+
+        imageRenderer.imageFiltering = GL11.GL_LINEAR
+        imageRenderer.flush(image)
     }
 
     fun drawCustomQuads(fn: (BulkColourRenderer) -> Unit) {

@@ -49,9 +49,12 @@ class BulkImageRenderer : BulkRenderer() {
         r: Float, g: Float, b: Float, a: Float // Modulate colour
     ) {
         pushVert(x1, y1, u1, v1, r, g, b, a)
-        pushVert(x2, y1, u2, v1, r, g, b, a)
         pushVert(x2, y2, u2, v2, r, g, b, a)
+        pushVert(x2, y1, u2, v1, r, g, b, a)
+
+        pushVert(x1, y1, u1, v1, r, g, b, a)
         pushVert(x1, y2, u1, v2, r, g, b, a)
+        pushVert(x2, y2, u2, v2, r, g, b, a)
     }
 
     fun pushVert(x: Float, y: Float, u: Float, v: Float) {
@@ -107,11 +110,7 @@ class BulkImageRenderer : BulkRenderer() {
         updateTransformMatrix(posTransformLoc)
         updateUvTransformMatrix(image)
 
-        // Build a quad-to-triangle indices buffer
-        buildQuadIndices()
-        indices.flip()
-
-        glDrawElements(GL_TRIANGLES, GL_UNSIGNED_INT, indices)
+        glDrawArrays(GL_TRIANGLES, 0, numVerts)
 
         // Cleanup
         glUseProgram(0)

@@ -1,7 +1,6 @@
 package xyz.znix.xftl
 
 import org.jdom2.Element
-import org.lwjgl.opengl.GL11
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.Skill
@@ -13,13 +12,15 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.*
-import kotlin.math.*
+import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.reflect.KProperty
 
 abstract class AbstractSystem(val blueprint: SystemBlueprint) {
@@ -325,17 +326,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
             game.getImg("img/icons/locking/s_${imgType}_${levels}_base.png").draw(iconX, iconY)
 
-            // Draw the ring around the outside - because this involves drawing
-            // a pie-slice from the ring image, it's a bit messy.
+            // Draw the ring around the outside.
             val timerImg = game.getImg("img/icons/locking/s_${imgType}_timer.png")
-
-            // Use a transform to save having to add x/baseY to everything
-            g.pushTransform()
-            g.translate(iconX.f, iconY.f)
-
-            timerImg.bind()
-            Color.white.bind()
-            GL11.glBegin(GL11.GL_TRIANGLES)
 
             // Figure out the angle around this image we need to cut it at
             val numSegments = 12 // The ring is split up into 12 segments
@@ -349,55 +341,20 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             if (segments == 0)
                 segments = numSegments
 
+            // Find the angle of the end point, where 0 is up and +ve is CW
             val angle = TWO_PI * segments / numSegments
 
-            // Find the position of the point that changes with the angle
-            val size = timerImg.width.f
-            val half = size / 2
+            // Convert that into 0 is right and +ve is CCW
+            val upAngle = TWO_PI / 4
+            val endAngle = TWO_PI + upAngle // End pointing straight up
+            val startAngle = endAngle - angle
 
-            fun point(x: Float, y: Float) {
-                GL11.glTexCoord2f(
-                    x / timerImg.texture.rawTextureWidth,
-                    y / timerImg.texture.rawTextureHeight
-                )
-                Graphics.glVertexTransformed(x, y)
-            }
-
-            // Draw a bunch of triangles covering different parts of the image,
-            // each one covering a specific angle.
-            fun drawTriangle(minAngleDeg: Int, maxAngleDeg: Int) {
-                val minAngle = Math.toRadians(minAngleDeg.toDouble()).toFloat()
-                val maxAngle = Math.toRadians(maxAngleDeg.toDouble()).toFloat()
-
-                val thisAngle = when {
-                    angle < minAngle -> return
-                    angle > maxAngle -> maxAngle
-                    else -> angle
-                }
-
-                val px = (sin(thisAngle) * half + half).coerceIn(0f, size)
-                val py = (-cos(thisAngle) * half + half).coerceIn(0f, size)
-
-                val minX = (sin(minAngle) * half + half).coerceIn(0f, size)
-                val minY = (-cos(minAngle) * half + half).coerceIn(0f, size)
-
-                point(half, half) // The centre
-                point(px, py) // The moving corner, or maximum angle
-                point(minX, minY) // The point at the minimum angle
-            }
-
-            // Draw a bunch of triangles. The constraint with how
-            // large they can each be is that the line between
-            // their two points can't cut through the middle of the image.
-            drawTriangle(0, 45)
-            drawTriangle(45, 135)
-            drawTriangle(135, 225)
-            drawTriangle(225, 270)
-            drawTriangle(270, 360)
-
-            GL11.glEnd()
-
-            g.popTransform()
+            g.drawImagePieSlice(
+                timerImg,
+                iconX.f, iconY.f,
+                startAngle, endAngle,
+                Colour.white
+            )
         }
 
         val barX = x + 5
