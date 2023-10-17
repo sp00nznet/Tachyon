@@ -620,7 +620,7 @@ class MusicSpec(elem: Element) {
     val name: String = elem.getChildTextTrim("name")
 
     val explore: String = "audio/music/" + elem.getChildTextTrim("explore")
-    val combat: String = "audio/music/" + elem.getChildTextTrim("combat")
+    val combat: String = elem.getChildTextTrim("combat")?.let { "audio/music/$it" } ?: explore
 }
 
 private class VorbisInputStream(df: Datafile, val file: FTLFile) : VorbisFile.SeekableInputStream() {
