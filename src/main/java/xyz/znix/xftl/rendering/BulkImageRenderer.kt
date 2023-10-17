@@ -1,12 +1,7 @@
 package xyz.znix.xftl.rendering
 
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL15.*
-import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30.*
 import xyz.znix.xftl.f
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.math.max
 
 /**
  * Instances of this class accumulate a bunch of stuff
@@ -16,14 +11,21 @@ import kotlin.math.max
  * stuff like text where there's otherwise a silly number
  * of draw calls.
  */
-class BulkImageRenderer(var image: Image) : AutoCloseable {
-    var imageFiltering: Int = GL11.GL_LINEAR
-
-    private var vbo: Int = 0
-    private var data: ByteBuffer = generateBuffer(128)
-    private var numVerts = 0
+class BulkImageRenderer(var image: Image) : BulkRenderer() {
+    var imageFiltering: Int = GL_LINEAR
 
     private val transformMatData = generateBuffer(4 * 9).asFloatBuffer()
+
+    init {
+        glBindVertexArray(getOrCreateVAO())
+
+        // Packed as position then UV
+        glEnableVertexAttribArray(posAttrib)
+        glEnableVertexAttribArray(uvAttrib)
+        glEnableVertexAttribArray(colourAttrib)
+
+        glBindVertexArray(0)
+    }
 
     // Same signature as Image.draw
     fun pushImage(x: Float, y: Float) {
@@ -71,7 +73,7 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
         u: Float, v: Float,
         r: Float, g: Float, b: Float, a: Float // Modulate colour
     ) {
-        checkSize(4 * 4) // 4 32-bit ints
+        checkSize(8 * 4) // 8 32-bit floats
 
         // Transform our position to reflect the Graphics translate calls.
         // 3x3 matrix multiply, with (baseX,baseY,1)
@@ -93,94 +95,56 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
         numVerts++
     }
 
-    private fun checkSize(required: Int) {
-        if (data.remaining() >= required)
-            return
-
-        val current = data.position() + data.remaining()
-        val newData = generateBuffer(max(required, current * 2))
-
-        // Copy the old data into the new buffer
-        data.flip()
-        newData.put(data)
-        data = newData
-    }
-
-    private fun generateBuffer(size: Int): ByteBuffer {
-        return ByteBuffer.allocateDirect(size).apply {
-            order(ByteOrder.nativeOrder())
-        }
-    }
-
-    fun flush() {
+    override fun flush() {
         if (numVerts == 0)
             return
 
-        if (vbo == 0) {
-            vbo = glGenBuffers()
-        }
-
         image.texture.bind(imageFiltering) // Binds to GL_TEXTURE_2D
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
+        glBindVertexArray(getOrCreateVAO())
+
+        glBindBuffer(GL_ARRAY_BUFFER, getOrCreateVBO())
         data.flip()
         glBufferData(GL_ARRAY_BUFFER, data, GL_STREAM_DRAW)
 
-        // Packed as position then UV
-        GL20.glEnableVertexAttribArray(posAttrib)
-        GL20.glEnableVertexAttribArray(uvAttrib)
-        GL20.glEnableVertexAttribArray(colourAttrib)
-        GL20.glVertexAttribPointer(posAttrib, 2, GL11.GL_FLOAT, false, 32, 0)
-        GL20.glVertexAttribPointer(uvAttrib, 2, GL11.GL_FLOAT, false, 32, 8)
-        GL20.glVertexAttribPointer(colourAttrib, 4, GL11.GL_FLOAT, false, 32, 16)
+        glVertexAttribPointer(posAttrib, 2, GL_FLOAT, false, 32, 0)
+        glVertexAttribPointer(uvAttrib, 2, GL_FLOAT, false, 32, 8)
+        glVertexAttribPointer(colourAttrib, 4, GL_FLOAT, false, 32, 16)
 
-        GL20.glUseProgram(shader.handle)
+        glUseProgram(shader.handle)
 
         // Set the transform uniforms
-        updatePosTransformMatrix()
+        updateTransformMatrix(posTransformLoc)
         updateUvTransformMatrix()
 
-        GL11.glDrawArrays(GL11.GL_QUADS, 0, numVerts)
+        // Build a quad-to-triangle indices buffer
+        indices.clear()
+        for (i in 0 until numVerts) {
+            checkSizeIndices(4 * 6) // 6 indices, 32-bit integers
+            val firstVert = i * 4
+
+            indices.putInt(firstVert + 0)
+            indices.putInt(firstVert + 1)
+            indices.putInt(firstVert + 2)
+
+            indices.putInt(firstVert + 2)
+            indices.putInt(firstVert + 3)
+            indices.putInt(firstVert + 0)
+        }
+        indices.flip()
+
+        glDrawElements(GL_TRIANGLES, GL_UNSIGNED_INT, indices)
 
         // Cleanup
-        GL20.glDisableVertexAttribArray(posAttrib)
-        GL20.glDisableVertexAttribArray(uvAttrib)
-        GL20.glDisableVertexAttribArray(colourAttrib)
-        GL20.glUseProgram(0)
+        glUseProgram(0)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindVertexArray(0)
 
         // Clear out the buffer for subsequent renders
         data.clear()
         numVerts = 0
 
         return
-    }
-
-    private fun updatePosTransformMatrix() {
-        // We have to transform from pixel-space to NDC (normalised
-        // device coordinates), which go from -1 to 1 in both x and y.
-        // Also note that positive is up, instead of down, so we have
-        // to flip that around.
-
-        transformMatData.clear()
-
-        val size = ShaderProgramme.SHADER_SCREEN_SIZE
-
-        transformMatData.put(2f / size.x)
-        transformMatData.put(0f)
-        transformMatData.put(0f)
-
-        transformMatData.put(0f)
-        transformMatData.put(-2f / size.y)
-        transformMatData.put(0f)
-
-        // Transform column, 1 is multiplied into this in the shader.
-        transformMatData.put(-1f)
-        transformMatData.put(1f)
-        transformMatData.put(0f)
-
-        transformMatData.flip()
-        GL20.glUniformMatrix3fv(posTransformLoc, false, transformMatData)
     }
 
     private fun updateUvTransformMatrix() {
@@ -202,14 +166,7 @@ class BulkImageRenderer(var image: Image) : AutoCloseable {
         transformMatData.put(0f)
 
         transformMatData.flip()
-        GL20.glUniformMatrix3fv(uvTransformLoc, false, transformMatData)
-    }
-
-    override fun close() {
-        if (vbo != 0) {
-            glDeleteBuffers(vbo)
-            vbo = 0
-        }
+        glUniformMatrix3fv(uvTransformLoc, false, transformMatData)
     }
 
     companion object {

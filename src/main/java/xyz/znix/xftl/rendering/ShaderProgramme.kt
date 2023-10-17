@@ -1,7 +1,6 @@
 package xyz.znix.xftl.rendering
 
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30.*
 import xyz.znix.xftl.math.Point
 
 class ShaderProgramme(vertPath: String, fragPath: String) : AutoCloseable {
@@ -16,25 +15,25 @@ class ShaderProgramme(vertPath: String, fragPath: String) : AutoCloseable {
         var vert = -1
         var frag = -1
         try {
-            vert = createShader(vertPath, GL20.GL_VERTEX_SHADER)
-            frag = createShader(fragPath, GL20.GL_FRAGMENT_SHADER)
+            vert = createShader(vertPath, GL_VERTEX_SHADER)
+            frag = createShader(fragPath, GL_FRAGMENT_SHADER)
 
-            handle = GL20.glCreateProgram()
-            GL20.glAttachShader(handle, vert)
-            GL20.glAttachShader(handle, frag)
-            GL20.glLinkProgram(handle)
+            handle = glCreateProgram()
+            glAttachShader(handle, vert)
+            glAttachShader(handle, frag)
+            glLinkProgram(handle)
             checkError()
 
-            val logLength = GL20.glGetProgrami(handle, GL20.GL_INFO_LOG_LENGTH)
+            val logLength = glGetProgrami(handle, GL_INFO_LOG_LENGTH)
             // IDK if it needs to be null-terminated, so +1 just in case
-            val log = GL20.glGetProgramInfoLog(handle, logLength + 1)
+            val log = glGetProgramInfoLog(handle, logLength + 1)
 
             if (log.isNotEmpty()) {
                 println("Message when linking shader '$vertPath'/'$fragPath':")
                 println(log.trim())
             }
 
-            val status = GL20.glGetProgrami(handle, GL20.GL_LINK_STATUS)
+            val status = glGetProgrami(handle, GL_LINK_STATUS)
             if (status != 1) {
                 error("Failed to link shader '$vertPath'/'$fragPath'!")
             }
@@ -44,9 +43,9 @@ class ShaderProgramme(vertPath: String, fragPath: String) : AutoCloseable {
             success = true
         } finally {
             if (vert != -1)
-                GL20.glDeleteShader(vert)
+                glDeleteShader(vert)
             if (frag != -1)
-                GL20.glDeleteShader(frag)
+                glDeleteShader(frag)
 
             if (!success)
                 close()
@@ -56,16 +55,22 @@ class ShaderProgramme(vertPath: String, fragPath: String) : AutoCloseable {
     }
 
     fun getAttributeLocation(name: String): Int {
-        val location = GL20.glGetAttribLocation(handle, name)
+        val location = glGetAttribLocation(handle, name)
         checkError()
         require(location != -1) { "Missing attribute location '$name'" }
         return location
     }
 
     fun getUniformLocation(name: String): Int {
-        val location = GL20.glGetUniformLocation(handle, name)
+        val location = glGetUniformLocation(handle, name)
         checkError()
-        require(location != -1) { "Missing uniform location '$name'" }
+        // Location may be -1, if the variable isn't used by the programme
+        // Just print a warning, since throwing an exception is annoying while
+        // writing the shaders, as you have to make sure you always use all
+        // the variables.
+        if (location == -1) {
+            print("[WARN] Unknown shader uniform variable '$name'")
+        }
         return location
     }
 
@@ -75,21 +80,21 @@ class ShaderProgramme(vertPath: String, fragPath: String) : AutoCloseable {
         val bytes = url.openStream().use { it.readAllBytes() }
         val content = bytes.toString(Charsets.UTF_8)
 
-        val shader = GL20.glCreateShader(type)
-        GL20.glShaderSource(shader, content)
-        GL20.glCompileShader(shader)
+        val shader = glCreateShader(type)
+        glShaderSource(shader, content)
+        glCompileShader(shader)
         checkError()
 
-        val logLength = GL20.glGetShaderi(shader, GL20.GL_INFO_LOG_LENGTH)
+        val logLength = glGetShaderi(shader, GL_INFO_LOG_LENGTH)
         // IDK if it needs to be null-terminated, so +1 just in case
-        val log = GL20.glGetShaderInfoLog(shader, logLength + 1)
+        val log = glGetShaderInfoLog(shader, logLength + 1)
 
         if (log.isNotEmpty()) {
             println("Message when compiling shader $path:")
             println(log.trim())
         }
 
-        val status = GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS)
+        val status = glGetShaderi(shader, GL_COMPILE_STATUS)
         if (status != 1) {
             error("Failed to compile shader '$path'!")
         }
@@ -101,15 +106,15 @@ class ShaderProgramme(vertPath: String, fragPath: String) : AutoCloseable {
 
     override fun close() {
         if (handle != -1) {
-            GL20.glDeleteProgram(handle)
+            glDeleteProgram(handle)
             handle = -1
         }
     }
 
     companion object {
         private fun checkError() {
-            val err = GL11.glGetError()
-            if (err == GL11.GL_NO_ERROR)
+            val err = glGetError()
+            if (err == GL_NO_ERROR)
                 return
 
             error("OpenGL error: $err")
