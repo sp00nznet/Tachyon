@@ -12,9 +12,9 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.rendering.BulkColourRenderer
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.rendering.Texture
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -485,7 +485,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val dstA = FPos(dst.x + dstTangentX, dst.y + dstTangentY)
         val dstB = FPos(dst.x - dstTangentX, dst.y - dstTangentY)
 
-        drawGradient(srcA, srcB, dstA, dstB, transparentColour)
+        g.drawCustomQuads { quads ->
+            drawGradient(quads, srcA, srcB, dstA, dstB, transparentColour)
+        }
 
         if (game.debugFlags.showBeamVectors.set) {
             // This lets us check if our normal calculation is correct
@@ -497,12 +499,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
      * Draw a quad that's opaque along a centre line, and fades to the edge.
      */
     private fun drawGradient(
+        quads: BulkColourRenderer,
         srcA: FPos, srcB: FPos,
         dstA: FPos, dstB: FPos,
         colour: Color
     ) {
-        Texture.unbind()
-
         // Find the middle points where the colour should be strongest
         val srcMidX = (srcA.x + srcB.x) / 2
         val srcMidY = (srcA.y + srcB.y) / 2
@@ -514,25 +515,17 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val edge = Color(colour)
         edge.a = 0f
 
-        GL11.glBegin(GL11.GL_QUADS)
-
         // Draw the A-side - srcA,srcMid,dstA,dstMid
-        edge.bind()
-        Graphics.glVertexTransformed(srcA.x, srcA.y)
-        Graphics.glVertexTransformed(dstA.x, dstA.y)
-        colour.bind()
-        Graphics.glVertexTransformed(dstMidX, dstMidY)
-        Graphics.glVertexTransformed(srcMidX, srcMidY)
+        quads.pushVert(srcA.x, srcA.y, edge)
+        quads.pushVert(dstA.x, dstA.y, edge)
+        quads.pushVert(dstMidX, dstMidY, colour)
+        quads.pushVert(srcMidX, srcMidY, colour)
 
         // Draw the B-side - srcB,srcMid,dstB,dstMid
-        colour.bind()
-        Graphics.glVertexTransformed(dstMidX, dstMidY)
-        Graphics.glVertexTransformed(srcMidX, srcMidY)
-        edge.bind()
-        Graphics.glVertexTransformed(srcB.x, srcB.y)
-        Graphics.glVertexTransformed(dstB.x, dstB.y)
-
-        GL11.glEnd()
+        quads.pushVert(dstMidX, dstMidY, colour)
+        quads.pushVert(srcMidX, srcMidY, colour)
+        quads.pushVert(srcB.x, srcB.y, edge)
+        quads.pushVert(dstB.x, dstB.y, edge)
     }
 
     private fun drawDebugVectorAngle(g: Graphics, origin: IPoint, angle: Float, length: Float, colour: Color) {
