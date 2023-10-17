@@ -11,7 +11,7 @@ import xyz.znix.xftl.f
  * stuff like text where there's otherwise a silly number
  * of draw calls.
  */
-class BulkImageRenderer(var image: Image) : BulkRenderer() {
+class BulkImageRenderer : BulkRenderer() {
     var imageFiltering: Int = GL_LINEAR
 
     private val transformMatData = generateBuffer(4 * 9).asFloatBuffer()
@@ -25,16 +25,6 @@ class BulkImageRenderer(var image: Image) : BulkRenderer() {
         glEnableVertexAttribArray(colourAttrib)
 
         glBindVertexArray(0)
-    }
-
-    // Same signature as Image.draw
-    fun pushImage(x: Float, y: Float) {
-        val w = image.width.f
-        val h = image.height.f
-        pushVert(x + 0f, y + 0f, 0f, 0f)
-        pushVert(x + w, y + 0f, w, 0f)
-        pushVert(x + w, y + h, w, h)
-        pushVert(x + 0f, y + h, 0f, h)
     }
 
     fun pushImage(
@@ -95,7 +85,7 @@ class BulkImageRenderer(var image: Image) : BulkRenderer() {
         numVerts++
     }
 
-    override fun flush() {
+    fun flush(image: Image) {
         if (numVerts == 0)
             return
 
@@ -115,22 +105,10 @@ class BulkImageRenderer(var image: Image) : BulkRenderer() {
 
         // Set the transform uniforms
         updateTransformMatrix(posTransformLoc)
-        updateUvTransformMatrix()
+        updateUvTransformMatrix(image)
 
         // Build a quad-to-triangle indices buffer
-        indices.clear()
-        for (i in 0 until numVerts) {
-            checkSizeIndices(4 * 6) // 6 indices, 32-bit integers
-            val firstVert = i * 4
-
-            indices.putInt(firstVert + 0)
-            indices.putInt(firstVert + 1)
-            indices.putInt(firstVert + 2)
-
-            indices.putInt(firstVert + 2)
-            indices.putInt(firstVert + 3)
-            indices.putInt(firstVert + 0)
-        }
+        buildQuadIndices()
         indices.flip()
 
         glDrawElements(GL_TRIANGLES, GL_UNSIGNED_INT, indices)
@@ -147,7 +125,7 @@ class BulkImageRenderer(var image: Image) : BulkRenderer() {
         return
     }
 
-    private fun updateUvTransformMatrix() {
+    private fun updateUvTransformMatrix(image: Image) {
         // UVs are 0-1 in both axes.
 
         transformMatData.clear()

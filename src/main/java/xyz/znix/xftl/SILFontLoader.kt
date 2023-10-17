@@ -130,7 +130,7 @@ class SILFontLoader {
         val img = MonochromeImage(texWidth, texHeight, data)
 
         picture = TextureLoader.loadImage(context, img)
-        renderer = BulkImageRenderer(picture)
+        renderer = BulkImageRenderer()
 
         // Enlarged fonts are supposed to be pixelated.
         renderer.imageFiltering = GL11.GL_NEAREST
@@ -179,7 +179,7 @@ class SILFontLoader {
                 return
         }
 
-        renderer.flush()
+        renderer.flush(picture)
     }
 
     /**
@@ -226,8 +226,8 @@ class SILFontLoader {
             next += ((info.w + info.postkern) * scale).roundToInt()
         }
 
-        bgFont.renderer.flush()
-        renderer.flush()
+        bgFont.renderer.flush(bgFont.picture)
+        renderer.flush(picture)
     }
 
     fun drawStringCentred(x: Float, y: Float, width: Float, text: String, col: Color) {

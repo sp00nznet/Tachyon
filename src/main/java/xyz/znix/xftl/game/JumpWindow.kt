@@ -1,6 +1,5 @@
 package xyz.znix.xftl.game
 
-import org.lwjgl.opengl.GL11
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Utils
@@ -13,7 +12,6 @@ import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
-import xyz.znix.xftl.rendering.Texture
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Sector
 import xyz.znix.xftl.sys.Input
@@ -129,14 +127,12 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
                 val tangentX = cos(angle + PIf / 2f) * width / 2
                 val tangentY = sin(angle + PIf / 2f) * width / 2
 
-                Texture.unbind()
-                Constants.BEACON_LINE_FLAGSHIP.bind()
-                GL11.glBegin(GL11.GL_QUADS)
-                Graphics.glVertexTransformed(a.x + tangentX, a.y + tangentY)
-                Graphics.glVertexTransformed(a.x - tangentX, a.y - tangentY)
-                Graphics.glVertexTransformed(b.x - tangentX, b.y - tangentY)
-                Graphics.glVertexTransformed(b.x + tangentX, b.y + tangentY)
-                GL11.glEnd()
+                g.drawCustomQuads { renderer ->
+                    renderer.pushVert(a.x + tangentX, a.y + tangentY, Constants.BEACON_LINE_FLAGSHIP)
+                    renderer.pushVert(a.x - tangentX, a.y - tangentY, Constants.BEACON_LINE_FLAGSHIP)
+                    renderer.pushVert(b.x - tangentX, b.y - tangentY, Constants.BEACON_LINE_FLAGSHIP)
+                    renderer.pushVert(b.x + tangentX, b.y + tangentY, Constants.BEACON_LINE_FLAGSHIP)
+                }
 
                 // Draw the animated flagship on top of it.
                 // Note these numbers are approximate.

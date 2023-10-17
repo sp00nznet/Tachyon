@@ -25,21 +25,27 @@ class Graphics {
     // This is NOT on transformStack until pushTransform is called.
     private var transform = Matrix3f()
 
+    // These must be lazy-initialised, as the Graphics instance
+    // is created before the OpenGL context is set.
+    private val quadRenderer by lazy { BulkColourRenderer(GL11.GL_QUADS) }
+    private val triangleRenderer by lazy { BulkColourRenderer(GL11.GL_TRIANGLES) }
+    private val lineRenderer by lazy { BulkColourRenderer(GL11.GL_LINES) }
+    private val imageRenderer by lazy { BulkImageRenderer() }
+
+    // When non-zero, the renderers shouldn't be flushed if possible
+    private var flushSuppression: Int = 0
+
     fun fillRect(x: Int, y: Int, width: Int, height: Int) {
         fillRect(x.f, y.f, width.f, height.f)
     }
 
     fun fillRect(x: Float, y: Float, width: Float, height: Float) {
-        Texture.unbind()
-        this.colour.bind()
-        GL11.glBegin(GL11.GL_QUADS)
-
-        glVertexTransformed(x, y)
-        glVertexTransformed(x, y + height)
-        glVertexTransformed(x + width, y + height)
-        glVertexTransformed(x + width, y)
-
-        GL11.glEnd()
+        quadRenderer.pushVert(x, y, colour)
+        quadRenderer.pushVert(x + width, y, colour)
+        quadRenderer.pushVert(x + width, y + height, colour)
+        quadRenderer.pushVert(x, y + height, colour)
+        if (flushSuppression == 0)
+            quadRenderer.flush()
     }
 
     fun drawRect(x: Int, y: Int, widthMinusOne: Int, heightMinusOne: Int) {
@@ -47,24 +53,12 @@ class Graphics {
     }
 
     fun drawRect(x: Float, y: Float, widthMinusOne: Float, heightMinusOne: Float) {
-        // I don't think the line width is supposed to affect rectangles?
-        GL11.glLineWidth(1f)
-
-        Texture.unbind()
-        this.colour.bind()
-        GL11.glBegin(GL11.GL_LINE_LOOP)
-
-        // Offset the line points by 0.5, so int values fall in the middle
-        // of a pixel, ensuring it gets rasterised into the correct place.
-        val ox = x + 0.5f
-        val oy = y + 0.5f
-
-        glVertexTransformed(ox, oy)
-        glVertexTransformed(ox, oy + heightMinusOne)
-        glVertexTransformed(ox + widthMinusOne, oy + heightMinusOne)
-        glVertexTransformed(ox + widthMinusOne, oy)
-
-        GL11.glEnd()
+        drawBatched {
+            fillRect(x, y, widthMinusOne, 1f)
+            fillRect(x, y, 1f, heightMinusOne)
+            fillRect(x + widthMinusOne, y, 1f, heightMinusOne)
+            fillRect(x, y + heightMinusOne, widthMinusOne + 1f, 1f)
+        }
     }
 
     fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int) {
@@ -72,7 +66,7 @@ class Graphics {
     }
 
     fun drawLine(x1: Float, y1: Float, x2: Float, y2: Float) {
-        // Use rectangles to draw straight lines, copiedd from Slick's graphics class.
+        // Use rectangles to draw straight lines, copied from Slick's graphics class.
         // This ensures that the vast majority of lines won't vary between OpenGL
         // implementations, which can vary by upto one pixel.
         // Also, it means we won't have to change all our current line-rendering
@@ -92,14 +86,10 @@ class Graphics {
             return
         }
 
-        Texture.unbind()
-        this.colour.bind()
-        GL11.glLineWidth(lineWidth)
-
-        GL11.glBegin(GL11.GL_LINES)
-        glVertexTransformed(x1, y1)
-        glVertexTransformed(x2, y2)
-        GL11.glEnd()
+        lineRenderer.pushVert(x1, y1, colour)
+        lineRenderer.pushVert(x2, y2, colour)
+        if (flushSuppression == 0)
+            lineRenderer.flush()
     }
 
     fun fillOval(x: Float, y: Float, width: Float, height: Float) {
@@ -110,6 +100,63 @@ class Graphics {
         drawArc(x, y, width, height, 50, 0f, 360f)
     }
 
+    fun drawCustomQuads(fn: (BulkColourRenderer) -> Unit) {
+        fn(quadRenderer)
+        if (flushSuppression == 0)
+            quadRenderer.flush()
+    }
+
+    /**
+     * Run a function where the order of the draws don't matter.
+     *
+     * This can batch together most non-image draws into a single drawcall,
+     * significantly improving efficiency.
+     *
+     * This function is reentrant: it can be called inside of itself, so
+     * a function won't disrupt it's caller, like the following code would
+     * if there was a simple on/off function:
+     *
+     * ```
+     * enableBatching()
+     *   // In subroutine
+     *   enableBatching()
+     *   fillRect()
+     *   disableBatching()
+     * // Batching is now disabled by the subroutine!
+     * disableBatching()
+     * ```
+     *
+     * This function is inlined to avoid creating a closure function.
+     */
+    inline fun drawBatched(fn: () -> Unit) {
+        nestedEnableBatching()
+        fn()
+        nestedDisableBatching()
+    }
+
+    /**
+     * Use [drawBatched] instead!
+     *
+     * This is required since that's an inline function, which can't access
+     * private variables directly.
+     */
+    fun nestedEnableBatching() {
+        flushSuppression++
+    }
+
+    /**
+     * Use [drawBatched] instead!
+     */
+    fun nestedDisableBatching() {
+        flushSuppression--
+
+        if (flushSuppression == 0) {
+            quadRenderer.flush()
+            triangleRenderer.flush()
+            lineRenderer.flush()
+        }
+    }
+
     fun pushTransform() {
         transformStack.add(Matrix3f(transform))
     }
@@ -118,6 +165,7 @@ class Graphics {
         transform = transformStack.removeAt(transformStack.size - 1)
     }
 
+    @Suppress("ReplaceWithOperatorAssignment")
     fun translate(x: Float, y: Float) {
         // Do transform = transform*translate which means we're effectively
         // using a translation matrix which is an identity matrix, aside from
@@ -182,6 +230,9 @@ class Graphics {
     fun clear(colour: Color) {
         GL11.glClearColor(colour.r, colour.g, colour.b, colour.a)
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+
+        // In case something went horribly wrong last frame
+        flushSuppression = 0
     }
 
     fun checkNoPushedTransforms() {
@@ -203,43 +254,45 @@ class Graphics {
         x1: Float, y1: Float, width: Float, height: Float,
         segments: Int, start: Float, end: Float
     ) {
-        Texture.unbind()
-        this.colour.bind()
+        addArcVertices(x1, y1, width, height, segments, start, end) { _, _, lastX, lastY, x, y ->
+            lineRenderer.pushVert(lastX, lastY, colour)
+            lineRenderer.pushVert(x, y, colour)
+        }
 
-        GL11.glBegin(GL11.GL_LINE_STRIP)
-        addArcVertices(x1, y1, width, height, segments, start, end)
-        GL11.glEnd()
+        if (flushSuppression == 0)
+            lineRenderer.flush()
     }
 
     private fun fillArc(
         x1: Float, y1: Float, width: Float, height: Float,
         segments: Int, start: Float, end: Float
     ) {
-        Texture.unbind()
-        this.colour.bind()
+        addArcVertices(x1, y1, width, height, segments, start, end) { cx, cy, lastX, lastY, x, y ->
+            triangleRenderer.pushVert(cx, cy, colour)
+            triangleRenderer.pushVert(x, y, colour)
+            triangleRenderer.pushVert(lastX, lastY, colour)
+        }
 
-        GL11.glBegin(GL11.GL_TRIANGLE_FAN)
-        addArcVertices(x1, y1, width, height, segments, start, end)
-        GL11.glEnd()
+        if (flushSuppression == 0)
+            triangleRenderer.flush()
     }
 
     private fun addArcVertices(
         x1: Float, y1: Float, width: Float, height: Float,
-        segments: Int, start: Float, end: Float
+        segments: Int, start: Float, end: Float,
+        fn: (Float, Float, Float, Float, Float, Float) -> Unit
     ) {
         // This was copied from Slick's graphics class, factored out
         // from drawing filled and non-filled arcs.
 
         require(end >= start)
 
-        Texture.unbind()
-        this.colour.bind()
-
         val cx = x1 + width / 2.0f
         val cy = y1 + height / 2.0f
         val step = 360 / segments
-        glVertexTransformed(cx, cy)
         var a = start.toInt()
+        var lastX: Float? = null
+        var lastY: Float? = null
         while (a < (end + step).toInt()) {
             var ang = a.toFloat()
             if (ang > end) {
@@ -247,9 +300,34 @@ class Graphics {
             }
             val x = (cx + cos(Math.toRadians(ang.toDouble())) * width / 2.0f).toFloat()
             val y = (cy + sin(Math.toRadians(ang.toDouble())) * height / 2.0f).toFloat()
-            glVertexTransformed(x, y)
             a += step
+
+            if (lastX != null && lastY != null) {
+                fn(cx, cy, lastX, lastY, x, y)
+            }
+
+            lastX = x
+            lastY = y
         }
+    }
+
+    private fun drawImageWithTexFiltering(
+        image: Image,
+        x: Float, y: Float,
+        x2: Float, y2: Float,
+        srcX1: Float, srcY1: Float,
+        srcX2: Float, srcY2: Float,
+        filter: Color,
+        textureFiltering: Int,
+        alpha: Float
+    ) {
+        imageRenderer.pushImage(
+            x, y, x2, y2,
+            srcX1, srcY1, srcX2, srcY2,
+            filter.r, filter.g, filter.b, alpha
+        )
+        imageRenderer.imageFiltering = textureFiltering
+        imageRenderer.flush(image)
     }
 
     companion object {
@@ -271,6 +349,27 @@ class Graphics {
             // Don't need to calculate a W value
 
             GL11.glVertex3f(x, y, 0f)
+        }
+
+        /**
+         * Called by [Image]'s draw function, should not be used elsewhere.
+         */
+        fun internalDrawImage(
+            image: Image,
+            x: Float, y: Float,
+            x2: Float, y2: Float,
+            srcX1: Float, srcY1: Float,
+            srcX2: Float, srcY2: Float,
+            filter: Color,
+            textureFiltering: Int,
+            alpha: Float
+        ) {
+            CURRENT!!.drawImageWithTexFiltering(
+                image,
+                x, y, x2, y2,
+                srcX1, srcY1, srcX2, srcY2,
+                filter, textureFiltering, alpha
+            )
         }
     }
 }

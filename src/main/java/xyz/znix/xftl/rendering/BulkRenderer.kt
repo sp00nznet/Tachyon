@@ -13,9 +13,8 @@ abstract class BulkRenderer : AutoCloseable {
     protected var indices: ByteBuffer = generateBuffer(128)
     protected var numVerts = 0
 
+    private var indicesAreQuads = false
     private val transformMatData = generateBuffer(4 * 9).asFloatBuffer()
-
-    abstract fun flush()
 
     override fun close() {
         if (vao != 0) {
@@ -72,6 +71,42 @@ abstract class BulkRenderer : AutoCloseable {
     }
 
     /**
+     * Fills the indices array with indexes that render the [numVerts] quads.
+     *
+     * This re-uses the previous indices data if possible.
+     */
+    protected fun buildQuadIndices() {
+        indices.clear()
+
+        val sizePerQuad = 6 * 4
+        val numQuads = numVerts / 4
+        checkSizeIndices(numQuads * sizePerQuad)
+
+        // Re-use the previous data, if possible.
+        if (!indicesAreQuads) {
+            indicesAreQuads = true
+
+            // Completely fill the indices array with as many quads as we can.
+            // That way we won't have to next time, unless it grows.
+            val maxQuads = indices.remaining() / sizePerQuad
+            for (i in 0 until maxQuads) {
+                val firstVert = i * 4
+
+                // Assume the vertices are added clockwise, as we build our CCW face.
+                indices.putInt(firstVert + 0)
+                indices.putInt(firstVert + 2)
+                indices.putInt(firstVert + 1)
+
+                indices.putInt(firstVert + 2)
+                indices.putInt(firstVert + 0)
+                indices.putInt(firstVert + 3)
+            }
+        }
+
+        indices.position(numQuads * sizePerQuad)
+    }
+
+    /**
      * Ensures there's at least [required] bytes of space remaining in [data].
      */
     protected fun checkSize(required: Int) {
@@ -82,6 +117,11 @@ abstract class BulkRenderer : AutoCloseable {
      * Ensures there's at least [required] bytes of space remaining in [indices].
      */
     protected fun checkSizeIndices(required: Int) {
+        if (required > indices.remaining()) {
+            // If the indices were for quads, the end is now missing.
+            indicesAreQuads = false
+        }
+
         indices = checkSizeOf(indices, required)
     }
 

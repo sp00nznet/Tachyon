@@ -11,11 +11,11 @@ import xyz.znix.xftl.game.UIUtils
  * the window_base texture.
  */
 class WindowRenderer(
-    backgroundImage: Image,
+    private val backgroundImage: Image,
     private val outlineImage: Image,
     private val maskImage: Image
 ) {
-    private val baseImage = BulkImageRenderer(backgroundImage)
+    private val baseImage = BulkImageRenderer()
 
     fun render(x: Int, y: Int, width: Int, height: Int) {
         // Tile in the background area. We have to mask it, since the tiles
@@ -107,7 +107,7 @@ class WindowRenderer(
             }
             tileX += TILE_X
         }
-        baseImage.flush()
+        baseImage.flush(backgroundImage)
     }
 
     // Note the coordinates for this include the glow!

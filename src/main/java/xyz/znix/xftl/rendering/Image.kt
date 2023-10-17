@@ -127,32 +127,13 @@ class Image(
         @Suppress("DEPRECATION")
         val finalAlpha = this.alpha * filter.a
 
-        // This is copied from Slick's Image.draw and drawEmbedded functions.
-        GL11.glColor4f(filter.r, filter.g, filter.b, finalAlpha)
-
-        texture.bind(textureFiltering)
-
-        GL11.glBegin(GL11.GL_QUADS)
-
-        val u1 = (srcX1 + textureOffsetX) / texture.rawTextureWidth
-        val v1 = (srcY1 + textureOffsetY) / texture.rawTextureHeight
-
-        val u2 = (srcX2 + textureOffsetX) / texture.rawTextureWidth
-        val v2 = (srcY2 + textureOffsetY) / texture.rawTextureHeight
-
-        GL11.glTexCoord2f(u1, v1)
-        Graphics.glVertexTransformed(x, y)
-
-        GL11.glTexCoord2f(u1, v2)
-        Graphics.glVertexTransformed(x, y2)
-
-        GL11.glTexCoord2f(u2, v2)
-        Graphics.glVertexTransformed(x2, y2)
-
-        GL11.glTexCoord2f(u2, v1)
-        Graphics.glVertexTransformed(x2, y)
-
-        GL11.glEnd()
+        Graphics.internalDrawImage(
+            this,
+            x, y, x2, y2,
+            srcX1, srcY1, srcX2, srcY2,
+            filter, textureFiltering,
+            finalAlpha
+        )
     }
 
     fun drawSection(
