@@ -120,7 +120,7 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
     }
 
     override fun drawImage(x0: Float, y0: Float, x1: Float, y1: Float, baseFrame: Image, alpha: Float) {
-        info.drawImage(x0, y0, x1, y1, baseFrame, alpha)
+        info.drawImage(x0, y0, x1, y1, baseFrame, alpha, true)
     }
 
     override fun onMidTeleport() {
@@ -268,7 +268,8 @@ class LivingCrewInfo(
             x.f, y.f,
             x.f + portraitImage.width * scale, y.f + portraitImage.height * scale,
             portraitImage,
-            1f
+            1f,
+            false
         )
     }
 
@@ -277,7 +278,8 @@ class LivingCrewInfo(
         x0: Float, y0: Float,
         x1: Float, y1: Float,
         baseFrame: Image,
-        alpha: Float
+        alpha: Float,
+        skipColours: Boolean
     ) {
         val texX0 = baseFrame.textureOffsetX
         val texY0 = baseFrame.textureOffsetY
@@ -301,6 +303,9 @@ class LivingCrewInfo(
         fullBaseImage.alpha = alpha
         fullBaseImage.drawNearest(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f)
         fullBaseImage.alpha = 1f
+
+        if (skipColours)
+            return
 
         // Draw all the layers
         for ((index, path) in imageNames.withIndex()) {
