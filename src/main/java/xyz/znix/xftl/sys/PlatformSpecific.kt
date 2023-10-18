@@ -23,7 +23,7 @@ sealed interface PlatformSpecific {
         @JvmField
         val INSTANCE: PlatformSpecific = when (Platform.get()) {
             Platform.WINDOWS -> WindowsPlatform()
-            Platform.MACOSX -> error("MacOS not yet supported")
+            Platform.MACOSX -> MacPlatform()
             Platform.LINUX -> LinuxPlatform()
         }
     }
@@ -118,6 +118,11 @@ private class WindowsPlatform : PlatformSpecific {
 
         saveGamePath = userSavedGames.resolve("Project Wormhole")
     }
+}
+
+private class MacPlatform : PlatformSpecific {
+    // TODO use the proper path
+    override val saveGamePath: Path = Path.of("fixme-wormhole-saves")
 }
 
 private class LinuxPlatform : PlatformSpecific {
