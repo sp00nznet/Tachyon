@@ -397,20 +397,6 @@ class Graphics {
         }
 
         /**
-         * Call glVertex3f, while multiplying the coordinates by the transform matrix.
-         */
-        fun glVertexTransformed(baseX: Float, baseY: Float) {
-            val m = getTextureTransformMatrix()
-
-            // 3x3 matrix multiply, with (baseX,baseY,1)
-            val x = baseX * m.m00 + baseY * m.m01 + m.m02
-            val y = baseX * m.m10 + baseY * m.m11 + m.m12
-            // Don't need to calculate a W value
-
-            GL11.glVertex3f(x, y, 0f)
-        }
-
-        /**
          * Called by [Image]'s draw function, should not be used elsewhere.
          */
         fun internalDrawImage(

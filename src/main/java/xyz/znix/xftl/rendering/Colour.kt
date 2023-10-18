@@ -11,13 +11,6 @@ class Colour(var r: Float, var g: Float, var b: Float, var a: Float) {
 
     constructor(other: Colour) : this(other.r, other.g, other.b, other.a)
 
-    /**
-     * Bind this colour to the GL context
-     */
-    fun bind() {
-        GL11.glColor4f(r, g, b, a)
-    }
-
     @Suppress("unused")
     companion object {
         @JvmField

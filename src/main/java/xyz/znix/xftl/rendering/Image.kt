@@ -166,10 +166,6 @@ class Image(
         )
     }
 
-    fun bind() {
-        texture.bind(DEFAULT_TEXTURE_FILTERING)
-    }
-
     companion object {
         // Despite this being a pixel art game, relatively few sprites are scaled
         // up - using GL_NEAREST by default ends up looking horrible.

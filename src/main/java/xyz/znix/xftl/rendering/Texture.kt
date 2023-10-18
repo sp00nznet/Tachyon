@@ -30,7 +30,6 @@ class Texture(
      * or [GL11.GL_NEAREST] - the latter should be used when scaling up the image.
      */
     fun bind(filtering: Int) {
-        GL11.glEnable(GL11.GL_TEXTURE_2D)
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, glName)
 
         if (currentFiltering != filtering) {
@@ -46,11 +45,5 @@ class Texture(
         freed = true
 
         GL11.glDeleteTextures(glName)
-    }
-
-    companion object {
-        fun unbind() {
-            GL11.glDisable(GL11.GL_TEXTURE_2D)
-        }
     }
 }

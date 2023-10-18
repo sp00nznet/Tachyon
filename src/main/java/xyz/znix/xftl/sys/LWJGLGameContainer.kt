@@ -7,7 +7,9 @@ import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.KHRDebug
 import org.lwjgl.system.MemoryStack.stackPush
+import org.lwjgl.system.MemoryUtil
 import org.lwjgl.system.MemoryUtil.NULL
 import org.newdawn.slick.InputListener
 import org.newdawn.slick.KeyListener
@@ -85,8 +87,11 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE)
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE)
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+
+        // TODO disable this for end users
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE)
 
         // Create the window
         window = glfwCreateWindow(width, height, game.title, NULL, NULL)
@@ -162,10 +167,9 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         GL.createCapabilities()
 
         // From Slick's ImmediateModeOGLRenderer
-        glEnable(GL_TEXTURE_2D);
-        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST)
 
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         glClearDepth(1.0)
 
         glEnable(GL_BLEND);
@@ -173,13 +177,36 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
 
         glViewport(0, 0, width, height)
 
-        // From enterOrtho
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0.0, width.toDouble(), height.toDouble(), 0.0, 1.0, -1.0);
-        glMatrixMode(GL_MODELVIEW);
+        // Set up debug output
+        glEnable(KHRDebug.GL_DEBUG_OUTPUT)
 
-        // glTranslatef((width - xsize) / 2, (height - ysize) / 2, 0);
+        // Don't fill the console with errors if there's an issue each frame
+        val maxErrorCount = 50
+        var errorCount = 0
+
+        // Disable the flood of notification messages
+        KHRDebug.glDebugMessageControl(
+            GL_DONT_CARE,
+            GL_DONT_CARE,
+            KHRDebug.GL_DEBUG_SEVERITY_NOTIFICATION,
+            null as IntArray?,
+            false
+        )
+
+        KHRDebug.glDebugMessageCallback({ source, type, id, severity, length, message, _ ->
+            errorCount++
+            if (errorCount == maxErrorCount) {
+                println("Got too many OpenGL debug messages, stopping output")
+            }
+            if (errorCount >= maxErrorCount) {
+                return@glDebugMessageCallback
+            }
+
+            val messageString = MemoryUtil.memUTF8(message, length)
+
+            // Filtering for end users?
+            println("Got GL debug message (id=$id src=$source type=$type sev=$severity): $messageString")
+        }, 0)
     }
 
     private fun loop() {

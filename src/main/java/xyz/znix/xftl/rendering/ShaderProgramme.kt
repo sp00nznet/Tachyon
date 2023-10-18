@@ -8,7 +8,8 @@ class ShaderProgramme(vertPath: String, fragPath: String) : AutoCloseable {
         private set
 
     init {
-        checkError()
+        // Absorb any previous errors
+        glGetError()
 
         var success = false
 
