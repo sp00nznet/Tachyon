@@ -48,6 +48,17 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
     override val showRedOutline: Boolean get() = ownerShip?.isPlayerShip != true
 
+    @Suppress("SENSELESS_COMPARISON")
+    override val backImg: Image?
+        get() = when {
+            // This seems unnecessary since info is non-nullable, but it's read
+            // in the AbstractCrew constructor.
+            info == null -> super.backImg
+
+            info.isFemale -> game.getImg("img/people/female_color.png")
+            else -> super.backImg
+        }
+
     override val mode: SlotType
         get() {
             var side = when (room.ship) {

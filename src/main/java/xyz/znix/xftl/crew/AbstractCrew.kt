@@ -29,7 +29,7 @@ abstract class AbstractCrew(
     val codename: String get() = blueprint.name
 
     var icon: FTLAnimation
-    val backImg: Image? = initialRoom.ship.sys.getImgIfExists("img/people/${codename}_color.png")
+    open val backImg: Image? = initialRoom.ship.sys.getImgIfExists("img/people/${codename}_color.png")
     val portraitAnim: AnimationSpec
     val portraitImage: Image
 
@@ -607,9 +607,6 @@ abstract class AbstractCrew(
     }
 
     open fun draw(g: Graphics) {
-        // Bit of a hack, since we're drawn from the ship
-        val isSelected = game.shipUI.isCrewHighlighted(this)
-
         val cf = icon.currentFrame
 
         var spriteY = screenY
@@ -650,25 +647,7 @@ abstract class AbstractCrew(
         val x1 = x0 + cf.width
         val y1 = y0 + height
 
-        // Draw the background image - the coloured hint that changes
-        // when you mouse over the crew.
-        // This is missing for drones, which makes sense as you can't
-        // select them.
-        if (backImg != null) {
-            val backSubImg = backImg.getSubImage(
-                cf.textureOffsetX,
-                cf.textureOffsetY,
-                cf.width,
-                cf.height
-            )
-            val backColour = when {
-                showRedOutline -> Color(CREW_HOSTILE_BG)
-                isSelected -> Color(CREW_SELECTED_BG)
-                else -> Color(CREW_DESELECTED_BG)
-            }
-            backColour.a *= opacity
-            backSubImg.draw(x0, y0, x1, y1, 0f, 0f, cf.width.f, cf.height.f, backColour)
-        }
+        drawBackground(cf, x0, y0, x1, y1, opacity)
 
         // Draw the actual image
         // This is moved into its own function so that living crew with layered
@@ -682,6 +661,33 @@ abstract class AbstractCrew(
             x.f + portraitImage.width * scale, y.f + portraitImage.height * scale,
             portraitImage, 1f
         )
+    }
+
+    private fun drawBackground(image: Image, x0: Float, y0: Float, x1: Float, y1: Float, opacity: Float) {
+        if (backImg == null) {
+            return
+        }
+
+        // Bit of a hack, since we're drawn from the ship
+        val isSelected = game.shipUI.isCrewHighlighted(this)
+
+        // Draw the background image - the coloured hint that changes
+        // when you mouse over the crew.
+        // This is missing for drones, which makes sense as you can't
+        // select them.
+        val backSubImg = backImg!!.getSubImage(
+            image.textureOffsetX,
+            image.textureOffsetY,
+            image.width,
+            image.height
+        )
+        val backColour = when {
+            showRedOutline -> Color(CREW_HOSTILE_BG)
+            isSelected -> Color(CREW_SELECTED_BG)
+            else -> Color(CREW_DESELECTED_BG)
+        }
+        backColour.a *= opacity
+        backSubImg.draw(x0, y0, x1, y1, 0f, 0f, image.width.f, image.height.f, backColour)
     }
 
     protected open fun drawImage(
