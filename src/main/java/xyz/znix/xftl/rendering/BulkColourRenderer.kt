@@ -69,7 +69,10 @@ class BulkColourRenderer(val drawType: Int) : BulkRenderer() {
             buildQuadIndices()
             indices.flip()
 
-            glDrawElements(GL_TRIANGLES, GL_UNSIGNED_INT, indices)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getOrCreateEBO())
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STREAM_DRAW)
+
+            glDrawElements(GL_TRIANGLES, indices.remaining() / 4, GL_UNSIGNED_INT, 0)
         } else {
             glDrawArrays(drawType, 0, numVerts)
         }

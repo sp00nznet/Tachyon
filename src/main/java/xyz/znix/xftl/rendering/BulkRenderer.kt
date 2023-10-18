@@ -8,6 +8,7 @@ import kotlin.math.max
 abstract class BulkRenderer : AutoCloseable {
     private var vao: Int = 0
     private var vbo: Int = 0
+    private var ebo: Int = 0
 
     protected var data: ByteBuffer = generateBuffer(128)
     protected var indices: ByteBuffer = generateBuffer(128)
@@ -18,8 +19,12 @@ abstract class BulkRenderer : AutoCloseable {
 
     override fun close() {
         if (vao != 0) {
-            GL30.glDeleteBuffers(vao)
+            GL30.glDeleteVertexArrays(vao)
             vao = 0
+        }
+        if (ebo != 0) {
+            GL30.glDeleteBuffers(ebo)
+            ebo = 0
         }
         if (vbo != 0) {
             GL30.glDeleteBuffers(vbo)
@@ -33,6 +38,14 @@ abstract class BulkRenderer : AutoCloseable {
         }
 
         return vbo
+    }
+
+    protected fun getOrCreateEBO(): Int {
+        if (ebo == 0) {
+            ebo = GL30.glGenBuffers()
+        }
+
+        return ebo
     }
 
     protected fun getOrCreateVAO(): Int {
