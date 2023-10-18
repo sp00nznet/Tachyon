@@ -1163,7 +1163,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         g.fillRect(x + 33f, y + 19f, hpWidth.f, 4f)
 
         // Draw the crew portrait, mostly so you can see what race they are.
-        crew.drawPortrait(x - 1, y - 3)
+        crew.drawPortrait(x - 1, y - 3, true)
 
         // Draw the crew name
         weaponNameText.drawString(x + 33f, y + 14f, crew.info.name, CREW_BOX_NAME_COLOUR)

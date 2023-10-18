@@ -655,10 +655,16 @@ abstract class AbstractCrew(
         drawImage(x0, y0, x1, y1, cf, opacity)
     }
 
-    fun drawPortrait(x: Int, y: Int, scale: Float = 1f) {
+    fun drawPortrait(x: Int, y: Int, backgroundHighlight: Boolean, scale: Float = 1f) {
+        val x1 = x.f + portraitImage.width * scale
+        val y1 = y.f + portraitImage.height * scale
+
+        if (backgroundHighlight) {
+            drawBackground(portraitImage, x.f, y.f, x1, y1, 1f)
+        }
+
         drawImage(
-            x.f, y.f,
-            x.f + portraitImage.width * scale, y.f + portraitImage.height * scale,
+            x.f, y.f, x1, y1,
             portraitImage, 1f
         )
     }

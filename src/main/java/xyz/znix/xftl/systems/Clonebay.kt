@@ -210,7 +210,7 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             } else {
                 // Draw the crewmember portrait
                 val crew = queue[index]
-                crew.drawPortrait(windowX, windowY - 5)
+                crew.drawPortrait(windowX, windowY - 5, false)
             }
 
             // Draw the crew dying bar

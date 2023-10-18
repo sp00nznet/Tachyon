@@ -574,7 +574,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     }
 
     private fun drawLostCrew(crew: RemoveCrewEval, x: Int, y: Int): Int {
-        crew.crew.drawPortrait(x - 2, y - 2)
+        crew.crew.drawPortrait(x - 2, y - 2, false)
 
         val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
         val message = game.translator[messageKey].replace("\\1", crew.crew.info.name)

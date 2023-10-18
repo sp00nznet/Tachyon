@@ -511,6 +511,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 crew.drawPortrait(
                     pos.x + 2 + (96 - portrait.width * 2) / 2,
                     pos.y + 2 + (45 - portrait.height * 2) / 2,
+                    false,
                     2f
                 )
 

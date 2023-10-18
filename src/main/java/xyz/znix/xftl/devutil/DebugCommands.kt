@@ -241,7 +241,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
                     g.colour = Colour(55, 55, 55, 180)
                     g.fillRect(x.f, y.f, boxWidth.f, boxHeight.f)
 
-                    crew.drawPortrait(x, y, 1f)
+                    crew.drawPortrait(x, y, false, 1f)
 
                     console.font.drawString(x + 30f, y + 20f, crew.info.name, Colour.white)
 
