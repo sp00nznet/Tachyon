@@ -184,6 +184,11 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         val maxErrorCount = 50
         var errorCount = 0
 
+        // OSX lacks debug capabilities, we'll get an exception if we try to set them
+        if (!GL.getCapabilities().GL_KHR_debug) {
+            return
+        }
+
         // Disable the flood of notification messages
         KHRDebug.glDebugMessageControl(
             GL_DONT_CARE,
