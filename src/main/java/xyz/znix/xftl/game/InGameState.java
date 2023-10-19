@@ -64,6 +64,8 @@ public class InGameState extends MainGame.GameState {
 
     private LootPool lootPool;
 
+    private SILFontLoader pauseFont;
+
     private Image missingImage;
 
     private final Point tempPoint = new Point(0, 0);
@@ -175,6 +177,8 @@ public class InGameState extends MainGame.GameState {
         enableAdvancedEdition = content.enableAdvancedEdition;
         blueprintManager = content.blueprintManager;
         eventManager = content.eventManager;
+
+        pauseFont = getFont("c&c");
 
         // Load a bunch of images that we'll need, to make them available for later.
         List<SystemBlueprint> systems = blueprintManager.getBlueprints().values().stream()
@@ -460,6 +464,14 @@ public class InGameState extends MainGame.GameState {
             int imgY = container.getHeight() - 193;
             int imgX = container.getWidth() / 2 - pauseImg.getWidth() / 2;
             pauseImg.draw(imgX, imgY);
+
+            // TODO keybind names
+            String pauseText = getTranslator().get("paused_text").replace("\\1", "SPACE");
+            pauseFont.drawStringCentred(
+                    container.getWidth() / 2f, imgY + 11 + 53,
+                    0,
+                    pauseText, Constants.PAUSE_TEXT_COLOUR
+            );
         }
 
         // Draw solar flares and pulsar pulses

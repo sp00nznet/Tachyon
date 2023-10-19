@@ -26,6 +26,8 @@ public class Constants {
     public static final Colour UI_BACKGROUND_GLOW_COLOUR = new Colour(243, 255, 238);
     public static final Colour UI_SCRAP_TEXT_COLOUR = new Colour(243, 255, 230);
 
+    public static final Colour PAUSE_TEXT_COLOUR = new Colour(220, 220, 220);
+
     public static final Colour SYS_ENERGY_ACTIVE = new Colour(100, 255, 100);
     public static final Colour SYS_ENERGY_DEPOWERED = new Colour(251, 251, 251);
     public static final Colour SYS_ENERGY_BROKEN = new Colour(255, 50, 50);
