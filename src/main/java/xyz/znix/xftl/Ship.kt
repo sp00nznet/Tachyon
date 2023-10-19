@@ -1008,6 +1008,7 @@ class Ship(
         val damageNumber = maxOf(damage, systemDamage, ionDamage)
         val damageColour = when {
             ionDamage > 0 -> DAMAGE_COLOUR_ION
+            systemDamage > 0 && damage == 0 -> DAMAGE_COLOUR_SYSTEM
             else -> Colour.white
         }
         target.showDamageText(damageNumber.toString(), damageColour)
