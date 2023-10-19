@@ -8,7 +8,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.random
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rollChance
@@ -74,12 +74,12 @@ class AsteroidEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironme
             game.getFont("HL2", 2f).drawString(
                 550f, 20f,
                 "$currentPhase p=$phaseTimeRemaining",
-                Color.white
+                Colour.white
             )
             game.getFont("HL2", 2f).drawString(
                 850f, 20f,
                 "f=$firingTimer",
-                Color.white
+                Colour.white
             )
         }
     }

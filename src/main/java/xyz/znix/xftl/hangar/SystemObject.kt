@@ -2,7 +2,7 @@ package xyz.znix.xftl.hangar
 
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
 import xyz.znix.xftl.systems.Clonebay
@@ -53,7 +53,7 @@ class SystemObject(
         if (room != null && !editor.isDragging(this) && systemType.info == Artillery.INFO) {
             val weapon = system.artilleryWeapon?.let { editor.state.blueprints[it] } as AbstractWeaponBlueprint?
             val weaponName = if (weapon == null) "NO WEAPON!" else editor.state.translator[weapon.short!!]
-            editor.font.drawStringCentred(dragX.f, dragY + 13f, 0f, weaponName, Color.black)
+            editor.font.drawStringCentred(dragX.f, dragY + 13f, 0f, weaponName, Colour.black)
         }
     }
 

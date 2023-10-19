@@ -3,7 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.*
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -140,7 +140,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val maxHeight = 50 - imageId * 10 // one pixel per second of charging
         val barHeight = (chargeProgress * maxHeight).toInt()
 
-        g.colour = Color.white
+        g.colour = Colour.white
         g.fillRect(barX.f, barBaseY.f - barHeight, 5f, barHeight.f)
     }
 

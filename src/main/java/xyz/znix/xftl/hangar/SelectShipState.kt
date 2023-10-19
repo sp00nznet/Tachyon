@@ -5,7 +5,7 @@ import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.WindowRenderer
@@ -86,7 +86,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     }
 
     override fun render(container: GameContainer, g: Graphics) {
-        g.clear(Color.darkGray)
+        g.clear(Colour.darkGray)
 
         screenSize.x = container.width
         screenSize.y = container.height
@@ -102,12 +102,12 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
             val highlighted = mousePos.x in x..x + width && mousePos.y in y..y + height
 
             if (highlighted) {
-                g.colour = Color(50, 50, 150)
+                g.colour = Colour(50, 50, 150)
                 g.fillRect(x.f, y.f, width.f, height.f)
                 hovered = ship
             }
 
-            font.drawString(x + 5f, y + 10f, ship.name, Color.white)
+            font.drawString(x + 5f, y + 10f, ship.name, Colour.white)
             y += height + 3
         }
 

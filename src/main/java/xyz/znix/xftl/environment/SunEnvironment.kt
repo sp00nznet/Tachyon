@@ -6,7 +6,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.random
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rollChance
 import xyz.znix.xftl.savegame.SaveUtil
@@ -53,7 +53,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         glowImage.draw(
             0f, 0f,
             1000f, 1000f,
-            Color(1f, 1f, 1f, backGlow)
+            Colour(1f, 1f, 1f, backGlow)
         )
 
         g.pushTransform()
@@ -61,21 +61,21 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         g.rotate(sunImage.width / 2f, sunImage.height / 2f, 132f)
         sunImage.draw(
             0f, 0f,
-            Color(1f, 1f, 1f, sunOpacity)
+            Colour(1f, 1f, 1f, sunOpacity)
         )
         g.popTransform()
 
         glowImage.draw(
             0f, 0f,
             1000f, 1000f,
-            Color(1f, 1f, 1f, frontGlow)
+            Colour(1f, 1f, 1f, frontGlow)
         )
 
         if (game.debugFlags.showSunTimer.set) {
             game.getFont("HL2", 2f).drawString(
                 550f, 20f,
                 "Flare in " + (nextFlareTime - time),
-                Color.white
+                Colour.white
             )
         }
     }
@@ -94,7 +94,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         // The alpha is the cube of how far we are from the flare
         val alpha = progress.pow(3)
 
-        val filter = Color(Constants.SOLAR_FLARE_FILTER)
+        val filter = Colour(Constants.SOLAR_FLARE_FILTER)
         filter.a = alpha
         flareImage.draw(
             -360f, -640f,

@@ -3,7 +3,7 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.sys.Input
@@ -146,7 +146,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             position.x + 138f + (327f - nameWidth) / 2,
             position.y + 75f,
             name,
-            Color.white
+            Colour.white
         )
 
         undoButtonImage.draw(position.x + 3f, position.y + 464f)
@@ -503,7 +503,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 // Draw the name
                 val name = crew.info.name
                 val nameX = (96 - crewNameFont.getWidth(name)) / 2
-                crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, Color.white)
+                crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, Colour.white)
 
                 // Draw the crewmember portrait
                 // TODO align properly

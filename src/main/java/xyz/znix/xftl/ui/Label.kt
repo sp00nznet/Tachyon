@@ -4,7 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.requireAttributeValue
 import xyz.znix.xftl.requireAttributeValueInt
@@ -23,7 +23,7 @@ class Label(provider: UIProvider, text: String, font: SILFontLoader) : Widget(pr
             updateSize()
         }
 
-    var colour: Color = Color.black
+    var colour: Colour = Colour.black
 
     override val size = Point(0, 0)
     private var textWidth: Int = 1

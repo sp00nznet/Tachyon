@@ -5,7 +5,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.GameMap
 import java.awt.Rectangle
@@ -152,7 +152,7 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
             branchColour = Constants.SECTOR_BRANCH_PATH
         } else if (!accessible.contains(info)) {
             // Grey out this sector, it's impossible to reach
-            colour = Color(colour.r / 4, colour.g / 4, colour.b / 4)
+            colour = Colour(colour.r / 4, colour.g / 4, colour.b / 4)
             branchColour = Constants.SECTOR_BRANCH_GREYED
         }
 
@@ -210,7 +210,7 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
         }
     }
 
-    private fun drawSectorCircle(g: Graphics, x: Int, y: Int, outer: Color, inner: Color) {
+    private fun drawSectorCircle(g: Graphics, x: Int, y: Int, outer: Colour, inner: Colour) {
         val outerDiameter = SECTOR_RADIUS * 2f
         val innerDiameter = (SECTOR_RADIUS - 1) * 2f
 
@@ -369,7 +369,7 @@ class SectorMapWindow(private val game: InGameState, private val selectedCallbac
     private fun drawCutoutLabel(
         g: Graphics, x: Int, y: Int,
         bevelledStart: Boolean, bevelledEnd: Boolean,
-        colour: Color, name: String
+        colour: Colour, name: String
     ): Int {
         // For alignment purposes, the bevel counts as part of the padding
         val originX = if (bevelledStart) x - 3 else x

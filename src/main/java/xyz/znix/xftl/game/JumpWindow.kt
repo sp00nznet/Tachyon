@@ -9,7 +9,6 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -38,7 +37,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     private val targetBox = game.getImg("img/map/map_targetbox.png")
 
     private val fleetAdvanceImg = game.getImg("img/map/map_warningcircle_point.png")
-    private val fleetAdvanceColour = Color(246, 128, 125, 21)
+    private val fleetAdvanceColour = Colour(246, 128, 125, 21)
     private val fleetControlImg = game.getImg("img/map/map_warningcircle.png")
     private val fleetControlTile = game.getImg("img/map/map_warningcircle_tile.png")
 
@@ -146,7 +145,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
                 g.pushTransform()
                 g.rotate(a.x.f, a.y.f, Math.toDegrees(angle.toDouble()).toFloat() - 90f)
-                flagshipIcon.draw(a.x - 32f, a.y - 32f - movement, Color(1f, 1f, 1f, alpha))
+                flagshipIcon.draw(a.x - 32f, a.y - 32f - movement, Colour(1f, 1f, 1f, alpha))
                 g.popTransform()
             }
         }
@@ -187,7 +186,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
                 val opacity = if (flashTimer < 1f) flashTimer else 2f - flashTimer
 
-                val colour = Color(1f, 1f, 1f, opacity)
+                val colour = Colour(1f, 1f, 1f, opacity)
                 beaconWillOvertakeCircle.draw(
                     pos.x + 1f, pos.y + 2f, pos.x + 31f, pos.y + 32f,
                     0f, 0f, 40f, 40f,
@@ -274,7 +273,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         if (game.debugFlags.showMapGrid.set) {
             for (x in 0 until Sector.GRID_SIZE.x) {
                 for (y in 0 until Sector.GRID_SIZE.y) {
-                    g.colour = Color.red
+                    g.colour = Colour.red
                     g.drawRect(mapBase.x + x * 110f, mapBase.y + y * 110f, 110f, 110f)
                 }
             }
@@ -329,7 +328,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     override fun draw(g: Graphics) {
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
             // Draw the stencil
-            g.colour = Color.red // Any non-transparent colour will work
+            g.colour = Colour.red // Any non-transparent colour will work
 
             // The glow means the inside of the window has an 11-pixel boundary
             // This does leave a tiny area in the bevelled right-hand corner unstenciled,
@@ -452,7 +451,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         drawTargetMarkers(g, targetBox, pos.x + targetBox.width / 2, pos.y + targetBox.height / 2)
     }
 
-    private fun drawBeaconLinesTo(g: Graphics, beacon: Beacon, colour: Color, predicate: (Beacon) -> Boolean) {
+    private fun drawBeaconLinesTo(g: Graphics, beacon: Beacon, colour: Colour, predicate: (Beacon) -> Boolean) {
         for (neighbour in beacon.neighbours) {
             if (!predicate(neighbour))
                 continue
@@ -461,7 +460,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         }
     }
 
-    private fun drawBeaconLine(g: Graphics, from: Beacon, to: Beacon, colour: Color) {
+    private fun drawBeaconLine(g: Graphics, from: Beacon, to: Beacon, colour: Colour) {
         g.pushTransform()
 
         val fromPos = from.pos + mapBase + beaconOffset

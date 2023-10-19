@@ -7,7 +7,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Door
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ISerialReferencable
@@ -688,9 +688,9 @@ abstract class AbstractCrew(
             image.height
         )
         val backColour = when {
-            showRedOutline -> Color(CREW_HOSTILE_BG)
-            isSelected -> Color(CREW_SELECTED_BG)
-            else -> Color(CREW_DESELECTED_BG)
+            showRedOutline -> Colour(CREW_HOSTILE_BG)
+            isSelected -> Colour(CREW_SELECTED_BG)
+            else -> Colour(CREW_DESELECTED_BG)
         }
         backColour.a *= opacity
         backSubImg.draw(x0, y0, x1, y1, 0f, 0f, image.width.f, image.height.f, backColour)
@@ -725,7 +725,7 @@ abstract class AbstractCrew(
             healthBox.draw(screenX - 1f, screenY.f)
 
             val width = ceil(25f * health / maxHealth).toInt()
-            g.colour = Color.green
+            g.colour = Colour.green
             g.fillRect(screenX + 4f, screenY + 3f, width.f, 3f)
         }
     }

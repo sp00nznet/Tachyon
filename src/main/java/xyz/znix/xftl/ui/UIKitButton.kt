@@ -7,16 +7,16 @@ import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.Window
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sys.Input
 import kotlin.math.max
 
 class UIKitButton(
     provider: UIProvider,
-    val normalColour: Color,
-    val highlightColour: Color,
-    val disabledColour: Color
+    val normalColour: Colour,
+    val highlightColour: Colour,
+    val disabledColour: Colour
 ) : Widget(provider) {
     override val size: Point = Point(0, 0)
 
@@ -76,7 +76,7 @@ class UIKitButton(
     }
 
     private inner class InGameButton(game: InGameState) : Button(game, position, size) {
-        fun getColour(): Color {
+        fun getColour(): Colour {
             return when {
                 disabled -> Constants.JUMP_DISABLED
                 hovered -> Constants.UI_BUTTON_HOVER

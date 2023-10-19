@@ -7,7 +7,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sys.GameContainer
 
@@ -216,7 +216,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         UIUtils.drawStringWithGlow(game, jumpWarningFont, message, leftX, boxY + 1, GlowColour.RED, alpha)
     }
 
-    private fun renderSmallbar(x: Int, y: Int, key: String, filter: Color, textColour: Color) {
+    private fun renderSmallbar(x: Int, y: Int, key: String, filter: Colour, textColour: Colour) {
         val text = game.translator[key]
 
         val textX = 2

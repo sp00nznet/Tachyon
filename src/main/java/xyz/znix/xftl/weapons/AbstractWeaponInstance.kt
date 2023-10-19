@@ -4,7 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -128,7 +128,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         val glowPath = animation.chargeImage ?: return
         val glow = ship.sys.getImg(glowPath)
 
-        val filter = Color(1f, 1f, 1f, chargeProgress)
+        val filter = Colour(1f, 1f, 1f, chargeProgress)
         glow.draw(0f, 0f, filter)
     }
 

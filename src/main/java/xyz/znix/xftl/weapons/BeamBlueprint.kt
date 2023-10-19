@@ -1,7 +1,6 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import org.lwjgl.opengl.GL11
 import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Ship
@@ -13,7 +12,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.BulkColourRenderer
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -31,15 +30,15 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
     val fireDuration: Float = 1f * length / speedPixelsPerSecond
 
-    val beamColour: Color? = xml.getChild("color")?.let {
-        Color(
+    val beamColour: Colour? = xml.getChild("color")?.let {
+        Colour(
             it.getChildTextTrim("r").toInt(),
             it.getChildTextTrim("g").toInt(),
             it.getChildTextTrim("b").toInt()
         )
     }
 
-    private val transparentColour = Color(beamColour ?: DEFAULT_COLOUR).also {
+    private val transparentColour = Colour(beamColour ?: DEFAULT_COLOUR).also {
         it.a = 220f / 255f // This is largely guessed
     }
 
@@ -491,7 +490,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         if (game.debugFlags.showBeamVectors.set) {
             // This lets us check if our normal calculation is correct
-            drawDebugVectorAngle(g, dst, dstAngle, 20f, Color.yellow)
+            drawDebugVectorAngle(g, dst, dstAngle, 20f, Colour.yellow)
         }
     }
 
@@ -502,7 +501,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         quads: BulkColourRenderer,
         srcA: FPos, srcB: FPos,
         dstA: FPos, dstB: FPos,
-        colour: Color
+        colour: Colour
     ) {
         // Find the middle points where the colour should be strongest
         val srcMidX = (srcA.x + srcB.x) / 2
@@ -512,7 +511,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val dstMidY = (dstA.y + dstB.y) / 2
 
         // Fade to transparent, but without blending to another colour in the process.
-        val edge = Color(colour)
+        val edge = Colour(colour)
         edge.a = 0f
 
         // Draw the A-side - srcA,srcMid,dstA,dstMid
@@ -528,11 +527,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         quads.pushVert(dstB.x, dstB.y, edge)
     }
 
-    private fun drawDebugVectorAngle(g: Graphics, origin: IPoint, angle: Float, length: Float, colour: Color) {
+    private fun drawDebugVectorAngle(g: Graphics, origin: IPoint, angle: Float, length: Float, colour: Colour) {
         drawDebugVector(g, origin, cos(angle) * length, sin(angle) * length, colour)
     }
 
-    private fun drawDebugVector(g: Graphics, origin: IPoint, x: Float, y: Float, colour: Color) {
+    private fun drawDebugVector(g: Graphics, origin: IPoint, x: Float, y: Float, colour: Colour) {
         g.colour = colour
         g.drawLine(
             origin.x.f, origin.y.f,
@@ -671,7 +670,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         private const val DEFAULT_SPEED = 5
 
         // A bright red beam? This is largely guessed.
-        private val DEFAULT_COLOUR = Color(255, 30, 30)
+        private val DEFAULT_COLOUR = Colour(255, 30, 30)
 
         private val INVALID_CELL_POS = ConstPoint(-999, -999)
 

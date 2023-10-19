@@ -2,7 +2,7 @@ package xyz.znix.xftl.game
 
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import kotlin.random.Random
 
@@ -69,7 +69,7 @@ class WarningFlasher(
             UIUtils.drawStringWithGlow(game, font, warningText, x, centre.y - spacing, colour, alpha)
         }
 
-        g.colour = Color(this.colour.colour).also { it.a = alpha }
+        g.colour = Colour(this.colour.colour).also { it.a = alpha }
         for (i in 0 until linePoints.size - 1) {
             val a = linePoints[i]
             val b = linePoints[i + 1]

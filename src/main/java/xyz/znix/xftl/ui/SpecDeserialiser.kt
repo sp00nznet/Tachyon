@@ -5,7 +5,7 @@ import org.jdom2.Element
 import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.requireAttributeValue
 import java.io.InputStream
 
@@ -72,16 +72,16 @@ class SpecDeserialiser(private val provider: UIProvider) {
     class LoadedUI(val mainWidget: WidgetContainer, val extraRoots: Map<String, WidgetContainer>)
 
     companion object {
-        fun parseColour(elem: Element, attrName: String): Color {
+        fun parseColour(elem: Element, attrName: String): Colour {
             return parseColour(elem.requireAttributeValue(attrName))
         }
 
-        fun parseColour(elem: Element, attrName: String, defaultColour: Color): Color {
+        fun parseColour(elem: Element, attrName: String, defaultColour: Colour): Colour {
             val value = elem.getAttributeValue(attrName) ?: return defaultColour
             return parseColour(value)
         }
 
-        fun parseColour(value: String): Color {
+        fun parseColour(value: String): Colour {
             // TODO parse CSS hex codes
 
             return when (value) {

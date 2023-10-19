@@ -3,7 +3,7 @@ package xyz.znix.xftl.hangar
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
@@ -69,7 +69,7 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         if (!editor.isSelected(this))
             return
 
-        g.colour = Color(0, 255, 0, 100)
+        g.colour = Colour(0, 255, 0, 100)
         g.fillRect(room.pixelX.f, room.pixelY.f, room.pixelWidth.f, room.pixelHeight.f)
     }
 

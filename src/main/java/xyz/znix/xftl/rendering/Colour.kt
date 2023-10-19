@@ -1,7 +1,5 @@
 package xyz.znix.xftl.rendering
 
-import org.lwjgl.opengl.GL11
-
 // This is largely copied from Slick's colour class, under the BSD licence.
 class Colour(var r: Float, var g: Float, var b: Float, var a: Float) {
     constructor(r: Float, g: Float, b: Float) : this(r, g, b, 1f)
@@ -14,48 +12,45 @@ class Colour(var r: Float, var g: Float, var b: Float, var a: Float) {
     @Suppress("unused")
     companion object {
         @JvmField
-        val transparent = Color(0.0f, 0.0f, 0.0f, 0.0f)
+        val transparent = Colour(0.0f, 0.0f, 0.0f, 0.0f)
 
         @JvmField
-        val white = Color(1f, 1f, 1f, 1f)
+        val white = Colour(1f, 1f, 1f, 1f)
 
         @JvmField
-        val yellow: Color = Color(1f, 1f, 0f, 1f)
+        val yellow: Colour = Colour(1f, 1f, 0f, 1f)
 
         @JvmField
-        val red: Color = Color(1f, 0f, 0f, 1f)
+        val red: Colour = Colour(1f, 0f, 0f, 1f)
 
         @JvmField
-        val blue: Color = Color(0f, 0f, 1f, 1f)
+        val blue: Colour = Colour(0f, 0f, 1f, 1f)
 
         @JvmField
-        val green: Color = Color(0f, 1f, 0f, 1f)
+        val green: Colour = Colour(0f, 1f, 0f, 1f)
 
         @JvmField
-        val black: Color = Color(0f, 0f, 0f, 1f)
+        val black: Colour = Colour(0f, 0f, 0f, 1f)
 
         @JvmField
-        val gray = Color(0.5f, 0.5f, 0.5f, 1f)
+        val gray = Colour(0.5f, 0.5f, 0.5f, 1f)
 
         @JvmField
-        val cyan: Color = Color(0f, 1f, 1f, 1f)
+        val cyan: Colour = Colour(0f, 1f, 1f, 1f)
 
         @JvmField
-        val darkGray = Color(0.3f, 0.3f, 0.3f, 1f)
+        val darkGray = Colour(0.3f, 0.3f, 0.3f, 1f)
 
         @JvmField
-        val lightGray = Color(0.7f, 0.7f, 0.7f, 1f)
+        val lightGray = Colour(0.7f, 0.7f, 0.7f, 1f)
 
         @JvmField
-        val pink = Color(255, 175, 175, 255)
+        val pink = Colour(255, 175, 175, 255)
 
         @JvmField
-        val orange = Color(255, 200, 0, 255)
+        val orange = Colour(255, 200, 0, 255)
 
         @JvmField
-        val magenta = Color(255, 0, 255, 255)
+        val magenta = Colour(255, 0, 255, 255)
     }
 }
-
-// Migration aid
-typealias Color = Colour

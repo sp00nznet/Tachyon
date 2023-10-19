@@ -7,7 +7,7 @@ import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
@@ -113,7 +113,7 @@ class InfoPanel(private val game: InGameState) {
         val leftIconX = position.x + 9
         val rightIconX = position.x + 164
 
-        titleFont.drawString(position.x + 28f, skillsY + 32f, game.translator["crew_skills"], Color.white)
+        titleFont.drawString(position.x + 28f, skillsY + 32f, game.translator["crew_skills"], Colour.white)
 
         for ((index, skill) in Skill.values().withIndex()) {
             val row = index / 2
@@ -147,7 +147,7 @@ class InfoPanel(private val game: InGameState) {
 
             for ((i, line) in lines.withIndex()) {
                 val lineY = iconY + 32 + i * 15
-                tipFont.drawStringCentred(textCentreX.f, lineY.f, 0f, line, Color.white)
+                tipFont.drawStringCentred(textCentreX.f, lineY.f, 0f, line, Colour.white)
             }
         }
     }
@@ -181,7 +181,7 @@ class InfoPanel(private val game: InGameState) {
             titleFont.drawString(
                 position.x + 11f, position.y + 30f,
                 titleStr,
-                Color.white
+                Colour.white
             )
         }
 
@@ -191,14 +191,14 @@ class InfoPanel(private val game: InGameState) {
 
             var y = position.y + 53
             for (line in lines) {
-                descriptionFont.drawString(position.x + 11f, y.f, line, Color.white)
+                descriptionFont.drawString(position.x + 11f, y.f, line, Colour.white)
                 y += 17
             }
 
             // Draw the extra lines, which are for stuff like weapon attributes.
             y += 17
             for (line in extraLines) {
-                descriptionFont.drawString(position.x + 11f, y.f, line, Color.white)
+                descriptionFont.drawString(position.x + 11f, y.f, line, Colour.white)
                 y += 17
             }
         }
@@ -214,7 +214,7 @@ class InfoPanel(private val game: InGameState) {
 
             var lineY = tipY + 27
             for (line in tipLines) {
-                tipFont.drawString(position.x + 13f, lineY.f, line, Color.white)
+                tipFont.drawString(position.x + 13f, lineY.f, line, Colour.white)
                 lineY += 15
             }
         }
@@ -253,11 +253,11 @@ class InfoPanel(private val game: InGameState) {
                 scrapIcon.draw(x + 68, boxY)
 
                 val price = system.upgradeCost.getOrElse(i - 1) { -1 }
-                numberFont.drawString(x + 98f, boxY + 19f, price.toString(), Color.white)
+                numberFont.drawString(x + 98f, boxY + 19f, price.toString(), Colour.white)
             }
 
             val description = system.info!!.getLevelName(i, game.translator)
-            systemLevelFont.drawString(x + 142f, boxY + 17f, description, Color.white)
+            systemLevelFont.drawString(x + 142f, boxY + 17f, description, Colour.white)
         }
 
         val offsetY = y + 6 // Due to the ledge at the top of the left side

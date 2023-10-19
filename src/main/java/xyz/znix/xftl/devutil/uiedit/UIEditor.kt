@@ -115,7 +115,7 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
     override fun render(container: GameContainer, g: Graphics) {
         ShaderProgramme.SHADER_SCREEN_SIZE.set(container.width, container.height)
 
-        g.clear(Color.lightGray)
+        g.clear(Colour.lightGray)
 
         // Reset the transform from last frame, in case there was a transform
         // call that wasn't inside a pushTransform block.
@@ -146,7 +146,7 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         // after everything else, so it shows up on top.
         val hl = highlighted ?: return
 
-        g.colour = Color.blue
+        g.colour = Colour.blue
         g.drawRect(hl.position.x.f, hl.position.y.f, hl.size.x - 1f, hl.size.y - 1f)
     }
 
@@ -154,9 +154,9 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         val ui = ui
         if (ui == null) {
             var y = utilFont.baselineToTop
-            utilFont.drawString(0f, y.f, "Error loading UI XML:", Color.black)
+            utilFont.drawString(0f, y.f, "Error loading UI XML:", Colour.black)
             y += utilFont.lineSpacing
-            utilFont.drawString(0f, y.f, loadError, Color.black)
+            utilFont.drawString(0f, y.f, loadError, Colour.black)
             return
         }
 
@@ -164,10 +164,10 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
 
         var y = 0
 
-        utilFont.drawString(0f, y.f + height, "Scale (F3 to reset): %.2fx".format(zoomScale), Color.black)
+        utilFont.drawString(0f, y.f + height, "Scale (F3 to reset): %.2fx".format(zoomScale), Colour.black)
         y += utilFont.lineSpacing
 
-        utilFont.drawString(0f, y.f + height, "Auto-reload (F4 to toggle): $autoReload", Color.black)
+        utilFont.drawString(0f, y.f + height, "Auto-reload (F4 to toggle): $autoReload", Colour.black)
         y += utilFont.lineSpacing
 
         val mouseY = mousePos.y - Graphics.getTextureTransformMatrix().m12.roundToInt()
@@ -183,13 +183,13 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
             val hover = (mousePos.x - x) in 0..width && (mouseY - y) in -margin..height + margin
 
             if (hover) {
-                g.colour = Color.blue
+                g.colour = Colour.blue
                 highlighted = widget
                 g.fillRect(x - 2, y - 2, width + 4, height + 4)
             } else {
-                // g.colour = Color(200, 200, 200, 150)
+                // g.colour = Colour(200, 200, 200, 150)
             }
-            utilFont.drawString(x.f, y.f + height, text, Color.black)
+            utilFont.drawString(x.f, y.f + height, text, Colour.black)
 
             y += utilFont.lineSpacing
 
@@ -275,9 +275,9 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         return windowRenderer
     }
 
-    override fun getDebugOutlineColour(widget: Widget): Color? {
+    override fun getDebugOutlineColour(widget: Widget): Colour? {
         // We'll draw a blue highlight on top later for selected widgets
-        return if (showOutlines) Color.yellow else null
+        return if (showOutlines) Colour.yellow else null
     }
 
     override fun mouseWheelMoved(change: Int) {

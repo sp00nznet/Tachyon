@@ -6,7 +6,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -213,7 +213,7 @@ abstract class AbstractExternalDrone(
 
     protected abstract fun onRender(g: Graphics)
 
-    protected fun drawCentred(image: Image, filter: Color = Color.white) {
+    protected fun drawCentred(image: Image, filter: Colour = Colour.white) {
         // Copying FTL, use nearest filtering to avoid ugly edges due to the
         // wrong transparency colour.
         image.drawNearest(-image.width / 2.f, -image.height / 2f, filter)

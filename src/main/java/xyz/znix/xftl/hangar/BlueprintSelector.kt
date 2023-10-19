@@ -6,7 +6,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.sys.Input
@@ -50,7 +50,7 @@ class BlueprintSelector(
         val tabY = pos.y - 7
 
         editor.state.windowRenderer.renderMasked(pos.x, pos.y, size.x, size.y, {
-            g.colour = Color.red // Anything non-transparent will do
+            g.colour = Colour.red // Anything non-transparent will do
             g.fillRect(tabX.f, tabY.f, titleTabWidth.f, editor.titleTab.height.f)
         }, {
             drawBody(g)

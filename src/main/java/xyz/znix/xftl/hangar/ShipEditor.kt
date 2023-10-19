@@ -7,7 +7,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.math.Rectangle
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.systems.SystemBlueprint
@@ -95,7 +95,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
 
         val overlaps = findOverlappingRooms()
         for (overlap in overlaps) {
-            g.colour = Color(255, 0, 0, 60)
+            g.colour = Colour(255, 0, 0, 60)
             g.fillRect(
                 overlap.pos.x * ROOM_SIZE.f,
                 overlap.pos.y * ROOM_SIZE.f,
@@ -112,7 +112,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
 
             val bounds = getNewRoomBounds()
             if (bounds == null) {
-                g.colour = Color(0, 255, 0, 150)
+                g.colour = Colour(0, 255, 0, 150)
                 g.fillRect(
                     mouseGridPos.x * ROOM_SIZE.f,
                     mouseGridPos.y * ROOM_SIZE.f,
@@ -120,7 +120,7 @@ class ShipEditor(val state: SelectShipState, val ship: EditableShip) {
                     ROOM_SIZE.f
                 )
             } else {
-                g.colour = Color(0, 255, 0, 150)
+                g.colour = Colour(0, 255, 0, 150)
                 g.fillRect(
                     bounds.pos.x * ROOM_SIZE.f,
                     bounds.pos.y * ROOM_SIZE.f,

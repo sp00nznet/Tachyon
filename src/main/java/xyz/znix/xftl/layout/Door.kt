@@ -11,7 +11,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.abs
@@ -269,7 +269,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         // correct frame for its motion.
         val sheetX = ROOM_SIZE * (stateAnimation * 4).toInt()
 
-        val filter = if (level == 0) Constants.DOOR_BROKEN_FILTER else Color.white
+        val filter = if (level == 0) Constants.DOOR_BROKEN_FILTER else Colour.white
 
         // Note that isVertical refers to whether the door is vertical
         // or not, NOT whether the two rooms it joins are placed one
@@ -284,7 +284,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
 
         // Draw the mouse hover highlight
         if (hovered) {
-            val highlightFilter = Color(1f, 1f, 1f, 0.75f)
+            val highlightFilter = Colour(1f, 1f, 1f, 0.75f)
             highlight.draw(0f, 0f, highlightFilter)
         }
 

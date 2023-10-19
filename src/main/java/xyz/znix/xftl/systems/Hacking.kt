@@ -9,7 +9,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Renderable
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -400,7 +400,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 if (alpha > 1)
                     alpha = 2 - alpha
 
-                val colour = Color(1f, 1f, 1f, alpha)
+                val colour = Colour(1f, 1f, 1f, alpha)
                 lightOverlay.draw(-(offImage.width / 2).f, -6f, colour)
             }
         }

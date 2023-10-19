@@ -5,7 +5,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -106,8 +106,8 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         }
 
         val filter = when (showRedOutline) {
-            true -> Color.red
-            false -> Color.green
+            true -> Colour.red
+            false -> Colour.green
         }
 
         if (showHealthBar) {
@@ -357,7 +357,7 @@ class LivingCrewInfo(
         val baseColour = when (level) {
             SkillLevel.MAX -> Constants.SYS_ENERGY_REPAIR
             SkillLevel.PARTIAL -> Constants.SYS_ENERGY_ACTIVE
-            else -> Color.transparent
+            else -> Colour.transparent
         }
         val barColour = when (level) {
             // Max doesn't draw a bar
@@ -377,7 +377,7 @@ class LivingCrewInfo(
         // Draw the outer box around the bar.
         // Note that drawRect draws its lower and right lines outside
         // the specified region, so -1 from width and height.
-        g.colour = Color.white
+        g.colour = Colour.white
         g.drawRect(x.f, y.f, width - 1f, height - 1f)
 
         val innerBarWidth = width - 2
@@ -391,7 +391,7 @@ class LivingCrewInfo(
 
         // Draw the white divider line between yellow and green sections
         if (level == SkillLevel.PARTIAL) {
-            g.colour = Color.white
+            g.colour = Colour.white
             g.fillRect(x + 1f + progressWidth, y + 1f, 1f, height - 2f)
         }
     }

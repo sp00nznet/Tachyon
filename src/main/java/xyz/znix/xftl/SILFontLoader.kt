@@ -3,7 +3,7 @@ package xyz.znix.xftl
 import org.lwjgl.opengl.GL11
 import org.newdawn.slick.opengl.ImageData
 import xyz.znix.xftl.rendering.BulkImageRenderer
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
 import xyz.znix.xftl.sys.ResourceContext
@@ -150,11 +150,11 @@ class SILFontLoader {
         renderer = other.renderer
     }
 
-    fun drawString(x: Float, y: Float, text: String, col: Color) {
+    fun drawString(x: Float, y: Float, text: String, col: Colour) {
         drawStringTruncated(x, y, Float.MAX_VALUE, text, col)
     }
 
-    fun drawStringTruncated(x: Float, y: Float, width: Float, text: String, col: Color) {
+    fun drawStringTruncated(x: Float, y: Float, width: Float, text: String, col: Colour) {
         var next = x
         for (ch in text) {
             // Replace unknown characters with question marks
@@ -189,7 +189,7 @@ class SILFontLoader {
      * passed in. This is used for the damage/miss/resist text, which has its
      * background filled in.
      */
-    fun drawStringPaired(bgFont: SILFontLoader, x: Float, y: Float, text: String, fg: Color, bg: Color) {
+    fun drawStringPaired(bgFont: SILFontLoader, x: Float, y: Float, text: String, fg: Colour, bg: Colour) {
         // If we don't round off the Y, then at values about half way between
         // integers we can end up drawing the background a pixel below
         // the foreground.
@@ -230,12 +230,12 @@ class SILFontLoader {
         renderer.flush(picture)
     }
 
-    fun drawStringCentred(x: Float, y: Float, width: Float, text: String, col: Color) {
+    fun drawStringCentred(x: Float, y: Float, width: Float, text: String, col: Colour) {
         val textX = x + (width - getWidth(text)) / 2
         drawString(textX, y, text, col)
     }
 
-    fun drawStringLeftAligned(x: Float, y: Float, text: String, colour: Color) {
+    fun drawStringLeftAligned(x: Float, y: Float, text: String, colour: Colour) {
         drawString(x - getWidth(text), y, text, colour)
     }
 

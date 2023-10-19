@@ -3,7 +3,7 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import kotlin.math.roundToInt
@@ -57,7 +57,7 @@ object UIUtils {
         val glowImage = game.getImg("img/warnings/backglow_warning_${colour.bgName}.png")
         glowImage.alpha = alpha
 
-        val fontColour = Color(colour.colour)
+        val fontColour = Colour(colour.colour)
         fontColour.a = alpha
 
         // Draw on the text, with each word glowing separately.
@@ -113,7 +113,7 @@ object UIUtils {
         x: Int, y: Int,
         width: Int, height: Int,
         progress: Float,
-        outline: Color, fill: Color
+        outline: Colour, fill: Colour
     ) {
         val innerHeight = height - 1 // 1px of margin
         val fillHeight = (innerHeight * progress).roundToInt()
@@ -172,7 +172,7 @@ object UIUtils {
  *
  * The glow is based of an image, so there's only a limited selection.
  */
-enum class GlowColour(val bgName: String, val colour: Color) {
+enum class GlowColour(val bgName: String, val colour: Colour) {
     RED("red", Constants.WARNING_COLOUR_RED),
     WHITE("white", Constants.WARNING_COLOUR_WHITE),
     GREEN("green", Constants.WARNING_COLOUR_RED), // TODO set the right colour

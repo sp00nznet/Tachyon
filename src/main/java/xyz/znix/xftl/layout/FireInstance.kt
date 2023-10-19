@@ -8,7 +8,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.RoomPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.random.Random
@@ -151,11 +151,11 @@ class FireInstance(val room: Room, val slot: Int) {
             // Use the maximum initial value to avoid storing
             // the actual random value we picked.
             val progress = 1 - burnoutTimer!! / 15f
-            UIUtils.drawDebugBar(g, x + 8, y + 5, 5, 20, progress, Color.black, Color.blue)
+            UIUtils.drawDebugBar(g, x + 8, y + 5, 5, 20, progress, Colour.black, Colour.blue)
         }
 
         if (health != 1f) {
-            UIUtils.drawDebugBar(g, x + 15, y + 5, 5, 20, health, Color.black, Color.red)
+            UIUtils.drawDebugBar(g, x + 15, y + 5, 5, 20, health, Colour.black, Colour.red)
         }
     }
 

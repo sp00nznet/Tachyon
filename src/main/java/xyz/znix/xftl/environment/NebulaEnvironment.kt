@@ -9,7 +9,7 @@ import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.random
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sys.GameContainer
@@ -65,7 +65,7 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
                 else -> normalImage
             }
 
-            val filter = Color(1f, 1f, 1f, cloud.alpha)
+            val filter = Colour(1f, 1f, 1f, cloud.alpha)
             cloudImage.draw(-cloudImage.width / 2, -cloudImage.height / 2, filter)
 
             // Draw the lightning image on top

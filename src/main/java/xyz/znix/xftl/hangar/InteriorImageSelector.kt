@@ -4,7 +4,7 @@ import xyz.znix.xftl.Constants.ROOM_SIZE
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sys.Input
 
@@ -78,7 +78,7 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
         meta?.let { editor.state.getImg(it.path) }?.drawNearest(0f, 0f)
 
         if (isHovering) {
-            g.colour = Color(0.5f, 1f, 1f, 0.25f)
+            g.colour = Colour(0.5f, 1f, 1f, 0.25f)
             g.fillRect(0f, 0f, roomPixelWidth.f, roomPixelHeight.f)
         }
 
@@ -91,7 +91,7 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
             )
             g.rotate(ROOM_SIZE / 2f, ROOM_SIZE / 2f, meta.computerDirection!!.angle.f)
 
-            g.colour = Color.red
+            g.colour = Colour.red
             g.lineWidth = 2f
             g.drawLine(15f, 15f, 15f, 10f)
             g.drawLine(15f, 10f, 11f, 14f)

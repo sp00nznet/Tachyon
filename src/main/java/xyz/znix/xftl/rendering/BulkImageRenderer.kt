@@ -32,7 +32,7 @@ class BulkImageRenderer : BulkRenderer() {
         x2: Float, y2: Float, // Corner B on-screen
         u1: Float, v1: Float, // Corner A in-texture
         u2: Float, v2: Float, // Corner B in-texture
-        colour: Color
+        colour: Colour
     ) {
         pushImage(
             x1, y1, x2, y2,

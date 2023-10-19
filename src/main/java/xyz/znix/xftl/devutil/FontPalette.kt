@@ -4,7 +4,7 @@ import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.FontOverrideData
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Utils
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.ShaderProgramme
@@ -37,8 +37,8 @@ object FontPalette {
     val HELP_MSG = "Press F1 to clear the string, F2 for sample, F3 and arrow keys to view rawfonts, F4 for" +
             " baseline, F5 to reload the override XML, type to edit, and up/down to scale the font"
 
-    val BASELINE_COLOUR = Color(255, 0, 0, 128)
-    val OFFSET_COLOUR = Color(0, 255, 0, 128)
+    val BASELINE_COLOUR = Colour(255, 0, 0, 128)
+    val OFFSET_COLOUR = Colour(0, 255, 0, 128)
 
     private class GameImpl(val df: Datafile) : BasicGame("Font Palette") {
         private val fonts = HashMap<String, SILFontLoader>()
@@ -63,14 +63,14 @@ object FontPalette {
         override fun render(container: GameContainer, slickG: Graphics) {
             ShaderProgramme.SHADER_SCREEN_SIZE.set(container.width, container.height)
 
-            g.clear(Color.white)
+            g.clear(Colour.white)
 
-            utilFont.drawString(50f, 20f, HELP_MSG, Color.black)
+            utilFont.drawString(50f, 20f, HELP_MSG, Colour.black)
 
             if (rawFontMode) {
                 val name = FONT_NAMES[rawFontIdx]
-                utilFont.drawString(50f, 35f, "Selected font: (idx $rawFontIdx) $name", Color.black)
-                pictures[name]!!.draw(50f, 50f, Color.black)
+                utilFont.drawString(50f, 35f, "Selected font: (idx $rawFontIdx) $name", Colour.black)
+                pictures[name]!!.draw(50f, 50f, Colour.black)
                 return
             }
 
@@ -82,11 +82,11 @@ object FontPalette {
             for ((i, name) in FONT_NAMES.withIndex()) {
                 val fnt = fonts[name]!!
                 val y = 25f + (10 + 15 * fontSize) * (i + 1)
-                utilFont.drawString(20f, y, name, Color.black)
+                utilFont.drawString(20f, y, name, Colour.black)
 
                 fnt.scale = fontSize.toFloat()
 
-                fnt.drawString(150f, y, drawStr, Color.black)
+                fnt.drawString(150f, y, drawStr, Colour.black)
 
                 if (baseline) {
                     g.colour = BASELINE_COLOUR

@@ -3,7 +3,7 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.sys.Input
@@ -306,7 +306,7 @@ object Buttons {
 
         override val disabled: Boolean get() = empty || customDisabled
 
-        protected val textColour: Color
+        protected val textColour: Colour
             get() = when {
                 disabled -> Constants.SECTOR_CUTOUT_TEXT
                 hovered -> Constants.STORE_BUY_HOVER
@@ -445,8 +445,8 @@ object Buttons {
 
             val colour = when (isCompatible) {
                 null -> return // Nothing being dragged
-                true -> Color(100, 255, 100, 127) // Transparent SYS_ENERGY_ACTIVE
-                false -> Color(255, 50, 50, 127) // Transparent SYS_ENERGY_BROKEN
+                true -> Colour(100, 255, 100, 127) // Transparent SYS_ENERGY_ACTIVE
+                false -> Colour(255, 50, 50, 127) // Transparent SYS_ENERGY_BROKEN
             }
             overlay.draw(pos.x.f, pos.y.f, colour)
         }
@@ -579,7 +579,7 @@ abstract class SystemPowerButton(
         )
 
         // Debugging aid:
-        // g.color = Color.red
+        // g.colour = Colour.red
         // g.drawRect(imageX, imageY + topY, 5f, height.f)
     }
 

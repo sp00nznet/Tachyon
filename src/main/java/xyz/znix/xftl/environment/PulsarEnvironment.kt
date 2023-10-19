@@ -7,7 +7,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.random
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
@@ -58,7 +58,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
         val centreY = 203
 
         val waveAlpha = pulseTimer?.let { 1 - it }
-        val waveFilter = waveAlpha?.let { Color(1f, 1f, 1f, it) }
+        val waveFilter = waveAlpha?.let { Colour(1f, 1f, 1f, it) }
         val waveScale = (pulseTimer ?: 0f) * 3
 
         if (waveFilter != null) {
@@ -71,7 +71,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
         }
 
         sunBlack.drawAlignedCentred(centreX, centreY)
-        val filter = Color(1f, 1f, 1f, whiteAlpha)
+        val filter = Colour(1f, 1f, 1f, whiteAlpha)
         sunWhite.drawAlignedCentred(centreX, centreY, filter)
 
         if (waveFilter != null) {
@@ -87,7 +87,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
             game.getFont("HL2", 2f).drawString(
                 550f, 20f,
                 "Pulse in $timeToPulse",
-                Color.white
+                Colour.white
             )
         }
     }
@@ -104,7 +104,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
         // The alpha is the cube of how far we are from the flare
         val alpha = progress.pow(3)
 
-        val filter = Color(Constants.PULSAR_PULSE_FILTER)
+        val filter = Colour(Constants.PULSAR_PULSE_FILTER)
         filter.a = alpha
         flareImage.draw(
             -360f, -640f,
@@ -198,7 +198,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
         val damage = 1 + (currentPower / 2f).toInt()
 
         if (resist) {
-            system.room!!.showDamageText(game.translator["resist"], Color.white)
+            system.room!!.showDamageText(game.translator["resist"], Colour.white)
         } else {
             system.dealDamage(0, damage)
             system.room!!.showDamageText(damage.toString(), Constants.DAMAGE_COLOUR_ION)

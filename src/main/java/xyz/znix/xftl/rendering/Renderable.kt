@@ -23,7 +23,7 @@ interface Renderable {
      * @param y The y coordinate to draw the artefact at
      * @param filter The color filter to apply when drawing
      */
-    fun draw(x: Float, y: Float, filter: Color)
+    fun draw(x: Float, y: Float, filter: Colour)
 
     /**
      * Draw this artefact at the given location with the specified size
@@ -44,5 +44,5 @@ interface Renderable {
      * @param height The width to render the artefact at
      * @param filter The color filter to apply when drawing
      */
-    fun draw(x: Float, y: Float, width: Float, height: Float, filter: Color)
+    fun draw(x: Float, y: Float, width: Float, height: Float, filter: Colour)
 }

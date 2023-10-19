@@ -3,7 +3,7 @@ package xyz.znix.xftl.hangar
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 
 interface EditorMenu {
@@ -109,9 +109,9 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
         var hovered: Boolean = false
 
         fun draw(g: Graphics) {
-            g.colour = Color.darkGray
+            g.colour = Colour.darkGray
             g.fillRect(pos.x.f, pos.y.f, width.f, height.f)
-            g.colour = Color.white
+            g.colour = Colour.white
             g.drawRect(pos.x.f, pos.y.f, width.f, height.f)
 
             for ((index, entry) in entries.withIndex()) {
@@ -119,18 +119,18 @@ class PopupMenu(val editor: ShipEditor, val pos: IPoint, val entries: List<Entry
 
                 // Items light up either when you're hovering over them, or their child menu is open.
                 if (index == selected && (hovered || entry.children != null)) {
-                    g.colour = Color.gray
+                    g.colour = Colour.gray
                     g.fillRect(pos.x + 1f, y + 1f, width - 1f, ENTRY_HEIGHT - 1f)
                 }
 
                 editor.font.drawString(
                     pos.x.f + MARGIN,
                     y + 11f, entry.text,
-                    Color.white
+                    Colour.white
                 )
 
                 if (entry.children != null) {
-                    g.colour = Color.white
+                    g.colour = Colour.white
 
                     // Draw a triangle to indicate the sub-list
                     val leftX = pos.x + width - 7

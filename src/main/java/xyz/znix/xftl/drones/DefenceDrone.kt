@@ -8,7 +8,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -102,7 +102,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         if (isRunning) {
             val timeCharging = typeCooldown - cooldown
             val chargeProgress = max(0f, timeCharging / typeCooldown)
-            val colour = Color(1f, 1f, 1f, chargeProgress)
+            val colour = Colour(1f, 1f, 1f, chargeProgress)
             drawCentred(gunChargedImage, colour)
         }
 

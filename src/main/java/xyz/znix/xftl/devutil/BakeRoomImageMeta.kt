@@ -14,7 +14,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -141,7 +141,7 @@ object BakeRoomImageMeta {
             val x = cell.x * ROOM_SIZE
             val y = cell.y * ROOM_SIZE
 
-            val matchColour = Color(94, 129, 127)
+            val matchColour = Colour(94, 129, 127)
 
             val colourCount = if (isVertical) {
                 countPixelColour(x - 10, y + 10, 20, 15, matchColour)
@@ -193,7 +193,7 @@ object BakeRoomImageMeta {
             return false
         }
 
-        private fun countPixelColour(x: Int, y: Int, width: Int, height: Int, toMatch: Color): Int {
+        private fun countPixelColour(x: Int, y: Int, width: Int, height: Int, toMatch: Colour): Int {
             var count = 0
             for (py in y until y + height) {
                 for (px in x until x + width) {
@@ -204,18 +204,18 @@ object BakeRoomImageMeta {
             return count
         }
 
-        private fun getPixel(x: Int, y: Int): Color {
+        private fun getPixel(x: Int, y: Int): Colour {
             // It's easier to just ignore out-of-bound pixels than make sure
             // we're always using in-bound positions.
             if (x < 0 || y < 0)
-                return Color.transparent
+                return Colour.transparent
             if (x >= imageSize.x || y >= imageSize.y)
-                return Color.transparent
+                return Colour.transparent
 
             val index = x * 4 + y * stride
 
             // The 3rd byte is alpha, if it's non-zero consider the pixel occupied
-            return Color(
+            return Colour(
                 pixels[index + 0].toInt() and 0xff,
                 pixels[index + 1].toInt() and 0xff,
                 pixels[index + 2].toInt() and 0xff,

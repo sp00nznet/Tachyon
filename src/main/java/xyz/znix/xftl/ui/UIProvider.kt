@@ -1,7 +1,7 @@
 package xyz.znix.xftl.ui
 
 import xyz.znix.xftl.SILFontLoader
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.WindowRenderer
 
@@ -20,7 +20,7 @@ interface UIProvider {
 
     fun translate(key: String): String?
 
-    fun getDebugOutlineColour(widget: Widget): Color?
+    fun getDebugOutlineColour(widget: Widget): Colour?
 
     fun getWindowRenderer(): WindowRenderer
 }

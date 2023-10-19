@@ -6,7 +6,7 @@ import xyz.znix.xftl.Constants.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.*
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.Oxygen
@@ -398,7 +398,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         ship.sys.getFont("JustinFont8").drawString(
             offsetX + 4f, offsetY + 12f,
             id.toString(),
-            Color.blue
+            Colour.blue
         )
     }
 
@@ -419,8 +419,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             // Use 50 as the max, not the random initial starting
             // value since we'd also have to store that.
             val progress = 1 - spread / 50f
-            val fillColour = Color(200, 200, 0) // Dark yellow
-            UIUtils.drawDebugBar(g, x + 5, y + 5, 5, 20, progress, Color.black, fillColour)
+            val fillColour = Colour(200, 200, 0) // Dark yellow
+            UIUtils.drawDebugBar(g, x + 5, y + 5, 5, 20, progress, Colour.black, fillColour)
         }
     }
 
@@ -684,7 +684,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         fireSpreadTimers[slot] = current
     }
 
-    fun showDamageText(text: String, colour: Color) {
+    fun showDamageText(text: String, colour: Colour) {
         ship.showDamageTextAt(pixelCentre, text, colour)
     }
 

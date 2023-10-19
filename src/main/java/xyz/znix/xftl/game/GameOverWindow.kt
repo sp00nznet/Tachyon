@@ -2,7 +2,7 @@ package xyz.znix.xftl.game
 
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.ui.Label
 import xyz.znix.xftl.ui.WidgetContainer
@@ -49,7 +49,7 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
     }
 
     override fun draw(g: Graphics) {
-        // g.color = Color.red
+        // g.colour = Color.red
         // g.fillRect(position.x.f, position.y.f, size.x.f, size.y.f)
 
         g.pushTransform()
@@ -73,12 +73,12 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
         // Note that 0,0 includes the glow margin, so add 7px for it
         var textY = 92 + 7
         for (line in wrappedMessage) {
-            bodyFont.drawStringCentred(centreX.f, position.y + textY.f, 0f, line, Color.white)
+            bodyFont.drawStringCentred(centreX.f, position.y + textY.f, 0f, line, Colour.white)
             textY += 34
         }
 
         val scoreText = "SCORE: 123"
-        scoreFont.drawStringCentred(centreX.f, position.y + 208f, 0f, scoreText, Color.white)
+        scoreFont.drawStringCentred(centreX.f, position.y + 208f, 0f, scoreText, Colour.white)
     }
 
     override fun escapePressed() {

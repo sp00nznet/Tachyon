@@ -4,7 +4,7 @@ import org.jdom2.Element
 import org.lwjgl.opengl.GL11
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.sys.Game
 import xyz.znix.xftl.sys.LWJGLGameContainer
 import kotlin.math.PI
@@ -44,10 +44,10 @@ fun Random.rollChance(percentChance: Int): Boolean {
 /**
  * Interpolate a colour between [this] and [other]. When [proportion] is 0 it's entirely [this], 1 is entirely [other].
  */
-fun Color.lerp(other: Color, proportion: Float): Color {
+fun Colour.lerp(other: Colour, proportion: Float): Colour {
     if (proportion <= 0f) return this
     if (proportion >= 1f) return other
-    return Color(
+    return Colour(
         r.lerp(other.r, proportion),
         g.lerp(other.g, proportion),
         b.lerp(other.b, proportion),

@@ -2,7 +2,7 @@ package xyz.znix.xftl.hangar
 
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 
 class RoomCornerDragObject(
@@ -73,14 +73,14 @@ class RoomCornerDragObject(
         val originY = y - DRAG_BOX_SIZE / 2
 
         // Draw the background to make the handle easier to see
-        g.colour = Color(255, 255, 255, 200)
+        g.colour = Colour(255, 255, 255, 200)
         g.fillRect(originX.f, originY.f, DRAG_BOX_SIZE.f, DRAG_BOX_SIZE.f)
 
         // Draw the line indicating the handle - note we have to -3 on the width/height
         // because drawRect draws one pixel larger than if you pass the same coordinates to fillRect.
         g.colour = when (highlight) {
-            false -> Color.black
-            true -> Color.blue
+            false -> Colour.black
+            true -> Colour.blue
         }
         g.drawRect(originX + 1f, originY + 1f, DRAG_BOX_SIZE - 3f, DRAG_BOX_SIZE - 3f)
     }

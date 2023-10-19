@@ -9,7 +9,7 @@ import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.*
 import xyz.znix.xftl.sys.GameContainer
@@ -64,7 +64,7 @@ class DebugConsole(var game: InGameState) {
     fun render(gc: GameContainer, g: Graphics) {
         val height = gc.height / 2
 
-        g.colour = Color(127, 127, 127, 180)
+        g.colour = Colour(127, 127, 127, 180)
         g.fillRect(0f, 0f, gc.width.f, height.f)
 
         var y = height - 6
@@ -85,16 +85,16 @@ class DebugConsole(var game: InGameState) {
         val suggestion = overlay?.autoCompleteSuggestion
         if (suggestion != null && suggestion.startsWith(currentLine)) {
             val additional = suggestion.removePrefix(currentLine)
-            font.drawString(hintPos, y.f, additional, Color.lightGray)
+            font.drawString(hintPos, y.f, additional, Colour.lightGray)
             hintPos += font.getWidth(additional)
         }
 
-        font.drawString(20f, y.f, inputLine, Color.white)
+        font.drawString(20f, y.f, inputLine, Colour.white)
 
         // Draw the remaining (eg parameter name) hints
         for (hint in parameterHints) {
             hintPos += 10 // Add a gap from the last text
-            font.drawString(hintPos, y.f, hint, Color.lightGray)
+            font.drawString(hintPos, y.f, hint, Colour.lightGray)
             hintPos += font.getWidth(hint)
         }
 
@@ -117,10 +117,10 @@ class DebugConsole(var game: InGameState) {
         // at the latest message.
         if (offset != 0) {
             val lineY = height - 6 - fontHeight - 4
-            g.colour = Color.red
+            g.colour = Colour.red
             g.drawLine(0f, lineY.f, gc.width.f, lineY.f)
 
-            font.drawStringLeftAligned(gc.width - 5f, lineY - 2f, "$offset lines scrolled past", Color.red)
+            font.drawStringLeftAligned(gc.width - 5f, lineY - 2f, "$offset lines scrolled past", Colour.red)
         }
 
         // Cut down the history so it doesn't get too crazy.
@@ -720,11 +720,11 @@ class DebugConsole(var game: InGameState) {
                 var optionX = x
                 fun drawOption(value: Boolean, text: String) {
                     val boxWidth = 5 + font.getWidth(text) + 5
-                    g.colour = Color(55, if (value) 180 else 55, 55, 180)
+                    g.colour = Colour(55, if (value) 180 else 55, 55, 180)
 
                     val y = height + 10f
                     g.fillRect(optionX.f, y, boxWidth.f, optionHeight.f)
-                    font.drawString(optionX + 5f, y + 10f, text, Color.white)
+                    font.drawString(optionX + 5f, y + 10f, text, Colour.white)
 
                     optionX += boxWidth
                 }
@@ -741,10 +741,10 @@ class DebugConsole(var game: InGameState) {
                     val hovering = mouseX in x until x + width && mouseY in y until y + blockHeight
 
                     val shade = if (hovering) 140 else 100
-                    g.colour = Color(shade, shade, shade, 180)
+                    g.colour = Colour(shade, shade, shade, 180)
                     g.fillRect(x.f, y.f, width.f, blockHeight.f)
 
-                    font.drawStringTruncated(x + 5f, y + 10f, idWidth.f, event.event.debugId, Color.white)
+                    font.drawStringTruncated(x + 5f, y + 10f, idWidth.f, event.event.debugId, Colour.white)
 
                     val descriptionX = x + idWidth + 10
                     val descriptionWidth = width - descriptionX - 5f
@@ -752,7 +752,7 @@ class DebugConsole(var game: InGameState) {
                     font.drawStringTruncated(
                         descriptionX.f, y + 10f, descriptionWidth,
                         text.replace("\n", " \\n "),
-                        Color.white
+                        Colour.white
                     )
 
                     if (clicking && hovering) {
@@ -893,10 +893,10 @@ class DebugConsole(var game: InGameState) {
                     val hovering = mouseX in x until x + width && mouseY in y until y + blockHeight
 
                     val shade = if (hovering) 140 else 100
-                    g.colour = Color(shade, shade, shade, 180)
+                    g.colour = Colour(shade, shade, shade, 180)
                     g.fillRect(x.f, y.f, width.f, blockHeight.f)
 
-                    font.drawString(x + 5f, y + 10f, item.first, Color.white)
+                    font.drawString(x + 5f, y + 10f, item.first, Colour.white)
 
                     if (clicking && hovering) {
                         historyCursor = -1
@@ -1005,7 +1005,7 @@ class DebugConsole(var game: InGameState) {
 
     private inner class SimpleLine(val line: String) : ILine {
         override fun draw(x: Int, y: Int) {
-            font.drawString(x.f, y.f, line, Color.white)
+            font.drawString(x.f, y.f, line, Colour.white)
         }
     }
 
@@ -1013,7 +1013,7 @@ class DebugConsole(var game: InGameState) {
         override fun draw(x: Int, y: Int) {
             for ((index, part) in parts.withIndex()) {
                 val pos = positions[index]
-                font.drawString(x.f + pos, y.f, part, Color.white)
+                font.drawString(x.f + pos, y.f, part, Colour.white)
             }
         }
     }

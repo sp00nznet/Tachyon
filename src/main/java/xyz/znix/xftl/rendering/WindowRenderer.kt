@@ -30,7 +30,7 @@ class WindowRenderer(
         drawOutlineOrMask(outlineImage, x, y, width, height)
 
         // For testing, this will draw an outline around the specified area.
-        // g.color = Color(1f, 0f, 0f, 0.2f)
+        // g.colour = Colour(1f, 0f, 0f, 0.2f)
         // g.drawRect(x.f, y.f, width - 1f, height - 1f)
     }
 
@@ -76,7 +76,7 @@ class WindowRenderer(
         val tabWidth = startWidth + textWidth + endWidth
 
         renderMasked(x, y, width, height, {
-            g.colour = Color.red // Anything non-transparent will do
+            g.colour = Colour.red // Anything non-transparent will do
             g.fillRect(x.f - GLOW, y.f - GLOW, tabWidth.f, tabImage.height.f)
         }, {})
 
@@ -100,7 +100,7 @@ class WindowRenderer(
                     28f, 29f,
                     28f + TILE_X, 29f + TILE_Y,
 
-                    Color.white
+                    Colour.white
                 )
 
                 tileY += TILE_Y

@@ -16,7 +16,7 @@ import xyz.znix.xftl.layout.OxygenTransfer
 import xyz.znix.xftl.layout.PathFinder
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.*
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ISerialReferencable
@@ -30,7 +30,6 @@ import java.util.*
 import java.util.stream.Collectors
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 import kotlin.random.Random
 
 class Ship(
@@ -527,14 +526,14 @@ class Ship(
             val cloakFade = cloaking?.cloakFade ?: 0f
 
             val hullOpacity = 1f - cloakFade * 0.2f
-            hullImage.draw(hullOffset.x, hullOffset.y, Color(1f, 1f, 1f, hullOpacity))
+            hullImage.draw(hullOffset.x, hullOffset.y, Colour(1f, 1f, 1f, hullOpacity))
 
             if (cloakFade != 0f) {
                 requireNotNull(cloakImage) { "Ship '$name' cloaked, but it doesn't have a cloak image!" }
 
                 cloakImage.draw(
                     hullOffset.x + cloakOffset.x, hullOffset.y + cloakOffset.y,
-                    Color(1f, 1f, 1f, cloakFade)
+                    Colour(1f, 1f, 1f, cloakFade)
                 )
             }
 
@@ -546,14 +545,14 @@ class Ship(
         if (sys.debugFlags.showHardpoints.set) {
             for ((index, hp) in hardpoints.withIndex()) {
                 val pos = hp.spec.position
-                g.colour = Color.red
+                g.colour = Colour.red
                 g.drawLine(pos.x - 5f, pos.y - 5f, pos.x + 5f, pos.y + 5f)
                 g.drawLine(pos.x + 5f, pos.y - 5f, pos.x - 5f, pos.y + 5f)
 
                 sys.getFont("JustinFont8").drawString(
                     pos.x.f + 5f,
                     pos.y + 8f,
-                    index.toString(), Color.red
+                    index.toString(), Colour.red
                 )
             }
         }
@@ -598,7 +597,7 @@ class Ship(
         if (level == 0) {
             // Do nothing, shields disabled
         } else {
-            renderSingleShield(alpha, Color.white)
+            renderSingleShield(alpha, Colour.white)
         }
 
         // Draw the super shields
@@ -619,7 +618,7 @@ class Ship(
         }
     }
 
-    private fun renderSingleShield(alpha: Float, filter: Color) {
+    private fun renderSingleShield(alpha: Float, filter: Colour) {
         val basePosX = shieldOrigin.x - shieldHalfSize.x
         val basePosY = shieldOrigin.y - shieldHalfSize.y
 
@@ -1006,7 +1005,7 @@ class Ship(
         val damageNumber = maxOf(damage, systemDamage, ionDamage)
         val damageColour = when {
             ionDamage > 0 -> DAMAGE_COLOUR_ION
-            else -> Color.white
+            else -> Colour.white
         }
         target.showDamageText(damageNumber.toString(), damageColour)
 
@@ -1022,7 +1021,7 @@ class Ship(
      *
      * This doesn't draw the text exactly at said position - it's shown a bit above.
      */
-    fun showDamageTextAt(damagePos: IPoint, text: String, colour: Color) {
+    fun showDamageTextAt(damagePos: IPoint, text: String, colour: Colour) {
         val floatingNum = DamageNumber(damagePos.x.f, damagePos.y.f, text, colour)
         floatingNum.y -= 20f
         floatingNum.x += Random.nextInt(-10, 10).f
@@ -1796,7 +1795,7 @@ class Ship(
         }
     }
 
-    inner class DamageNumber(var x: Float, var y: Float, val text: String, val colour: Color) {
+    inner class DamageNumber(var x: Float, var y: Float, val text: String, val colour: Colour) {
         var timer: Float = 0f
 
         private val LIFETIME = 1.2f
@@ -1809,7 +1808,7 @@ class Ship(
         val width: Int = outerFont.getWidth(text)
 
         fun draw(g: Graphics) {
-            outerFont.drawStringPaired(innerFont, x, y, text, Color.black, colour)
+            outerFont.drawStringPaired(innerFont, x, y, text, Colour.black, colour)
         }
 
         fun update(dt: Float): Boolean {

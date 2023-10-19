@@ -6,7 +6,7 @@ import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -160,7 +160,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
 
             if (missed) {
-                ship.showDamageTextAt(position, ship.sys.translator["miss"], Color.white)
+                ship.showDamageTextAt(position, ship.sys.translator["miss"], Colour.white)
             }
         }
 

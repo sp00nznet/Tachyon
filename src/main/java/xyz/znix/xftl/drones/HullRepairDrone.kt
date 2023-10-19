@@ -3,7 +3,7 @@ package xyz.znix.xftl.drones
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.f
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -40,7 +40,7 @@ class HullRepairDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false)
 
     override fun onRender(g: Graphics) {
         if (isRunning && flightController.paused) {
-            val colour = Color(Color.white)
+            val colour = Colour(Colour.white)
 
             // This animation is guessed and measured from FTL, it's
             // not properly reverse-engineered out.

@@ -13,7 +13,7 @@ import kotlin.math.*
 class Graphics {
     var lineWidth: Float = 1f
 
-    var colour: Color = Color.white
+    var colour: Colour = Colour.white
 
     // The stack of transforms from pushTransform/popTransform calls.
     private val transformStack = ArrayList<Matrix3f>()
@@ -286,7 +286,7 @@ class Graphics {
         transform.m11 *= yScaling
     }
 
-    fun clear(colour: Color) {
+    fun clear(colour: Colour) {
         GL11.glClearColor(colour.r, colour.g, colour.b, colour.a)
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
 
@@ -376,7 +376,7 @@ class Graphics {
         x2: Float, y2: Float,
         srcX1: Float, srcY1: Float,
         srcX2: Float, srcY2: Float,
-        filter: Color,
+        filter: Colour,
         textureFiltering: Int,
         alpha: Float
     ) {
@@ -405,7 +405,7 @@ class Graphics {
             x2: Float, y2: Float,
             srcX1: Float, srcY1: Float,
             srcX2: Float, srcY2: Float,
-            filter: Color,
+            filter: Colour,
             textureFiltering: Int,
             alpha: Float
         ) {

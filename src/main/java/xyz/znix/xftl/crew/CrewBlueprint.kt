@@ -3,7 +3,7 @@ package xyz.znix.xftl.crew
 import org.jdom2.Element
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 
 class CrewBlueprint(elem: Element) : Blueprint(elem) {
     override val cost: Int = elem.getChildTextTrim("cost").toInt()
@@ -21,7 +21,7 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
      * A list of all the colour filters that can be used as a filter
      * for rendering the layer1 (or in the case of humans, layer2) images.
      */
-    val colourFilters: List<List<Color>> = elem.getChild("colorList")
+    val colourFilters: List<List<Colour>> = elem.getChild("colorList")
         ?.getChildren("layer")?.map { parseColourLayer(it) }
         ?: emptyList()
 
@@ -92,12 +92,12 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
     }
 
     companion object {
-        private fun parseColourLayer(layerElem: Element): List<Color> {
+        private fun parseColourLayer(layerElem: Element): List<Colour> {
             val colourElements = layerElem.getChildren("color")
 
             return colourElements.map {
                 // Alpha is 0-1, the others are 0-255
-                Color(
+                Colour(
                     it.getAttributeValue("r").toInt() / 255f,
                     it.getAttributeValue("g").toInt() / 255f,
                     it.getAttributeValue("b").toInt() / 255f,

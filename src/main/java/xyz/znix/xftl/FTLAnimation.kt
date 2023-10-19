@@ -1,7 +1,7 @@
 package xyz.znix.xftl
 
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.Renderable
 
@@ -71,10 +71,10 @@ class FTLAnimation(
     }
 
     override fun draw(x: Float, y: Float) {
-        draw(x, y, Color.white)
+        draw(x, y, Colour.white)
     }
 
-    override fun draw(x: Float, y: Float, filter: Color) {
+    override fun draw(x: Float, y: Float, filter: Colour) {
         currentFrame.draw(x, y, filter)
     }
 
@@ -82,7 +82,7 @@ class FTLAnimation(
         currentFrame.draw(x, y, width, height)
     }
 
-    override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Color) {
+    override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Colour) {
         currentFrame.draw(x, y, width, height, filter)
     }
 }

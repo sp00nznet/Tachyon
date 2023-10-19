@@ -11,7 +11,7 @@ import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.RoomPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -195,7 +195,7 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                     0f, fillTopHeight.f,
                     windowWidth.f, windowHeight.f,
 
-                    Color.green
+                    Colour.green
                 )
             }
 
@@ -206,7 +206,7 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 val hiddenCrew = queue.size - shownCrew
                 val numStr = "+$hiddenCrew"
 
-                hiddenCrewFont.drawString(windowX + 11f, windowY + 15f, numStr, Color.white)
+                hiddenCrewFont.drawString(windowX + 11f, windowY + 15f, numStr, Colour.white)
             } else {
                 // Draw the crewmember portrait
                 val crew = queue[index]

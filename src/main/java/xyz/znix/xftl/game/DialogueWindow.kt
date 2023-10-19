@@ -7,7 +7,7 @@ import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -209,9 +209,9 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             val colour = when {
                 !enabled -> Constants.TEXT_OPTION_DISABLED
                 hoveredOption == i -> Constants.TEXT_OPTION_HOVER
-                choice == null -> Color.white
+                choice == null -> Colour.white
                 choice.blue -> Constants.TEXT_OPTION_BLUE
-                else -> Color.white
+                else -> Colour.white
             }
 
             val prefix = "${i + 1}. "
@@ -296,7 +296,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             val boxX = position.x + (size.x - boxSize.x) / 2
             val boxY = boxMiddleY - boxSize.y / 2
             val boxPos = ConstPoint(boxX, boxY)
-            drawResourceBox(g, resourcesGained, boxPos, boxSize, Color.white)
+            drawResourceBox(g, resourcesGained, boxPos, boxSize, Colour.white)
 
             // The spacing between the event text and the options is constant, regardless
             // of the size of the rewards.
@@ -318,7 +318,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         // Draw the continue option
         val colour = when (hoveredOption) {
             0 -> Constants.TEXT_OPTION_HOVER
-            else -> Color.white
+            else -> Colour.white
         }
 
         val text = "1. " + game.translator["continue"]
@@ -424,7 +424,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         return ConstPoint(width, height)
     }
 
-    private fun drawResourceBox(g: Graphics, resourceSet: ResourceSet, pos: IPoint, size: IPoint, textColour: Color) {
+    private fun drawResourceBox(g: Graphics, resourceSet: ResourceSet, pos: IPoint, size: IPoint, textColour: Colour) {
         var y = pos.y
 
         g.colour = Constants.REWARDS_BACKGROUND
@@ -494,7 +494,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     }
 
     private fun drawText(
-        y: Int, msg: String, colour: Color = Color.white,
+        y: Int, msg: String, colour: Colour = Colour.white,
         addOption: Boolean = false, maxX: Int = -1
     ): Int {
         // The x coordinate where line wrapping is triggered
@@ -522,7 +522,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         return textY
     }
 
-    private fun drawRewardBlueprint(g: Graphics, bp: Blueprint, boxX: Int, textY: Int, textColour: Color): Int {
+    private fun drawRewardBlueprint(g: Graphics, bp: Blueprint, boxX: Int, textY: Int, textColour: Colour): Int {
         when (bp) {
             is AbstractWeaponBlueprint -> {
                 val anim = bp.getLauncher(game)
@@ -565,7 +565,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
     }
 
-    private fun drawRewardCrew(crew: LivingCrewInfo, x: Int, y: Int, textColour: Color): Int {
+    private fun drawRewardCrew(crew: LivingCrewInfo, x: Int, y: Int, textColour: Colour): Int {
         crew.drawPortrait(x - 2, y - 2)
 
         resourceNumFont.drawString(x + 30f, y + 21f, crew.name, textColour)
@@ -831,7 +831,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
     }
 
-    private fun getHullDamageText(resourceSet: ResourceSet): Pair<String, Color> {
+    private fun getHullDamageText(resourceSet: ResourceSet): Pair<String, Colour> {
         val baseDamage = resourceSet.damage.sumBy { it.amount }
 
         if (baseDamage < 0) {
@@ -848,14 +848,14 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         return Pair(message, Constants.SYS_ENERGY_BROKEN)
     }
 
-    private fun getUpgradeText(upgrade: EventSystemUpgrade): Pair<String, Color> {
+    private fun getUpgradeText(upgrade: EventSystemUpgrade): Pair<String, Colour> {
         val isReactor = upgrade.system == "reactor"
         val system = playerShip.systems.firstOrNull { it.codename == upgrade.system }
         val systemName = game.translator[upgrade.system]
 
         if (system == null && !isReactor) {
             val message = game.translator["upgrade_fail_missing"].replace("\\1", systemName)
-            return Pair(message, Color.white)
+            return Pair(message, Colour.white)
         }
 
         val isMaxed = when {
@@ -865,7 +865,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         if (isMaxed) {
             val message = game.translator["upgrade_fail_max"].replace("\\1", systemName)
-            return Pair(message, Color.white)
+            return Pair(message, Colour.white)
         }
 
         val message = game.translator["upgrade_success"]
@@ -873,7 +873,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         return Pair(message, Constants.SYS_ENERGY_ACTIVE)
     }
 
-    private fun getFleetPursuitText(amount: Int): Pair<String, Color> {
+    private fun getFleetPursuitText(amount: Int): Pair<String, Colour> {
         when {
             amount == 1 -> {
                 val message = game.translator["fleet_speed_1"]

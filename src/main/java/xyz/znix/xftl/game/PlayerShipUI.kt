@@ -16,7 +16,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Cursor
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -688,7 +688,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
                     val filter = when (clockOn) {
                         true -> mainColour
-                        false -> Color.white // Don't filter the already-greyed image
+                        false -> Colour.white // Don't filter the already-greyed image
                     }
                     icon.draw(pos.x + 32, pos.y + 20, filter)
 
@@ -758,7 +758,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // Draw the crew selection rectangle, if appropriate
         val csr = crewSelectionRectangle
         if (csr != null && !isCrewSelectionPoint) {
-            g.colour = Color.white
+            g.colour = Colour.white
             val size = csr.second - csr.first
             g.drawRect(csr.first.x.f, csr.first.y.f, size.x.f, size.y.f)
             g.drawRect(csr.first.x + 1f, csr.first.y + 1f, size.x - 2f, size.y - 2f)
@@ -851,7 +851,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     private fun renderSingleMenu(container: GameContainer, g: Graphics, window: Window) {
         // Add the tint over all the regular game stuff to make the window clearer.
-        g.colour = Color(0f, 0f, 0f, 0.65f)
+        g.colour = Colour(0f, 0f, 0f, 0.65f)
         g.fillRect(0f, 0f, container.width.f, container.height.f)
 
         // Centre the window.
@@ -1020,7 +1020,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val textWidth = numberFont.getWidth(count.toString())
             val textInternalX = ceil((areaWidth - textWidth) / 2f).toInt()
 
-            numberFont.drawString(areaStart + textInternalX, shieldY + 27f, count.toString(), Color.white)
+            numberFont.drawString(areaStart + textInternalX, shieldY + 27f, count.toString(), Colour.white)
 
             if (delta != 0) {
                 val rdt = ResourceDeltaText(x + 40f, 65f, delta)
@@ -1066,11 +1066,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val evadeTextRight = 92f
 
         // Evade
-        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 15f, "${ship.evasion}%", Color.white)
+        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 15f, "${ship.evasion}%", Colour.white)
 
         // Oxygen
         val avgOxygen = round(ship.averageOxygen * 100).toInt()
-        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 37f, "$avgOxygen%", Color.white)
+        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 37f, "$avgOxygen%", Colour.white)
 
         // Draw all the crew boxes
         crewBaseY = oxyY + 59
@@ -1108,7 +1108,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         if (!drawSkills) {
             // Draw the semi-transparent background
-            g.colour = Color(colour.r, colour.g, colour.b, CREW_BOX_BG_ALPHA)
+            g.colour = Colour(colour.r, colour.g, colour.b, CREW_BOX_BG_ALPHA)
             g.fillRect(x.f, y.f, CREW_BOX_WIDTH.f, CREW_BOX_HEIGHT.f)
 
             // Draw the solid outline, via two unfilled rectangles.
@@ -1119,7 +1119,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             // TODO show the animation when the crewmember gets a skill point.
         } else {
             // Draw the semi-transparent background
-            g.colour = Color(colour.r, colour.g, colour.b, 0.25f)
+            g.colour = Colour(colour.r, colour.g, colour.b, 0.25f)
             g.fillRect(x.f, y.f, 89f, CREW_BOX_HEIGHT.f)
             g.fillRect(x + 89f, y.f, 80f, 146f)
 
@@ -1152,9 +1152,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         if (crew.health == crew.maxHealth) {
-            g.colour = Color.green
+            g.colour = Colour.green
         } else {
-            g.colour = Color(
+            g.colour = Colour(
                 1f,
                 (2f * hpFraction).coerceIn(0f..1f),
                 0f
@@ -1562,7 +1562,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         override val disabled: Boolean get() = empty
 
-        protected val mainColour: Color
+        protected val mainColour: Colour
             get() = when {
                 empty -> WEAPONS_ITEM_DESELECTED
                 isBeingHacked -> SYSTEM_HACKED
@@ -1826,7 +1826,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         fun draw(g: Graphics) {
-            numberDeltaFont.drawStringPaired(numberDeltaFontBg, x, y, text, Color.black, Color.white)
+            numberDeltaFont.drawStringPaired(numberDeltaFontBg, x, y, text, Colour.black, Colour.white)
         }
 
         fun update(dt: Float) {
