@@ -144,6 +144,8 @@ abstract class AbstractExternalDrone(
         if (ownerShip.sys.getEnemyOf(ownerShip) == targetShip)
             return
 
+        // TODO don't explode in the case of enemy combat drones when
+        //  the enemy ship surrenders.
         removeInstance()
         targetShip.externalDrones.remove(this)
     }
