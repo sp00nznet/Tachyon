@@ -231,15 +231,20 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
             val deltaSec = deltaNS / 1_000_000_000f
             lastNanos = thisUpdateTime
 
+            val isFocused = glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE
+
             // Update the game state
             game.update(this, deltaSec)
 
-            // Render out the game
-            game.render(this, g)
+            // Only render if the user can see the result
+            if (isFocused) {
+                // Render out the game
+                game.render(this, g)
 
-            // Swap the colour buffers, presenting the newly-drawn one
-            // to the screen.
-            glfwSwapBuffers(window)
+                // Swap the colour buffers, presenting the newly-drawn one
+                // to the screen.
+                glfwSwapBuffers(window)
+            }
 
             // Poll for window events. The key callback above will only be
             // invoked during this call.
@@ -277,10 +282,16 @@ private class LWJGLInput(val window: Long) : Input {
         }
         glfwSetCharCallback(window) { _, codepoint -> charCallback(codepoint.toChar()) }
         glfwSetMouseButtonCallback(window) { _, button, action, mods -> mouseButtonCallback(button, action, mods) }
-        glfwSetScrollCallback(window) { window, xOffset, yOffset -> mouseWheelCallback(xOffset, yOffset) }
+        glfwSetScrollCallback(window) { _, xOffset, yOffset -> mouseWheelCallback(xOffset, yOffset) }
     }
 
     fun update() {
+        // Block updates while unfocused, so the player doesn't hear
+        // the mouse-over sounds for buttons through another window.
+        // This happens on Linux/X11 without this check.
+        if (glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_FALSE)
+            return
+
         val lastX = mouseX
         val lastY = mouseY
 
