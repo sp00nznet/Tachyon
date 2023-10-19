@@ -318,6 +318,14 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     val ship: Ship get() = target.ship
 
     override fun reachedTarget() {
+        // First check if we're already dead. With large enough
+        // timesteps, the projectile can go from outside the
+        // shields to it's target in a single frame. This prevents that
+        // from happening, since dead is set when we hit the shields.
+        if (dead) {
+            return
+        }
+
         resolveMissed()
 
         if (missed == true)
