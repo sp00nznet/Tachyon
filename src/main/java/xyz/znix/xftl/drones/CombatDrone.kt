@@ -120,6 +120,10 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
     }
 
     private fun fire() {
+        // If we're cloaked, we should still pause as if we would fire, just not actually do so.
+        if (targetShip.isCloakActive)
+            return
+
         // Required for Kotlin smart-casting since 'weapon' is mutable
         val weapon = weapon
 
