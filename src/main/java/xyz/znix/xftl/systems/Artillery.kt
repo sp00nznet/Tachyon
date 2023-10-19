@@ -147,6 +147,12 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         g.fillRect(barX.f, barBaseY.f - barHeight, 5f, barHeight.f)
     }
 
+    override fun onJump() {
+        super.onJump()
+
+        chargeProgress = 0f
+    }
+
     private fun fireAt(targetShip: Ship) {
         // Allow smart-casting, since weapon is mutable.
         val weapon = this.weapon
