@@ -1011,7 +1011,11 @@ class Ship(
             systemDamage > 0 && damage == 0 -> DAMAGE_COLOUR_SYSTEM
             else -> Colour.white
         }
-        target.showDamageText(damageNumber.toString(), damageColour)
+
+        // Don't show a popup for fire bombs etc that don't do damage
+        if (damageNumber > 0) {
+            target.showDamageText(damageNumber.toString(), damageColour)
+        }
 
         if (sys.debugFlags.noDmg.set)
             return
