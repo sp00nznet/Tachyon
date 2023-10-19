@@ -892,7 +892,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
         val mask = game.getImg("img/statusUI/top_hull_bar_mask.png")
         val hpH = mask.height.f
-        mask.draw(11f, 0f, 11f + hpW, hpH, 0f, 0f, hpW, hpH, healthColour)
+        mask.draw(11f, 0f, 11f + hpW, hpH, 0f, 0f, hpW, hpH, 1f, healthColour)
 
         val lastFraction = lastHealth.f / ship.maxHealth
         val newFraction = ship.health.f / ship.maxHealth

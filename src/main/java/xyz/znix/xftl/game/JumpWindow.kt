@@ -186,11 +186,10 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
                 val opacity = if (flashTimer < 1f) flashTimer else 2f - flashTimer
 
-                val colour = Colour(1f, 1f, 1f, opacity)
                 beaconWillOvertakeCircle.draw(
                     pos.x + 1f, pos.y + 2f, pos.x + 31f, pos.y + 32f,
                     0f, 0f, 40f, 40f,
-                    colour
+                    opacity, Colour.white
                 )
             }
 

@@ -195,7 +195,7 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                     0f, fillTopHeight.f,
                     windowWidth.f, windowHeight.f,
 
-                    Colour.green
+                    1f, Colour.green
                 )
             }
 
@@ -226,7 +226,7 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                         0f, 0f,
                         windowWidth.f, fillTopHeight.f,
 
-                        Constants.CLONE_DYING_FILTER
+                        1f, Constants.CLONE_DYING_FILTER
                     )
                 }
             }

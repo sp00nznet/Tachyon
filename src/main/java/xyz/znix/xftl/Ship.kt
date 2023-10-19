@@ -622,15 +622,13 @@ class Ship(
         val basePosX = shieldOrigin.x - shieldHalfSize.x
         val basePosY = shieldOrigin.y - shieldHalfSize.y
 
-        shieldImage.alpha = alpha
-
         // Draw the image scaled to fit the
         shieldImage.draw(
             basePosX.f, basePosY.f,
             basePosX.f + shieldHalfSize.x * 2, basePosY.f + shieldHalfSize.y * 2,
             0f, 0f,
             shieldImage.width.f, shieldImage.height.f,
-            filter
+            alpha, filter
         )
     }
 

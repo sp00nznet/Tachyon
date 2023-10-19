@@ -688,12 +688,11 @@ abstract class AbstractCrew(
             image.height
         )
         val backColour = when {
-            showRedOutline -> Colour(CREW_HOSTILE_BG)
-            isSelected -> Colour(CREW_SELECTED_BG)
-            else -> Colour(CREW_DESELECTED_BG)
+            showRedOutline -> CREW_HOSTILE_BG
+            isSelected -> CREW_SELECTED_BG
+            else -> CREW_DESELECTED_BG
         }
-        backColour.a *= opacity
-        backSubImg.draw(x0, y0, x1, y1, 0f, 0f, image.width.f, image.height.f, backColour)
+        backSubImg.draw(x0, y0, x1, y1, 0f, 0f, image.width.f, image.height.f, opacity, backColour)
     }
 
     protected open fun drawImage(
@@ -709,9 +708,7 @@ abstract class AbstractCrew(
     ) {
         // Use nearest filtering so the image looks good when scaled up
         // in the crew management screen.
-        baseFrame.alpha = alpha
-        baseFrame.drawNearest(x0, y0, x1, y1, 0f, 0f, baseFrame.width.f, baseFrame.height.f)
-        baseFrame.alpha = 1f
+        baseFrame.drawNearest(x0, y0, x1, y1, 0f, 0f, baseFrame.width.f, baseFrame.height.f, alpha)
     }
 
     open fun drawForeground(g: Graphics) {

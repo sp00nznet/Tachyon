@@ -55,7 +55,6 @@ object UIUtils {
         val glowMargin = 1
 
         val glowImage = game.getImg("img/warnings/backglow_warning_${colour.bgName}.png")
-        glowImage.alpha = alpha
 
         val fontColour = Colour(colour.colour)
         fontColour.a = alpha
@@ -65,7 +64,7 @@ object UIUtils {
         for (word in text.split(' ')) {
             val wordWidth = font.getWidth(word)
             font.drawString(mutX.f, y.f, word, fontColour)
-            drawGlow(glowImage, mutX - glowMargin, y, wordWidth + glowMargin * 2)
+            drawGlow(glowImage, alpha, mutX - glowMargin, y, wordWidth + glowMargin * 2)
             mutX += wordWidth
 
             // The space doesn't glow
@@ -73,7 +72,7 @@ object UIUtils {
         }
     }
 
-    private fun drawGlow(image: Image, x: Int, y: Int, width: Int) {
+    private fun drawGlow(image: Image, alpha: Float, x: Int, y: Int, width: Int) {
         // The glow image is huge, we have to scale it down.
         val scale = 1 / 9f
 
@@ -92,19 +91,22 @@ object UIUtils {
         // Left side
         image.draw(
             x.f, glowTopY, x.f + endWidthScreen, glowBottomY,
-            0f, 0f, endWidthImg, image.height.f
+            0f, 0f, endWidthImg, image.height.f,
+            alpha, Colour.white
         )
 
         // Middle
         image.draw(
             x + endWidthScreen, glowTopY, x.f + width - endWidthScreen, glowBottomY,
-            100f, 0f, 200f, image.height.f
+            100f, 0f, 200f, image.height.f,
+            alpha, Colour.white
         )
 
         // Right side
         image.draw(
             x.f + width - endWidthScreen, glowTopY, x.f + width, glowBottomY,
-            image.width.f - endWidthImg, 0f, image.width.f, image.height.f
+            image.width.f - endWidthImg, 0f, image.width.f, image.height.f,
+            alpha, Colour.white
         )
     }
 

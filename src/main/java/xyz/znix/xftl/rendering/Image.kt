@@ -22,9 +22,6 @@ class Image(
     val texture: Texture
 ) : Renderable {
 
-    @Deprecated("Pass in a filter to the image, rather than mutating it.")
-    var alpha: Float = 1f
-
     val imageSize: IPoint get() = ConstPoint(width, height)
 
     fun draw() {
@@ -40,8 +37,12 @@ class Image(
         draw(x.f, y.f, filter)
     }
 
+    fun draw(x: Int, y: Int, alpha: Float) {
+        draw(x.f, y.f, alpha)
+    }
+
     override fun draw(x: Float, y: Float) {
-        draw(x, y, Colour.white)
+        draw(x, y, 1f)
     }
 
     override fun draw(x: Float, y: Float, filter: Colour) {
@@ -52,12 +53,24 @@ class Image(
             0f, 0f,
             width.f, height.f,
 
-            filter
+            1f, filter
+        )
+    }
+
+    fun draw(x: Float, y: Float, alpha: Float) {
+        draw(
+            x, y,
+            x + width, y + height,
+
+            0f, 0f,
+            width.f, height.f,
+
+            alpha, Colour.white
         )
     }
 
     fun drawNearest(x: Float, y: Float, filter: Colour = Colour.white) {
-        drawNearest(x, y, x + width, y + height, 0f, 0f, width.f, height.f, filter)
+        drawNearest(x, y, x + width, y + height, 0f, 0f, width.f, height.f, filter = filter)
     }
 
     override fun draw(x: Float, y: Float, width: Float, height: Float) {
@@ -65,7 +78,7 @@ class Image(
     }
 
     fun drawNearest(x: Float, y: Float, width: Float, height: Float) {
-        drawNearest(x, y, x + width, y + height, 0f, 0f, this.width.f, this.height.f, Colour.white)
+        drawNearest(x, y, x + width, y + height, 0f, 0f, this.width.f, this.height.f, 1f, Colour.white)
     }
 
     override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Colour) {
@@ -76,12 +89,12 @@ class Image(
             0f, 0f,
             this.width.f, this.height.f,
 
-            filter
+            1f, filter
         )
     }
 
     fun draw(x: Float, y: Float, x2: Float, y2: Float, srcx: Float, srcy: Float, srcx2: Float, srcy2: Float) {
-        draw(x, y, x2, y2, srcx, srcy, srcx2, srcy2, Colour.white)
+        draw(x, y, x2, y2, srcx, srcy, srcx2, srcy2, 1f, Colour.white)
     }
 
     fun draw(
@@ -89,9 +102,10 @@ class Image(
         x2: Float, y2: Float,
         srcX1: Float, srcY1: Float,
         srcX2: Float, srcY2: Float,
+        alpha: Float,
         filter: Colour
     ) {
-        drawWithTexFiltering(x, y, x2, y2, srcX1, srcY1, srcX2, srcY2, filter, DEFAULT_TEXTURE_FILTERING)
+        drawWithTexFiltering(x, y, x2, y2, srcX1, srcY1, srcX2, srcY2, alpha, filter, DEFAULT_TEXTURE_FILTERING)
     }
 
     fun drawAlignedCentred(centreX: Int, centreY: Int, filter: Colour = Colour.white) {
@@ -111,9 +125,10 @@ class Image(
         x2: Float, y2: Float,
         srcX1: Float, srcY1: Float,
         srcX2: Float, srcY2: Float,
+        alpha: Float = 1f,
         filter: Colour = Colour.white
     ) {
-        drawWithTexFiltering(x, y, x2, y2, srcX1, srcY1, srcX2, srcY2, filter, GL11.GL_NEAREST)
+        drawWithTexFiltering(x, y, x2, y2, srcX1, srcY1, srcX2, srcY2, alpha, filter, GL11.GL_NEAREST)
     }
 
     private fun drawWithTexFiltering(
@@ -121,11 +136,10 @@ class Image(
         x2: Float, y2: Float,
         srcX1: Float, srcY1: Float,
         srcX2: Float, srcY2: Float,
-        filter: Colour,
+        alpha: Float, filter: Colour,
         textureFiltering: Int
     ) {
-        @Suppress("DEPRECATION")
-        val finalAlpha = this.alpha * filter.a
+        val finalAlpha = alpha * filter.a
 
         Graphics.internalDrawImage(
             this,
@@ -153,7 +167,7 @@ class Image(
         draw(
             x.f, y.f, x.f + screenWidth, y.f + screenHeight,
             offsetX.f, offsetY.f, offsetX + width.f, offsetY + height.f,
-            colour ?: Colour.white
+            1f, colour ?: Colour.white
         )
     }
 

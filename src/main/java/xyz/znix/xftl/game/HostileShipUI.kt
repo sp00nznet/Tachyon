@@ -100,7 +100,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         hull.draw(
             hpX.f, hpY.f, hpX.f + hpWidth, hpY.f + hull.height,
             0f, 0f, hpWidth.f, hull.height.f,
-            Constants.SHIP_HEALTH_HIGH
+            1f, Constants.SHIP_HEALTH_HIGH
         )
 
         enemy.shields?.let { shields ->
@@ -230,7 +230,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             x.f + left.width, y.f,
             x.f + left.width + midWidth, y.f + middle.height,
             0f, 0f, middle.width.f, middle.height.f,
-            filter
+            1f, filter
         )
 
         val rightImg = game.getImg("img/combatUI/box_hostiles_smallbar_right.png")

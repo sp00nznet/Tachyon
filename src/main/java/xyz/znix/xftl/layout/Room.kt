@@ -152,8 +152,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         if (isOxygenCritical) {
             val img = ship.sys.getImg("img/effects/low_o2_stripes_${width}x${height}.png")
-            img.alpha = 0.5f
-            img.draw(x.f, y.f)
+            img.draw(x.f, y.f, 0.5f)
         }
 
         g.colour = FLOOR_GRID_COLOUR

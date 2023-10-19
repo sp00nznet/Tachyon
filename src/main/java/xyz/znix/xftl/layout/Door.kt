@@ -293,7 +293,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
 
             sheetX.f, sheetY.f,
             sheetX.f + ROOM_SIZE, sheetY.f + ROOM_SIZE,
-            filter
+            1f, filter
         )
 
         g.popTransform()
