@@ -1005,6 +1005,10 @@ class Ship(
     }
 
     fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
+        // Don't show the popup for system damage in a system-less room.
+        if (target.system == null && damage == 0)
+            return
+
         val damageNumber = maxOf(damage, systemDamage, ionDamage)
         val damageColour = when {
             ionDamage > 0 -> DAMAGE_COLOUR_ION
