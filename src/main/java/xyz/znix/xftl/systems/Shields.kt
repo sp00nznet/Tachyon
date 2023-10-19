@@ -130,7 +130,11 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     fun popShieldLayer(type: AbstractWeaponBlueprint) {
         // Break super shields first
         if (ship.superShield > 0) {
-            ship.superShield -= type.damage + type.ionDamage * 2
+            ship.superShield -= when {
+                type.ionDamage > 0 -> type.ionDamage * 2
+                type.damage > 0 -> type.damage
+                else -> type.sysDamage
+            }
             return
         }
 
