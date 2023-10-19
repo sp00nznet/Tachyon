@@ -10,6 +10,7 @@ import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Color
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.sector.Beacon
@@ -68,6 +69,8 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     private val neighbourVisSet = sector.beacons.filter { it.visited }.flatMap { it.neighbours }.toSet()
 
     private val labelWhite = (1..3).map { game.getImg("img/map/map_box_white_$it.png") }
+    private val labelGreen = (1..3).map { game.getImg("img/map/map_box_green_$it.png") }
+    private val labelPurple = (1..3).map { game.getImg("img/map/map_box_purple_$it.png") }
 
     val cancelButton = Buttons.BasicButton(
         game, size + ConstPoint(10 - cancelButtonOutline.width, 1),
@@ -207,21 +210,21 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             beaconImg.draw(pos)
 
             if (beacon.event.isDistressBeacon && !beacon.visited && showBasicInfo && !willBeOvertaken)
-                drawBeaconLabel(pos, game.translator["map_icon_distress"])
+                drawBeaconLabel(labelWhite, Constants.SECTOR_CUTOUT_TEXT, pos, game.translator["map_icon_distress"])
 
             // Note that quests and stores are cleared when the beacon is overrun,
             // so we don't have to check if willBeOvertaken is set.
             if (beacon.hasQuest && !beacon.visited)
-                drawBeaconLabel(pos, game.translator["map_icon_quest"])
+                drawBeaconLabel(labelWhite, Constants.SECTOR_CUTOUT_TEXT, pos, game.translator["map_icon_quest"])
 
             if (beacon.hasStore && showBasicInfo)
-                drawBeaconLabel(pos, game.translator["map_icon_store"])
+                drawBeaconLabel(labelWhite, Constants.SECTOR_CUTOUT_TEXT, pos, game.translator["map_icon_store"])
 
             if (beacon.isExit)
-                drawBeaconLabel(pos, game.translator["map_icon_exit"])
+                drawBeaconLabel(labelGreen, Constants.SECTOR_CUTOUT_TEXT_GREEN, pos, game.translator["map_icon_exit"])
 
             if (beacon.isBase)
-                drawBeaconLabel(pos, game.translator["map_icon_base"])
+                drawBeaconLabel(labelPurple, Constants.SECTOR_CUTOUT_TEXT_PURPLE, pos, game.translator["map_icon_base"])
 
             if (beacon == hovered && beacon != game.currentBeacon && game.currentBeacon.neighbours.contains(hovered)) {
                 drawTargetBox(g, pos)
@@ -485,7 +488,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         g.popTransform()
     }
 
-    private fun drawBeaconLabel(pos: IPoint, text: String) {
+    private fun drawBeaconLabel(images: List<Image>, colour: Colour, pos: IPoint, text: String) {
         // AFAIK the labels in FTL are drawn with alpha=204, TODO use that
 
         val strWidth = beaconLabelFont.getWidth(text)
@@ -493,11 +496,11 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         val boxTop = pos.y - 11
         val boxTopWithGlow = boxTop - 6
 
-        labelWhite[0].draw(pos.x + 15, boxTopWithGlow)
-        labelWhite[1].drawNearest(pos.x + 34f, boxTopWithGlow.f, strWidth - 8f, 32f)
-        labelWhite[2].draw(pos.x + 26 + strWidth, boxTopWithGlow)
+        images[0].draw(pos.x + 15, boxTopWithGlow)
+        images[1].drawNearest(pos.x + 34f, boxTopWithGlow.f, strWidth - 8f, 32f)
+        images[2].draw(pos.x + 26 + strWidth, boxTopWithGlow)
 
-        beaconLabelFont.drawString(pos.x + 30f, boxTop + 10f, text, Constants.SECTOR_CUTOUT_TEXT)
+        beaconLabelFont.drawString(pos.x + 30f, boxTop + 10f, text, colour)
     }
 
     private fun drawCorner(edge: Direction) {

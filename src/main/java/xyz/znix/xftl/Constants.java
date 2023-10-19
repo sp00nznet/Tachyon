@@ -61,6 +61,8 @@ public class Constants {
 
     public static final Colour SECTOR_CUTOUT = new Colour(53, 75, 89);
     public static final Colour SECTOR_CUTOUT_TEXT = new Colour(235, 245, 229);
+    public static final Colour SECTOR_CUTOUT_TEXT_GREEN = new Colour(46, 236, 54);
+    public static final Colour SECTOR_CUTOUT_TEXT_PURPLE = new Colour(177, 190, 179);
 
     public static final Colour STORE_BUY_HOVER = new Colour(245, 238, 163);
     public static final Colour STORE_SELL_TITLE = new Colour(28, 21, 21);
