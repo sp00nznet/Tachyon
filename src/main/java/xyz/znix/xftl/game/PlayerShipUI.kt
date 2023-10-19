@@ -501,16 +501,39 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     private fun drawSystems(g: Graphics) {
         // Draw the power tree's energy bars
-        val powerHeight = drawReactorPower(g)
+        val (fullPowerHeight, availablePowerHeight) = drawReactorPower(g)
 
         val powerTreeX = 86 - 53
         val powerTreeY = height - 21 - 302
-        val powerTreeMaskY = powerTreeY + 27 - powerHeight
+        val powerTreeMaskY = powerTreeY + 27
+        val powerIsAvailable = ship.powerAvailable > 0
+        val powerMaskImg = game.getImg("img/wire_left_mask.png")
+        val powerWireImg = game.getImg("img/wireUI/wire_full.png")
 
         Utils.drawStenciled(Utils.StencilMode.BLOCKING, {
-            game.getImg("img/wire_left_mask.png").draw(powerTreeX.f + 4, powerTreeMaskY.f)
+            powerMaskImg.draw(powerTreeX.f + 4, powerTreeMaskY.f - fullPowerHeight)
         }) {
-            game.getImg("img/wireUI/wire_full.png").draw(powerTreeX.f, powerTreeY.f)
+            powerWireImg.draw(powerTreeX.f, powerTreeY.f, 0.5f)
+        }
+
+        // Have to check since this draws the first system's power wire too,
+        // and it's not masked off.
+        if (powerIsAvailable) {
+            Utils.drawStenciled(Utils.StencilMode.BLOCKING, {
+                powerMaskImg.draw(powerTreeX.f + 4, powerTreeMaskY.f - availablePowerHeight)
+            }) {
+                // The power wire is taller than the mask (and way taller
+                // than it needs to be), so the top shows if almost all
+                // the ship's power is used.
+                val maxHeight = powerMaskImg.height
+                val exclusion = powerWireImg.height - maxHeight
+                powerWireImg.draw(
+                    powerTreeX.f, powerTreeY.f + exclusion,
+                    powerTreeX.f + powerWireImg.width, powerTreeY.f + powerWireImg.height,
+                    0f, exclusion.f,
+                    powerWireImg.width.f, powerWireImg.height.f
+                )
+            }
         }
 
         // Draw the systems and the wires under them
@@ -572,7 +595,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 true -> game.getImg("img/wireUI/wire_${wireWidth}_cap.png")
                 false -> game.getImg("img/wireUI/wire_$wireWidth.png")
             }
-            image.draw(wireX.f, wireY.f)
+
+            // The wire does indeed get drawn twice if power is available, the colours match vanilla.
+            image.draw(wireX.f, wireY.f, 0.5f)
+            if (powerIsAvailable) {
+                image.draw(wireX.f, wireY.f)
+            }
         }
 
         // If a weapon is being targeted, check that our click event is still the game's active click
@@ -799,9 +827,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     /**
      * Draw the stack of reactor power icons.
      *
-     * Returns the height of the stack of power bars.
+     * Returns the height of the stack of power bars, and the height of the top
+     * of the highest non-empty power bar.
      */
-    private fun drawReactorPower(g: Graphics): Int {
+    private fun drawReactorPower(g: Graphics): Pair<Int, Int> {
         // Top-left corner of the bottom power bar
         val x = 12
         val baseY = height - 34
@@ -841,7 +870,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             nextPowerIdx++
         }
 
-        return (totalPower - 1) * spacing
+        val topOfStack = (totalPower - 1) * spacing
+        val topOfPowered = (availablePower - 1) * spacing
+        return Pair(topOfStack, topOfPowered)
     }
 
     fun renderMenus(container: GameContainer, g: Graphics) {
