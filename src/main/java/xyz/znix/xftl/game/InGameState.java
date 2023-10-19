@@ -560,7 +560,7 @@ public class InGameState extends MainGame.GameState {
                     // shipUI.showEventDialogue(event);
                 }
 
-                enemyIsHostile = false;
+                setEnemyIsHostile(false);
 
                 // If we jump back, they shouldn't re-appear.
                 // This also means there won't be a danger mark
@@ -601,7 +601,7 @@ public class InGameState extends MainGame.GameState {
             visitedSectors.add(sectorInfo);
         }
 
-        enemyIsHostile = true;
+        setEnemyIsHostile(true);
         setEnemy(currentBeacon.getShip());
 
         // Make the store button appear and disappear.
@@ -688,7 +688,7 @@ public class InGameState extends MainGame.GameState {
         }
 
         setEnemy(flagship);
-        enemyIsHostile = true;
+        setEnemyIsHostile(true);
 
         Event event = eventManager.get("BOSS_TEXT_" + stage).resolve();
         shipUI.showEventDialogue(event);
@@ -741,12 +741,12 @@ public class InGameState extends MainGame.GameState {
             setEnemy(content.generator.buildShip(this, spec, sector, difficulty, null));
 
             // Ships aren't hostile by default
-            this.enemyIsHostile = false;
+            setEnemyIsHostile(false);
         }
         Boolean hostileState = event.getLoadShipHostile();
         if (hostileState != null) {
             this.currentBeacon.setShip(hostileState ? enemy : null);
-            this.enemyIsHostile = hostileState;
+            setEnemyIsHostile(hostileState);
         }
     }
 
@@ -754,7 +754,7 @@ public class InGameState extends MainGame.GameState {
     public void debugSpawnShip(EnemyShipSpec spec, Difficulty difficulty, int sector, int seed) {
         setEnemy(content.generator.buildShip(this, spec, sector, difficulty, seed));
         currentBeacon.setShip(enemy);
-        enemyIsHostile = true;
+        setEnemyIsHostile(true);
     }
 
     private void setEnemy(Ship enemy) {
@@ -1545,6 +1545,18 @@ public class InGameState extends MainGame.GameState {
         // Print a message in the debug console, so the player knows what happened.
         debugConsoleVisible = true;
         getDebugConsole().onFailedSaveRestore();
+    }
+
+    private void setEnemyIsHostile(boolean enemyIsHostile) {
+        if (this.enemyIsHostile == enemyIsHostile)
+            return;
+
+        this.enemyIsHostile = enemyIsHostile;
+
+        // Get rid of any remaining drones on the player's ship
+        if (!enemyIsHostile && enemy != null && enemy.getDrones() != null) {
+            enemy.getDrones().enemyShipUpdated();
+        }
     }
 
     public interface RoomClickListener {

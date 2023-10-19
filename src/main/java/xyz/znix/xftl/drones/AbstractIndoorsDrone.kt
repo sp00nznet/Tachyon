@@ -84,6 +84,15 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
         }
     }
 
+    override fun onEnemyShipUpdated() {
+        super.onEnemyShipUpdated()
+
+        // If we're on the former enemy ship, destroy ourselves.
+        if (pawn != null && ship != ownerShip && ship != ownerShip.sys.getEnemyOf(ownerShip)) {
+            destroy()
+        }
+    }
+
     protected abstract fun updatePawn(dt: Float)
 
     protected abstract fun drawPawn()
