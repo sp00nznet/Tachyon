@@ -155,7 +155,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             val y = boxY + box.height - 85
             val x = boxX + i * 30 + 40
 
-            sys.drawIconAndPower(game, g, x, y)
+            sys.drawIconAndPower(game, g, false, x, y)
         }
     }
 

@@ -33,8 +33,11 @@ class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
         )
     }
 
-    override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, y: Int) {
-        super.drawIconAndPower(game, g, x, y)
+    override fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, x: Int, y: Int) {
+        super.drawIconAndPower(game, g, isPlayer, x, y)
+
+        if (!isPlayer)
+            return
 
         val frame = game.getImg("img/systemUI/button_door_base.png")
         frame.draw(

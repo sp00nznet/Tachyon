@@ -310,10 +310,14 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     /**
      * Draw the system icon and it's power bars.
      *
+     * [isPlayer] is true if the system is being rendered as part of the
+     * player's ship. This should be used to hide stuff like the clonebay
+     * queue on an enemy ship.
+     *
      * [x] and [y] specify the top-left corner of the box that contains
      * the system icon, NOT including the 19-pixel glow around the icon.
      */
-    open fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, y: Int) {
+    open fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, x: Int, y: Int) {
         // Account for the 19px of padding
         val iconX = x - 19
         val iconY = y - 19

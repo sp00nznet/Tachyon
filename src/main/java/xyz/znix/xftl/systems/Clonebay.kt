@@ -144,8 +144,11 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         topImage.draw(x, y)
     }
 
-    override fun drawIconAndPower(game: InGameState, g: Graphics, x: Int, y: Int) {
-        super.drawIconAndPower(game, g, x, y)
+    override fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, x: Int, y: Int) {
+        super.drawIconAndPower(game, g, isPlayer, x, y)
+
+        if (!isPlayer)
+            return
 
         val queueX = x - 7 - 6
 
