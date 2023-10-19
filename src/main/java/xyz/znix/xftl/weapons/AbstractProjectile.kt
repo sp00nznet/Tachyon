@@ -89,7 +89,11 @@ abstract class AbstractProjectile(
 
         val isDeparting = targetShip != null && targetShip != currentSpace
 
-        // If we're in the target ship's space, check if we're now inside it's shields.
+        val hitRoom = updateMovement(dt)
+
+        // If we're in the target ship's space, check if we're now inside its shields.
+        // This must happen after updateMovement, to prevent the projectile
+        // from bypassing shields with high frametimes.
         if (!hasPassedShields && !isDeparting) {
             val rel = Point(position)
             rel -= currentSpace.shieldOrigin
@@ -101,8 +105,6 @@ abstract class AbstractProjectile(
                 crossedShieldLine()
             }
         }
-
-        val hitRoom = updateMovement(dt)
 
         if (hitRoom) {
             reachedTarget()
