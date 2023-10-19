@@ -3,6 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants
+import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.rendering.Graphics
@@ -144,6 +145,13 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
         g.fillRect(x, sabotageY, sabotageWidth, 6)
 
         return prevBarY
+    }
+
+    override fun isMannableBy(crew: AbstractCrew): Boolean {
+        if (powerSelected == 0)
+            return false
+
+        return super.isMannableBy(crew)
     }
 
     /**

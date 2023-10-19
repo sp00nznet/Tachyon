@@ -51,6 +51,14 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
             }
         }
 
+    override fun isMannableBy(crew: AbstractCrew): Boolean {
+        if (ship.engines!!.powerSelected == 0) {
+            return false
+        }
+
+        return super.isMannableBy(crew)
+    }
+
     // Nothing to serialise
     override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit

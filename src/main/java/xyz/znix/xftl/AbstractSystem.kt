@@ -428,6 +428,17 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     }
 
     /**
+     * Can this system be manned by the given crewmember. This checks whether
+     * the system is mannable at all, not just whether the given crewmember
+     * can man it.
+     *
+     * If true, then [configuration].computerPoint must be non-null.
+     */
+    open fun isMannableBy(crew: AbstractCrew): Boolean {
+        return configuration.computerPoint != null && hackedBy?.isPoweredUp != true && undamagedEnergy > 0
+    }
+
+    /**
      * Draw the power bars themselves, returning the Y of the top of the top bar.
      *
      * @param yOfBottom The Y of the bottom of the lowest bar in the stack.
