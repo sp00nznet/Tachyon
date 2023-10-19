@@ -237,14 +237,18 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
             game.update(this, deltaSec)
 
             // Only render if the user can see the result
-            if (isFocused) {
-                // Render out the game
-                game.render(this, g)
-
-                // Swap the colour buffers, presenting the newly-drawn one
-                // to the screen.
-                glfwSwapBuffers(window)
+            if (!isFocused) {
+                // Internally run at ~20 updates/sec when unfocused to save CPU.
+                glfwWaitEventsTimeout(1.0 / 20)
+                continue
             }
+
+            // Render out the game
+            game.render(this, g)
+
+            // Swap the colour buffers, presenting the newly-drawn one
+            // to the screen.
+            glfwSwapBuffers(window)
 
             // Poll for window events. The key callback above will only be
             // invoked during this call.
