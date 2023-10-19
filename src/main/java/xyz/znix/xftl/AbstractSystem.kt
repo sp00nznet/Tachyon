@@ -435,7 +435,13 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      * If true, then [configuration].computerPoint must be non-null.
      */
     open fun isMannableBy(crew: AbstractCrew): Boolean {
-        return configuration.computerPoint != null && hackedBy?.isPoweredUp != true && undamagedEnergy > 0
+        // Note we have to check canBeManned, in case the ship has a manually
+        // configured computer location for an un-mannable system.
+        // (canBeManned enables automatic computer placement)
+        return configuration.computerPoint != null
+                && hackedBy?.isPoweredUp != true
+                && undamagedEnergy > 0
+                && info.canBeManned
     }
 
     /**
