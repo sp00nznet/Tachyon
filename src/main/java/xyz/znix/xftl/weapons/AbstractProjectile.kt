@@ -340,7 +340,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         // We're inside the shield!
 
         val activeShields = ship.shields?.activeShields ?: 0
-        if (activeShields == 0)
+        if (activeShields == 0 && ship.superShield == 0)
             return
 
         resolveMissed()
