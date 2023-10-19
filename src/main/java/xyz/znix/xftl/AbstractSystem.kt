@@ -279,7 +279,11 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         damageProgress = 0f
 
         // This bar of the system is broken.
-        ship.damage(room!!, 0, 1, 0)
+        // Don't use ship.damage, as that'd spawn a damage popup number which
+        // we don't want unless the system is fully broken.
+        if (!ship.sys.debugFlags.noDmg.set) {
+            dealDamage(1, 0)
+        }
 
         if (!broken) {
             return true
