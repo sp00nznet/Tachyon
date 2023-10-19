@@ -148,11 +148,10 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             val option = newOptions[i]
             val choice = option.choice!!
 
-            // If we don't have the stuff for this event and it's
-            // hidden flag is set, then make it disappear.
-            // This is what stops you from seeing blue options you
-            // can't select.
-            if (choice.hidden && !isConditionsSatisfied(option)) {
+            // If we don't have the blue option requirements, hide the option.
+            // This doesn't consider regular resources (missiles, fuel, etc) since
+            // if there's not enough of those, the option is merely greyed out.
+            if (!hasRequiredEquipment(option)) {
                 newOptions.removeAt(i)
                 continue
             }
@@ -604,13 +603,23 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         if (playerShip.fuelCount < -res.fuel)
             return false
 
+        return hasRequiredEquipment(event)
+    }
+
+    /**
+     * Checks if the player has all the stuff requiredd for an event,
+     * excluding resources.
+     *
+     * This is distinct from [isConditionsSatisfied], since the option is hidden
+     * if the user lacks any of the required equipment.
+     */
+    private fun hasRequiredEquipment(event: EvaluatedEvent): Boolean {
+        if (event.isContinue)
+            return true
+
         // Check for the option requirement, which is usually used
         // for blue-option requirements.
-        if (event.choice != null) {
-            return checkReq(event.choice)
-        }
-
-        return true
+        return event.choice?.let { checkReq(it) } ?: true
     }
 
     private fun checkReq(choice: Choice): Boolean {
