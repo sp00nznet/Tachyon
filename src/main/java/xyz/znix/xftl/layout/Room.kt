@@ -138,11 +138,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         }
     }
 
-    fun render(g: Graphics, selected: Boolean) {
+    fun render(g: Graphics, selected: Boolean, alpha: Float) {
         val x = offsetX
         val y = offsetY
 
-        g.colour = FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)
+        g.colour = Colour(FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)).apply { a = alpha }
         g.fillRect(
             x.f,
             y.f,
@@ -225,7 +225,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         // Note that when drawing right-hand or bottom
         // walls, we need to subtract two from the x/y
         // in order to keep the lines internal to the room.
-        g.colour = ROOM_BORDER_COLOUR
+        g.colour = Colour(ROOM_BORDER_COLOUR).apply { a = alpha }
         g.lineWidth = 2f
         for (cellX in 0 until width) {
             drawWall(g, x, y, cellX, 0, Direction.UP)

@@ -251,7 +251,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         return true
     }
 
-    fun render(g: Graphics) {
+    fun render(g: Graphics, alpha: Float) {
         val animationDir = when {
             open || crewOpenDemand -> 1
             else -> -1
@@ -293,7 +293,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
 
             sheetX.f, sheetY.f,
             sheetX.f + ROOM_SIZE, sheetY.f + ROOM_SIZE,
-            1f, filter
+            alpha, filter
         )
 
         g.popTransform()

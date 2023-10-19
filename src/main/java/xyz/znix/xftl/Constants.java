@@ -7,8 +7,7 @@ public class Constants {
 
     public static final Colour FLOOR_COLOUR = new Colour(230, 226, 219);
     public static final Colour FLOOR_COLOUR_NO_OXYGEN = new Colour(254, 178, 171);
-    public static final Colour FLOOR_GRID_COLOUR = new Colour(172, 169, 164);
-    public static final Colour FLOOR_GRID_CROSS = new Colour(129, 127, 123);
+    public static final Colour FLOOR_GRID_COLOUR = new Colour(0, 0, 0, 66);
     public static final Colour ROOM_BORDER_COLOUR = Colour.black;
     public static final Colour ROOM_BORDER_COLOUR_SELECTED = Colour.yellow;
     public static final Colour ROOM_BORDER_COLOUR_SELECTED_INNER = new Colour(255, 188, 0);

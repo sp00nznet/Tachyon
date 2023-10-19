@@ -521,12 +521,14 @@ class Ship(
             }
         } else {
             // Animate between cloaked and uncloaked
-            // Note this is guesstimated, not measured - change it if
-            // you think it can be made more accurate.
             val cloakFade = cloaking?.cloakFade ?: 0f
 
-            val hullOpacity = 1f - cloakFade * 0.2f
-            hullImage.draw(hullOffset.x, hullOffset.y, Colour(1f, 1f, 1f, hullOpacity))
+            val interiorAlpha = 1f - cloakFade / 2f
+            val hullAlpha = when (cloakFade) {
+                0f -> 1f
+                else -> interiorAlpha * 0.75f
+            }
+            hullImage.draw(hullOffset.x, hullOffset.y, Colour(1f, 1f, 1f, hullAlpha))
 
             if (cloakFade != 0f) {
                 requireNotNull(cloakImage) { "Ship '$name' cloaked, but it doesn't have a cloak image!" }
@@ -537,8 +539,9 @@ class Ship(
                 )
             }
 
-            if (interiorVisible)
-                drawInterior(g, selected)
+            if (interiorVisible) {
+                drawInterior(g, selected, interiorAlpha)
+            }
         }
 
         // Draw the debug hardpoint visuals
@@ -699,10 +702,12 @@ class Ship(
         g.popTransform()
     }
 
-    private fun drawInterior(g: Graphics, selected: Room?) {
-        if (floorImage != null) {
-            floorImage.draw(floorOffset.x + hullOffset.x, floorOffset.y + hullOffset.y)
-        }
+    private fun drawInterior(g: Graphics, selected: Room?, alpha: Float) {
+        floorImage?.draw(
+            floorOffset.x + hullOffset.x,
+            floorOffset.y + hullOffset.y,
+            Colour(1f, 1f, 1f, alpha)
+        )
 
         // Draw the rooms
         for (room in rooms) {
@@ -714,12 +719,12 @@ class Ship(
                 roomSelected = true
             }
 
-            room.render(g, roomSelected)
+            room.render(g, roomSelected, alpha)
         }
 
         // Draw the doors
         for (door in doors) {
-            door.render(g)
+            door.render(g, alpha)
         }
 
         // Draw the crew
