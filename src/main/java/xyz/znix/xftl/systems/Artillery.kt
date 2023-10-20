@@ -120,6 +120,8 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         weapon.render(g)
 
+        Weapons.drawEnemyChargeBar(ship, weapon, isHackActive)
+
         g.popTransform()
     }
 

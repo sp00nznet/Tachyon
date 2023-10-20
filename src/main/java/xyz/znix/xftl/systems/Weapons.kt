@@ -1,11 +1,8 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.SystemInfo
-import xyz.znix.xftl.Translator
+import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.Skill
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -126,6 +123,8 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
 
                 weapon.render(g)
+
+                drawEnemyChargeBar(ship, weapon, isHackActive)
             }
 
             g.popTransform()
@@ -413,6 +412,36 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (hp.mirror) {
                 g.scale(-1f, 1f)
             }
+        }
+
+        fun drawEnemyChargeBar(ship: Ship, weapon: AbstractWeaponInstance, hacked: Boolean) {
+            // The bars are only drawn on enemy weapons
+            if (ship.isPlayerShip)
+                return
+
+            // Make sure the player has high enough level sensors to see the bar
+            // TODO manning bonus
+            val game = ship.sys
+            val playerSensors = game.player.sensors?.undamagedEnergy ?: 0
+            if (playerSensors < 3)
+                return
+
+            val enemyChargeBox = game.getImg("img/combatUI/box_hostiles_weapon_charge.png")
+            val enemyChargeBar = game.getImg("img/combatUI/box_hostiles_weapon_chargebar.png")
+
+            // Draw the charge bar on enemy ships when the player has
+            // improved sensors.
+            // These are level with the top of the weapon, and 10px out.
+            val barX = weapon.animation.sheet.frameWidth + 10
+            val barColour = when (hacked) {
+                true -> Constants.SYSTEM_HACKED
+                false -> Constants.SYS_ENERGY_REPAIR
+            }
+            enemyChargeBox.draw(barX, 0, barColour)
+
+            val height = (enemyChargeBar.height * weapon.chargeProgress).roundToInt()
+            val barY = 2 + enemyChargeBar.height - height
+            enemyChargeBar.draw(barX + 2f, barY.f, enemyChargeBar.width.f, height.f, barColour)
         }
     }
 }
