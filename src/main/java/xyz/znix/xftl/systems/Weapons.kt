@@ -424,9 +424,8 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 return
 
             // Make sure the player has high enough level sensors to see the bar
-            // TODO manning bonus
             val game = ship.sys
-            val playerSensors = game.player.sensors?.undamagedEnergy ?: 0
+            val playerSensors = game.player.sensors?.effectivePower ?: 0
             if (playerSensors < 3)
                 return
 

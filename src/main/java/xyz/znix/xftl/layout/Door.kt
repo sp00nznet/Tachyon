@@ -49,7 +49,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
                 return healths[2] // Level 3 equivalent
             }
 
-            val baseLevel = ship.doorsSystem?.undamagedEnergy ?: 0
+            val baseLevel = ship.doorsSystem?.effectivePower ?: 0
             if (baseLevel < 2) {
                 // Low-level doors have four health for whatever reason,
                 // but don't actually stop boarders.
@@ -113,7 +113,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         get() {
             when {
                 isHacked -> return 5
-                else -> return ship.doorsSystem?.undamagedEnergy ?: 0
+                else -> return ship.doorsSystem?.effectivePower ?: 0
             }
         }
 
@@ -414,7 +414,7 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         }
 
         // If there isn't a doors system, the door isn't locked.
-        val baseLevel = ship.doorsSystem?.undamagedEnergy ?: 0
+        val baseLevel = ship.doorsSystem?.effectivePower ?: 0
         if (baseLevel < 2) {
             return false
         }

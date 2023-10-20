@@ -8,6 +8,18 @@ import xyz.znix.xftl.rendering.Graphics
 abstract class SubSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint) {
     abstract val sortingType: SortingType
 
+    /**
+     * Get the energy this system is operating at, accounting for
+     * the bonus energy from manning it.
+     */
+    open val effectivePower: Int
+        get() {
+            if (info.canBeManned && manningCrew != null) {
+                return undamagedEnergy + 1
+            }
+            return undamagedEnergy
+        }
+
     override fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int): Int {
         // The top of the bottom bar
         val baseY = yOfBottom - 6

@@ -13,6 +13,7 @@ import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.systems.MainSystem
+import xyz.znix.xftl.systems.SubSystem
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.random.Random
@@ -189,10 +190,9 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
     }
 
     private fun dealSystemIon(system: AbstractSystem, resist: Boolean) {
-        // TODO account for manning doors/sensors, which increases their damage
         val currentPower = when (system) {
             is MainSystem -> system.powerSelected
-            else -> system.undamagedEnergy
+            else -> (system as SubSystem).effectivePower
         }
 
         val damage = 1 + (currentPower / 2f).toInt()
