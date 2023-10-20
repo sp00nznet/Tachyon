@@ -65,6 +65,13 @@ dependencies {
 // Define the main class for the application
 application {
     mainClass.set("xyz.znix.xftl.App")
+
+    // On Mac, all UI stuff must happen on the first thread, including
+    // our GLFW stuff.
+    // This option doesn't exist on other platforms.
+    if (System.getProperty("os.name").contains("Mac OS")) {
+        applicationDefaultJvmArgs = listOf("-XstartOnFirstThread")
+    }
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
