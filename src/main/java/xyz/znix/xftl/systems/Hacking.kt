@@ -26,6 +26,7 @@ import kotlin.math.min
 class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.HACKING
     override val insertButtonSpace: Boolean get() = true
+    override val isPowerLocked: Boolean get() = super.isPowerLocked || active
 
     /**
      * Is the hacking module powered up, regardless
