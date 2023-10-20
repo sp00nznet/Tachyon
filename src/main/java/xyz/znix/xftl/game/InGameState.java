@@ -1635,7 +1635,7 @@ public class InGameState extends MainGame.GameState {
             generator = new ShipGenerator(datafile, blueprintManager);
             translator = new Translator(datafile, "en");
             eventManager = new EventManager(datafile, translator, blueprintManager);
-            nameManager = new CrewNameManager(datafile);
+            nameManager = new CrewNameManager(datafile, "en");
             achievements = new Achievement.AchievementTable(datafile);
 
             blueprintManager.finishLoading(this);

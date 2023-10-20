@@ -6,11 +6,11 @@ import kotlin.random.Random
 /**
  * Stores all the available crew names, from names.xml.
  */
-class CrewNameManager(df: Datafile) {
+class CrewNameManager(df: Datafile, private val language: String) {
     val names: List<CrewNameList>
 
     init {
-        names = ArrayList()
+        val allNames = ArrayList<CrewNameList>()
 
         val root = df.parseXML(df["data/names.xml"]).rootElement
 
@@ -18,25 +18,35 @@ class CrewNameManager(df: Datafile) {
             require(child.name == "nameList") { "Found non-nameList element in names.xml root" }
 
             val listNames = ArrayList<String>()
+            val shortVersions = HashMap<String, String>()
 
             for (nameElem in child.children) {
                 require(nameElem.name == "name") { "Found non-name element in nameList (in names.xml)" }
-                listNames.add(nameElem.textTrim)
+                val name = nameElem.textTrim
+                listNames.add(name)
+
+                val shortName = nameElem.getAttributeValue("short")
+                if (shortName != null) {
+                    shortVersions[name] = shortName
+                }
             }
 
             val isMale = child.getAttributeValue("sex") == "male"
-            val language = child.getAttributeValue("language") ?: "en"
+            val listLanguage = child.getAttributeValue("language") ?: "en"
 
-            names.add(CrewNameList(listNames, isMale, language))
+            allNames.add(CrewNameList(listNames, shortVersions, isMale, listLanguage))
+        }
+
+        val matchingLanguage = allNames.filter { it.language == language }
+        if (matchingLanguage.isNotEmpty()) {
+            names = matchingLanguage
+        } else {
+            names = allNames.filter { it.language == "en" }
         }
     }
 
-    fun getForGender(male: Boolean?, language: String, rand: Random): String {
+    fun getForGender(male: Boolean?, rand: Random): String {
         val lists = names.filter {
-            // Filter for the correct language
-            if (it.language != language)
-                return@filter false
-
             // If a gender is specified, filter on that
             if (male != null) {
                 if (male != it.isMale)
@@ -48,6 +58,25 @@ class CrewNameManager(df: Datafile) {
 
         return lists.random(rand).names.random(rand)
     }
+
+    fun findShort(name: String): String? {
+        for (list in names) {
+            list.shortVersions[name]?.let { return it }
+        }
+        return null
+    }
 }
 
-class CrewNameList(val names: List<String>, val isMale: Boolean, val language: String)
+class CrewNameList(
+    val names: List<String>,
+
+    /**
+     * This list's mapping between full and shortened names.
+     *
+     * This is used for names that have custom shortened versions.
+     */
+    val shortVersions: Map<String, String>,
+
+    val isMale: Boolean,
+    val language: String
+)

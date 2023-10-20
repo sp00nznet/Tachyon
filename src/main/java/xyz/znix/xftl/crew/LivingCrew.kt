@@ -4,6 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.game.PlayerShipUI
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -228,12 +229,7 @@ class LivingCrewInfo(
 
     val race: CrewBlueprint,
 
-    /**
-     * The player facing name of this crew, eg 'Slocknog' or some
-     * other name that's selected by the player, by an event or
-     * from the default list of names.
-     */
-    var name: String,
+    name: String,
 
     /**
      * The index of this crew's colour selection. This is used to select
@@ -244,16 +240,34 @@ class LivingCrewInfo(
     var colour: Int
 ) {
     /**
+     * The player facing name of this crew, eg 'Slocknog' or some
+     * other name that's selected by the player, by an event or
+     * from the default list of names.
+     */
+    var name: String = name
+        set(value) {
+            if (field == value)
+                return
+
+            field = value
+            shortName = findShortName()
+        }
+
+    var shortName: String = findShortName()
+        private set
+
+    /**
      * The crew's skills. 0 means no skill, 1 means fully yellow (max level).
      *
      * 0.5 is where the crew's skill turns from white to green, and starts showing
      * a yellow progress bar.
      */
-    val skills = EnumMap<Skill, Float>(Skill.values().associate { Pair(it, 0f) })
+    val skills: EnumMap<Skill, Float> = EnumMap(Skill.entries.associateWith { 0f })
 
     /**
      * For humans, this determines whether they're male or female.
      */
+    @Suppress("ConvertTwoComparisonsToRangeCheck") // Intention is clearer like this
     val isFemale: Boolean get() = colour >= race.baseNumberOfColours && race.baseNumberOfColours > 0
 
     private val portraitImage: Image = game.animations["${race.name}_portrait"].spriteAt(game, 0)
@@ -392,6 +406,41 @@ class LivingCrewInfo(
         }
     }
 
+    private fun findShortName(): String {
+        // Pick a short name.
+        // This does a few things:
+        // * Use the name as-is if it's short enough
+        // * Check if there's a pre-defined short version of the name
+        // * Pick the last (space-separated) part of the name
+        // * Pick the shortest-by-pixel-length part of the name, and truncate it
+
+        val font = game.getFont(PlayerShipUI.CREW_NAME_FONT)
+
+        // Already short enough?
+        if (font.getWidth(name) < PlayerShipUI.MAX_NAME_WIDTH) {
+            return name
+        }
+
+        // Pre-defined short version?
+        game.nameManager.findShort(name)?.let { return it }
+
+        // Last name short enough?
+        val parts = name.split(" ")
+        val lastName = parts.last()
+        if (font.getWidth(lastName) < PlayerShipUI.MAX_NAME_WIDTH) {
+            return lastName
+        }
+
+        // Find the shortest part, and truncate it
+        var shortened = parts.minBy { font.getWidth(it) }
+
+        while (font.getWidth("$shortened.") >= PlayerShipUI.MAX_NAME_WIDTH) {
+            shortened = shortened.substring(0, shortened.length - 1)
+        }
+
+        return "$shortened."
+    }
+
     fun saveToXML(elem: Element, includeRace: Boolean = true) {
         if (includeRace) {
             SaveUtil.addAttr(elem, "race", race.name)
@@ -426,8 +475,8 @@ class LivingCrewInfo(
 
                 else -> Random.nextInt(race.numberOfColours) // Aliens
             }
-            // TODO pick names with the correct language
-            val name = game.nameManager.getForGender(isMale, "en", Random.Default)
+
+            val name = game.nameManager.getForGender(isMale, Random.Default)
             return LivingCrewInfo(game, race, name, colour)
         }
 

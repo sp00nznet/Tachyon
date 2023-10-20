@@ -35,6 +35,7 @@ import kotlin.random.Random
 class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val font = game.getFont("HL2", 2f)
     private val weaponNameText = game.getFont("JustinFont8")
+    private val crewNameText = game.getFont(CREW_NAME_FONT)
     private val weaponNumberFont = game.getFont("c&c")
     private val numberFont = game.getFont("num_font")
     private val oxygenEvadeFont = game.getFont("JustinFont10")
@@ -1226,7 +1227,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         crew.drawPortrait(x - 1, y - 3, true)
 
         // Draw the crew name
-        weaponNameText.drawString(x + 33f, y + 14f, crew.info.name, CREW_BOX_NAME_COLOUR)
+        crewNameText.drawString(x + 33f, y + 14f, crew.info.shortName, CREW_BOX_NAME_COLOUR)
 
         // If the crew is dying in a clonebay, draw the red overlay
         if (cloneDyingProgress > 0f) {
@@ -1902,6 +1903,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
          * standing underneath.
          */
         val SELECTION_BOX_SIZE = 6f.pow(2f).toInt()
+
+        /**
+         * This is the font used for truncating crew names, so expose it here.
+         */
+        const val CREW_NAME_FONT = "JustinFont8"
+        const val MAX_NAME_WIDTH = 50
 
         private const val INSUFFICIENT_SCRAP_FLASH_TIME = 0.35f
         private const val WEAPON_BOX_GLOW = 12
