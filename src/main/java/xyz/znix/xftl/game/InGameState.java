@@ -442,10 +442,12 @@ public class InGameState extends MainGame.GameState {
 
         // Set the position of the player's ship, based on whether or not
         // there's also an enemy ship.
-        if (enemy != null) {
-            playerShipOffset.setX(200);
-        } else {
+        if (enemy == null) {
             playerShipOffset.setX(350);
+        } else if (enemy.isFlagship()) {
+            playerShipOffset.setX(150);
+        } else {
+            playerShipOffset.setX(200);
         }
         playerShipOffset.setY(170);
 

@@ -54,18 +54,46 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             false -> Constants.SHIP_BOX_TEXT_NEUTRAL
         }
 
-        val boxX = gc.width - (box.width - 20) - 18
-        val boxY = 54 - 9
+        // The position of the box, when you remove the glow padding
+        val boxX: Int
+        val boxY: Int
+
+        val leftGlow: Int
+        val rightGlow: Int
+        val topGlow: Int
+        val bottomGlow: Int
+        if (enemy.isFlagship) {
+            leftGlow = 4
+            rightGlow = 4
+            topGlow = 4
+            bottomGlow = 4
+            boxX = gc.width - (box.width - rightGlow) - 10 + leftGlow
+            boxY = 11
+        } else {
+            leftGlow = 10
+            rightGlow = 20
+            topGlow = 9
+            bottomGlow = 17
+            boxX = gc.width - (box.width - rightGlow) - 18 + leftGlow
+            boxY = 54
+        }
+
+        // The position of the image
+        val rawBoxX = boxX - leftGlow
+        val rawBoxY = boxY - topGlow
+
+        val boxRightX = rawBoxX + box.width - rightGlow
+        val boxBottomY = rawBoxY + box.height - bottomGlow
 
         // It's not quite the same as FTL, but works well enough for now
         mutableShipPos.x = boxX + (box.width - enemy.hullImage.width) / 2
         mutableShipPos.y = boxY + (box.height - enemy.hullImage.height) / 2
         mutableShipPos -= enemy.hullOffset
 
-        box.draw(boxX, boxY, filter)
+        box.draw(rawBoxX, rawBoxY, filter)
 
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
-            mask.draw(boxX, boxY)
+            mask.draw(rawBoxX, rawBoxY)
         }) {
             g.pushTransform()
             g.translate(shipPos.x.f, shipPos.y.f)
@@ -76,22 +104,26 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             g.popTransform()
         }
 
-        val textX = boxX + 12
+        val textX = boxX + 2
 
         // Draw the title
-        titleFont.drawString(textX + 1f, boxY + 25f, game.translator["target_window"], textColour)
+        val titleX = textX + when (enemy.isFlagship) {
+            true -> 7
+            else -> 1
+        }
+        titleFont.drawString(titleX.f, boxY + 16f, game.translator["target_window"], textColour)
 
         // Draw the class and relationship text
-        val statusTextX = boxX + box.width - 20 - 11
-        val classY = boxY + 9 + 38
+        val statusTextX = boxRightX - 11
+        val classY = boxY + 38
         drawStatus(statusTextX, classY, isHostile)
 
         // Draw the FTL charging warning, if relevant.
-        val centreX = boxX + box.width / 2
+        val centreX = rawBoxX + box.width / 2
         drawEscapeWarning(centreX, boxY)
 
         // Draw the hull level
-        val hullY = boxY + 29 + 4
+        val hullY = boxY + 20 + 4
         renderSmallbar(textX, hullY, "status_hull", filter, textColour)
         val hpWidth = 11 * enemy.health
         val hpX = textX + 5
@@ -152,8 +184,8 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         // Draw the enemy's systems
         // TODO sorting
         for ((i, sys) in enemy.systems.withIndex()) {
-            val y = boxY + box.height - 85
-            val x = boxX + i * 30 + 40
+            val y = boxBottomY - 49
+            val x = boxX + i * 30 + 49
 
             sys.drawIconAndPower(game, g, false, x, y)
         }
@@ -213,7 +245,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         val message = game.translator[warningKey]
 
         val leftX = centreX - jumpWarningFont.getWidth(message) / 2
-        UIUtils.drawStringWithGlow(game, jumpWarningFont, message, leftX, boxY + 1, GlowColour.RED, alpha)
+        UIUtils.drawStringWithGlow(game, jumpWarningFont, message, leftX, boxY - 10, GlowColour.RED, alpha)
     }
 
     private fun renderSmallbar(x: Int, y: Int, key: String, filter: Colour, textColour: Colour) {
