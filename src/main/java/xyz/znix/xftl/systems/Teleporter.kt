@@ -1,12 +1,9 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.SystemInfo
-import xyz.znix.xftl.Translator
+import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.ButtonImageSet
 import xyz.znix.xftl.game.GlowColour
@@ -24,6 +21,12 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val insertButtonSpace: Boolean get() = true
 
     private val teleportSound by onInit { it.sounds.getSample("teleport") }
+
+    private val padOffImage by onInit { it.getImg("img/ship/interior/teleporter_off.png") }
+    private val padOnImage by onInit { it.getImg("img/ship/interior/teleporter_selected.png") }
+    private val padActiveImage by onInit { it.getImg("img/ship/interior/teleporter_on.png") }
+
+    private var onCooldown = false
 
     val isSendAvailable: Boolean
         get() {
@@ -65,6 +68,10 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     override fun update(dt: Float) {
         super.update(dt)
+
+        if (ionTimer == 0f) {
+            onCooldown = false
+        }
 
         // If there's a command ready, grab and action it
         val command = commandedTeleport ?: return
@@ -126,6 +133,10 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // Ion-stun for 20s at 1 power, 15s at 2, and 10s at 3.
         ionTimer += cooldownTime(powerSelected).f
+
+        // Render the teleport pads blue until the ion timer runs out.
+        // This prevents an ion weapon making the pads go blue.
+        onCooldown = true
     }
 
     override fun makeExtraButtons(powerPos: IPoint): List<Button> {
@@ -143,6 +154,26 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             TeleporterButton(buttonBase, ConstPoint(4, 4), true, top, bgButton.superShieldWarning),
             TeleporterButton(buttonBase, ConstPoint(4, 27), false, bottom, bgButton.superShieldWarning)
         )
+    }
+
+    override fun drawRoom(g: Graphics) {
+        val padImage = when {
+            powerSelected == 0 -> padOffImage
+            onCooldown -> padActiveImage
+            else -> padOnImage
+        }
+
+        for (x in 0 until room!!.width) {
+            for (y in 0 until room!!.height) {
+                padImage.drawAlignedCentred(
+                    room!!.offsetX + x * Constants.ROOM_SIZE + Constants.ROOM_SIZE / 2,
+                    room!!.offsetY + y * Constants.ROOM_SIZE + Constants.ROOM_SIZE / 2,
+                )
+            }
+        }
+
+        // Draw the icon on top
+        super.drawRoom(g)
     }
 
     fun selectTeleportAction(send: Boolean, room: Room) {
