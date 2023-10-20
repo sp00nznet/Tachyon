@@ -756,6 +756,7 @@ abstract class SystemInfo(
 ) {
     abstract val canBeManned: Boolean
     open val isComputerObstruction: Boolean get() = false
+    open val isSubSystem: Boolean get() = false
 
     abstract fun create(blueprint: SystemBlueprint): AbstractSystem
 

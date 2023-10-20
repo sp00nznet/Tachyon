@@ -20,6 +20,7 @@ class Sensors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
 private object SensorInfo : SystemInfo("sensors") {
     override val canBeManned: Boolean get() = true
+    override val isSubSystem: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Sensors(blueprint)
 

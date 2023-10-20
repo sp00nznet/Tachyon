@@ -115,6 +115,7 @@ class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
 private object BatteryInfo : SystemInfo("battery") {
     override val canBeManned: Boolean get() = false
+    override val isSubSystem: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint): AbstractSystem = BackupBattery(blueprint)
 

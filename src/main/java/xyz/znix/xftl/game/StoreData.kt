@@ -158,7 +158,7 @@ class StoreData {
         // If the ship is full and can't take any more main systems, remove those
         // which don't replace an existing system.
         if (ship.mainSystems.size >= 8) {
-            possibleSystems.removeIf { shipSlots.getValue(it).room.system == null }
+            possibleSystems.removeIf { it.info?.isSubSystem != true && shipSlots.getValue(it).room.system == null }
         }
 
         // To match FTL with a little bit of odd behaviour, if the list of non-forced
@@ -208,7 +208,7 @@ class StoreData {
             sections += Section.valueOf(sectionName)
         }
 
-        for (resource in Resource.values()) {
+        for (resource in Resource.entries) {
             val value = elem.getAttributeValue(resource.name)?.toInt() ?: continue
             availableResources[resource] = value
         }

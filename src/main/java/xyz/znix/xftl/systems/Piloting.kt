@@ -77,6 +77,7 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
 private object PilotingInfo : SystemInfo("pilot") {
     override val canBeManned: Boolean get() = true
+    override val isSubSystem: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Piloting(blueprint)
 

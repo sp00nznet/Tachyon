@@ -366,10 +366,10 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                         // Stop the user from installing more than eight systems, unless
                         // this replaces an existing system (clonebay/medbay).
                         val numSystems = ship.mainSystems.size
-                        if (numSystems >= 8 && systemSlot.room.system == null)
+                        if (numSystems >= 8 && systemSlot.room.system == null && system?.info?.isSubSystem != true)
                             return true
 
-                        // Stop the user from installing the same system twicee
+                        // Stop the user from installing the same system twice
                         return systemSlot.isInstalled
                     }
 

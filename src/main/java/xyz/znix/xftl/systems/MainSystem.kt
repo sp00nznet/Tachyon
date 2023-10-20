@@ -68,6 +68,10 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      */
     open val insertButtonSpace: Boolean get() = false
 
+    init {
+        check(!blueprint.info!!.isSubSystem)
+    }
+
 
     override fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int): Int {
         // The top of the bottom bar

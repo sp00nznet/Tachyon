@@ -96,6 +96,7 @@ class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
 private object DoorInfo : SystemInfo("doors") {
     override val canBeManned: Boolean get() = true
+    override val isSubSystem: Boolean get() = true
 
     override fun create(blueprint: SystemBlueprint) = Doors(blueprint)
 
