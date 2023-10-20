@@ -7,9 +7,13 @@ import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.game.Button
+import xyz.znix.xftl.game.GlowColour
 import xyz.znix.xftl.game.SystemPowerButton
+import xyz.znix.xftl.game.WarningFlasher
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -134,6 +138,11 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (!ready)
             return
 
+        // Block mind-control on enemy ships with a super shield
+        // TODO super shield bypass
+        if (room.ship != ship && room.ship.superShield > 0)
+            return
+
         // If we're attacking a room on the player's ship, look for intruders.
         // Otherwise, look for crewmembers on enemy ships.
         val targetMode = when (room.ship) {
@@ -204,6 +213,12 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         override val duration: Float get() = this@MindControl.duration
         override val isOff: Boolean get() = !ready
 
+        private val superShieldWarning = WarningFlasher(
+            game, powerPos + ConstPoint(35, -62),
+            "warning_super_shield_mind",
+            false, colour = GlowColour.WHITE
+        )
+
         override val forceHighlight: Boolean
             get() = game.shipUI.isSelectingMindControlTarget
 
@@ -214,7 +229,23 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (disabled)
                 return
 
+            // If the enemy ship has a zoltan shield but there are intruders
+            // on the player's ship, they can activate mind control and place
+            // it on the enemy ship - it just doesn't do anything once un-paused.
+            // TODO super shield bypass
+            val hasIntruders = ship.intruders.any { (it as? LivingCrew)?.isMindControlResistant == false }
+            val enemyShip = game.getEnemyOf(ship)
+            if (!hasIntruders && enemyShip != null && enemyShip.superShield > 0) {
+                superShieldWarning.startFor(3.5f)
+                return
+            }
+
             game.shipUI.mindControlSelected()
+        }
+
+        override fun draw(g: Graphics) {
+            super.draw(g)
+            superShieldWarning.draw(g)
         }
     }
 }
