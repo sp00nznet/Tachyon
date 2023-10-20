@@ -93,3 +93,7 @@ crew on the player's ship, finding the first one where:
 * Either the crewmember is below their minimum health, or RequiredEvac is forcing a teleport
 
 The crew will then be teleported from this room.
+
+CrewAI::SetTeleportRequest isn't called if the player has a super shield,
+which prevents crew from being held in the teleporter until the player's super
+shield is broken.

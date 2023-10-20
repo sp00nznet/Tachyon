@@ -104,7 +104,7 @@ class FriendlyCrewAI(private val ship: Ship) {
         val teleporter = ship.teleporter
         var teleportSend = false
         var teleportForceRecv = false
-        if (teleporter != null && !ship.isPlayerShip) {
+        if (teleporter != null && !ship.isPlayerShip && ship.sys.getEnemyOf(ship)?.superShield == 0) {
             // Don't create more tasks than the teleporter can fit.
             var toSend = getNumMoreBoarders().coerceAtMost(teleporter.room!!.cellCount)
 
