@@ -3,12 +3,15 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.systems.SubSystem
 import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.ui.Label
+import xyz.znix.xftl.ui.WidgetContainer
 
 private typealias UndoFn = () -> Unit
 
@@ -43,6 +46,11 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private val systemUpgradeUndos = HashMap<AbstractSystem, ArrayList<UndoFn>>()
     private val reactorUpgradeUndo = ArrayList<UndoFn>()
 
+    private val crewDismissWidget: WidgetContainer = game.uiLoader.load("confirm").mainWidget
+    private val crewDismissWidgetPos = Point(0, 0)
+    private var crewToDismiss: LivingCrew? = null
+    private var crewDismissWidgetButtons: List<Button> = emptyList()
+
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
 
@@ -57,6 +65,22 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
     init {
         updateButtons()
+
+        (crewDismissWidget.byId["message"] as Label).text = game.translator["confirm_dismiss"]
+
+        // Re-perform the layout to fit the message
+        crewDismissWidget.root.updateSizes()
+        crewDismissWidget.root.expandToParent(ConstPoint.ZERO)
+        crewDismissWidget.root.updateLayout()
+
+        crewDismissWidget.addButtonListener("yes") {
+            crewToDismiss!!.removeFromShip()
+            crewToDismiss = null
+            updateButtons()
+        }
+        crewDismissWidget.addButtonListener("no") {
+            crewToDismiss = null
+        }
     }
 
     private fun updateButtons() {
@@ -470,6 +494,20 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         // TODO use the same pattern as before for the too-many-crewmembers screen
         drawCrewBox(g, crew, ConstPoint(154, 88 + 133 * 2), 6)
         drawCrewBox(g, crew, ConstPoint(324, 88 + 133 * 2), 7)
+
+        if (crewToDismiss != null) {
+            g.pushTransform()
+            g.translate(position.x + crewDismissWidgetPos.x.f, position.y + crewDismissWidgetPos.y.f)
+            crewDismissWidget.draw(g)
+            g.popTransform()
+
+            if (updatingButtons) {
+                crewDismissWidgetButtons = crewDismissWidget.buildButtons(game, this, crewDismissWidgetPos)
+                for (button in crewDismissWidgetButtons) {
+                    button.windowOffset = position
+                }
+            }
+        }
     }
 
     private fun drawCrewBox(g: Graphics, crewList: List<LivingCrew>, boxPos: ConstPoint, id: Int) {
@@ -486,6 +524,17 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
         val boxNormal = game.getImg("img/upgradeUI/Equipment/box_crew_on.png")
         val boxHover = game.getImg("img/upgradeUI/Equipment/box_crew_selected.png")
+
+        if (crewToDismiss == crew) {
+            val margin = 22 // Min space between window and warning
+            val boxCentre = boxPos.x + boxNormal.width / 2
+            val boxWidth = crewDismissWidget.root.size.x
+            val baseRelX = boxCentre - boxWidth / 2
+            val relX = baseRelX.coerceIn(margin..size.x - boxWidth - margin)
+
+            crewDismissWidgetPos.x = relX
+            crewDismissWidgetPos.y = boxPos.y + 70 + 23
+        }
 
         if (!updatingButtons)
             return
@@ -531,7 +580,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             game.translator["crewbox_dismiss"],
             2, dismissFont, 9
         ) {
-            // TODO show the crewmember dismiss warning box
+            crewToDismiss = crew
+            updateButtons()
         }
     }
 
@@ -543,6 +593,13 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     }
 
     override fun mouseClick(button: Int, x: Int, y: Int) {
+        if (crewToDismiss != null) {
+            for (btn in crewDismissWidgetButtons) {
+                btn.mouseDown(button, x, y)
+            }
+            return
+        }
+
         super.mouseClick(button, x, y)
 
         if (tab == Tab.EQUIPMENT)
@@ -550,6 +607,10 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     }
 
     override fun mouseReleased(button: Int, x: Int, y: Int) {
+        if (crewToDismiss != null) {
+            return
+        }
+
         super.mouseReleased(button, x, y)
 
         if (tab == Tab.EQUIPMENT)
@@ -557,6 +618,14 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     }
 
     override fun updateUI(x: Int, y: Int) {
+        // If the crew dismiss window is up, block all other interactions.
+        if (crewToDismiss != null) {
+            for (button in crewDismissWidgetButtons) {
+                button.update(x, y, false)
+            }
+            return
+        }
+
         super.updateUI(x, y)
 
         if (tab == Tab.EQUIPMENT)

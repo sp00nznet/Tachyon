@@ -1,6 +1,7 @@
 package xyz.znix.xftl.game
 
 import xyz.znix.xftl.f
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -22,7 +23,7 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
     override val size: IPoint = widgetTree.root.size
 
     init {
-        buttons += widgetTree.buildButtons(game, this)
+        buttons += widgetTree.buildButtons(game, this, ConstPoint.ZERO)
 
         widgetTree.addButtonListener("stats", this::statsClicked)
         widgetTree.addButtonListener("restart", this::restartClicked)

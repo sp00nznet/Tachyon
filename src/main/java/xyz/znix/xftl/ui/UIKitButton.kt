@@ -6,6 +6,7 @@ import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.Window
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -57,8 +58,8 @@ class UIKitButton(
         stretchToFitChildren()
     }
 
-    override fun createGameButtons(game: InGameState, window: Window): List<Button> {
-        val btn = InGameButton(game)
+    override fun createGameButtons(game: InGameState, window: Window, offset: IPoint): List<Button> {
+        val btn = InGameButton(game, position + offset)
         gameButton = btn
         return listOf(btn)
     }
@@ -75,7 +76,7 @@ class UIKitButton(
         }
     }
 
-    private inner class InGameButton(game: InGameState) : Button(game, position, size) {
+    private inner class InGameButton(game: InGameState, pos: IPoint) : Button(game, pos, size) {
         fun getColour(): Colour {
             return when {
                 disabled -> Constants.JUMP_DISABLED

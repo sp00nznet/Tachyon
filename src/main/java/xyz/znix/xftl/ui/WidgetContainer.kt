@@ -3,6 +3,7 @@ package xyz.znix.xftl.ui
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.Window
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 
 class WidgetContainer(val root: Widget) {
@@ -48,7 +49,13 @@ class WidgetContainer(val root: Widget) {
         button.clickListener = listener
     }
 
-    fun buildButtons(game: InGameState, window: Window): List<Button> {
-        return sortedWidgets.flatMap { it.createGameButtons(game, window) }
+    /**
+     * Builds in-game buttons, to make the UI interactive.
+     *
+     * [offset] is the difference between the origin of the root widget
+     * and the origin of the parent window.
+     */
+    fun buildButtons(game: InGameState, window: Window, offset: IPoint): List<Button> {
+        return sortedWidgets.flatMap { it.createGameButtons(game, window, offset) }
     }
 }

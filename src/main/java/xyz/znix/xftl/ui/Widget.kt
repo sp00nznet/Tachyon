@@ -180,8 +180,11 @@ abstract class Widget(val provider: UIProvider) {
      *
      * For this, in-game buttons can be created, but they only work with
      * the in-game state.
+     *
+     * [offset] is the offset from the in-game window coordinate system
+     * to the widget coordinate system.
      */
-    open fun createGameButtons(game: InGameState, window: Window): List<Button> {
+    open fun createGameButtons(game: InGameState, window: Window, offset: IPoint): List<Button> {
         return emptyList()
     }
 

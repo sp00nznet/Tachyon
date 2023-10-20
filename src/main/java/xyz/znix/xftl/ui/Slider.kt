@@ -7,6 +7,7 @@ import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.Window
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -54,7 +55,7 @@ class Slider(provider: UIProvider) : Widget(provider) {
         size.y = max(size.y, availableHeight)
     }
 
-    override fun createGameButtons(game: InGameState, window: Window): List<Button> {
+    override fun createGameButtons(game: InGameState, window: Window, offset: IPoint): List<Button> {
         gameButton = SliderButton(game, window)
         return listOf(gameButton!!)
     }

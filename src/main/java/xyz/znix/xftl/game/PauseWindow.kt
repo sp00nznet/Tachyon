@@ -2,6 +2,7 @@ package xyz.znix.xftl.game
 
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Colour
@@ -22,7 +23,7 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
     override val size: IPoint = widgetTree.root.size
 
     init {
-        buttons += widgetTree.buildButtons(game, this)
+        buttons += widgetTree.buildButtons(game, this, ConstPoint.ZERO)
 
         widgetTree.addButtonListener("continue", this::continueClicked)
         widgetTree.addButtonListener("main_menu", this::mainMenuClicked)

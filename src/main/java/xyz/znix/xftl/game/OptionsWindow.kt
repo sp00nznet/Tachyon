@@ -1,6 +1,7 @@
 package xyz.znix.xftl.game
 
 import xyz.znix.xftl.f
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.ui.Slider
@@ -15,7 +16,7 @@ class OptionsWindow(val game: InGameState, val close: () -> Unit) : Window() {
     override val size: IPoint get() = widgetTree.root.size
 
     init {
-        buttons += widgetTree.buildButtons(game, this)
+        buttons += widgetTree.buildButtons(game, this, ConstPoint.ZERO)
 
         soundSlider.value = game.mainGame.profile.soundVolume
         musicSlider.value = game.mainGame.profile.musicVolume

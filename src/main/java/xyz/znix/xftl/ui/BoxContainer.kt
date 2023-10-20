@@ -73,18 +73,7 @@ class BoxContainer(provider: UIProvider, val layoutDirection: Direction) : Widge
     override fun attemptStretch(availableWidth: Int, availableHeight: Int) {
         val extraX = availableWidth - size.x
         if (extraX > 0 && layoutDirection.isHorizontal) {
-            val totalStretch = children.sumByDouble { it.xStretch.toDouble() }.toFloat()
-
-            for ((i, child) in children.withIndex()) {
-                if (child.xStretch == 0f)
-                    continue
-
-                val fraction = child.xStretch / totalStretch
-                val thisExtra = (extraX * fraction).toInt()
-
-                val newWidth = childSizes[i] + thisExtra
-                childSizes[i] = newWidth
-
+            computeStretches(extraX, { it.xStretch }) { child, newWidth ->
                 child.attemptStretch(newWidth, 0)
             }
 
@@ -94,22 +83,48 @@ class BoxContainer(provider: UIProvider, val layoutDirection: Direction) : Widge
         // Copy-paste of the above, but for Y
         val extraY = availableHeight - size.y
         if (extraY > 0 && layoutDirection.isVertical) {
-            val totalStretch = children.sumByDouble { it.yStretch.toDouble() }.toFloat()
-
-            for ((i, child) in children.withIndex()) {
-                if (child.yStretch == 0f)
-                    continue
-
-                val fraction = child.yStretch / totalStretch
-                val thisExtra = (extraY * fraction).toInt()
-
-                val newHeight = childSizes[i] + thisExtra
-                childSizes[i] = newHeight
-
+            computeStretches(extraY, { it.yStretch }) { child, newHeight ->
                 child.attemptStretch(0, newHeight)
             }
 
             mutableSize.y = availableHeight
+        }
+    }
+
+    private fun computeStretches(extraSpace: Int, getStretch: (Widget) -> Float, apply: (Widget, Int) -> Unit) {
+        val totalStretch = children.sumOf { getStretch(it).toDouble() }.toFloat()
+
+        // Find out how much space each child would receive
+        // Note this rounds down, so there's probably going to be a bit
+        // of extra space left over.
+        // If we have a column of hbox widgets or vice-versa, it probably needs
+        // to be the exact width so the right-hand elements line up.
+        // Thus we'll find an error, and add that back in later.
+        val regularExtras = children.map {
+            val stretch = getStretch(it)
+            if (stretch == 0f)
+                return@map null
+
+            val fraction = stretch / totalStretch
+            (extraSpace * fraction).toInt()
+        }
+
+        var error = extraSpace - regularExtras.filterNotNull().sum()
+
+        for ((i, child) in children.withIndex()) {
+            var extra = regularExtras[i] ?: continue
+
+            // Spread the aforementioned integer round-off error among the first
+            // lot of stretchable components.
+            if (error > 0) {
+                extra += 1
+                error--
+            }
+
+            val newSize = childSizes[i] + extra
+            childSizes[i] = newSize
+
+            apply(child, newSize)
         }
     }
 
