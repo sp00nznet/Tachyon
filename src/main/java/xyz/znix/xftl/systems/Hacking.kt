@@ -27,6 +27,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.HACKING
     override val insertButtonSpace: Boolean get() = true
     override val isPowerLocked: Boolean get() = super.isPowerLocked || active
+    override val hasWhiteLockingBox: Boolean get() = active
 
     /**
      * Is the hacking module powered up, regardless

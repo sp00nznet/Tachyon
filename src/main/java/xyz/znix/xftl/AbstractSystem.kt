@@ -129,6 +129,13 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             return room!!.crew.firstOrNull { it.currentAction == AbstractCrew.Action.MANNING } as? LivingCrew
         }
 
+    /**
+     * True if there should be a white locking box around the system's power,
+     * which is shown in hacking/cloaking/mind control when those systems
+     * are active.
+     */
+    open val hasWhiteLockingBox: Boolean get() = false
+
     open fun update(dt: Float) {
         if (!damaged || room?.crew?.none { it.mode == AbstractCrew.SlotType.CREW } == true)
             repairProgress = 0f
@@ -389,6 +396,17 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             // outline around it.
             g.colour = Constants.SYSTEM_HACKED
             drawIonOrHackBar()
+        } else if (hasWhiteLockingBox) {
+            g.colour = Colour.white
+            drawIonOrHackBar()
+
+            // Draw the padlock icon at the top
+            val lockImg = game.getImg("img/icons/locking/s_lock_white.png")
+            lockImg.draw(barX + 2f - 6f, statusIconY - 21f)
+
+            // If we've got ion damage and a hacking probe connected,
+            // the latter is shifted upwards.
+            statusIconY -= 21
         } else if (isIonised) {
             // If the system is ionised, draw the 'locked' bar around it
             g.colour = Constants.SYSTEM_IONISED

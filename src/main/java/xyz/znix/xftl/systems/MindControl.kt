@@ -34,6 +34,7 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         private set
 
     override val isPowerLocked: Boolean get() = super.isPowerLocked || active
+    override val hasWhiteLockingBox: Boolean get() = active
 
     val ready: Boolean get() = powerSelected > 0 && !isPowerLocked && !isHackActive
 

@@ -4,6 +4,7 @@ import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.ZoltanEnergySource
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.BatteryEnergySource
 import xyz.znix.xftl.systems.MainSystem
@@ -104,6 +105,11 @@ object ReactorEnergySource : EnergySource {
                 // a subsystem), but ion damage is applied.
                 // This changes the colour of all the remaining power.
                 g.colour = Constants.SYSTEM_IONISED
+                g.fillRect(x, y, width, height)
+            }
+
+            system.hasWhiteLockingBox -> {
+                g.colour = Colour.white
                 g.fillRect(x, y, width, height)
             }
 
