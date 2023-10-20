@@ -698,6 +698,11 @@ public class InGameState extends MainGame.GameState {
             }
         }
 
+        // Copied from ShipGenerator, required for stage 1
+        if (flagship.getDronesCount() == 0 && flagship.getHacking() != null) {
+            flagship.setDronesCount(5);
+        }
+
         setEnemy(flagship);
         setEnemyIsHostile(true);
 
