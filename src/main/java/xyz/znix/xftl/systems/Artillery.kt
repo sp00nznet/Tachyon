@@ -154,10 +154,10 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     private fun fireAt(targetShip: Ship) {
-        // Allow smart-casting, since weapon is mutable.
-        val weapon = this.weapon
+        if (ship.sys.debugFlags.noEnemyFire.set && !ship.isPlayerShip)
+            return
 
-        when (weapon) {
+        when (val weapon = this.weapon) {
             is BeamBlueprint.BeamInstance -> {
                 val startRoom = targetShip.rooms.random()
                 val furthestRoom = targetShip.rooms.maxByOrNull { it.pixelCentre.distToSq(startRoom.pixelCentre) }
