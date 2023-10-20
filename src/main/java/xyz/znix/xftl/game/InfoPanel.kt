@@ -197,9 +197,11 @@ class InfoPanel(private val game: InGameState) {
 
             // Draw the extra lines, which are for stuff like weapon attributes.
             y += 17
-            for (line in extraLines) {
-                descriptionFont.drawString(position.x + 11f, y.f, line, Colour.white)
-                y += 17
+            for (extra in extraLines) {
+                for (line in descriptionFont.wrapString(extra, 310)) {
+                    descriptionFont.drawString(position.x + 11f, y.f, line, Colour.white)
+                    y += 17
+                }
             }
         }
 
