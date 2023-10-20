@@ -404,8 +404,10 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         if (resourceSet.damage.isNotEmpty()) {
             val (message, _) = getHullDamageText(resourceSet)
-            width = max(width, 30 + resourceNumFont.getWidth(message) + 30)
-            height += 32
+            if (message != null) {
+                width = max(width, 30 + resourceNumFont.getWidth(message) + 30)
+                height += 32
+            }
         }
 
         for (upgrade in resourceSet.upgrades) {
@@ -475,8 +477,10 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         if (resourceSet.damage.isNotEmpty()) {
             val (message, colour) = getHullDamageText(resourceSet)
-            resourceNumFont.drawString(pos.x + 30f, y + 21f, message, colour)
-            y += 32
+            if (message != null) {
+                resourceNumFont.drawString(pos.x + 30f, y + 21f, message, colour)
+                y += 32
+            }
         }
 
         for (upgrade in resourceSet.upgrades) {
@@ -840,13 +844,17 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
     }
 
-    private fun getHullDamageText(resourceSet: ResourceSet): Pair<String, Colour> {
+    private fun getHullDamageText(resourceSet: ResourceSet): Pair<String?, Colour> {
         val baseDamage = resourceSet.damage.sumBy { it.amount }
 
         if (baseDamage < 0) {
             // Limit the displayed health gain if some will be wasted
             // because the player will have full health.
             val realHealing = min(playerShip.maxHealth - playerShip.health, -baseDamage)
+
+            if (realHealing == 0) {
+                return Pair(null, Constants.SYS_ENERGY_BROKEN)
+            }
 
             val message = game.translator["heal_alert"].replace("\\1", realHealing.toString())
             return Pair(message, Constants.SYS_ENERGY_ACTIVE)
