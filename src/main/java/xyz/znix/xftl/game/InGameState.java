@@ -1554,8 +1554,9 @@ public class InGameState extends MainGame.GameState {
         this.enemyIsHostile = enemyIsHostile;
 
         // Get rid of any remaining drones on the player's ship
-        if (!enemyIsHostile && enemy != null && enemy.getDrones() != null) {
-            enemy.getDrones().enemyShipUpdated();
+        if (enemy != null) {
+            enemy.enemyShipUpdated();
+            player.enemyShipUpdated();
         }
     }
 

@@ -1409,6 +1409,11 @@ class Ship(
      * This credits piloting/engine skills if it succeeds.
      */
     fun pickMissed(): Boolean {
+        // Weapons fired at enemy ships before they surrender always
+        // miss after a surrender.
+        if (!isPlayerShip && sys.getEnemyOf(this) == null)
+            return true
+
         val missed = Random.rollChance(evasion)
         if (missed) {
             piloting?.addSkillPoint(Skill.PILOTING)
@@ -1421,6 +1426,29 @@ class Ship(
         val firstFrame = animation.spriteAt(sys, 0)
         val offsetPos = ConstPoint(centre.x - firstFrame.width / 2, centre.y - firstFrame.height / 2)
         animations += FloatingAnimation(sys, animation, offsetPos)
+    }
+
+    fun enemyShipUpdated() {
+        drones?.enemyShipUpdated()
+
+        val enemy = sys.getEnemyOf(this)
+
+        // If our weapons are currently targeted on the now-neutral enemy,
+        // un-target them.
+        val targets = weapons?.selectedTargets
+        if (targets != null) {
+            val toUnTarget = ArrayList<Int>()
+            for (target in targets.iterator()) {
+                if (target.targetShip == this || target.targetShip == enemy)
+                    continue
+
+                toUnTarget.add(target.weaponNumber)
+            }
+
+            for (id in toUnTarget) {
+                targets.unTarget(id)
+            }
+        }
     }
 
 
