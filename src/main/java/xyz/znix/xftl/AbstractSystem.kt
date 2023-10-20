@@ -516,8 +516,9 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      */
     fun getSkillLevel(skill: Skill): SkillLevel? {
         // It seems there's a fake crewmember in every room?
+        // This only applies to fully-repaired systems, I think.
         // https://www.reddit.com/r/ftlgame/comments/2e30zc/question_re_autoscouts/
-        if (ship.isAutoScout)
+        if (ship.isAutoScout && !damaged)
             return SkillLevel.BASE
 
         return manningCrew?.getSkillLevel(skill)
