@@ -69,6 +69,20 @@ abstract class SubSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint)
         return baseY - (energyLevels - 1) * 8
     }
 
+    override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
+        if (!info.canBeManned)
+            return
+
+        val iconPath = when {
+            isIonised -> "img/systemUI/manning_bar_ion.png"
+            manningCrew != null -> "img/systemUI/manning_bar_on.png"
+            else -> "img/systemUI/manning_bar_off.png"
+        }
+
+        val img = ship.sys.getImg(iconPath)
+        img.draw(x, y + 2 - img.height)
+    }
+
     // List of the default systems, for sorting purposes
     enum class SortingType {
         PILOTING,

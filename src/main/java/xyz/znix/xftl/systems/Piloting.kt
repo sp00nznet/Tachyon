@@ -61,7 +61,6 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     }
 
     override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
-        super.drawManningIcon(g, x, y)
         drawManningSkillIcon(x, y, getSkillLevel(Skill.PILOTING))
     }
 
