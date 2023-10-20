@@ -47,7 +47,7 @@ class AugEngiMedbots(elem: Element) : AugmentBlueprint(elem) {
         if (medbay.powerSelected == 0)
             return
 
-        val healing = dt * 1.6f
+        val healing = dt * 6.4f * value
 
         for (crew in ship.friendlyCrew) {
             if (crew !is LivingCrew)
