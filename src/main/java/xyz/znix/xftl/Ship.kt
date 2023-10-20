@@ -1234,6 +1234,28 @@ class Ship(
     }
 
     fun cargoUpdated() {
+        // Pack the weapons and drones so all the empty slots are at the end.
+        var weaponDest = 0
+        for (hp in hardpoints) {
+            val weapon = hp.weapon ?: continue
+            hardpoints[weaponDest++].weapon = weapon
+        }
+        for (i in weaponDest until hardpoints.size) {
+            hardpoints[i].weapon = null
+        }
+
+        drones?.drones?.let { droneList ->
+            var droneDest = 0
+            for (drone in droneList) {
+                if (drone == null)
+                    continue
+                droneList[droneDest++] = drone
+            }
+            for (i in droneDest until droneList.size) {
+                droneList[i] = null
+            }
+        }
+
         // Update all the buttons that have to change to reflect
         // the cargo being modified.
         // This is called very early, before the ship UI is created.
