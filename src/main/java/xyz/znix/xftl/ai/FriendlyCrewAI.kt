@@ -325,32 +325,21 @@ class FriendlyCrewAI(private val ship: Ship) {
         val teleporter = ship.teleporter!!
         val enemy = ship.sys.getEnemyOf(ship) ?: return
 
-        var anyCrewWaiting = false
-
         // Check that there aren't any crew still pathing to the teleporter
         for (crew in aiCrew) {
             // Stop if any crew are currently being teleported
             if (crew.currentAction == AbstractCrew.Action.TELEPORTING)
                 return
 
-            val task = assignments[crew] ?: continue
-            if (task !is TeleportingTask)
+            if (assignments[crew] !is TeleportingTask)
                 continue
 
             // Don't teleport until all the crew are ready
             if (crew.standingPosition?.room != teleporter.room)
                 return
-
-            anyCrewWaiting = true
         }
 
-        // Don't try to teleport if there aren't any crew assigned to the teleporter,
-        // as this would increment teleportCount each frame.
-        if (!anyCrewWaiting)
-            return
-
         teleporter.selectTeleportAction(true, enemy.rooms.random())
-        teleportCount++
     }
 
     private fun doTeleportRecv(teleportForceRecv: Boolean) {
@@ -376,6 +365,14 @@ class FriendlyCrewAI(private val ship: Ship) {
             teleporter.selectTeleportAction(false, crew.room)
             return
         }
+    }
+
+    fun onCrewTeleportedOut() {
+        // Only increment teleportCount when someone has actually been teleported.
+        // If we did this before calling selectTeleportAction, anything that blocked
+        // teleporting (eg cloaking, super shield) would increment this every frame
+        // until we hit the limit.
+        teleportCount++
     }
 
     // TODO serialisation

@@ -68,6 +68,12 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // If there's a command ready, grab and action it
         val command = commandedTeleport ?: return
+
+        // If the enemy ship is cloaked, stop now without removing the command.
+        // Thus the command will stay there until the enemy comes out of cloak.
+        if (command.room.ship.isCloakActive)
+            return
+
         commandedTeleport = null
 
         if (command.send) {
@@ -89,6 +95,8 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             for (crew in ourCrew) {
                 crew.teleportAnimatedTo(command.room)
             }
+
+            ship.crewAI.onCrewTeleportedOut()
         } else {
             if (!isReceiveAvailable)
                 return
