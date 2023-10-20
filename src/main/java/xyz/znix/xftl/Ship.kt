@@ -87,8 +87,6 @@ class Ship(
 
     val shieldImage: Image = sys.getImg(type.shieldImage)
 
-    val shieldOffset: ConstPoint
-
     val selectedShieldHalfSize: ConstPoint
     val shieldHalfSize: ConstPoint
 
@@ -388,7 +386,7 @@ class Ship(
             room.initialise(roomDoors)
         }
 
-        shieldOffset = type.shieldEllipse.pos.const
+        val shieldOffset = type.shieldEllipse.pos.const
         selectedShieldHalfSize = type.shieldEllipse.size.const
 
         // The player ship uses the exact size of the shield image,

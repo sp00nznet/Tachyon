@@ -125,7 +125,7 @@ object Utils {
 
         val gc = LWJGLGameContainer(game)
         // gc.setTargetFrameRate(120)
-        gc.setDisplayMode(1250, 720, false)
+        gc.setDisplayMode(1280, 720, false)
         // gc.setShowFPS(false)
         gc.start()
     }

@@ -1280,7 +1280,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         font.drawString(textX + 1f, textY + 15f, name, UI_TEXT_COLOUR_1)
     }
 
-    fun updateUI(x: Int, y: Int, playerShipPosition: ConstPoint) {
+    fun updateUI(x: Int, y: Int, playerShipPosition: IPoint) {
         pauseWindow?.let { win ->
             win.updateUI(x, y)
             return

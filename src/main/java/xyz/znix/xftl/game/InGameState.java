@@ -41,8 +41,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class InGameState extends MainGame.GameState {
-    private static final ConstPoint PLAYER_SHIP_POSITION = new ConstPoint(100, 150);
-
     private final MainGame mainGame;
 
     private final GameContent content;
@@ -96,6 +94,8 @@ public class InGameState extends MainGame.GameState {
 
     // Used for animation rendering only
     private float renderingDeltaTime;
+
+    private final Point playerShipOffset = new Point(0, 0);
 
     /**
      * The quest events that couldn't be fit in the current sector,
@@ -320,14 +320,14 @@ public class InGameState extends MainGame.GameState {
                     rightClicked = true;
                 }
 
-                shipUI.mouseClick(i, in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
+                shipUI.mouseClick(i, in.getMouseX(), in.getMouseY(), playerShipOffset);
             } else if (prev && !now) {
-                shipUI.mouseUp(i, in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
+                shipUI.mouseUp(i, in.getMouseX(), in.getMouseY(), playerShipOffset);
             }
             mouseDownPrev[i] = now;
         }
 
-        shipUI.updateUI(in.getMouseX(), in.getMouseY(), PLAYER_SHIP_POSITION);
+        shipUI.updateUI(in.getMouseX(), in.getMouseY(), playerShipOffset);
 
         // Figure out when the player right-clicks
         // an enemy room - this is used for controlling boarders.
@@ -380,7 +380,7 @@ public class InGameState extends MainGame.GameState {
         // Hovering over the player
         tempPoint.setX(container.getInput().getMouseX());
         tempPoint.setY(container.getInput().getMouseY());
-        tempPoint.minusAssign(PLAYER_SHIP_POSITION);
+        tempPoint.minusAssign(playerShipOffset);
         player.screenPosToShipPos(tempPoint);
 
         RoomPoint rp = player.shipToRoomPos(tempPoint);
@@ -440,9 +440,18 @@ public class InGameState extends MainGame.GameState {
 
         currentBeacon.getEnvironment(this).renderBackground(container, g);
 
+        // Set the position of the player's ship, based on whether or not
+        // there's also an enemy ship.
+        if (enemy != null) {
+            playerShipOffset.setX(200);
+        } else {
+            playerShipOffset.setX(350);
+        }
+        playerShipOffset.setY(170);
+
         // Get the player's ship away from the top UI
         g.pushTransform();
-        g.translate(PLAYER_SHIP_POSITION.getX(), PLAYER_SHIP_POSITION.getY());
+        g.translate(playerShipOffset.getX(), playerShipOffset.getY());
         player.render(g, true, hoveredRoom);
         player.renderTargeting(g, Objects.requireNonNull(player.getWeapons()).getSelectedTargets());
         g.popTransform();
