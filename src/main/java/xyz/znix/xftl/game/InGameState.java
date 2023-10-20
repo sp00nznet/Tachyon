@@ -1557,6 +1557,15 @@ public class InGameState extends MainGame.GameState {
         if (enemy != null) {
             enemy.enemyShipUpdated();
             player.enemyShipUpdated();
+
+            // Turn the enemy weapons off - this is only a visual thing at
+            // this point, since the AI isn't being updated to fire them.
+            for (Ship.Hardpoint hardpoint : enemy.getHardpoints()) {
+                if (hardpoint.getWeapon() == null || enemy.getWeapons() == null)
+                    continue;
+
+                enemy.getWeapons().setWeaponPower(hardpoint.getWeapon(), false);
+            }
         }
     }
 
