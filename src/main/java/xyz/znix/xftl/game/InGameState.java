@@ -1580,7 +1580,7 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
-    public boolean playerHasTooManyCrew() {
+    public int getPlayerCrewCount() {
         // TODO account for crew on the enemy ship, at the same time
         //  as making ShipWindow do the same.
         int crewCount = 0;
@@ -1595,7 +1595,15 @@ public class InGameState extends MainGame.GameState {
             crewCount++;
         }
 
-        return crewCount > 8;
+        return crewCount;
+    }
+
+    public boolean isPlayerCrewFull() {
+        return getPlayerCrewCount() >= 8;
+    }
+
+    public boolean playerHasTooManyCrew() {
+        return getPlayerCrewCount() > 8;
     }
 
     public interface RoomClickListener {

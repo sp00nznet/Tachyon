@@ -214,13 +214,18 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             }
 
             val prefix = "${i + 1}. "
-            val text = prefix + option.choiceText
+            var text = prefix + option.choiceText
 
             // Handle the 'continue' option, since it fails if
             // we try to read its resources.
             if (option.isContinue) {
                 drawText(textY, text, colour, rebuildBBs)
                 continue
+            }
+
+            // Warn the user if they'll have to fire a crewmember
+            if (option.resources.crew.isNotEmpty() && game.isPlayerCrewFull) {
+                text += " " + game.translator["event_crew_full"]
             }
 
             // Draw the resources for this event, if appropriate
