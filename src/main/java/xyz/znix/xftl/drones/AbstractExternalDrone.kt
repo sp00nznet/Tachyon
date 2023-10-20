@@ -103,6 +103,12 @@ abstract class AbstractExternalDrone(
     override fun update(dt: Float) {
         super.update(dt)
 
+        // If the drone disappears (for example, when jumping) then don't
+        // leave it as being active, as that prevents it from being used again.
+        if (!targetShip.externalDrones.contains(this)) {
+            removeInstance()
+        }
+
         if (isRunning) {
             timeActive += dt
         } else {
