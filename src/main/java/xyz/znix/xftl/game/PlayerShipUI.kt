@@ -94,6 +94,16 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val hullWarning50 = WarningFlasher(game, ConstPoint(437, 100), "warning_hull_50", true, hullWarningLines)
     private val hullWarning75 = WarningFlasher(game, ConstPoint(437, 100), "warning_hull_75", true, hullWarningLines)
 
+    private val oxygenWarningLines = listOf(
+        ConstPoint(99, 137),
+        ConstPoint(116, 170),
+        ConstPoint(216, 170)
+    )
+    private val oxygenWarning = WarningFlasher(
+        game, ConstPoint(167, 188),
+        "warning_oxygen", true, oxygenWarningLines, alwaysOn = true
+    )
+
     private val shieldsWarning = WarningFlasher(
         game, ConstPoint(204, 132), "warning_shields", true,
         listOf(
@@ -1092,16 +1102,34 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, ship.dronesCount, deltaDrones, 0)
 
         // Oxygen and evasion indicator
+
+        val avgOxygen = round(ship.averageOxygen * 100).toInt()
+        val oxygenRed: Boolean
+        if (avgOxygen < 25) {
+            oxygenWarning.draw(g)
+            oxygenRed = oxygenWarning.isFlashingHigh
+        } else {
+            oxygenRed = false
+        }
+
+        val evasion = ship.evasion
+        val evasionRed = evasion == 0
+
+        val evasionOxyPath = when {
+            evasionRed && oxygenRed -> "img/statusUI/top_evade_oxygen_both_red.png"
+            evasionRed -> "img/statusUI/top_evade_oxygen_up_red.png"
+            oxygenRed -> "img/statusUI/top_evade_oxygen_down_red.png"
+            else -> "img/statusUI/top_evade_oxygen.png"
+        }
         val oxyY = 96
-        game.getImg("img/statusUI/top_evade_oxygen.png").draw(1f, oxyY - 7f)
+        game.getImg(evasionOxyPath).draw(1f, oxyY - 7f)
 
         val evadeTextRight = 92f
 
         // Evade
-        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 15f, "${ship.evasion}%", Colour.white)
+        oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 15f, "$evasion%", Colour.white)
 
         // Oxygen
-        val avgOxygen = round(ship.averageOxygen * 100).toInt()
         oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 37f, "$avgOxygen%", Colour.white)
 
         // Draw all the crew boxes
