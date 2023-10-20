@@ -3,6 +3,7 @@ package xyz.znix.xftl.ui
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.Window
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 
@@ -49,6 +50,12 @@ class WidgetContainer(val root: Widget) {
     fun addButtonListener(id: String, listener: () -> Unit) {
         val button = byId[id] as UIKitButton
         button.clickListener = listener
+    }
+
+    fun updateLayout() {
+        root.updateSizes()
+        root.expandToParent(ConstPoint.ZERO)
+        root.updateLayout()
     }
 
     /**

@@ -4,7 +4,6 @@ import org.jdom2.Document
 import org.jdom2.Element
 import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.Constants
-import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.requireAttributeValue
 import java.io.InputStream
@@ -39,12 +38,15 @@ class SpecDeserialiser(private val provider: UIProvider) {
 
         for (widget in widgets) {
             widget.init(null)
-            widget.updateSizes()
-            widget.expandToParent(ConstPoint.ZERO)
-            widget.updateLayout()
         }
 
-        return LoadedUI(WidgetContainer(widgets.first()), emptyMap())
+        val containers = widgets.map { WidgetContainer(it) }
+
+        for (container in containers) {
+            container.updateLayout()
+        }
+
+        return LoadedUI(containers.first(), emptyMap())
     }
 
     private fun loadWidgets(parent: Element): List<Widget> {

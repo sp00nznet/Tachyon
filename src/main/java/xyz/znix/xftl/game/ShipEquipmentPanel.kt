@@ -271,7 +271,12 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
         // equipment but your cargo is full) UIs are similar.
         sellButton = null
         if (sellUI) {
-            sellButton = SellDropBox.create(game, ConstPoint(-275, 107)) { draggingBlueprint?.blueprint }
+            sellButton = SellDropBox.create(
+                game,
+                SellDropBox.Type.SELL_EQUIPMENT,
+                ConstPoint(-275, 107)
+            ) { draggingBlueprint?.blueprint }
+
             buttons += sellButton!!
         }
 
@@ -445,6 +450,7 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
 
     class SellDropBox private constructor(
         game: InGameState, pos: IPoint,
+        private val type: Type,
         private val container: WidgetContainer,
         private val getDrag: () -> Blueprint?,
     ) :
@@ -454,24 +460,30 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
 
         private val images: List<ImageView> = container.allWidgets.filterIsInstance(ImageView::class.java)
 
-        private val highlightingLabels: List<Label> = listOf(
+        private val highlightingLabels: List<Label> = listOfNotNull(
             container.byId["message"] as Label,
-            container.byId["value_label"] as Label,
-            container.byId["price"] as Label,
+            container.byId["value_label"] as Label?,
+            container.byId["price"] as Label?,
         )
 
-        private val price = container.byId["price"] as Label
+        private val price = container.byId["price"] as Label?
 
         override fun draw(g: Graphics) {
-            val normal = game.getImg("img/dropbox_sell_on.png")
-            val hover = game.getImg("img/dropbox_sell_select2.png")
+            val normalPath = when (type) {
+                Type.SELL_EQUIPMENT -> "img/dropbox_sell_on.png"
+                else -> "img/dropbox_on.png"
+            }
+            val hoverPath = when (type) {
+                Type.SELL_EQUIPMENT -> "img/dropbox_sell_select2.png"
+                else -> "img/dropbox_select2.png"
+            }
 
             val draggingBlueprint = getDrag()
 
             val hoverActive = hovered && draggingBlueprint != null
             val image = when {
-                hoverActive -> hover
-                else -> normal
+                hoverActive -> game.getImg(hoverPath)
+                else -> game.getImg(normalPath)
             }
             for (view in images) {
                 view.image = image
@@ -485,7 +497,9 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
                 label.colour = colour
             }
 
-            if (draggingBlueprint != null) {
+            if (price == null) {
+                // For the over-capacity boxes
+            } else if (draggingBlueprint != null) {
                 // You only get half of what you paid for it
                 val sellPrice = (draggingBlueprint.cost ?: 0) / 2
                 price.text = sellPrice.toString()
@@ -504,11 +518,39 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
         }
 
         companion object {
-            fun create(game: InGameState, pos: IPoint, getDrag: () -> Blueprint?): SellDropBox {
-                val widget: WidgetContainer = game.uiLoader.load("sell_drop_box").mainWidget
+            fun create(game: InGameState, type: Type, pos: IPoint, getDrag: () -> Blueprint?): SellDropBox {
+                val widgetName = when (type) {
+                    Type.SELL_EQUIPMENT -> "sell_drop_box"
+                    Type.TOO_MUCH_EQUIPMENT -> TODO()
+                    Type.TOO_MANY_CREW -> "crew_over_capacity"
+                }
 
-                return SellDropBox(game, pos, widget, getDrag)
+                val widget: WidgetContainer = game.uiLoader.load(widgetName).mainWidget
+
+                val titleKey = when (type) {
+                    Type.SELL_EQUIPMENT -> "sell_box_title"
+                    Type.TOO_MUCH_EQUIPMENT -> "overcapacity_item_title"
+                    Type.TOO_MANY_CREW -> "overcapacity_crew_title"
+                }
+                val messageKey = when (type) {
+                    Type.SELL_EQUIPMENT -> "sell_box_text"
+                    Type.TOO_MUCH_EQUIPMENT -> "overcapacity_item_text1"
+                    Type.TOO_MANY_CREW -> "overcapacity_crew_text"
+                }
+
+                (widget.byId["title"] as Label).text = game.translator[titleKey]
+                (widget.byId["message"] as Label).text = game.translator[messageKey]
+
+                widget.updateLayout()
+
+                return SellDropBox(game, pos, type, widget, getDrag)
             }
+        }
+
+        enum class Type {
+            SELL_EQUIPMENT,
+            TOO_MUCH_EQUIPMENT,
+            TOO_MANY_CREW,
         }
     }
 }

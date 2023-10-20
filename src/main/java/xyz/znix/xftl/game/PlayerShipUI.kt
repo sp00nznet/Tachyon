@@ -494,6 +494,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
 
         updatingButtons = false
+
+        // If the player's ship is full of crew, open the window to dismiss one.
+        // Don't override another window to do this, however.
+        if (currentWindow == null && game.playerHasTooManyCrew()) {
+            showShipWindow()
+        }
     }
 
     private fun addPlayerCrew(crewList: List<AbstractCrew>) {

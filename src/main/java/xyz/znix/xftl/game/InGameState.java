@@ -1580,6 +1580,24 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
+    public boolean playerHasTooManyCrew() {
+        // TODO account for crew on the enemy ship, at the same time
+        //  as making ShipWindow do the same.
+        int crewCount = 0;
+
+        for (AbstractCrew crew : player.getCrew()) {
+            if (!(crew instanceof LivingCrew living))
+                continue;
+
+            if (living.getOwnerShip() != player)
+                continue;
+
+            crewCount++;
+        }
+
+        return crewCount > 8;
+    }
+
     public interface RoomClickListener {
         void roomClicked(Room room, GameContainer gc);
 

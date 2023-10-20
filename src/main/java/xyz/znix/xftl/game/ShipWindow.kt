@@ -20,7 +20,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     override val size = ConstPoint(587, 464)
 
     // Make the system power stuff visible
-    override val windowCentreOffset = ConstPoint(-100, 0)
+    override val windowCentreOffset = ConstPoint(-10, 0)
 
     private val acceptButtonImage = game.getImg("img/upgradeUI/buttons_accept_base.png")
     private val undoButtonImage = game.getImg("img/upgradeUI/buttons_undo_base.png")
@@ -64,6 +64,12 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     )
 
     init {
+        // Auto-switch to the too-many-crew and too-many-items tabs
+        if (game.playerHasTooManyCrew()) {
+            tab = Tab.CREW
+        }
+        // TODO too many items
+
         updateButtons()
 
         (crewDismissWidget.byId["message"] as Label).text = game.translator["confirm_dismiss"]
@@ -93,25 +99,12 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         // The buttons can change their icon depending on which of the other two
         // tabs are selected, so re-create them whenever a different tab is selected.
 
-        fun createTab(tab: Tab, pos: ConstPoint, size: ConstPoint): SimpleButton {
-            val current = this.tab.textureName
-            val new = tab.textureName
-            return SimpleButton(
-                game, pos, size, ConstPoint.ZERO,
-                game.getImg("img/upgradeUI/Equipment/tabButtons/${current}_${new}_on.png"),
-                game.getImg("img/upgradeUI/Equipment/tabButtons/${current}_${new}_select2.png")
-            ) {
-                this.tab = tab
-                updateButtons()
-            }
-        }
-
         if (tab != Tab.UPGRADES)
-            buttons += createTab(Tab.UPGRADES, ConstPoint(-GLOW_WIDTH, -GLOW_WIDTH), ConstPoint(109, 48))
+            buttons += TabButton(Tab.UPGRADES, ConstPoint(-GLOW_WIDTH, -GLOW_WIDTH), ConstPoint(109, 48))
         if (tab != Tab.CREW)
-            buttons += createTab(Tab.CREW, ConstPoint(75, -GLOW_WIDTH), ConstPoint(127, 48))
+            buttons += TabButton(Tab.CREW, ConstPoint(75, -GLOW_WIDTH), ConstPoint(127, 48))
         if (tab != Tab.EQUIPMENT)
-            buttons += createTab(Tab.EQUIPMENT, ConstPoint(175, -GLOW_WIDTH), ConstPoint(123, 48))
+            buttons += TabButton(Tab.EQUIPMENT, ConstPoint(175, -GLOW_WIDTH), ConstPoint(123, 48))
 
         // Switching tabs away from upgrades commits the system upgrades
         if (tab != Tab.UPGRADES) {
@@ -491,9 +484,15 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         drawCrewBox(g, crew, ConstPoint(68 + 170 * 2, 88 + 133 * 1), 5)
 
         // Third row
-        // TODO use the same pattern as before for the too-many-crewmembers screen
-        drawCrewBox(g, crew, ConstPoint(154, 88 + 133 * 2), 6)
-        drawCrewBox(g, crew, ConstPoint(324, 88 + 133 * 2), 7)
+        if (game.playerHasTooManyCrew()) {
+            // Too many crew members, show a 3x3 grid
+            drawCrewBox(g, crew, ConstPoint(68 + 170 * 0, 88 + 133 * 2), 6)
+            drawCrewBox(g, crew, ConstPoint(68 + 170 * 1, 88 + 133 * 2), 7)
+            drawCrewBox(g, crew, ConstPoint(68 + 170 * 2, 88 + 133 * 2), 8)
+        } else {
+            drawCrewBox(g, crew, ConstPoint(154, 88 + 133 * 2), 6)
+            drawCrewBox(g, crew, ConstPoint(324, 88 + 133 * 2), 7)
+        }
 
         if (crewToDismiss != null) {
             g.pushTransform()
@@ -507,6 +506,14 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                     button.windowOffset = position
                 }
             }
+        }
+
+        if (game.playerHasTooManyCrew() && updatingButtons) {
+            buttons += ShipEquipmentPanel.SellDropBox.create(
+                game,
+                ShipEquipmentPanel.SellDropBox.Type.TOO_MANY_CREW,
+                ConstPoint(-275, 107)
+            ) { null }
         }
     }
 
@@ -661,6 +668,33 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         UPGRADES("upgrades"),
         CREW("crew"),
         EQUIPMENT("equipment"),
+    }
+
+    private inner class TabButton(val newTab: Tab, pos: ConstPoint, size: ConstPoint) : Button(game, pos, size) {
+        val images = ButtonImageSet.select2(game, "img/upgradeUI/Equipment/tabButtons/${tab}_${newTab}")
+
+        override val disabled: Boolean
+            get() = when (tab) {
+                Tab.CREW -> game.playerHasTooManyCrew()
+                else -> false
+            }
+
+        override fun draw(g: Graphics) {
+            val image = when {
+                disabled -> images.off
+                hovered -> images.hover
+                else -> images.normal
+            }
+            image.draw(pos)
+        }
+
+        override fun click(button: Int) {
+            if (button != Input.MOUSE_LEFT_BUTTON || disabled)
+                return
+
+            tab = newTab
+            updateButtons()
+        }
     }
 
     companion object {
