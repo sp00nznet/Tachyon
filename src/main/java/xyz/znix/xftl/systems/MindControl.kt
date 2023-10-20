@@ -45,7 +45,7 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         get() {
             return when (powerSelected) {
                 // From the wiki
-                0 -> 0.1f // Dummy value
+                0 -> 0.001f // Dummy value
                 1 -> 14f
                 2 -> 20f
                 3 -> 28f
@@ -66,8 +66,16 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         checkEnemyGone()
+        if (timeRemaining == null) {
+            // If checkEnemyGone reset the timer
+            return
+        }
 
-        val newTime = oldTime - dt
+        // Clamp the timer, so if the system is damaged it cuts down
+        // the remaining time.
+        val clamped = oldTime.coerceAtMost(duration)
+
+        val newTime = clamped - dt
         if (newTime <= 0) {
             switchToCooldown()
             return
