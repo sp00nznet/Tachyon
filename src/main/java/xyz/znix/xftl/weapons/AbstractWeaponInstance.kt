@@ -74,9 +74,6 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
     open fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
         if (isPowered) {
-            if (!hasEnoughMissiles)
-                isPowered = false
-
             if (canCharge)
                 timeCharged += chargeTime
         } else {

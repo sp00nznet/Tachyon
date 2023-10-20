@@ -64,6 +64,9 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             weapon.bindToWeaponsSystem(this)
             weapon.update(dt, chargeTime, !ship.opponentCloakActive)
 
+            if (!weapon.hasEnoughMissiles)
+                setWeaponPower(weapon, false)
+
             // Update the weapon slide
             val slideSpeed = dt * 2
             if (weapon.isPowered) {
