@@ -9,6 +9,9 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Drones
+import xyz.znix.xftl.ui.ImageView
+import xyz.znix.xftl.ui.Label
+import xyz.znix.xftl.ui.WidgetContainer
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.min
@@ -268,75 +271,7 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
         // equipment but your cargo is full) UIs are similar.
         sellButton = null
         if (sellUI) {
-            val normal = game.getImg("img/dropbox_sell_on.png")
-            val hover = game.getImg("img/dropbox_sell_select2.png")
-
-            sellButton = object : Button(game, ConstPoint(-275, 107), ConstPoint(258, 191)) {
-                override val makesHoverNoise: Boolean get() = false
-
-                override fun draw(g: Graphics) {
-                    val hoverActive = hovered && draggingBlueprint != null
-                    val image = if (hoverActive) hover else normal
-                    val glow = 7f
-
-                    val colour = if (hoverActive) Constants.UI_BUTTON_HOVER else Constants.SECTOR_CUTOUT_TEXT
-
-                    // Image x and y origin positions - note the image has a glow
-                    // around it, so we have to offset it to make it's top-left solid
-                    // pixel line up with our position.
-                    val ix = pos.x - glow
-                    val iy = pos.y - glow
-
-                    // Draw the top (title bar) area
-                    image.draw(
-                        ix, iy, ix + image.width, iy + 62f,
-                        0f, 0f, image.width.f, 62f
-                    )
-
-                    // Draw the stretched middle area to accomidate all the text
-                    val descriptionText = game.translator["sell_box_text"]
-                    val lines = descriptionText.split('\n')
-                    val insertHeight = lines.size * 24 - 10
-
-                    image.draw(
-                        ix, iy + 62f, ix + image.width, iy + 62f + insertHeight,
-                        0f, 63f, image.width.f, 63f
-                    )
-
-                    // Draw the bottom part of the image
-                    image.draw(
-                        ix, iy + 62f + insertHeight, ix + image.width, iy + insertHeight + image.height,
-                        0f, 62f, image.width.f, image.height.f
-                    )
-
-                    // Draw the description text
-                    for ((i, line) in lines.withIndex()) {
-                        val y = pos.y + 66f + i * 24
-                        sellBoxFont.drawStringCentred(pos.x.f, y, size.x.f, line, colour)
-                    }
-
-                    // Draw the title
-                    missingSystemFont.drawStringCentred(
-                        pos.x.f, pos.y + 29f, size.x.f,
-                        game.translator["sell_box_title"],
-                        Constants.STORE_SELL_TITLE
-                    )
-
-                    sellBoxFont.drawString(pos.x + 44f, pos.y + 180f, game.translator["sell_value"], colour)
-
-                    val blueprint = draggingBlueprint?.blueprint
-                    if (blueprint != null) {
-                        // You only get half of what you paid for it
-                        val sellPrice = (blueprint.cost ?: 0) / 2
-
-                        sellPriceFont.drawString(pos.x + 207f, pos.y + 181f, sellPrice.toString(), colour)
-                    }
-                }
-
-                override fun click(button: Int) {
-                    // Clicking the sell box doesn't do anything
-                }
-            }
+            sellButton = SellDropBox.create(game, ConstPoint(-275, 107)) { draggingBlueprint?.blueprint }
             buttons += sellButton!!
         }
 
@@ -506,5 +441,74 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
         src.set(replacing)
 
         ship.cargoUpdated()
+    }
+
+    class SellDropBox private constructor(
+        game: InGameState, pos: IPoint,
+        private val container: WidgetContainer,
+        private val getDrag: () -> Blueprint?,
+    ) :
+        Button(game, pos, container.root.size) {
+
+        override val makesHoverNoise: Boolean get() = false
+
+        private val images: List<ImageView> = container.allWidgets.filterIsInstance(ImageView::class.java)
+
+        private val highlightingLabels: List<Label> = listOf(
+            container.byId["message"] as Label,
+            container.byId["value_label"] as Label,
+            container.byId["price"] as Label,
+        )
+
+        private val price = container.byId["price"] as Label
+
+        override fun draw(g: Graphics) {
+            val normal = game.getImg("img/dropbox_sell_on.png")
+            val hover = game.getImg("img/dropbox_sell_select2.png")
+
+            val draggingBlueprint = getDrag()
+
+            val hoverActive = hovered && draggingBlueprint != null
+            val image = when {
+                hoverActive -> hover
+                else -> normal
+            }
+            for (view in images) {
+                view.image = image
+            }
+
+            val colour = when {
+                hoverActive -> Constants.UI_BUTTON_HOVER
+                else -> Constants.SECTOR_CUTOUT_TEXT
+            }
+            for (label in highlightingLabels) {
+                label.colour = colour
+            }
+
+            if (draggingBlueprint != null) {
+                // You only get half of what you paid for it
+                val sellPrice = (draggingBlueprint.cost ?: 0) / 2
+                price.text = sellPrice.toString()
+            } else {
+                price.text = ""
+            }
+
+            g.pushTransform()
+            g.translate(pos.x.f, pos.y.f)
+            container.draw(g)
+            g.popTransform()
+        }
+
+        override fun click(button: Int) {
+            // Clicking the sell box doesn't do anything
+        }
+
+        companion object {
+            fun create(game: InGameState, pos: IPoint, getDrag: () -> Blueprint?): SellDropBox {
+                val widget: WidgetContainer = game.uiLoader.load("sell_drop_box").mainWidget
+
+                return SellDropBox(game, pos, widget, getDrag)
+            }
+        }
     }
 }

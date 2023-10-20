@@ -11,6 +11,8 @@ class WidgetContainer(val root: Widget) {
 
     val byId: Map<String, Widget>
 
+    val allWidgets: Collection<Widget> get() = sortedWidgets
+
     init {
         fun recurse(widget: Widget) {
             sortedWidgets.add(widget)
