@@ -32,6 +32,11 @@ interface EnergySource {
      */
     val isPerSystem: Boolean get() = false
 
+    /**
+     * True if this power source can't be displaced with ion damage.
+     */
+    val isIonProof: Boolean get() = false
+
     fun adjustShipPower(ship: Ship, power: MutableMap<EnergySource, Int>)
 
     /**

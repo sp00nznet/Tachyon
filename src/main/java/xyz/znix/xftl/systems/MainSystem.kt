@@ -10,6 +10,7 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import kotlin.math.max
 import kotlin.math.min
 
 abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint) {
@@ -67,6 +68,14 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      * to fit in next to the power icon.
      */
     open val insertButtonSpace: Boolean get() = false
+
+    override val effectiveIonPowerLimit: Int?
+        get() {
+            val limit = ionPowerLimit ?: return null
+            val zoltanPower = EnergySource.PER_SYSTEM_TYPES
+                .sumOf { if (it.isIonProof) it.getSystemPower(this) else 0 }
+            return max(zoltanPower, limit)
+        }
 
     init {
         check(!blueprint.info!!.isSubSystem)

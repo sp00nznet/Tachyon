@@ -73,6 +73,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      */
     var ionPowerLimit: Int? = null
 
+    open val effectiveIonPowerLimit: Int? get() = ionPowerLimit
+
     // Note that system cooldowns set the ion timer without adding
     // any ion damage, to lock in the power. Hence we need to check
     // the timer instead of the damage.
@@ -106,7 +108,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
             // If ion damage is applied, we can't increase the amount
             // of power beyond the limit it set.
-            ionPowerLimit?.let { available = min(available, it) }
+            effectiveIonPowerLimit?.let { available = min(available, it) }
 
             return max(available, 0)
         }
