@@ -383,7 +383,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
 
         if (ionDamage > 0 && ship.superShield == 0) {
             ship.shields!!.dealDamage(0, ionDamage)
-            ship.showDamageTextAt(position, ionDamage.toString(), Constants.DAMAGE_COLOUR_ION)
+            ship.showDamageTextAt(position, ionDamage, Constants.DAMAGE_COLOUR_ION)
         } else {
             ship.shields!!.popShieldLayer(type, position)
         }
@@ -420,7 +420,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
             val missSound = type.missSounds?.get() ?: defaultMissSound
             missSound.play()
 
-            target.ship.showDamageTextAt(position, ship.sys.translator["miss"], Colour.white)
+            target.ship.showDamageTextAt(position, "text_miss", Colour.white)
 
             return
         }

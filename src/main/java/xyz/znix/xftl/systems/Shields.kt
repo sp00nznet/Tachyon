@@ -141,7 +141,7 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             ship.superShield -= damage
 
             if (damagePos != null) {
-                ship.showDamageTextAt(damagePos, damage.toString(), Constants.DAMAGE_COLOUR_ZOLTAN)
+                ship.showDamageTextAt(damagePos, damage, Constants.DAMAGE_COLOUR_ZOLTAN)
             }
             return
         }

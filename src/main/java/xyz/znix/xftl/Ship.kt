@@ -30,6 +30,7 @@ import java.util.*
 import java.util.stream.Collectors
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 class Ship(
@@ -583,7 +584,7 @@ class Ship(
 
         // Draw the damage numbers that appear when your ship is hit
         for (num in damageNumbers) {
-            num.draw(g)
+            num.draw()
         }
     }
 
@@ -1016,7 +1017,7 @@ class Ship(
 
         // Don't show a popup for fire bombs etc that don't do damage
         if (damageNumber > 0) {
-            target.showDamageText(damageNumber.toString(), damageColour)
+            target.showDamageText(damageNumber, damageColour)
         }
 
         if (sys.debugFlags.noDmg.set)
@@ -1031,12 +1032,18 @@ class Ship(
      *
      * This doesn't draw the text exactly at said position - it's shown a bit above.
      */
-    fun showDamageTextAt(damagePos: IPoint, text: String, colour: Colour) {
-        val floatingNum = DamageNumber(damagePos.x.f, damagePos.y.f, text, colour)
-        floatingNum.y -= 20f
+    fun showDamageTextAt(damagePos: IPoint, imageName: String, colour: Colour) {
+        val image = sys.getImg("img/numbers/$imageName.png")
+        val floatingNum = DamageNumber(damagePos.x.f, damagePos.y.f, image, colour)
+        floatingNum.y -= 30f
         floatingNum.x += Random.nextInt(-10, 10).f
-        floatingNum.x -= floatingNum.width / 2
         damageNumbers.add(floatingNum)
+    }
+
+    fun showDamageTextAt(damagePos: IPoint, number: Int, colour: Colour) {
+        val clamped = number.coerceIn(0..9)
+        val imageName = "Text_${clamped}_L"
+        showDamageTextAt(damagePos, imageName, colour)
     }
 
     fun crewWeaponDamage(target: Room, damage: Int, weapon: AbstractWeaponBlueprint) {
@@ -1855,20 +1862,13 @@ class Ship(
         }
     }
 
-    inner class DamageNumber(var x: Float, var y: Float, val text: String, val colour: Colour) {
+    inner class DamageNumber(var x: Float, var y: Float, val image: Image, val colour: Colour) {
         var timer: Float = 0f
 
         private val LIFETIME = 1.2f
 
-        private val outerFont = sys.getFont("HL2", 2f)
-        private val innerFont = sys.getFont("HL1", 2f)
-
-        // TODO 5px horizontal rand, 20px up from damage
-
-        val width: Int = outerFont.getWidth(text)
-
-        fun draw(g: Graphics) {
-            outerFont.drawStringPaired(innerFont, x, y, text, Colour.black, colour)
+        fun draw() {
+            image.drawAlignedCentred(x.roundToInt(), y.roundToInt(), colour)
         }
 
         fun update(dt: Float): Boolean {

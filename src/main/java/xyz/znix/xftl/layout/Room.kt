@@ -683,8 +683,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         fireSpreadTimers[slot] = current
     }
 
-    fun showDamageText(text: String, colour: Colour) {
-        ship.showDamageTextAt(pixelCentre, text, colour)
+    fun showDamageText(imageName: String, colour: Colour) {
+        ship.showDamageTextAt(pixelCentre, imageName, colour)
+    }
+
+    fun showDamageText(damage: Int, colour: Colour) {
+        ship.showDamageTextAt(pixelCentre, damage, colour)
     }
 
     /**

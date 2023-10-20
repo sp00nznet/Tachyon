@@ -160,7 +160,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
 
             if (missed) {
-                ship.showDamageTextAt(position, ship.sys.translator["miss"], Colour.white)
+                ship.showDamageTextAt(position, "text_miss", Colour.white)
             }
         }
 
