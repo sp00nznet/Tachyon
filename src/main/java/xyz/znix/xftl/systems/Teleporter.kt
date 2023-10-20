@@ -111,7 +111,14 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (command.room.ship.superShield > 0)
                 return
 
-            var ourCrew = command.room.crew.filter { it.mode == AbstractCrew.SlotType.INTRUDER && it is LivingCrew }
+            var ourCrew = command.room.crew
+                .filterIsInstance<LivingCrew>()
+                .filter { it.mode == AbstractCrew.SlotType.INTRUDER }
+
+            if (!ship.isPlayerShip) {
+                // Don't abduct the player's mind-controlled crew.
+                ourCrew = ourCrew.filterNot { it.ownerShip?.isPlayerShip == true }
+            }
 
             // Limit the crew we can teleport to four (at least on a two-person
             // teleporter, you can't teleport more than four crew, even if
