@@ -5,6 +5,7 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.game.UIUtils
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
@@ -63,6 +64,10 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         lastEnginesOn = enginesOn
+    }
+
+    override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
+        drawManningSkillIcon(x, y, getSkillLevel(Skill.ENGINES))
     }
 
     // Nothing to serialise

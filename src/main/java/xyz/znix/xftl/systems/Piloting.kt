@@ -6,6 +6,7 @@ import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
@@ -57,6 +58,11 @@ class Piloting(blueprint: SystemBlueprint) : SubSystem(blueprint) {
         }
 
         return super.isMannableBy(crew)
+    }
+
+    override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
+        super.drawManningIcon(g, x, y)
+        drawManningSkillIcon(x, y, getSkillLevel(Skill.PILOTING))
     }
 
     // Nothing to serialise

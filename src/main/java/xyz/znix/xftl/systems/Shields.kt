@@ -7,6 +7,7 @@ import xyz.znix.xftl.Translator
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -176,6 +177,10 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             return 6
         }
         return 2
+    }
+
+    override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
+        drawManningSkillIcon(x, y, getSkillLevel(Skill.SHIELDS))
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {

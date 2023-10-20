@@ -391,6 +391,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             statusIconY -= 3
         }
 
+        var showManning = false
+
         if (isHackActive) {
             // When this system is actively being hacked, draw a purple
             // outline around it.
@@ -419,6 +421,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             // If we've got ion damage and a hacking probe connected,
             // the latter is shifted upwards.
             statusIconY -= 21
+        } else {
+            showManning = true
         }
 
         // If this room has a hacking probe attached and turned on - whether
@@ -427,6 +431,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             // Draw the hacking icon at the top
             val lockImg = game.getImg("img/icons/s_hacked.png")
             lockImg.draw(barX + 1f - 9f, statusIconY - 24f)
+            showManning = false
         }
 
         // If the system is being burnt or sabotaged, draw the fist above it
@@ -437,12 +442,34 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             val sabotageIcon = game.getImg("img/icons/s_sabatoge.png") // (sic)
             sabotageIcon.draw(barX - 9, statusIconY - 26)
             statusIconY -= 24
+            showManning = false
         }
 
         if (hasFires) {
             val fireIcon = game.getImg("img/icons/s_fire2.png")
             fireIcon.draw(barX - 9, statusIconY - 24)
+            showManning = false
         }
+
+        // Only draw the manning icon if there isn't another status icon
+        if (showManning) {
+            drawManningIcon(g, barX, statusIconY)
+        }
+    }
+
+    protected open fun drawManningIcon(g: Graphics, x: Int, y: Int) {
+    }
+
+    protected fun drawManningSkillIcon(x: Int, y: Int, level: SkillLevel?) {
+        val iconPath = when (level) {
+            SkillLevel.BASE -> "img/systemUI/manning_white.png"
+            SkillLevel.PARTIAL -> "img/systemUI/manning_green.png"
+            SkillLevel.MAX -> "img/systemUI/manning_yellow.png"
+            null -> "img/systemUI/manning_outline.png"
+        }
+
+        val img = ship.sys.getImg(iconPath)
+        img.draw(x + 1, y + 3 - img.height)
     }
 
     /**

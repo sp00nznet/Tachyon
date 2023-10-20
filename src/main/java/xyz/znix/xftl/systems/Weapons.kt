@@ -259,6 +259,10 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
     }
 
+    override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
+        drawManningSkillIcon(x, y, getSkillLevel(Skill.WEAPONS))
+    }
+
     /**
      * Turns a weapon on or off.
      *
