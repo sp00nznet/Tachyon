@@ -122,6 +122,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             system.damagedEnergyLevels = 0
             system.ionTimer = 0f
             system.ionPowerLimit = null
+            system.powerLimitChanged()
         }
 
         for (room in targetShip.rooms) {

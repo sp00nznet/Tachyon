@@ -22,7 +22,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      * This is simply the sum of all the power in [selectedPowerSources].
      */
     // Note: this is cached since it's used *everywhere*
-    var powerSelected: Int = 1
+    var powerSelected: Int = 0
         private set
 
     /**
@@ -32,6 +32,15 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      */
     var forcedPower: Int = 0
         private set
+
+    /**
+     * The amount of power the player wants the system to have.
+     *
+     * After the system is damaged and repaired, or when an ion wears off, this
+     * is what's used to determine whether to increase the system's power.
+     */
+    // TODO implement for weapons and drones
+    var targetPower: Int = 0
 
     /**
      * The power this system is supplied with, broken down by where it's coming from.
@@ -164,23 +173,55 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
     }
 
     override fun powerLimitChanged() {
-        // This ultimately calls consumePower, which will reduce our selected
-        // power if there isn't enough, in turn calling powerStateChanged.
-        ship.updateAvailablePower()
+        if (undamagedEnergy < powerSelected) {
+            // This ultimately calls consumePower, which will reduce our selected
+            // power if there isn't enough, in turn calling powerStateChanged.
+            ship.updateAvailablePower()
+        }
+
+        if (powerSelected < targetPower && powerSelected < undamagedEnergy) {
+            // We've been repaired (or the ion wore off), try and return to
+            // our original power level.
+            val systemRequested = min(targetPower, undamagedEnergy)
+            val nextValue = min(powerAvailable, systemRequested)
+            if (!setSystemPower(nextValue) || nextValue < systemRequested) {
+                // We didn't have enough reactor power to restore this level.
+                // TODO show a not-enough-power warning here.
+                targetPower = powerSelected
+            }
+        }
     }
 
+    /**
+     * Increase this system's consumed power.
+     *
+     * This remembers the power value, which is set as the player's selected
+     * target value to be restored after the system is damaged and repaired,
+     * so it shouldn't be called without the player's input.
+     */
     open fun increasePower() {
         if (isPowerLocked)
             return
 
         setSystemPower(powerSelected + 1)
+
+        targetPower = powerSelected
     }
 
+    /**
+     * Increase this system's consumed power.
+     *
+     * This remembers the power value, which is set as the player's selected
+     * target value to be restored after the system is damaged and repaired,
+     * so it shouldn't be called without the player's input.
+     */
     open fun decreasePower() {
         if (isPowerLocked)
             return
 
         setSystemPower(powerSelected - 1)
+
+        targetPower = powerSelected
     }
 
     /**

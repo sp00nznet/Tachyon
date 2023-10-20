@@ -164,6 +164,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             if (ionTimer <= 0) {
                 ionPowerLimit = null
                 ionTimer = 0f
+                powerLimitChanged()
             }
         }
 
@@ -270,6 +271,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         repairProgress = 0f
 
         damagedEnergyLevels--
+        powerLimitChanged()
 
         return true
     }

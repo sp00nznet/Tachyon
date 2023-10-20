@@ -161,6 +161,7 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             return
 
         setSystemPower(selectedShieldBars * 2 + 2)
+        targetPower = powerSelected
     }
 
     override fun decreasePower() {
@@ -169,6 +170,7 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // Clamp the power at 0, in case we have an odd number of power bars.
         setSystemPower((selectedShieldBars * 2 - 2).coerceAtLeast(0))
+        targetPower = powerSelected
     }
 
     override fun getPowerBarSpacing(powerLevel: Int): Int {
