@@ -137,8 +137,15 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
     open val hasWhiteLockingBox: Boolean get() = false
 
     open fun update(dt: Float) {
-        if (!damaged || room?.crew?.none { it.mode == AbstractCrew.SlotType.CREW } == true)
+        if (!damaged) {
             repairProgress = 0f
+        } else if (ship.isAutoScout && room!!.breaches.all { it == null }) {
+            // 8% per second is the human speed, it's 1/3 of that for the auto repair
+            repair(0.08f / 3 * dt)
+        } else if (room?.crew?.none { it.mode == AbstractCrew.SlotType.CREW } == true) {
+            // No-one is in the room
+            repairProgress = 0f
+        }
 
         // Damage is shared between fires and boarders, we can undo it
         // if there's neither of them here.
