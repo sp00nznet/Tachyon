@@ -76,10 +76,14 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         }
 
     /**
-     * The amount of health this has. Boarders attack it, once it goes
-     * to zero the door is stuck open for a few seconds.
+     * The amount of damage this door has taken. Once this is equal to
+     * [maxHealth], the door is stuck open for a few seconds.
+     *
+     * Storing damage is better than storing health, because if the doors
+     * are upgraded or damaged then the change applies to the doors
+     * immediately, rather than when the door health is next reset.
      */
-    var health: Int = maxHealth
+    var damage: Int = 0
         private set
 
     // When a door is broken by intruders, it's locked open for a few seconds.
@@ -300,19 +304,19 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
     }
 
     fun attackDoor() {
-        health = (health - 1).coerceAtLeast(0)
+        damage++
 
         // When we're broken, start a timer that keeps the doors
         // open until it's elapsed.
-        if (health == 0) {
+        if (damage >= maxHealth) {
             open = true
-            health = maxHealth
+            damage = 0
             brokenOpenTimer = 7f
         }
     }
 
     fun resetHealth() {
-        health = maxHealth
+        damage = 0
     }
 
     fun saveToXML(): Element? {
@@ -320,27 +324,26 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         // isn't a blank element in the savefile.
         // Note that whether the door is open or closed is serialised separately.
 
-        if (health == maxHealth && brokenOpenTimer == null) {
+        if (damage == 0 && brokenOpenTimer == null) {
             return null
         }
 
         val elem = Element("door")
 
-        SaveUtil.addAttrInt(elem, "health", health)
+        SaveUtil.addAttrInt(elem, "damage", damage)
         SaveUtil.addAttrFloat(elem, "brokenOpen", brokenOpenTimer)
 
         return elem
     }
 
     fun loadFromXML(elem: Element) {
-        health = SaveUtil.getAttrInt(elem, "health")
+        damage = SaveUtil.getAttrInt(elem, "damage")
         brokenOpenTimer = SaveUtil.getAttrFloatOrNull(elem, "brokenOpen")
     }
 
     // Called if we returned null from saveToXML.
     fun loadWithoutXML() {
-        // Note that maxHealth may have changed since we were constructed.
-        health = maxHealth
+        damage = 0
         brokenOpenTimer = null
     }
 
