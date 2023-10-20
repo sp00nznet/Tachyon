@@ -406,7 +406,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                 override val blueprint: Blueprint? get() = crew?.race
                 override val price: Int get() = crew!!.race.cost
 
-                // TODO block buying more than 8 crew
+                override val customDisabled: Boolean = game.isPlayerCrewFull
 
                 override fun buy() {
                     store.crew[index] = null
