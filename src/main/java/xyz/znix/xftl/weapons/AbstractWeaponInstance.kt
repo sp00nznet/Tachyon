@@ -192,10 +192,10 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 }
 
 /**
- * Represents a weapon that can be fired at a single room. Includes basically everything but beams.
+ * Represents a weapon that can be fired at individual rooms. Includes basically everything but beams.
  */
 interface IRoomTargetingWeapon {
-    fun fire(target: Room)
+    fun fire(targetSource: () -> Room)
 
     fun fireFromDrone(drone: CombatDrone, target: Room)
 

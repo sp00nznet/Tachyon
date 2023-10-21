@@ -100,14 +100,24 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
             when (weapon) {
                 is IRoomTargetingWeapon -> {
-                    weapon.fire(pickTarget())
+                    val remainingRooms = ArrayList(player.rooms)
+                    weapon.fire { pickTarget(remainingRooms) }
                 }
             }
         }
     }
 
-    private fun pickTarget(): Room {
-        return player.rooms[(Math.random() * player.rooms.size).toInt()]
+    private fun pickTarget(remainingRooms: ArrayList<Room>): Room {
+        // If we run out of rooms, start over
+        if (remainingRooms.isEmpty()) {
+            remainingRooms.addAll(player.rooms)
+        }
+
+        // Enemies shoot at different targets with each shot
+        // TODO hard-mode targeting
+        val room = remainingRooms.random()
+        remainingRooms.remove(room)
+        return room
     }
 
     private fun updateHacking() {

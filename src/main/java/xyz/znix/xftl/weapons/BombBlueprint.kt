@@ -80,9 +80,9 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             target.ship.projectiles += makeBomb(target, missed, hitSuperShield)
         }
 
-        override fun fire(target: Room) {
+        override fun fire(targetSource: () -> Room) {
             fire()
-            this.target = target
+            this.target = targetSource()
 
             type.launchSounds?.get()?.play()
         }

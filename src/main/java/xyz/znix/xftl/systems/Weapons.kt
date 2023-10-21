@@ -383,7 +383,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
                 when (tgt) {
                     is SelectedTarget.BeamAim -> tgt.beamWeapon.fire(tgt)
-                    is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire(tgt.room)
+                    is SelectedTarget.RoomAim -> tgt.roomTargetingWeapon.fire { tgt.room }
                 }
 
                 this@Weapons.onWeaponFired()

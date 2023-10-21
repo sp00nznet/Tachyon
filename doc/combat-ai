@@ -18,8 +18,8 @@ goalChargeLevel, then this weapon is skipped.
 
 If the weapon is fully charged (or always for a non-charge weapon), the weapon
 is now fired:
-* Pick the number of target rooms - 1 for charge weapons, the number of shots
-  for any other weapons.
+* Pick the number of target rooms - this is one for each projectile that will
+  be fired, properly accounting for the variable number that charge weapons fire.
 * For each shot, call PrioritizeSystem to pick a system to fire at, or chose a
   random room if it returns null.
 * Call ProjectileFactory::Fire to queue up shots at the selected rooms.

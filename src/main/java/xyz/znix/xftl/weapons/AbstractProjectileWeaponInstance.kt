@@ -17,7 +17,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
 
     // The list of all the rooms to fire at. This is required since artillery
-    // weapons fire at different rooms for each shot.
+    // weapons and all enemy-fired weapons aim at different rooms for each shot.
     protected val targets = ArrayList<Room>()
 
     // This isn't derived from the targets list, since after we fire our last
@@ -151,11 +151,11 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         ship.projectiles += projectile
     }
 
-    override fun fire(target: Room) {
+    override fun fire(targetSource: () -> Room) {
         check(!isFiring) { "Cannot file while already firing!" }
 
         for (i in 0 until totalReadyCharges * type.shots) {
-            targets.add(target)
+            targets.add(targetSource())
         }
 
         // Store the current chain count, in case we need it for the ion charger.
