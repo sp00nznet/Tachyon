@@ -32,21 +32,24 @@ class Translator(df: Datafile, lang: String) {
 
     private fun parseFile(filename: String, df: Datafile, tl: HashMap<String, String>) {
         val doc = df.parseXML(df[filename])
-        parseDoc(doc, tl)
+        parseDoc(filename, doc, tl)
     }
 
     private fun parseEmbedded(path: String, tl: HashMap<String, String>) {
-        @Suppress("VulnerableCodeUsages") // we set expandEntities
         val builder = SAXBuilder()
         builder.expandEntities = false
         val doc = builder.build(javaClass.classLoader.getResourceAsStream(path)!!)
 
-        parseDoc(doc, tl)
+        parseDoc(path, doc, tl)
     }
 
-    private fun parseDoc(doc: Document, tl: HashMap<String, String>) {
+    private fun parseDoc(fileName: String, doc: Document, tl: HashMap<String, String>) {
         for (elem in doc.rootElement.children) {
-            check(elem.name == "text")
+            if (elem.name != "text") {
+                println("[WARN] Found invalid element '${elem.name}' in translation file '$fileName'")
+                continue
+            }
+
             tl[elem.getAttributeValue("name")] = elem.textTrim.replace("\\n", "\n")
         }
     }
