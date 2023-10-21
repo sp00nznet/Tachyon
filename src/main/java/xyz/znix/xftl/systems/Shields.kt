@@ -181,6 +181,18 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         return 2
     }
 
+    override fun dealDamage(damage: Int, ionDamage: Int) {
+        super.dealDamage(damage, ionDamage)
+
+        // If the player shoots a beam from shields to another room, the shields
+        // should go down immediately. We can't afford to wait for the next
+        // update, in case the frame-time is too high as the user could hit
+        // another room on the same frame.
+        if (activeShields > selectedShieldBars) {
+            activeShields = selectedShieldBars
+        }
+    }
+
     override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
         drawManningSkillIcon(x, y, getSkillLevel(Skill.SHIELDS))
     }
