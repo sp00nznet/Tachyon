@@ -386,6 +386,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         targetingSelectedWeapon = id
         selectWeaponClickEvent = RoomClickListener { room, gc ->
+            // Prevent the player from shooting at the enemy ship once
+            // their crew is dead.
+            if (room.ship != ship && room.ship != game.getEnemyOf(ship)) {
+                return@RoomClickListener
+            }
+
             if (room.ship == ship && !weapon.canTargetOwnShip) {
                 return@RoomClickListener
             }
