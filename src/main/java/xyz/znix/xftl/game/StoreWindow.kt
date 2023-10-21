@@ -339,16 +339,18 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         if (!updatingBuyButtons)
             return
 
-        val images = ButtonImageSet(
-            game.getImg("img/storeUI/store_systems_on.png"),
-            // The sold-out image still has the cutout for the system icon, so
-            // use the sold-out weapon image instead.
-            game.getImg("img/storeUI/store_weapons_off.png"),
-            game.getImg("img/storeUI/store_systems_select2.png")
-        )
-
         for (i in 0 until 3) {
             val system = store.systems.getOrNull(i)
+            val isSubSystem = system?.info?.isSubSystem == true
+
+            val images = when {
+                // The disabled image still has the cutout for the system icon, so
+                // use the sold-out weapon image instead.
+                system == null -> ButtonImageSet.static(game, "img/storeUI/store_weapons_off.png")
+
+                isSubSystem -> ButtonImageSet.select2(game, "img/storeUI/store_subsystems")
+                else -> ButtonImageSet.select2(game, "img/storeUI/store_systems")
+            }
 
             val systemSlot = ship.systemSlots.firstOrNull { it.system == system }
             val buttonPos = pos + ConstPoint(5, 17 + i * 53)
@@ -366,7 +368,7 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
                         // Stop the user from installing more than eight systems, unless
                         // this replaces an existing system (clonebay/medbay).
                         val numSystems = ship.mainSystems.size
-                        if (numSystems >= 8 && systemSlot.room.system == null && system?.info?.isSubSystem != true)
+                        if (numSystems >= 8 && systemSlot.room.system == null && isSubSystem != true)
                             return true
 
                         // Stop the user from installing the same system twice

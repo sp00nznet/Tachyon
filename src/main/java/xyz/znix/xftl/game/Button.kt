@@ -141,6 +141,11 @@ data class ButtonImageSet(val normal: Image, val off: Image, val hover: Image, v
                 offHover = game.getImg("${prefix}_off_selected.png")
             return ButtonImageSet(normal, off, hover, offHover)
         }
+
+        fun static(game: InGameState, path: String): ButtonImageSet {
+            val image = game.getImg(path)
+            return ButtonImageSet(image, image, image)
+        }
     }
 }
 
