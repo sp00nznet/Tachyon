@@ -64,6 +64,11 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
     private val boostAnim = animation.boostAnim?.startSingle(ship.sys)
 
+    /**
+     * True if the player can fire this weapon at their own ship, eg for bombs.
+     */
+    open val canTargetOwnShip: Boolean get() = false
+
     val chargeTime: Float
         get() {
             if (type.boost?.type != AbstractWeaponBlueprint.BoostType.COOLDOWN)

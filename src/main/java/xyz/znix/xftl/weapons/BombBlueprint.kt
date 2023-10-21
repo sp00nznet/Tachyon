@@ -34,6 +34,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         private var hasFired = false
 
         override val isFiring: Boolean get() = target != null
+        override val canTargetOwnShip: Boolean get() = true
 
         private val fireAnimationFrame: Int
             get() {

@@ -386,6 +386,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         targetingSelectedWeapon = id
         selectWeaponClickEvent = RoomClickListener { room, gc ->
+            if (room.ship == ship && !weapon.canTargetOwnShip) {
+                return@RoomClickListener
+            }
+
             if (weapon is IRoomTargetingWeapon) {
                 targets.targetRoom(id, room)
             } else if (weapon is BeamBlueprint.BeamInstance) {
