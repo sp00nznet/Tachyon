@@ -22,6 +22,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     val radius: Int = xml.getChildTextTrim("radius").toInt()
 
     private val projectileSpecs: List<ProjectileSpec>
+    val projectileCount: Int
 
     init {
         projectileSpecs = ArrayList()
@@ -33,6 +34,8 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 proj.getAttributeValue("fake")!!.toBoolean()
             )
         }
+
+        projectileCount = projectileSpecs.filter { !it.fake }.sumOf { it.count }
     }
 
     override fun buildInstance(ship: Ship): AbstractWeaponInstance = FlakInstance(ship)

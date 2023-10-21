@@ -10,10 +10,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.SystemBlueprint
-import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
-import xyz.znix.xftl.weapons.BeamBlueprint
-import xyz.znix.xftl.weapons.DroneBlueprint
-import xyz.znix.xftl.weapons.LaserBlueprint
+import xyz.znix.xftl.weapons.*
 import kotlin.math.max
 
 // TODO vertically offset all the non-system boxes correctly
@@ -65,7 +62,9 @@ class InfoPanel(private val game: InGameState) {
         if (blueprint.missilesUsed > 0) {
             lines += game.translator["requires_missiles"]
         }
-        if (blueprint.shots != 1 || blueprint is LaserBlueprint) {
+        if (blueprint is FlakBlueprint) {
+            lines += game.translator["shots"].replace("\\1", blueprint.projectileCount.toString())
+        } else if (blueprint.shots != 1 || blueprint is LaserBlueprint) {
             lines += game.translator["shots"].replace("\\1", blueprint.shots.toString())
         }
         if (blueprint.chargeLevels != null) {
