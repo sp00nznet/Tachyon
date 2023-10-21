@@ -16,10 +16,26 @@ import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 class ShipAI(val ship: Ship, val player: Ship) {
     private val fireAtChargeLevel = HashMap<AbstractWeaponInstance, Int>()
 
+    private var hadFirstUpdate = false
+
     fun update(dt: Float) {
         // If the ship is dying, don't do anything.
         if (ship.isDead)
             return
+
+        if (!hadFirstUpdate) {
+            hadFirstUpdate = true
+
+            // Immediately turn the ship's shields on, so the player can't get a sneaky shot in
+            // FIXME do this properly
+            val shields = ship.shields
+            if (shields != null) {
+                for (i in 1..shields.energyLevels) {
+                    shields.increasePower()
+                    shields.update(10f) // Horrible hack
+                }
+            }
+        }
 
         // Power up all the systems
         for (sys in ship.mainSystems) {
