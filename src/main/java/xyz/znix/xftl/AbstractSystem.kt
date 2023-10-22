@@ -36,7 +36,11 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
     protected val ship: Ship get() = room!!.ship
 
+    /**
+     * The number of purchased power bars.
+     */
     var energyLevels: Int = 1
+
     var damagedEnergyLevels: Int = 0
     val damaged: Boolean get() = damagedEnergyLevels > 0
     val broken: Boolean get() = damagedEnergyLevels >= energyLevels

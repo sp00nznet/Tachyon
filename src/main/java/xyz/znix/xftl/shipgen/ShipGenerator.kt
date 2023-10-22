@@ -157,6 +157,14 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             subtractPower(category, basePowerUse)
         }
 
+        // Make sure each system has at least one power
+        // This is a fix for the auto-assault ship which has 0 minimum weapons power
+        for (system in ship.systems) {
+            if (system.energyLevels == 0) {
+                system.energyLevels = 1
+            }
+        }
+
         // Find a soft cap for how much power each system can have
         // This can be exceeded by scripted weapons and drones
         val softCaps = HashMap<AbstractSystem, Int>()
