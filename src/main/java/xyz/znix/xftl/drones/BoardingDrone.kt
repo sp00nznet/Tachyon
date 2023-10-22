@@ -177,7 +177,17 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         // if I got some addresses swapped.
         // Note it has a 16x multiplier, to convert it from pixels per
         // SpeedFactor to pixels per second. See doc/reveng-general.md.
-        override val speed: Int get() = 18 * 16
+        override val speed: Int
+            get() = when {
+                // Pause when the drone is powered off
+                !isPowered -> 0
+
+                // Pause when the target is cloaked
+                target.ship.isCloakActive -> 0
+
+                // Regular speed
+                else -> 18 * 16
+            }
 
         override var drawUnderShip: Boolean = true
 
