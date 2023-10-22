@@ -26,12 +26,15 @@ class Engines(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             return base + bonus
         }
 
+    /**
+     * The charge rate of the engines, relative to level 1 engines.
+     */
     val chargeRate: Float
         get() {
             if (powerSelected == 0)
                 return 0f
 
-            // TODO manning bonus
+            // TODO manning bonus of 1.1, 1.17 and 1.25 times for different skill levels
             return CHARGE_RATES[powerSelected - 1]
         }
 

@@ -790,8 +790,18 @@ class Ship(
 
         updateCrew(dt)
 
+        // This FTL charge logic is for the player; enemies have a completely
+        // separate charge time stored in ShipAI.
         if (canChargeFTL) {
-            ftlChargeProgress += (engines?.chargeRate ?: 0f) * dt / 68f
+            var rate = engines?.chargeRate ?: 0f
+
+            // When you're in a dangerous environment without an enemy,
+            // the charge speed is boosted.
+            if (sys.getEnemyOf(this) == null) {
+                rate *= 3
+            }
+
+            ftlChargeProgress += rate * dt / 68f
         }
         if (ftlChargeProgress > 1f) {
             ftlChargeProgress = 1f
