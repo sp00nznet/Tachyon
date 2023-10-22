@@ -109,15 +109,21 @@ public class InGameState extends MainGame.GameState {
 
         gameMap = new GameMap(df, eventManager, enableAdvancedEdition, Random.Default);
 
-        createNewPlayerShip(playerShipName, customised);
-        shipUI = new PlayerShipUI(player, this);
-
         // Start at the first beacon of the first sector
         // Be sure we do this after creating the player ship, it's used by the enemy AI
         // Note that we don't store the current sector anywhere - it's determined via
         // the current beacon.
         Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0), difficulty);
         setCurrentBeacon(firstSector.getStartBeacon());
+
+        // Do this after setting the initial beacon, since the ship reads the current
+        // beacon when calculating its power values.
+        createNewPlayerShip(playerShipName, customised);
+        shipUI = new PlayerShipUI(player, this);
+
+        // Show the starting beacon dialogue, since it wasn't displayed earlier
+        // due to shipUI not existing yet.
+        shipUI.showEventDialogue(currentBeacon.getEvent());
     }
 
     /**
@@ -258,6 +264,28 @@ public class InGameState extends MainGame.GameState {
                 LivingCrewInfo info = LivingCrewInfo.generateRandom(race, this);
                 player.addCrewMember(info, true, false);
             }
+        }
+
+        // Set the default power levels. Don't turn on weapons or drones, both
+        // to avoid running out of power for other stuff, and to avoid wasting
+        // drone parts.
+        player.updateAvailablePower();
+        for (MainSystem system : player.getMainSystems()) {
+            if (system instanceof Weapons || system instanceof Drones)
+                continue;
+
+            for (int i = 0; i < system.getBlueprint().getMaxPower(); i++) {
+                system.increasePower();
+            }
+        }
+
+        // Properly calculate the evasion chance, so it shows properly while
+        // paused in the start-of-game event, and to charge up the shield in
+        // that same time.
+        // Call it repeatedly to charge up the level-2 starting shields
+        // on Mantis B. This is a bit hacky, but it's fine for now.
+        for (int i = 0; i < 5; i++) {
+            player.update(10f);
         }
     }
 
@@ -616,12 +644,15 @@ public class InGameState extends MainGame.GameState {
         setEnemyIsHostile(true);
         setEnemy(currentBeacon.getShip());
 
-        // Make the store button appear and disappear.
-        shipUI.updateButtons();
+        // This is called for the first beacon before the player is created.
+        if (player != null) {
+            // Make the store button appear and disappear.
+            shipUI.updateButtons();
 
-        player.resetAfterJump();
-        if (currentBeacon.getState() == Beacon.State.UNVISITED) {
-            shipUI.showEventDialogue(currentBeacon.getEvent());
+            player.resetAfterJump();
+            if (currentBeacon.getState() == Beacon.State.UNVISITED) {
+                shipUI.showEventDialogue(currentBeacon.getEvent());
+            }
         }
 
         // Spawn in a new rebel elite every jump for overtaken beacons
@@ -787,9 +818,9 @@ public class InGameState extends MainGame.GameState {
 
         // Update the drones system, as drones may need to disappear
         // when the enemy ship is changed.
-        Drones playerDrones = player.getDrones();
-        if (playerDrones != null) {
-            playerDrones.enemyShipUpdated();
+        // Note the player won't be set by now, in the case of the first beacon.
+        if (player != null && player.getDrones() != null) {
+            player.getDrones().enemyShipUpdated();
         }
     }
 

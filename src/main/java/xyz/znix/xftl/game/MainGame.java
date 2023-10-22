@@ -80,9 +80,17 @@ public class MainGame implements Game {
 
     @Override
     public void shutdown() {
-        currentState.shutdown();
+        // The state and content might be null if there was an exception during
+        // initialisation, as this will be run in a finally block.
+        // If we throw an exception here, it'll hide the original one that
+        // caused the crash in the first place.
+        if (currentState != null) {
+            currentState.shutdown();
+        }
 
-        content.freeResources();
+        if (content != null) {
+            content.freeResources();
+        }
     }
 
     public void switchToShipSelect() {
