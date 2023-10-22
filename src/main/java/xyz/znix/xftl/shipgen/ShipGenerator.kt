@@ -262,8 +262,11 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         var hasHullDamageWeapon = false
         var hasLaserLikeWeapon = false
         while (true) {
+            // The under-construction flagship and zoltan peace envoy don't have any weapons.
+            val weaponSystem = ship.weapons ?: break
+
             val usedPower = ship.hardpoints.sumBy { it.weapon?.type?.power ?: 0 }
-            val remainingPower = ship.weapons!!.energyLevels - usedPower
+            val remainingPower = weaponSystem.energyLevels - usedPower
 
             // Ran out of power?
             if (remainingPower <= 0)
@@ -323,7 +326,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             if (suitable.isEmpty()) {
                 println("Warning: wasn't able to find any more suitable weapons for ship '${ship.name}'")
                 println("  Current weapons: " + ship.hardpoints.mapNotNull { it.weapon })
-                println("  Weapon system power: ${ship.weapons!!.energyLevels}")
+                println("  Weapon system power: ${weaponSystem.energyLevels}")
                 break
             }
 
@@ -439,8 +442,10 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
         val startPower = system.energyLevels
 
-        // It's only the flagship that lacks a maximum power, and it's not handled by the ship generator.
-        val maxPower = system.configuration.spec.aiMaxPower!!
+        // In vanilla it's only the flagship and under-construction flagship
+        // that lack a maximum power, and the former is not handled by the ship generator.
+        // If this is missing, use the system's maximum power.
+        val maxPower = system.configuration.spec.aiMaxPower ?: system.blueprint.maxPower
 
         // Lerp between the min and max power
         val numSectors = 8
