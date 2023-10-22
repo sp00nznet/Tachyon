@@ -402,14 +402,15 @@ public class InGameState extends MainGame.GameState {
         if (in.isKeyPressed(Input.KEY_SPACE))
             paused = !paused;
 
+        boolean shiftPressed = in.isKeyDown(Input.KEY_LSHIFT);
         if (in.isKeyPressed(Input.KEY_1))
-            shipUI.weaponHotkeyPressed(0);
+            shipUI.weaponHotkeyPressed(0, shiftPressed);
         if (in.isKeyPressed(Input.KEY_2))
-            shipUI.weaponHotkeyPressed(1);
+            shipUI.weaponHotkeyPressed(1, shiftPressed);
         if (in.isKeyPressed(Input.KEY_3))
-            shipUI.weaponHotkeyPressed(2);
+            shipUI.weaponHotkeyPressed(2, shiftPressed);
         if (in.isKeyPressed(Input.KEY_4))
-            shipUI.weaponHotkeyPressed(3);
+            shipUI.weaponHotkeyPressed(3, shiftPressed);
 
         if (in.isKeyPressed(Input.KEY_ESCAPE))
             shipUI.escapePressed();

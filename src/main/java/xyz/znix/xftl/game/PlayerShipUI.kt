@@ -352,7 +352,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
-    fun weaponHotkeyPressed(id: Int) {
+    fun weaponHotkeyPressed(id: Int, shiftPressed: Boolean) {
         if (pauseWindow != null) return
 
         // Temporary hack to make the option hotkeys work
@@ -371,6 +371,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         beamTargeting = null
 
         val weapon = ship.hardpoints[id].weapon ?: return
+
+        if (shiftPressed) {
+            // Holding shift turns a weapon off
+            if (weapon.isPowered && ship.weapons!!.setWeaponPower(weapon, false)) {
+                powerDownSound.play()
+            }
+            return
+        }
 
         if (!weapon.isPowered) {
             if (ship.weapons!!.setWeaponPower(weapon, true)) {
@@ -676,13 +684,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 override val droneCooldownProgress: Float? get() = null
 
                 override fun click(button: Int) {
-                    if (button == Input.MOUSE_LEFT_BUTTON) {
-                        weaponHotkeyPressed(i)
-                    }
-                    if (weapon != null && weapon.isPowered && button == Input.MOUSE_RIGHT_BUTTON) {
-                        if (ship.weapons!!.setWeaponPower(weapon, false)) {
-                            powerDownSound.play()
-                        }
+                    when (button) {
+                        Input.MOUSE_LEFT_BUTTON -> weaponHotkeyPressed(i, false)
+                        Input.MOUSE_RIGHT_BUTTON -> weaponHotkeyPressed(i, true)
                     }
                 }
 
