@@ -106,5 +106,12 @@ val fatJar by tasks.registering(Jar::class) {
     // Use our sources first, so we can replace Slick classes
     from(sourceSets.main.get().output)
 
-    from(configurations.runtimeClasspath.get().map { zipTree(it) })
+    from(configurations.runtimeClasspath.get().map { file ->
+        // Exclude signature files, since if the jar is signed
+        // we have to do the whole thing at once.
+        zipTree(file).matching {
+            exclude("META-INF/*.SF")
+            exclude("META-INF/*.RSA")
+        }
+    })
 }
