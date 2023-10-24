@@ -112,8 +112,8 @@ class EventManager(val df: Datafile, private val translator: Translator, private
             "NEBULA_REBEL" -> return !eventList
         }
 
-        check(!this.events.containsKey(name))
-
+        // If an event is duplicated, the latter one overwrites the former.
+        // This is widely used by mods, as they append a modified copy of an event.
         return true
     }
 
@@ -159,8 +159,13 @@ class EventManager(val df: Datafile, private val translator: Translator, private
 
         // Build a mapping of the events by their deserialisation ID, which
         // we'll use to pick out events when the game is being loaded.
-        if (byDeserialisationId.containsKey(serialId)) {
-            error("Event deserialisation ID '$serialId' is not unique!")
+        // Mods can overwrite events, so we may need to add a number to make
+        // this name unique.
+        var uniqueId = serialId
+        var suffix = 0
+        while (byDeserialisationId.containsKey(uniqueId)) {
+            uniqueId = "$serialId-$suffix"
+            suffix++
         }
         byDeserialisationId[serialId] = event
 

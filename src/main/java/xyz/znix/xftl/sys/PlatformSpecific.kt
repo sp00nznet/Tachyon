@@ -17,6 +17,7 @@ sealed interface PlatformSpecific {
     val saveGamePath: Path
 
     val saveProfilePath: Path get() = saveGamePath.resolve(SaveProfile.PROFILE_NAME)
+    val modsDirectory: Path get() = saveGamePath.resolve("mods")
 
     companion object {
         @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")

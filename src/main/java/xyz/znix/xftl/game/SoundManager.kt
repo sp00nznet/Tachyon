@@ -9,6 +9,7 @@ import org.newdawn.slick.openal.WaveData
 import xyz.znix.xftl.Datafile
 import xyz.znix.xftl.FTLFile
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.VanillaDatafile
 import xyz.znix.xftl.sys.INativeResource
 import xyz.znix.xftl.sys.OpenALStreamPlayer
 import xyz.znix.xftl.sys.ResourceContext
@@ -623,14 +624,15 @@ class MusicSpec(elem: Element) {
     val combat: String = elem.getChildTextTrim("combat")?.let { "audio/music/$it" } ?: explore
 }
 
-private class VorbisInputStream(df: Datafile, val file: FTLFile) : VorbisFile.SeekableInputStream() {
+private class VorbisInputStream(df: Datafile, file: FTLFile) : VorbisFile.SeekableInputStream() {
     /**
      * To avoid loading the whole track into memory (which is quite unnecessary),
      * we open the raw FTL database.
      *
      * TODO this will need special-casing for mods.
      */
-    private val fi: RandomAccessFile = RandomAccessFile(df.underlyingFile, "r")
+    private val fi: RandomAccessFile = RandomAccessFile(df.vanilla.underlyingFile, "r")
+    private val file: VanillaDatafile.Entry = df.vanilla[file.name]
 
     init {
         // Without this, we start before the OGG file's position in the DAT file.

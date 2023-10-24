@@ -2,6 +2,8 @@ package xyz.znix.xftl
 
 import org.jdom2.Document
 import org.jdom2.input.SAXBuilder
+import xyz.znix.xftl.modding.SlipstreamMod
+import xyz.znix.xftl.modding.SlipstreamPatcher
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
 import xyz.znix.xftl.sys.ResourceContext
@@ -10,10 +12,14 @@ import java.io.*
 const val HEADER_SIZE = 16
 const val ENTRY_SIZE = 20
 
-class Datafile @Throws(FileNotFoundException::class)
-constructor(val underlyingFile: File) {
-
-    private val files: MutableMap<Int, FTLFile> = HashMap()
+/**
+ * Represents a vanilla FTL .dat file, without any mods applied.
+ *
+ * [Datafile] acts as a layer over the top of this, applying changes from
+ * [SlipstreamPatcher] and any other mod sources we might later have.
+ */
+class VanillaDatafile(val underlyingFile: File) {
+    private val files: MutableMap<String, Entry> = HashMap()
     private val fi: RandomAccessFile = RandomAccessFile(underlyingFile, "r")
 
     init {
@@ -35,7 +41,7 @@ constructor(val underlyingFile: File) {
         val namesStart = entriesStart + fileCount * ENTRY_SIZE
 
         for (i in 1..fileCount) {
-            val hash = fi.readInt()
+            fi.readInt() // The file name hash
 
             val flags = readByte(fi)
 
@@ -54,19 +60,10 @@ constructor(val underlyingFile: File) {
 
             check(compressedSize == decompressedSize) { "Compressed and uncompressed file sizes do not match" }
 
-            val file = FTLFile(name, offset, decompressedSize)
-            files[hash] = file
-            check(hash == file.hash)
+            files[name] = Entry(name, offset, decompressedSize)
 
             check(fi.filePointer == entriesStart + i * ENTRY_SIZE)
         }
-
-        // for(pair in files)
-        //     System.out.println(pair.value.name)
-
-        // val mantis = this["data/mantis_scout.xml"]
-        // val mantis = this["data/kestral.txt"]
-        // System.out.println(String(read(mantis)))
     }
 
     private fun readStringNulTerm(fi: RandomAccessFile): String {
@@ -102,22 +99,62 @@ constructor(val underlyingFile: File) {
         }
     }
 
-    operator fun get(name: String): FTLFile =
-        files[Hash.hash(name)] ?: throw IllegalArgumentException("No such file '$name'")
+    operator fun get(name: String): Entry =
+        files[name] ?: throw IllegalArgumentException("No such file '$name'")
 
-    fun getOrNull(name: String): FTLFile? = files[Hash.hash(name)]
-
-    fun read(file: FTLFile): ByteArray {
+    fun read(file: Entry): ByteArray {
         fi.seek(file.offset.toLong())
         val bytes = ByteArray(file.length)
         fi.read(bytes)
         return bytes
     }
 
-    fun readString(file: FTLFile) = String(read(file), Charsets.UTF_8)
+    fun getAllFiles(): List<Entry> {
+        return files.values.toList()
+    }
+
+    class Entry(val name: String, val offset: Int, val length: Int)
+
+    companion object {
+        @JvmStatic
+        fun createWithDefaultPath(): VanillaDatafile {
+            var path: String? = System.getProperty("xftl.datafile-path")
+            if (path == null) {
+                path = System.getenv("XFTL_DATAFILE")
+            }
+            if (path == null) {
+                error("Datafile path not set!")
+            }
+            return VanillaDatafile(File(path))
+        }
+    }
+}
+
+class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>) {
+    // TODO handle closing this, to close the zip files
+    private val patcher = SlipstreamPatcher(vanilla)
+    private val files: Map<String, FTLFile>
+
+    init {
+        patcher.patch(slipstreamMods)
+        files = patcher.files.keys.map { FTLFile(it) }.associateBy { it.name }
+    }
+
+    operator fun get(name: String): FTLFile =
+        files[name] ?: throw IllegalArgumentException("No such file '$name'")
+
+    fun getOrNull(name: String): FTLFile? = files[name]
+
+    fun read(file: FTLFile): ByteArray {
+        return patcher.files[file.name]!!.open().use { it.readAllBytes() }
+    }
+
+    fun readString(file: FTLFile): String {
+        // The vanilla files use LF endings, but mods might introduce CRLF endings too.
+        return String(read(file), Charsets.UTF_8).replace("\r\n", "\n")
+    }
 
     fun parseXML(file: FTLFile): Document {
-        @Suppress("VulnerableCodeUsages") // we set expandEntities
         val builder = SAXBuilder()
         builder.expandEntities = false
         return builder.build(open(file))
@@ -133,19 +170,5 @@ constructor(val underlyingFile: File) {
 
     fun getAllFiles(): List<FTLFile> {
         return files.values.toList()
-    }
-
-    companion object {
-        @JvmStatic
-        fun createWithDefaultPath(): Datafile {
-            var path: String? = System.getProperty("xftl.datafile-path")
-            if (path == null) {
-                path = System.getenv("XFTL_DATAFILE")
-            }
-            if (path == null) {
-                error("Datafile path not set!")
-            }
-            return Datafile(File(path))
-        }
     }
 }

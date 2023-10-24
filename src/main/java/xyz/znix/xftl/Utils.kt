@@ -4,9 +4,16 @@ import org.jdom2.Element
 import org.lwjgl.opengl.GL11
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.modding.SlipstreamMod
+import xyz.znix.xftl.modding.SlipstreamZipMod
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.sys.Game
 import xyz.znix.xftl.sys.LWJGLGameContainer
+import xyz.znix.xftl.sys.PlatformSpecific
+import java.nio.file.Files
+import java.util.*
+import kotlin.io.path.extension
+import kotlin.io.path.isRegularFile
 import kotlin.math.PI
 import kotlin.random.Random
 
@@ -119,7 +126,21 @@ object Utils {
     }
 
     fun startSlick(builder: (Datafile) -> Game) {
-        val df = Datafile.createWithDefaultPath()
+        val vanilla = VanillaDatafile.createWithDefaultPath()
+
+        // Load slipstream mods from a 'mods' folder
+        val mods: List<SlipstreamMod>
+        if (Files.isDirectory(PlatformSpecific.INSTANCE.modsDirectory)) {
+            mods = Files.list(PlatformSpecific.INSTANCE.modsDirectory)
+                .filter { it.isRegularFile() } // Exclude directories
+                .filter { it.extension == "ftl" }
+                .map { SlipstreamZipMod(it.toFile()) }
+                .toList()
+        } else {
+            mods = Collections.emptyList()
+        }
+
+        val df = Datafile(vanilla, mods)
 
         val game = builder(df)
 

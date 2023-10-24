@@ -27,6 +27,9 @@ val lwjglNatives = listOf(
 )
 
 dependencies {
+    // We use Slipstream as a library, to patch in mods on-the-fly
+    implementation(":slipstream")
+
     implementation("org.slick2d:slick2d-core:1.0.2") {
         // We're only using a few things from Slick, like its image and audio
         // decoders, so we don't need all it's native libraries. In fact, we
