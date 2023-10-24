@@ -12,8 +12,6 @@ import xyz.znix.xftl.sys.LWJGLGameContainer
 import xyz.znix.xftl.sys.PlatformSpecific
 import java.nio.file.Files
 import java.util.*
-import kotlin.io.path.extension
-import kotlin.io.path.isRegularFile
 import kotlin.math.PI
 import kotlin.random.Random
 
@@ -128,15 +126,20 @@ object Utils {
     fun startSlick(builder: (Datafile) -> Game) {
         val vanilla = VanillaDatafile.createWithDefaultPath()
 
-        // Load slipstream mods from a 'mods' folder
+        // Load slipstream mods from a 'mods' folder. The mod order is specified
+        // with the order.txt file, which has the names of each of the mods
+        // on separate lines.
+        // TODO move into a GUI.
         val mods: List<SlipstreamMod>
-        if (Files.isDirectory(PlatformSpecific.INSTANCE.modsDirectory)) {
-            mods = Files.list(PlatformSpecific.INSTANCE.modsDirectory)
-                .filter { it.isRegularFile() } // Exclude directories
-                .filter { it.extension == "ftl" }
-                .map { SlipstreamZipMod(it.toFile()) }
-                .toList()
+        val modDir = PlatformSpecific.INSTANCE.modsDirectory
+        val modOrderFile = modDir.resolve("order.txt")
+        if (Files.isRegularFile(modOrderFile)) {
+            println("Using mod order file: '$modOrderFile'")
+            mods = Files.readAllLines(modOrderFile)
+                .filter { it.isNotBlank() }
+                .map { SlipstreamZipMod(modDir.resolve(it).toFile()) }
         } else {
+            println("Missing mod order file, mods disabled: '$modOrderFile'")
             mods = Collections.emptyList()
         }
 
