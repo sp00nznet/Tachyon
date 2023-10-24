@@ -28,7 +28,7 @@ val lwjglNatives = listOf(
 
 dependencies {
     // We use Slipstream as a library, to patch in mods on-the-fly
-    implementation(":slipstream")
+    implementation(project(":slipstream"))
 
     implementation("org.slick2d:slick2d-core:1.0.2") {
         // We're only using a few things from Slick, like its image and audio
@@ -91,6 +91,11 @@ val classes: Task by tasks
 
 val fatJar by tasks.registering(Jar::class) {
     dependsOn(classes)
+
+    // This is already properly added to runtimeClasspath, but it's not set
+    // to automatically build - compileJava will run, but not the jar task.
+    dependsOn(":slipstream:jar")
+
     manifest {
         attributes["Main-Class"] = application.mainClass.get()
     }

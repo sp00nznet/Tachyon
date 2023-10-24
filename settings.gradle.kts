@@ -9,4 +9,4 @@
 
 rootProject.name = "wormhole"
 
-includeBuild("slipstream")
+include("slipstream")
