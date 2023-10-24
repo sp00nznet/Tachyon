@@ -15,3 +15,6 @@ dependencies {
     implementation("net.sf.saxon:Saxon-HE:11.4")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.12.7.1")
 }
+
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
