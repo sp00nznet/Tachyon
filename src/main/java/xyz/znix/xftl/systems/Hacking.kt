@@ -87,7 +87,9 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // ship, and b) the power really did change.
         if (ship == ship.sys.player && buttonHeight != height) {
             buttonHeight = height
-            ship.sys.shipUI.updateButtons()
+
+            // Null when a new game starts
+            ship.sys.shipUI?.updateButtons()
         }
     }
 

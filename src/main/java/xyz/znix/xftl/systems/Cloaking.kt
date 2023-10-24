@@ -68,7 +68,8 @@ class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // Exclude the enemy AI from this, as they can fiddle with
         // the power multiple times a frame.
         if (ship == ship.sys.player) {
-            ship.sys.shipUI.updateButtons()
+            // Null when a new game starts
+            ship.sys.shipUI?.updateButtons()
         }
     }
 
