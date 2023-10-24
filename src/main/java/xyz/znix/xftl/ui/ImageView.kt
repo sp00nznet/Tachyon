@@ -30,7 +30,7 @@ class ImageView(
                 val x = position.x.f + tileWidth * tileX
                 val y = position.y.f + tileHeight * tileY
 
-                image.drawNearest(
+                image.draw(
                     x, y,
                     x + tileWidth, y + tileHeight,
                     offset.x.f, offset.y.f,

@@ -75,7 +75,7 @@ class InteriorImageSelector(val editor: ShipEditor, val room: EditableRoom) : Ed
 
         // Draw the image with its floor
         EditableRoom.drawFloor(g, 0, 0, room.w, room.h)
-        meta?.let { editor.state.getImg(it.path) }?.drawNearest(0f, 0f)
+        meta?.let { editor.state.getImg(it.path) }?.draw(0f, 0f)
 
         if (isHovering) {
             g.colour = Colour(0.5f, 1f, 1f, 0.25f)

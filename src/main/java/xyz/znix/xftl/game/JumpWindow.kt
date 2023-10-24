@@ -495,7 +495,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         val boxTopWithGlow = boxTop - 6
 
         images[0].draw(pos.x + 15, boxTopWithGlow)
-        images[1].drawNearest(pos.x + 34f, boxTopWithGlow.f, strWidth - 8f, 32f)
+        images[1].draw(pos.x + 34f, boxTopWithGlow.f, strWidth - 8f, 32f)
         images[2].draw(pos.x + 26 + strWidth, boxTopWithGlow)
 
         beaconLabelFont.drawString(pos.x + 30f, boxTop + 10f, text, colour)

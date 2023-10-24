@@ -155,7 +155,7 @@ class Graphics {
         drawTriangle(360, 225, 270)
         drawTriangle(360, 270, 360)
 
-        imageRenderer.imageFiltering = GL11.GL_LINEAR
+        imageRenderer.imageFiltering = Image.DEFAULT_TEXTURE_FILTERING
         imageRenderer.flush(image)
     }
 
@@ -370,14 +370,13 @@ class Graphics {
         }
     }
 
-    private fun drawImageWithTexFiltering(
+    private fun drawImage(
         image: Image,
         x: Float, y: Float,
         x2: Float, y2: Float,
         srcX1: Float, srcY1: Float,
         srcX2: Float, srcY2: Float,
         filter: Colour,
-        textureFiltering: Int,
         alpha: Float
     ) {
         imageRenderer.pushImage(
@@ -385,7 +384,6 @@ class Graphics {
             srcX1, srcY1, srcX2, srcY2,
             filter.r, filter.g, filter.b, alpha
         )
-        imageRenderer.imageFiltering = textureFiltering
         imageRenderer.flush(image)
     }
 
@@ -406,14 +404,13 @@ class Graphics {
             srcX1: Float, srcY1: Float,
             srcX2: Float, srcY2: Float,
             filter: Colour,
-            textureFiltering: Int,
             alpha: Float
         ) {
-            CURRENT!!.drawImageWithTexFiltering(
+            CURRENT!!.drawImage(
                 image,
                 x, y, x2, y2,
                 srcX1, srcY1, srcX2, srcY2,
-                filter, textureFiltering, alpha
+                filter, alpha
             )
         }
     }

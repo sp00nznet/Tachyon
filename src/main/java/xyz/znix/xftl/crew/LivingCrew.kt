@@ -314,7 +314,7 @@ class LivingCrewInfo(
         val fullBaseImage = game.getImg(baseImagePath)
 
         // Draw the base image, without any tinting
-        fullBaseImage.drawNearest(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f, alpha)
+        fullBaseImage.draw(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f, alpha, Colour.white)
 
         if (skipColours)
             return
@@ -326,7 +326,7 @@ class LivingCrewInfo(
             val colours = race.colourFilters[index]
             val filter = colours[effectiveColour % colours.size]
 
-            layer.drawNearest(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f, alpha, filter)
+            layer.draw(x0, y0, x1, y1, texX0.f, texY0.f, texX1.f, texY1.f, alpha, filter)
         }
     }
 

@@ -222,9 +222,7 @@ abstract class AbstractExternalDrone(
     protected abstract fun onRender(g: Graphics)
 
     protected fun drawCentred(image: Image, filter: Colour = Colour.white) {
-        // Copying FTL, use nearest filtering to avoid ugly edges due to the
-        // wrong transparency colour.
-        image.drawNearest(-image.width / 2.f, -image.height / 2f, filter)
+        image.draw(-image.width / 2.f, -image.height / 2f, filter)
     }
 
     open fun canCollideWith(proj: IProjectile): Boolean {

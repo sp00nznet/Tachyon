@@ -258,7 +258,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         left.draw(x, y, filter)
         val middle = game.getImg("img/combatUI/box_hostiles_smallbar_middle.png")
         val midWidth = textWidth + textX - left.width
-        middle.drawNearest(
+        middle.draw(
             x.f + left.width, y.f,
             x.f + left.width + midWidth, y.f + middle.height,
             0f, 0f, middle.width.f, middle.height.f,

@@ -12,7 +12,7 @@ import xyz.znix.xftl.f
  * of draw calls.
  */
 class BulkImageRenderer : BulkRenderer() {
-    var imageFiltering: Int = GL_LINEAR
+    var imageFiltering: Int = Image.DEFAULT_TEXTURE_FILTERING
 
     private val transformMatData = generateBuffer(4 * 9).asFloatBuffer()
 

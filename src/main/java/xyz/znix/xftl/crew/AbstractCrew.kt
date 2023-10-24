@@ -706,9 +706,7 @@ abstract class AbstractCrew(
 
         alpha: Float
     ) {
-        // Use nearest filtering so the image looks good when scaled up
-        // in the crew management screen.
-        baseFrame.drawNearest(x0, y0, x1, y1, 0f, 0f, baseFrame.width.f, baseFrame.height.f, alpha)
+        baseFrame.draw(x0, y0, x1, y1, 0f, 0f, baseFrame.width.f, baseFrame.height.f, alpha, Colour.white)
     }
 
     open fun drawForeground(g: Graphics) {

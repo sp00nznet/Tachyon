@@ -69,16 +69,8 @@ class Image(
         )
     }
 
-    fun drawNearest(x: Float, y: Float, filter: Colour = Colour.white) {
-        drawNearest(x, y, x + width, y + height, 0f, 0f, width.f, height.f, filter = filter)
-    }
-
     override fun draw(x: Float, y: Float, width: Float, height: Float) {
         draw(x, y, width, height, Colour.white)
-    }
-
-    fun drawNearest(x: Float, y: Float, width: Float, height: Float) {
-        drawNearest(x, y, x + width, y + height, 0f, 0f, this.width.f, this.height.f, 1f, Colour.white)
     }
 
     override fun draw(x: Float, y: Float, width: Float, height: Float, filter: Colour) {
@@ -105,7 +97,14 @@ class Image(
         alpha: Float,
         filter: Colour
     ) {
-        drawWithTexFiltering(x, y, x2, y2, srcX1, srcY1, srcX2, srcY2, alpha, filter, DEFAULT_TEXTURE_FILTERING)
+        val finalAlpha = alpha * filter.a
+
+        Graphics.internalDrawImage(
+            this,
+            x, y, x2, y2,
+            srcX1, srcY1, srcX2, srcY2,
+            filter, finalAlpha
+        )
     }
 
     fun drawAlignedCentred(centreX: Int, centreY: Int, filter: Colour = Colour.white) {
@@ -117,36 +116,6 @@ class Image(
             centreX - floor(width / 2f), centreY - floor(height / 2f),
             width, height,
             filter
-        )
-    }
-
-    fun drawNearest(
-        x: Float, y: Float,
-        x2: Float, y2: Float,
-        srcX1: Float, srcY1: Float,
-        srcX2: Float, srcY2: Float,
-        alpha: Float = 1f,
-        filter: Colour = Colour.white
-    ) {
-        drawWithTexFiltering(x, y, x2, y2, srcX1, srcY1, srcX2, srcY2, alpha, filter, GL11.GL_NEAREST)
-    }
-
-    private fun drawWithTexFiltering(
-        x: Float, y: Float,
-        x2: Float, y2: Float,
-        srcX1: Float, srcY1: Float,
-        srcX2: Float, srcY2: Float,
-        alpha: Float, filter: Colour,
-        textureFiltering: Int
-    ) {
-        val finalAlpha = alpha * filter.a
-
-        Graphics.internalDrawImage(
-            this,
-            x, y, x2, y2,
-            srcX1, srcY1, srcX2, srcY2,
-            filter, textureFiltering,
-            finalAlpha
         )
     }
 
@@ -181,8 +150,12 @@ class Image(
     }
 
     companion object {
-        // Despite this being a pixel art game, relatively few sprites are scaled
-        // up - using GL_NEAREST by default ends up looking horrible.
-        const val DEFAULT_TEXTURE_FILTERING = GL11.GL_LINEAR
+        // While nearest filtering kinda sucks for rotation, it's what vanilla
+        // uses for that - anything else looks terrible because the images have
+        // arbitrary colours on transparent regions, so artefacts appear around
+        // edges.
+        // Linear scaling also looks bad on high-DPI displays, as the game goes
+        // from being pixel art to a blurry mess.
+        const val DEFAULT_TEXTURE_FILTERING = GL11.GL_NEAREST
     }
 }
