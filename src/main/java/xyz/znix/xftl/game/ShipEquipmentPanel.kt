@@ -31,9 +31,9 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
 
     var sellUI: Boolean = false
 
-    private val sectionFont = game.getFont("hl2", 2f)
-    private val missingSystemFont = game.getFont("hl2", 3f)
-    private val sellBoxFont = game.getFont("hl1", 2f)
+    private val sectionFont = game.getFont("HL2", 2f)
+    private val missingSystemFont = game.getFont("HL2", 3f)
+    private val sellBoxFont = game.getFont("HL1", 2f)
     private val sellPriceFont = game.getFont("num_font")
     private val augmentFont = game.getFont("JustinFont12Bold")
 

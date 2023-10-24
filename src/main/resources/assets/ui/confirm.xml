@@ -19,7 +19,7 @@
             <widget type="image" pBottom="0" h="15" iy="31" pRight="-7" ix="-27"/>
 
             <widget type="label" id="message" text="noloc:change me in code xyz"
-                    font="hl1" scale="2" colour="glow-white"
+                    font="HL1" scale="2" colour="glow-white"
                     pLeft="10" pRight="10" pTop="16" pBottom="15"/>
         </widget>
         <widget type="hbox" pLeft="-7" pRight="-7" id="button-box">
@@ -66,7 +66,7 @@
         }
 
         button > label {
-        font: "hl2";
+        font: "HL2";
         scale: 2;
         colour: "text-dark";
 

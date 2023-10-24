@@ -27,10 +27,10 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
     private val shipNameFont = game.getFont("c&c", 3f)
     private val numberFont = game.getFont("num_font")
-    private val reactorFont = game.getFont("hl1", 2f)
+    private val reactorFont = game.getFont("HL1", 2f)
     private val crewNameFont = game.getFont("JustinFont8")
-    private val dismissFont = game.getFont("hl1")
-    private val maxFont = game.getFont("hl1", 2f)
+    private val dismissFont = game.getFont("HL1")
+    private val maxFont = game.getFont("HL1", 2f)
 
     private val upgradeSystemSound = game.sounds.getSample("upgradeSystem")
     private val downgradeSystemSound = game.sounds.getSample("downgradeSystem")
@@ -59,7 +59,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         // where it meets up with the side of the ship panel has a small ledge.
         game, position + ConstPoint(428, 471),
         ConstPoint(132, 32), game.translator["button_accept"],
-        4, game.getFont("hl2", 3f), 25,
+        4, game.getFont("HL2", 3f), 25,
         this::escapePressed
     )
 
@@ -171,7 +171,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             buttons += object : Buttons.BasicButton(
                 game, ConstPoint(26, 471), ConstPoint(97, 32),
                 game.translator["button_undo"],
-                4, game.getFont("hl2", 3f), 25,
+                4, game.getFont("HL2", 3f), 25,
                 this::undoAllSystems
             ) {
                 // Grey the button out when there's nothing to undo
@@ -671,7 +671,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     }
 
     private inner class TabButton(val newTab: Tab, pos: ConstPoint, size: ConstPoint) : Button(game, pos, size) {
-        val images = ButtonImageSet.select2(game, "img/upgradeUI/Equipment/tabButtons/${tab}_${newTab}")
+        val images =
+            ButtonImageSet.select2(game, "img/upgradeUI/Equipment/tabButtons/${tab.textureName}_${newTab.textureName}")
 
         override val disabled: Boolean
             get() = when (tab) {
