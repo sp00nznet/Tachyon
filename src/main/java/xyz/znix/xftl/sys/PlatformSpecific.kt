@@ -8,6 +8,7 @@ import org.lwjgl.system.libffi.FFICIF
 import org.lwjgl.system.libffi.LibFFI
 import org.lwjgl.system.windows.WindowsLibrary
 import xyz.znix.xftl.game.SaveProfile
+import java.nio.file.Files
 import java.nio.file.Path
 
 sealed interface PlatformSpecific {
@@ -23,6 +24,13 @@ sealed interface PlatformSpecific {
      * The path to a text file, containing the path of the ftl.dat file.
      */
     val ftlDatPathFile: Path get() = saveGamePath.resolve("ftl-path.txt")
+
+    /**
+     * Look through the OS's running processes, to find FTL.
+     *
+     * If it's running, find the path to it's ftl.dat file.
+     */
+    fun findRunningInstanceDat(): Path?
 
     companion object {
         @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
@@ -124,11 +132,21 @@ private class WindowsPlatform : PlatformSpecific {
 
         saveGamePath = userSavedGames.resolve("Project Wormhole")
     }
+
+    override fun findRunningInstanceDat(): Path? {
+        // TODO implement
+        return null
+    }
 }
 
 private class MacPlatform : PlatformSpecific {
     // TODO use the proper path
     override val saveGamePath: Path = Path.of("fixme-wormhole-saves")
+
+    override fun findRunningInstanceDat(): Path? {
+        // TODO implement
+        return null
+    }
 }
 
 private class LinuxPlatform : PlatformSpecific {
@@ -139,5 +157,36 @@ private class LinuxPlatform : PlatformSpecific {
             ?: Path.of(System.getProperty("user.home")).resolve(".local/share")
 
         saveGamePath = dataHome.resolve("ProjectWormhole")
+    }
+
+    override fun findRunningInstanceDat(): Path? {
+        // Dig through /proc
+        for (item in Files.list(Path.of("/proc"))) {
+            if (!Files.isDirectory(item))
+                continue
+
+            // Ignore everything except process directories, which
+            // are named from their PID.
+            if (item.fileName.toString().toIntOrNull() == null)
+                continue
+
+            val exePath = try {
+                Files.readSymbolicLink(item.resolve("exe"))
+            } catch (_: Exception) {
+                // We don't have permission to look at this on many processes
+                continue
+            }
+
+            val exeName = exePath.fileName.toString()
+            if (exeName != "FTL.amd64" && exeName != "FTL.x86")
+                continue
+
+            // Found it!
+            val datPath = exePath.parent.resolve("ftl.dat")
+            if (Files.isRegularFile(datPath))
+                return datPath
+        }
+
+        return null
     }
 }

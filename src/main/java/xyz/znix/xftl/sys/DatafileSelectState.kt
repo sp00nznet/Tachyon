@@ -15,6 +15,7 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
     private lateinit var font: SILFontLoader
     private lateinit var translator: Translator
 
+    private lateinit var baseOptions: List<Path>
     private val options = ArrayList<Path>()
 
     private val optionX = 60
@@ -26,6 +27,15 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
 
     private lateinit var descriptionLines: List<String>
 
+    private var scanThread: Thread? = null
+    private var timeToProcessScan: Float = 0f
+
+    @Volatile
+    private var scanResult: Path? = null
+
+    @Volatile
+    private var hasScanResult = false
+
     override fun init(container: GameContainer) {
         // Use a badly-converted copy of the Roboto font, since we can't access
         // FTL fonts until we select ftl.dat.
@@ -35,7 +45,8 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
 
         translator = Translator("assets/lang/en.xml")
 
-        options.addAll(FTLFinder.findInstallations())
+        baseOptions = FTLFinder.findInstallations()
+        options.addAll(baseOptions)
 
         val description = translator["xftl_select_datafile_desc"]
             .replace("\\1", PlatformSpecific.INSTANCE.ftlDatPathFile.toString())
@@ -43,6 +54,38 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
     }
 
     override fun update(container: GameContainer, delta: Float) {
+        // If we're currently scanning, don't keep running the timer - wait
+        // three seconds between scans, so if a scan takes longer than that
+        // we shouldn't start another one in parallel.
+        if (scanThread?.isAlive == true) {
+            return
+        }
+
+        if (hasScanResult) {
+            hasScanResult = false
+
+            options.clear()
+            options.addAll(baseOptions)
+            scanResult?.let { options.add(it) }
+        }
+
+        // Every 3 seconds, check if FTL is running - and if so, grab its path
+        // to ftl.dat.
+        timeToProcessScan -= delta
+        if (timeToProcessScan > 0)
+            return
+        timeToProcessScan = 3f
+
+        // Scanning can take some time, put it on its own thread.
+        scanThread = Thread {
+            scanResult = FTLFinder.findRunningInstance()
+            hasScanResult = true
+        }
+        scanThread!!.name = "FTL Instance Scanner"
+        scanThread!!.isDaemon = true
+        scanThread!!.start()
+
+        println("Scanning for FTL processes, to find their ftl.dat path")
     }
 
     override fun render(container: GameContainer, g: Graphics) {
@@ -111,7 +154,7 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
     }
 
     private fun getOptionY(index: Int): Int {
-        return optionBaseY + 25 * index
+        return optionBaseY + 30 * index
     }
 
     override fun shutdown() {

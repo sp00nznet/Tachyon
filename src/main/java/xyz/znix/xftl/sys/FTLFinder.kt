@@ -21,6 +21,10 @@ object FTLFinder {
         return findSteam()
     }
 
+    fun findRunningInstance(): Path? {
+        return PlatformSpecific.INSTANCE.findRunningInstanceDat()
+    }
+
     private fun findSteam(): List<Path> {
         // Steam stores a list of library locations in VDF files
         // Search those to try and find an FTL installation
@@ -74,4 +78,6 @@ private fun main() {
     println("TESTING: Searching for FTL installations")
     val result = FTLFinder.findInstallations()
     println(result)
+    println("Running instance:")
+    println(FTLFinder.findRunningInstance())
 }
