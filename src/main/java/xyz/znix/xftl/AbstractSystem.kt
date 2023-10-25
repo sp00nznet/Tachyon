@@ -742,8 +742,10 @@ class SystemInstallConfiguration(
         }
 
         // If the computer point isn't set, it doesn't make sense for the direction to be.
+        // Some mods can set this, eg fed tanker C from Dyno's Hangar.
         if (compPoint == null && compDir != null) {
-            error("Cannot set the computer direction but not point for system ${system.type}")
+            println("[WARN] Cannot set the computer direction but not point for system ${system.type}")
+            compDir = null
         }
 
         computerPoint = compPoint
