@@ -12,6 +12,7 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.Weapons
+import kotlin.math.roundToInt
 
 abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, ship: Ship) :
     AbstractWeaponInstance(type, ship), IRoomTargetingWeapon {
@@ -132,7 +133,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
         // For the chain ion, mark the projectile as doing more damage
         if (type.boost?.type == AbstractWeaponBlueprint.BoostType.DAMAGE) {
-            projectile.chainDamage = type.boost.perShot * firingChainCount
+            projectile.chainDamage = type.boost.perShot.roundToInt() * firingChainCount
         }
 
         type.launchSounds?.get()?.play()

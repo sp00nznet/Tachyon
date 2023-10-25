@@ -52,7 +52,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
         } else {
             val typeName = boostElem.getChildTextTrim("type")
             val type = BoostType.valueOf(typeName.toUpperCase(Locale.UK))
-            val amount = boostElem.getChildTextTrim("amount").toInt()
+            val amount = boostElem.getChildTextTrim("amount").toFloat()
             val count = boostElem.getChildTextTrim("count").toInt()
             boost = ChainBoost(type, amount, count)
         }
@@ -139,6 +139,6 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     }
 
     // This is for the charge lasers (including the Vulkan) and the chain ion
-    class ChainBoost(val type: BoostType, val perShot: Int, val maxCount: Int)
+    class ChainBoost(val type: BoostType, val perShot: Float, val maxCount: Int)
     enum class BoostType { COOLDOWN, DAMAGE }
 }
