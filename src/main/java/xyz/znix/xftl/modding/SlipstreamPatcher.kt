@@ -332,6 +332,12 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
         val root: String = m.group(2) // What is this?
         val fileName: String = m.group(3)
 
+        // Silently discard anything in a __MACOSX directory, as there
+        // can be lots and lots of files there.
+        if (innerPath.contains("__MACOSX/")) {
+            return null
+        }
+
         if (ModUtilities.isJunkFile(innerPath)) {
             log.warning(String.format("Skipping junk file: %s", innerPath))
             return null
