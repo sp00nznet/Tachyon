@@ -371,7 +371,16 @@ class Ship(
             }
         } else {
             rooms = type.rooms.map { Room(this, it.id, it.pos.x, it.pos.y, it.size.x, it.size.y) }
-            doors = type.doors.map { it ->
+            doors = type.doors.mapNotNull { it ->
+                // Some modded ships have doors that don't connect to any rooms.
+                // (eg, the circle destroyer from Dino's Hangar)
+                // We should probably guess what rooms these connect to and link
+                // them up, for now ignore those doors.
+                if (it.left == null && it.right == null) {
+                    println("[WARN] Ignoring disconnected door at ${it.pos.x},${it.pos.y}.")
+                    return@mapNotNull null
+                }
+
                 Door(
                     it.pos,
                     it.left?.let { rooms[it.id] },
