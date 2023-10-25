@@ -15,10 +15,17 @@ object FTLFinder {
         // TODO Mac support
     )
 
-    // TODO epic store
+    private val EPIC_LOCATION = Path.of("C:\\Program Files\\Epic Games\\FasterThanLight\\ftl.dat")
 
     fun findInstallations(): List<Path> {
-        return findSteam()
+        val results = ArrayList<Path>()
+        results += findSteam()
+
+        if (Files.isRegularFile(EPIC_LOCATION)) {
+            results.add(EPIC_LOCATION)
+        }
+
+        return results
     }
 
     fun findRunningInstance(): Path? {
