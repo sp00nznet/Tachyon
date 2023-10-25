@@ -3,6 +3,7 @@ package xyz.znix.xftl.sys
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.regex.Pattern
 
 /**
  * Searches for FTL installations.
@@ -16,6 +17,8 @@ object FTLFinder {
     )
 
     private val EPIC_LOCATION = Path.of("C:\\Program Files\\Epic Games\\FasterThanLight\\ftl.dat")
+
+    private val VDF_REGEX = Pattern.compile("\\s*\"path\"\\s+\"([^\"]*)\"\\s*")
 
     fun findInstallations(): List<Path> {
         val results = ArrayList<Path>()
@@ -61,14 +64,11 @@ object FTLFinder {
         val result = ArrayList<Path>()
 
         for (line in Files.readAllLines(vdf)) {
-            val parts = line.trim().split(' ', '\t').filter { it.isNotBlank() }
-
-            // Try anything starting with path - if it's not a library
-            // path that's fine too, we just won't find an ftl.dat file.
-            if (parts[0] != "\"path\"")
+            val matcher = VDF_REGEX.matcher(line)
+            if (!matcher.matches())
                 continue
 
-            val steamDir = parts.getOrNull(1)?.trim('"')?.let { Path.of(it) } ?: continue
+            val steamDir = Path.of(matcher.group(1))
             val ftlDat = steamDir.resolve("steamapps/common/FTL Faster Than Light/data/ftl.dat")
             if (!Files.isRegularFile(ftlDat))
                 continue
