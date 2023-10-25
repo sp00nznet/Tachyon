@@ -106,21 +106,21 @@ class Ship(
      * The ship's augment slots. This should only be used for UI relating
      * to the augment objects as seen on the ship screen - in the future,
      * mods will be able to apply blueprint effects to the ship without
-     * using an augment slot, and those show up in [augmentCounts], so it
+     * using an augment slot, and those show up in [augmentValues], so it
      * should be used for mod compatibility whenever possible.
      *
      * One must always call [cargoUpdated] after modifying this, so the
-     * changes show up in [augmentCounts].
+     * changes show up in [augmentValues].
      */
     val augments = ArrayList<AugmentBlueprint>()
 
     /**
-     * This contains the number of each type of augment. Mods will be able to
-     * apply augment effects without a regular augments, and those effects
-     * will then be stored here.
+     * This contains the sum of the values for each type of augment. Mods
+     * will be able to apply augment effects without a regular augments,
+     * and those effects will then be stored here.
      */
-    val privateAugmentCounts = HashMap<AugmentBlueprint, Int>()
-    val augmentCounts: Map<AugmentBlueprint, Int> = Collections.unmodifiableMap(privateAugmentCounts)
+    private val privateAugmentValues = HashMap<AugmentBlueprint, Float>()
+    val augmentValues: Map<AugmentBlueprint, Float> = Collections.unmodifiableMap(privateAugmentValues)
 
     val pathFinder: PathFinder
 
@@ -816,7 +816,7 @@ class Ship(
             ftlChargeProgress = 1f
         }
 
-        for (augment in augmentCounts.keys) {
+        for (augment in augmentValues.keys) {
             augment.update(this, dt)
         }
     }
@@ -1101,7 +1101,7 @@ class Ship(
         // any that were previously set at this beacon.
         updateScriptedPowerLimits()
 
-        for (augment in augmentCounts.keys) {
+        for (augment in augmentValues.keys) {
             augment.onJump(this)
         }
 
@@ -1286,9 +1286,9 @@ class Ship(
         sys.shipUI?.shipModified()
 
         // Update the number of each type of augment, for fast lookups.
-        privateAugmentCounts.clear()
+        privateAugmentValues.clear()
         for (aug in augments) {
-            privateAugmentCounts[aug] = 1 + (augmentCounts[aug] ?: 0)
+            privateAugmentValues[aug] = aug.value + (augmentValues[aug] ?: 0f)
         }
     }
 
@@ -1422,7 +1422,20 @@ class Ship(
      */
     fun hasAugment(name: String): Boolean {
         val blueprint = sys.blueprintManager[name] as AugmentBlueprint
-        return augmentCounts.containsKey(blueprint)
+        return augmentValues.containsKey(blueprint)
+    }
+
+    /**
+     * Get the value for the given augment. If multiple of an augment
+     * are installed, their values are summed together.
+     *
+     * Returns 0 if the ship has no such augments.
+     *
+     * This throws an exception if the named blueprint doesn't exist.
+     */
+    fun getAugmentValue(name: String): Float {
+        val blueprint = sys.blueprintManager[name] as AugmentBlueprint
+        return augmentValues[blueprint] ?: 0f
     }
 
     /**
