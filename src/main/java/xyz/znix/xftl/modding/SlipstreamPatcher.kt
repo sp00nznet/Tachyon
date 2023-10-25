@@ -308,7 +308,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
         val lower = innerPath.lowercase(Locale.UK)
         var originalCase = toOriginalCase[lower]
 
-        if (originalCase != null && lower != originalCase) {
+        if (originalCase != null && innerPath != originalCase) {
             log.warning("Modded file's case doesn't match existing path: \"$innerPath\" vs \"$originalCase\"")
         }
 
