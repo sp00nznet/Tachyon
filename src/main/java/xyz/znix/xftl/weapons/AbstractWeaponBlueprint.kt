@@ -119,16 +119,21 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
 
     class SoundList(elem: Element) {
         private val names: List<String> = elem.getChildren("sound").map { it.textTrim }
-        private var soundsInternal: List<FTLSound>? = null
+        private var soundsInternal: List<FTLSound?>? = null
 
-        val sounds: List<FTLSound> get() = soundsInternal ?: error("SoundList not yet loaded!")
+        /**
+         * The sounds in this list.
+         *
+         * Null entries represent invalid sounds, which don't appear in sounds.xml.
+         */
+        val sounds: List<FTLSound?> get() = soundsInternal ?: error("SoundList not yet loaded!")
 
         fun load(content: GameContent) {
             if (soundsInternal != null) {
                 error("Cannot re-initialise sound list!")
             }
 
-            soundsInternal = names.map { content.sounds.getSample(it) }
+            soundsInternal = names.map { content.sounds.getSampleOrWarn(it) }
         }
 
         fun get(): FTLSound? {

@@ -140,6 +140,15 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         return get(spec)
     }
 
+    fun getSampleOrWarn(name: String): FTLSound? {
+        val spec = samples[name]
+        if (spec == null) {
+            println("No sound sample listed in sounds.xml for '$name'")
+            return null
+        }
+        return get(spec)
+    }
+
     /**
      * Create a new handle that can trigger this sound loop.
      *
