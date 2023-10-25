@@ -4,10 +4,10 @@ import org.jdom2.Document
 import org.jdom2.Element
 import org.jdom2.input.SAXBuilder
 
-class Translator(df: Datafile, lang: String) {
+class Translator {
     val translations: Map<String, String>
 
-    init {
+    constructor(df: Datafile, lang: String) {
         translations = HashMap()
         fun load(name: String) = parseFile(name, df, translations)
 
@@ -28,6 +28,15 @@ class Translator(df: Datafile, lang: String) {
 
         // Put a when block here if/when our strings are translated.
         parseEmbedded("assets/lang/en.xml", translations)
+    }
+
+    /**
+     * Used for the select-a-datafile screen, as we don't have a main
+     * datafile to use at that point.
+     */
+    constructor(embeddedPath: String) {
+        translations = HashMap()
+        parseEmbedded(embeddedPath, translations)
     }
 
     private fun parseFile(filename: String, df: Datafile, tl: HashMap<String, String>) {

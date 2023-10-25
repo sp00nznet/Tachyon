@@ -1,9 +1,6 @@
 package xyz.znix.xftl.devutil
 
-import xyz.znix.xftl.Datafile
-import xyz.znix.xftl.FontOverrideData
-import xyz.znix.xftl.SILFontLoader
-import xyz.znix.xftl.Utils
+import xyz.znix.xftl.*
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -18,7 +15,9 @@ import kotlin.math.min
 object FontPalette {
     @JvmStatic
     fun main(args: Array<String>) {
-        Utils.startSlick { GameImpl(it) }
+        val vanilla = VanillaDatafile.createWithDefaultPath()
+        val df = Datafile(vanilla, emptyList()) // No mods
+        Utils.startSlick(GameImpl(df))
     }
 
     val FONT_NAMES = listOf(

@@ -4,14 +4,9 @@ import org.jdom2.Element
 import org.lwjgl.opengl.GL11
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.modding.SlipstreamMod
-import xyz.znix.xftl.modding.SlipstreamZipMod
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.sys.Game
 import xyz.znix.xftl.sys.LWJGLGameContainer
-import xyz.znix.xftl.sys.PlatformSpecific
-import java.nio.file.Files
-import java.util.*
 import kotlin.math.PI
 import kotlin.random.Random
 
@@ -123,30 +118,7 @@ object Utils {
         GL11.glDisable(GL11.GL_STENCIL_TEST)
     }
 
-    fun startSlick(builder: (Datafile) -> Game) {
-        val vanilla = VanillaDatafile.createWithDefaultPath()
-
-        // Load slipstream mods from a 'mods' folder. The mod order is specified
-        // with the order.txt file, which has the names of each of the mods
-        // on separate lines.
-        // TODO move into a GUI.
-        val mods: List<SlipstreamMod>
-        val modDir = PlatformSpecific.INSTANCE.modsDirectory
-        val modOrderFile = modDir.resolve("order.txt")
-        if (Files.isRegularFile(modOrderFile)) {
-            println("Using mod order file: '$modOrderFile'")
-            mods = Files.readAllLines(modOrderFile)
-                .filter { it.isNotBlank() }
-                .map { SlipstreamZipMod(modDir.resolve(it).toFile()) }
-        } else {
-            println("Missing mod order file, mods disabled: '$modOrderFile'")
-            mods = Collections.emptyList()
-        }
-
-        val df = Datafile(vanilla, mods)
-
-        val game = builder(df)
-
+    fun startSlick(game: Game) {
         val gc = LWJGLGameContainer(game)
         // gc.setTargetFrameRate(120)
         gc.setDisplayMode(1280, 720, false)

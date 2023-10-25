@@ -12,11 +12,11 @@ import xyz.znix.xftl.rendering.WindowRenderer
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.ResourceContext
 
-class SelectShipState(private val vanillaDF: Datafile, private val main: MainGame) : MainGame.GameState() {
+class SelectShipState(private val datafile: Datafile, private val main: MainGame) : MainGame.GameState() {
     private val resourceContext = ResourceContext()
 
-    val font = SILFontLoader(resourceContext, vanillaDF, vanillaDF["fonts/c&c.font"])
-    val fontHL2 = SILFontLoader(resourceContext, vanillaDF, vanillaDF["fonts/HL2.font"])
+    val font = SILFontLoader(resourceContext, datafile, datafile["fonts/c&c.font"])
+    val fontHL2 = SILFontLoader(resourceContext, datafile, datafile["fonts/HL2.font"])
 
     val mousePos = Point(0, 0)
     val shipOffset = Point(0, 0)
@@ -40,9 +40,9 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
         "PLAYER_SHIP_CRYSTAL"
     )
 
-    val blueprints: BlueprintManager = BlueprintManager(vanillaDF, true)
-    val translator: Translator = Translator(vanillaDF, "en")
-    val animations: Animations = Animations(vanillaDF)
+    val blueprints: BlueprintManager = BlueprintManager(datafile, true)
+    val translator: Translator = Translator(datafile, "en")
+    val animations: Animations = Animations(datafile)
 
     val roomImageMeta: RoomImageMeta = RoomImageMeta.loadFromResource()
 
@@ -173,7 +173,7 @@ class SelectShipState(private val vanillaDF: Datafile, private val main: MainGam
     }
 
     fun getImg(path: String): Image {
-        return images.getOrPut(path) { vanillaDF.readImage(resourceContext, vanillaDF[path]) }
+        return images.getOrPut(path) { datafile.readImage(resourceContext, datafile[path]) }
     }
 
     fun startGame(selected: Difficulty) {

@@ -39,13 +39,17 @@ class SILFontLoader {
 
     var scale: Float = 1f
 
-    constructor(context: ResourceContext, df: Datafile, file: FTLFile) {
-        val override = FontOverrideData.fonts[file.name]
+    constructor(context: ResourceContext, df: Datafile, file: FTLFile) : this(
+        context,
+        FontOverrideData.fonts[file.name],
+        df.read(file)
+    )
 
-        val seeking = SeekingInputStream(df.read(file))
+    constructor(context: ResourceContext, override: FontOverrideData.FontInfo?, data: ByteArray) {
+        val seeking = SeekingInputStream(data)
         val bytes = DataInputStream(seeking)
 
-        check(Arrays.equals(bytes.readNBytes(4), "FONT".toByteArray()))
+        check(bytes.readNBytes(4).contentEquals("FONT".toByteArray()))
 
         val version = bytes.read()
         lineSpacing = bytes.read()
@@ -96,7 +100,7 @@ class SILFontLoader {
 
         seeking.position = textureOffset
         val magic = bytes.readNBytes(4)
-        check(Arrays.equals(magic, "TEX\u000a".toByteArray()))
+        check(magic.contentEquals("TEX\u000a".toByteArray()))
 
         val texVersion = bytes.read()
         check(texVersion == 2)

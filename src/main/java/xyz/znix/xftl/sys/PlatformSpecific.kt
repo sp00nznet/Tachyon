@@ -19,6 +19,11 @@ sealed interface PlatformSpecific {
     val saveProfilePath: Path get() = saveGamePath.resolve(SaveProfile.PROFILE_NAME)
     val modsDirectory: Path get() = saveGamePath.resolve("mods")
 
+    /**
+     * The path to a text file, containing the path of the ftl.dat file.
+     */
+    val ftlDatPathFile: Path get() = saveGamePath.resolve("ftl-path.txt")
+
     companion object {
         @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
         @JvmField

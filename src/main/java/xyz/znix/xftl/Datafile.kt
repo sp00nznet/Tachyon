@@ -2,12 +2,17 @@ package xyz.znix.xftl
 
 import org.jdom2.Document
 import org.jdom2.input.SAXBuilder
+import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.modding.SlipstreamMod
 import xyz.znix.xftl.modding.SlipstreamPatcher
+import xyz.znix.xftl.modding.SlipstreamZipMod
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
+import xyz.znix.xftl.sys.PlatformSpecific
 import xyz.znix.xftl.sys.ResourceContext
 import java.io.*
+import java.nio.file.Files
+import java.util.*
 
 const val HEADER_SIZE = 16
 const val ENTRY_SIZE = 20
@@ -118,14 +123,8 @@ class VanillaDatafile(val underlyingFile: File) {
     companion object {
         @JvmStatic
         fun createWithDefaultPath(): VanillaDatafile {
-            var path: String? = System.getProperty("xftl.datafile-path")
-            if (path == null) {
-                path = System.getenv("XFTL_DATAFILE")
-            }
-            if (path == null) {
-                error("Datafile path not set!")
-            }
-            return VanillaDatafile(File(path))
+            val path = MainGame.findFtlDat() ?: error("Datafile path not set!")
+            return VanillaDatafile(path.toFile())
         }
     }
 }
@@ -170,5 +169,28 @@ class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>
 
     fun getAllFiles(): List<FTLFile> {
         return files.values.toList()
+    }
+
+    companion object {
+        fun loadWithMods(vanilla: VanillaDatafile): Datafile {
+            // Load slipstream mods from a 'mods' folder. The mod order is specified
+            // with the order.txt file, which has the names of each of the mods
+            // on separate lines.
+            // TODO move into a GUI.
+            val mods: List<SlipstreamMod>
+            val modDir = PlatformSpecific.INSTANCE.modsDirectory
+            val modOrderFile = modDir.resolve("order.txt")
+            if (Files.isRegularFile(modOrderFile)) {
+                println("Using mod order file: '$modOrderFile'")
+                mods = Files.readAllLines(modOrderFile)
+                    .filter { it.isNotBlank() }
+                    .map { SlipstreamZipMod(modDir.resolve(it).toFile()) }
+            } else {
+                println("Missing mod order file, mods disabled: '$modOrderFile'")
+                mods = Collections.emptyList()
+            }
+
+            return Datafile(vanilla, mods)
+        }
     }
 }

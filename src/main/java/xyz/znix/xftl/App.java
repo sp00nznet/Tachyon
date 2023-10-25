@@ -22,6 +22,6 @@ public class App {
             }
         }
 
-        Utils.INSTANCE.startSlick(datafile -> new MainGame(datafile, cla));
+        Utils.INSTANCE.startSlick(new MainGame(cla));
     }
 }

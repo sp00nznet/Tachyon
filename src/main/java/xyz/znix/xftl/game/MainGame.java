@@ -10,12 +10,14 @@ import org.jetbrains.annotations.Nullable;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
+import xyz.znix.xftl.VanillaDatafile;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
 import xyz.znix.xftl.rendering.Cursor;
 import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
+import xyz.znix.xftl.sys.DatafileSelectState;
 import xyz.znix.xftl.sys.Game;
 import xyz.znix.xftl.sys.GameContainer;
 import xyz.znix.xftl.sys.PlatformSpecific;
@@ -26,11 +28,13 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 public class MainGame implements Game {
-    private final Datafile vanillaDatafile;
+    private VanillaDatafile vanillaDatafile;
+    private Datafile datafile;
     private final CommandLineArgs commandLineArgs;
 
     private GameContainer gameContainer;
@@ -43,8 +47,7 @@ public class MainGame implements Game {
 
     private Cursor currentCursor;
 
-    public MainGame(Datafile datafile, CommandLineArgs args) {
-        this.vanillaDatafile = datafile;
+    public MainGame(CommandLineArgs args) {
         this.commandLineArgs = args;
     }
 
@@ -54,9 +57,15 @@ public class MainGame implements Game {
 
         profile = loadProfile();
 
+        // If we don't have a valid ftl.dat file to use, open the selection screen
+        if (!loadDatafile()) {
+            switchToDatafileSelect();
+            return;
+        }
+
         // Load the game content immediately - this will work until
         // we support mods or turning Advanced Edition on or off.
-        content = new InGameState.GameContent(vanillaDatafile, true);
+        content = new InGameState.GameContent(datafile, true);
 
         if (commandLineArgs.newGameShip != null) {
             // Switch right into a new game
@@ -94,8 +103,17 @@ public class MainGame implements Game {
     }
 
     public void switchToShipSelect() {
-        SelectShipState state = new SelectShipState(vanillaDatafile, this);
+        // This may have been called by DatafileSelectState
+        if (vanillaDatafile == null) {
+            loadDatafile();
+        }
+
+        SelectShipState state = new SelectShipState(datafile, this);
         setCurrentState(state);
+    }
+
+    public void switchToDatafileSelect() {
+        setCurrentState(new DatafileSelectState(this));
     }
 
     public void startNewGame(@NotNull String shipName, Difficulty difficulty, EditableShip customised) {
@@ -206,6 +224,70 @@ public class MainGame implements Game {
     public void quitGame() {
         // Do we need to do anything else?
         gameContainer.exit();
+    }
+
+    private boolean loadDatafile() {
+        Path ftlDat = findFtlDat();
+        if (ftlDat == null) {
+            switchToDatafileSelect();
+            return false;
+        }
+        vanillaDatafile = new VanillaDatafile(ftlDat.toFile());
+
+        // TODO make mods adjustable in the ship select screen
+        datafile = Datafile.Companion.loadWithMods(vanillaDatafile);
+
+        return true;
+    }
+
+    public static Path findFtlDat() {
+        // Let the user override the path with system properties
+        String override = System.getProperty("xftl.datafile-path");
+        if (override != null) {
+            return Path.of(override);
+        }
+        override = System.getenv("XFTL_DATAFILE");
+        if (override != null) {
+            return Path.of(override);
+        }
+
+        // There's a text file which contains the path to the ftl.dat file
+        Path ftlPathFile = PlatformSpecific.INSTANCE.getFtlDatPathFile();
+        if (!Files.isRegularFile(ftlPathFile)) {
+            // Create the file, so the user can find and edit it
+            try {
+                Files.writeString(ftlPathFile, "Put the path to ftl.dat here", StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                System.err.println("Failed to write placeholder to: " + ftlPathFile);
+                //noinspection CallToPrintStackTrace
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        String rawPath;
+        try {
+            rawPath = Files.readString(ftlPathFile).strip();
+        } catch (IOException e) {
+            // Abort in this case, since there's probably something valid there.
+            throw new RuntimeException(e);
+        }
+
+        Path path;
+        try {
+            path = Path.of(rawPath);
+        } catch (InvalidPathException ignored) {
+            System.err.printf("Invalid ftl.dat path (could not parse): '%s'%n", rawPath);
+            return null;
+        }
+
+        if (!Files.isRegularFile(path)) {
+            System.err.printf("Invalid ftl.dat path: '%s'%n", rawPath);
+            return null;
+        }
+
+        return path;
     }
 
     private SaveProfile loadProfile() {

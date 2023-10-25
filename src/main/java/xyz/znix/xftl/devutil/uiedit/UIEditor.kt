@@ -314,7 +314,9 @@ class UIEditor(val df: Datafile, val filename: String) : BasicGame("XFTL UI Edit
         fun main(args: Array<String>) {
             val filename = args[0]
 
-            Utils.startSlick { UIEditor(it, filename) }
+            val vanilla = VanillaDatafile.createWithDefaultPath()
+            val df = Datafile(vanilla, emptyList()) // No mods
+            Utils.startSlick(UIEditor(df, filename))
         }
     }
 }
