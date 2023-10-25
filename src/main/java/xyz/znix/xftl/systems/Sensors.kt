@@ -9,6 +9,12 @@ import xyz.znix.xftl.savegame.RefLoader
 class Sensors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
     override val sortingType = SortingType.SENSORS
 
+    private val blocked: Boolean get() = ship.sys.currentBeacon.environmentType.isNebula || isHackActive
+    val providesPlayerVision: Boolean get() = !blocked && effectivePower >= 1
+    val providesEnemyVision: Boolean get() = !blocked && effectivePower >= 2
+    val showsEnemyWeaponCharge: Boolean get() = !blocked && effectivePower >= 3
+    val showsEnemyPowerLevels: Boolean get() = !blocked && effectivePower >= 4
+
     // Nothing to serialise
     override fun saveSystem(elem: Element, refs: ObjectRefs) = Unit
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit

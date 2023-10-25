@@ -116,11 +116,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         playerHasVision = crew.any { it.providesPlayerVision }
 
         val playerSensors = ship.sys.player?.sensors
-        if (playerSensors != null && playerSensors.effectivePower >= 2) {
+        if (playerSensors != null && playerSensors.providesEnemyVision) {
             // View the enemy ship via L2 sensors
             playerHasVision = true
         }
-        if (playerSensors != null && playerSensors == ship.sensors && playerSensors.effectivePower >= 1) {
+        if (playerSensors != null && playerSensors == ship.sensors && playerSensors.providesPlayerVision) {
             // View the player's own ship via L1 sensors
             playerHasVision = true
         }
