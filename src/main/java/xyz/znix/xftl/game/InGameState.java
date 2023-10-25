@@ -274,6 +274,10 @@ public class InGameState extends MainGame.GameState {
             if (system instanceof Weapons || system instanceof Drones)
                 continue;
 
+            // As a hack, turn artillery off so what's below doesn't charge it.
+            if (system instanceof Artillery)
+                continue;
+
             for (int i = 0; i < system.getBlueprint().getMaxPower(); i++) {
                 system.increasePower();
             }
