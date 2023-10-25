@@ -1,6 +1,7 @@
 package xyz.znix.xftl.sector
 
 import org.jdom2.Element
+import xyz.znix.xftl.GameText
 import xyz.znix.xftl.mapChildrenText
 import xyz.znix.xftl.requireAttributeValue
 import xyz.znix.xftl.requireAttributeValueInt
@@ -31,8 +32,8 @@ class SectorType(private val eventManager: EventManager, elem: Element) {
         EventInfo(name, count, eventManager[name])
     }
 
-    val nameTextId: String
-    val shortTextId: String
+    val nameTextId: GameText
+    val shortTextId: GameText
 
     val rarityOverrides: Map<String, Int>
 
@@ -41,8 +42,13 @@ class SectorType(private val eventManager: EventManager, elem: Element) {
         check(nameList.children.size == 1)
         val nameElem = nameList.getChild("name")
 
-        nameTextId = nameElem.getAttributeValue("id")
-        shortTextId = nameElem.getAttributeValue("short")
+        // In vanilla, both of these are specified as localisation keys for
+        // all sector types. However, mods don't have to.
+        // I haven't checked if the short text behaviour is correct, this is
+        // just a guess.
+        // This is reproduced with the Insurrection mod.
+        nameTextId = GameText.parse(nameElem)
+        shortTextId = nameElem.getAttributeValue("short")?.let { GameText.localised(it) } ?: nameTextId
 
         // Load the rarity overrides
         check(elem.getChildren("rarityList").size <= 1)
