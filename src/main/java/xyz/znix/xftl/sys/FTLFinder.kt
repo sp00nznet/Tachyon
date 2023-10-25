@@ -12,7 +12,7 @@ object FTLFinder {
         "C:\\Program Files (x86)\\Steam\\SteamApps\\libraryfolders.vdf",
         "~/.local/share/Steam/steamapps/libraryfolders.vdf",
         // TODO apparently there's a different location for new Linux installs?
-        // TODO Mac support
+        "~/Library/Application Support/Steam/steamapps/libraryfolders.vdf",
     )
 
     private val EPIC_LOCATION = Path.of("C:\\Program Files\\Epic Games\\FasterThanLight\\ftl.dat")
