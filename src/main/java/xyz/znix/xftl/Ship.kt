@@ -427,15 +427,26 @@ class Ship(
 
         systemSlots = rooms.flatMap { it.systemSlots }
 
-        hullOffset = type.hullOffset + offset * ROOM_SIZE
-
-        // We can only calculate the shield origin after we've got the hull offset
-        val origin = Point(hullImage.width, hullImage.height)
-        origin.divide(2)
-        origin += hullOffset
-        if (isPlayerShip)
-            origin += shieldOffset
+        // The shield origin is found by drawing a box that contains all
+        // the rooms, then taking its centre.
+        val minX = offset.x + rooms.minOf { it.x }
+        val minY = offset.y + rooms.minOf { it.y }
+        val maxX = offset.x + rooms.maxOf { it.x + it.width }
+        val maxY = offset.y + rooms.maxOf { it.y + it.height }
+        val centreRoomX = (minX + maxX) / 2f
+        val centreRoomY = (minY + maxY) / 2f
+        val origin = Point(
+            (ROOM_SIZE * centreRoomX).toInt(),
+            (ROOM_SIZE * centreRoomY).toInt(),
+        )
+        origin += shieldOffset
+        if (!isPlayerShip) {
+            // Yes this looks silly, but it's what vanilla does
+            origin.y += 110
+        }
         shieldOrigin = origin.const
+
+        hullOffset = ConstPoint(minX, minY) * ROOM_SIZE + type.hullOffset
 
         hardpoints = type.hardpoints.map { Hardpoint(it) }
         gibs = type.gibs.map { it.createInstance(sys) }
