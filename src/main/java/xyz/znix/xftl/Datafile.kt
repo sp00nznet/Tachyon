@@ -184,6 +184,7 @@ class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>
                 println("Using mod order file: '$modOrderFile'")
                 mods = Files.readAllLines(modOrderFile)
                     .filter { it.isNotBlank() }
+                    .filter { !it.startsWith("//") } // Comments
                     .map { SlipstreamZipMod(modDir.resolve(it).toFile()) }
             } else {
                 println("Missing mod order file, mods disabled: '$modOrderFile'")
