@@ -207,7 +207,10 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         // Note that abandoned sector doesn't refer to the lanius-filled in-game sector - that's LANIUS_SECTOR
         if (name == "ABANDONED_SECTOR" || name == "DEEP_SPACE_SECTOR") return
 
-        check(!sectorTypes.containsKey(name))
+        // Sectors can be overwritten by mods
+        if (sectorTypes.containsKey(name)) {
+            println("Overwriting existing sector $name")
+        }
 
         val sector = SectorType(eventManager, elem)
         check(name == sector.name)
