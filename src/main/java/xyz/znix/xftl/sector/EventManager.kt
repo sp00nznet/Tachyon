@@ -153,10 +153,6 @@ class EventManager(val df: Datafile, private val translator: Translator, private
             return lazy { events[it]!! }
         }
 
-        val text = elem.getChild("text")?.let(::loadText)
-        val choices = elem.getChildren("choice").withIndex().map { loadChoice(it.value, it.index, serialId) }
-        val event = Event(text, choices, elem, debugId, serialId, ::getImageList, ::loadText)
-
         // Build a mapping of the events by their deserialisation ID, which
         // we'll use to pick out events when the game is being loaded.
         // Mods can overwrite events, so we may need to add a number to make
@@ -167,7 +163,12 @@ class EventManager(val df: Datafile, private val translator: Translator, private
             uniqueId = "$serialId-$suffix"
             suffix++
         }
-        byDeserialisationId[serialId] = event
+
+        val text = elem.getChild("text")?.let(::loadText)
+        val choices = elem.getChildren("choice").withIndex().map { loadChoice(it.value, it.index, uniqueId) }
+        val event = Event(text, choices, elem, debugId, uniqueId, ::getImageList, ::loadText)
+
+        byDeserialisationId[uniqueId] = event
 
         return lazyOf(event)
     }
