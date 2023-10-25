@@ -257,7 +257,8 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
                     val baseStream = mod.openFile(entry.innerPath)
                     return ModUtilities.rebuildXMLFile(
                         baseStream, "UTF-8",
-                        mod.name + ":" + parentPath + fileName
+                        mod.name + ":" + parentPath + fileName,
+                        true
                     )
                 }
             }
