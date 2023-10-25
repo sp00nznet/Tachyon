@@ -17,8 +17,9 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
     private val widgetTree: WidgetContainer = game.uiLoader.load("escape_menu").mainWidget
     private val lockIcon: Image = game.getImg("img/customizeUI/box_lock_on.png")
     private val mousePos = Point(0, 0)
-    private val shipFamily: ShipFamily = game.content.shipFamilies.byShipId.getValue(game.player.type.name)
-    private val achievements: List<Achievement> = shipFamily.achievements.map { game.content.achievements[it] }
+    private val shipFamily: ShipFamily? = game.content.shipFamilies.byShipId[game.player.type.name]
+    private val achievements: List<Achievement> =
+        shipFamily?.achievements?.map { game.content.achievements[it] } ?: emptyList()
 
     override val size: IPoint = widgetTree.root.size
 
@@ -46,14 +47,19 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
         aeLabel.text = game.translator[aeKey]
 
         // Set the achievement icons
-        for ((idx, ach) in achievements.withIndex()) {
+        for (idx in 0 until 3) {
+            val ach = achievements.getOrNull(idx)
             val img = widgetTree.byId["ach${idx + 1}"] as ImageView
-            img.image = game.getImg(ach.img)
+            if (ach != null) {
+                img.image = game.getImg(ach.img)
+            } else {
+                img.isVisible = false
+            }
         }
 
         val questWidget = widgetTree.byId["quest"] as ImageView
-        questWidget.isVisible = shipFamily.hasQuest
-        if (shipFamily.hasQuest) {
+        questWidget.isVisible = shipFamily?.hasQuest == true
+        if (shipFamily != null && shipFamily.hasQuest) {
             val questImagePath = when (game.mainGame.profile.getShipUnlock(shipFamily)) {
                 null -> "img/achievements/S_Q_off.png"
                 else -> "img/achievements/S_Q_on.png"
@@ -99,8 +105,7 @@ class PauseWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
         // If the achievement isn't populated - such as for modded ships - then
         // there's nothing to draw.
-        val achievementId = shipFamily.achievements.getOrNull(index) ?: return
-        val achievement = game.content.achievements[achievementId]
+        val achievement = achievements.getOrNull(index) ?: return
         val unlockInfo = game.mainGame.profile.getAchievement(achievement)
 
         // Draw the padlock icon, if this achievement is locked
