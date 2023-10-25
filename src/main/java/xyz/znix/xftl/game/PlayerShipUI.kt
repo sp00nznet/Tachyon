@@ -1011,7 +1011,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val shields = ship.shields
 
         // Draw the shields indicator
-        val broken = shields != null && shields.energyLevels - shields.damagedEnergyLevels < 2
+        val broken = shields != null
+                && shields.energyLevels >= 2 // Don't warn for Zoltan B, which starts on 1
+                && shields.energyLevels - shields.damagedEnergyLevels < 2
         val shieldBox = when {
             broken -> game.getImg("img/statusUI/top_shields4_red.png")
             shields == null || shields.selectedShieldBars == 0 -> game.getImg("img/statusUI/top_shields4_off.png")
