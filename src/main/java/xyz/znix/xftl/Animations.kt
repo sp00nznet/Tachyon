@@ -91,7 +91,12 @@ class Animations(df: Datafile) {
         val realLength = length.coerceAtMost(sheet.horizontalCount)
 
         // Convert from per-cycle to per-frame
-        val time = xml.getChild("time").textTrim.toFloat() / realLength
+        // Special handling for zero-length animations, for the artillery_blank
+        // one in the mod 'Alpha_-_The_sM_Polish_Kit_for_1.6'
+        val time = when (realLength) {
+            0 -> 0.01f // Avoid further divide-by-zero errors
+            else -> xml.getChild("time").textTrim.toFloat() / realLength
+        }
 
         return AnimationSpec(sheet, name, x, y, realLength, time)
     }
@@ -191,8 +196,18 @@ class Animations(df: Datafile) {
         val frameWidth: Int, val frameHeight: Int,
         val sheetWidth: Int, val sheetHeight: Int
     ) {
-        val verticalCount: Int get() = sheetHeight / frameHeight
-        val horizontalCount: Int get() = sheetWidth / frameWidth
+        // Note that mods (tested with 'Alpha_-_The_sM_Polish_Kit_for_1.6') can
+        // have blank sprite sheets.
+        val verticalCount: Int
+            get() = when (frameHeight) {
+                0 -> 0
+                else -> sheetHeight / frameHeight
+            }
+        val horizontalCount: Int
+            get() = when (frameWidth) {
+                0 -> 0
+                else -> sheetWidth / frameWidth
+            }
 
         fun getSprite(sheetImage: Image, x: Int, y: Int): Image {
             require(x in 0 until horizontalCount)
