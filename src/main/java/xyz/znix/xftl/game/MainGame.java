@@ -63,10 +63,6 @@ public class MainGame implements Game {
             return;
         }
 
-        // Load the game content immediately - this will work until
-        // we support mods or turning Advanced Edition on or off.
-        content = new InGameState.GameContent(datafile, true);
-
         if (commandLineArgs.newGameShip != null) {
             // Switch right into a new game
             startNewGame(commandLineArgs.newGameShip, Difficulty.NORMAL, null);
@@ -236,6 +232,10 @@ public class MainGame implements Game {
 
         // TODO make mods adjustable in the ship select screen
         datafile = Datafile.Companion.loadWithMods(vanillaDatafile);
+
+        // Load the game content immediately - this will work until
+        // we support mods or turning Advanced Edition on or off.
+        content = new InGameState.GameContent(datafile, true);
 
         return true;
     }
