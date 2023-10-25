@@ -99,7 +99,10 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             g.translate(shipPos.x.f, shipPos.y.f)
             enemy.render(g, interiorVisible, hoveredRoom)
 
-            enemy.renderTargeting(g, game.shipUI.ship.weapons!!.selectedTargets)
+            val playerWeapons = game.shipUI.ship.weapons
+            if (playerWeapons != null) {
+                enemy.renderTargeting(g, playerWeapons.selectedTargets)
+            }
 
             g.popTransform()
         }

@@ -484,7 +484,10 @@ public class InGameState extends MainGame.GameState {
         g.pushTransform();
         g.translate(playerShipOffset.getX(), playerShipOffset.getY());
         player.render(g, true, hoveredRoom);
-        player.renderTargeting(g, Objects.requireNonNull(player.getWeapons()).getSelectedTargets());
+        if (player.getWeapons() != null) {
+            // Some modded ships don't have a weapons system
+            player.renderTargeting(g, player.getWeapons().getSelectedTargets());
+        }
         g.popTransform();
 
         shipUI.render(container, g);

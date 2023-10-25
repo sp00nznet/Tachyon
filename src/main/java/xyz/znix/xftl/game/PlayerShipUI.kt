@@ -363,8 +363,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         if (currentWindow != null) return
 
+        // Note that modded ships might not have a weapons system
+        val weapons = ship.weapons ?: return
+
         // Block interactions with hacked weapons
-        if (ship.weapons!!.isHackActive)
+        if (weapons.isHackActive)
             return
 
         // If the user was previously targeting a beam, cancel that.
@@ -374,14 +377,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         if (shiftPressed) {
             // Holding shift turns a weapon off
-            if (weapon.isPowered && ship.weapons!!.setWeaponPower(weapon, false)) {
+            if (weapon.isPowered && weapons.setWeaponPower(weapon, false)) {
                 powerDownSound.play()
             }
             return
         }
 
         if (!weapon.isPowered) {
-            if (ship.weapons!!.setWeaponPower(weapon, true)) {
+            if (weapons.setWeaponPower(weapon, true)) {
                 powerUpSound.play()
             } else {
                 powerUpFailSound.play()
@@ -389,8 +392,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             return
         }
 
-        val targets = ship.weapons?.selectedTargets ?: return
-        targets.unTarget(id)
+        weapons.selectedTargets.unTarget(id)
 
         targetingSelectedWeapon = id
         selectWeaponClickEvent = RoomClickListener { room, gc ->
@@ -405,7 +407,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             }
 
             if (weapon is IRoomTargetingWeapon) {
-                targets.targetRoom(id, room)
+                weapons.selectedTargets.targetRoom(id, room)
             } else if (weapon is BeamBlueprint.BeamInstance) {
                 val mousePos = ConstPoint(gc.input.mouseX, gc.input.mouseY)
                 val shipPos = mousePos - game.enemyPosition
@@ -655,105 +657,109 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             .orElse(1f)
 
         // Draw the weapons box
-        val weaponBoxX = weaponPowerX!! + 1
-        drawWeaponBox(weaponBoxX, "weapons_label", ship.weaponSlots!!)
+        // Note that some modded ships don't have a weapons system
+        val weapons = ship.weapons
+        if (weapons != null) {
+            val weaponBoxX = weaponPowerX!! + 1
+            drawWeaponBox(weaponBoxX, "weapons_label", ship.weaponSlots!!)
 
-        for (i in 0 until ship.weaponSlots!!) {
-            if (!updatingButtons)
-                continue
+            for (i in 0 until ship.weaponSlots!!) {
+                if (!updatingButtons)
+                    continue
 
-            // The origin position of the weapon button
-            val wx = weaponBoxX + WEAPON_BOX_GLOW + 12 + i * 97
-            val wy = weaponBoxY + 12 + 4
+                // The origin position of the weapon button
+                val wx = weaponBoxX + WEAPON_BOX_GLOW + 12 + i * 97
+                val wy = weaponBoxY + 12 + 4
 
-            val weapon = ship.hardpoints[i].weapon
+                val weapon = ship.hardpoints[i].weapon
 
-            buttons += object : WeaponDroneButton(ConstPoint(wx, wy), i, ConstPoint(87, 39)) {
-                override val empty: Boolean get() = weapon == null
-                override val name: String get() = weapon!!.type.translateShort(game)
-                override val requiredPower: Int get() = weapon!!.type.power
-                override val chargeTime: Float get() = weapon!!.chargeTime
-                override val chargeProgress: Float get() = weapon!!.chargeProgress
-                override val zoltanPower: Int get() = ship.weapons!!.getWeaponForcedPower(i)
-                override val isPowered: Boolean get() = weapon!!.isPowered
-                override val isCharged: Boolean get() = weapon!!.isCharged
-                override val isTargeted: Boolean get() = ship.weapons!!.selectedTargets.getTarget(i) != null
-                override val isSelectingTarget: Boolean get() = targetingSelectedWeapon == i
-                override val hasChargeBar: Boolean get() = true
-                override val isBeingHacked: Boolean get() = ship.weapons!!.isHackActive
-                override val droneCooldownProgress: Float? get() = null
+                buttons += object : WeaponDroneButton(ConstPoint(wx, wy), i, ConstPoint(87, 39)) {
+                    override val empty: Boolean get() = weapon == null
+                    override val name: String get() = weapon!!.type.translateShort(game)
+                    override val requiredPower: Int get() = weapon!!.type.power
+                    override val chargeTime: Float get() = weapon!!.chargeTime
+                    override val chargeProgress: Float get() = weapon!!.chargeProgress
+                    override val zoltanPower: Int get() = ship.weapons!!.getWeaponForcedPower(i)
+                    override val isPowered: Boolean get() = weapon!!.isPowered
+                    override val isCharged: Boolean get() = weapon!!.isCharged
+                    override val isTargeted: Boolean get() = ship.weapons!!.selectedTargets.getTarget(i) != null
+                    override val isSelectingTarget: Boolean get() = targetingSelectedWeapon == i
+                    override val hasChargeBar: Boolean get() = true
+                    override val isBeingHacked: Boolean get() = ship.weapons!!.isHackActive
+                    override val droneCooldownProgress: Float? get() = null
 
-                override fun click(button: Int) {
-                    when (button) {
-                        Input.MOUSE_LEFT_BUTTON -> weaponHotkeyPressed(i, false)
-                        Input.MOUSE_RIGHT_BUTTON -> weaponHotkeyPressed(i, true)
-                    }
-                }
-
-                override fun draw(g: Graphics) {
-                    super.draw(g)
-
-                    if (weapon != null && weapon.type.chargeLevels != null) {
-                        drawChargedShots()
+                    override fun click(button: Int) {
+                        when (button) {
+                            Input.MOUSE_LEFT_BUTTON -> weaponHotkeyPressed(i, false)
+                            Input.MOUSE_RIGHT_BUTTON -> weaponHotkeyPressed(i, true)
+                        }
                     }
 
-                    if (weapon != null && weapon.type.boost != null) {
-                        drawChainIcon()
-                    }
-                }
+                    override fun draw(g: Graphics) {
+                        super.draw(g)
 
-                private fun drawChargedShots() {
-                    requireNotNull(weapon)
-
-                    val filter = mainColour
-                    val max = weapon.maxTotalCharges
-                    val ready = weapon.totalReadyCharges
-                    val width = 11
-                    val baseX = pos.x + (size.x - max * 11) / 2
-                    val y = pos.y + 25
-
-                    for (charge in 0 until max) {
-                        val suffix = when {
-                            charge < ready -> "use"
-                            else -> "on"
+                        if (weapon != null && weapon.type.chargeLevels != null) {
+                            drawChargedShots()
                         }
 
-                        val img = game.getImg("img/combatUI/icon_chain_$suffix.png")
-                        val x = baseX + charge * width
-                        img.draw(x, y, filter)
-                    }
-                }
-
-                private fun drawChainIcon() {
-                    requireNotNull(weapon)
-                    val boost = weapon.type.boost
-                    requireNotNull(boost)
-
-                    val clockOn = when {
-                        weapon.chainCount == 0 -> false
-                        !isPowered -> false
-                        else -> true
+                        if (weapon != null && weapon.type.boost != null) {
+                            drawChainIcon()
+                        }
                     }
 
-                    val mode = when (clockOn) {
-                        true -> "on"
-                        false -> "off"
-                    }
-                    val iconName = when (boost.type) {
-                        AbstractWeaponBlueprint.BoostType.COOLDOWN -> "img/combatUI/icon_clock_$mode.png"
-                        AbstractWeaponBlueprint.BoostType.DAMAGE -> "img/combatUI/icon_arrow_$mode.png"
-                    }
-                    val icon = game.getImg(iconName)
+                    private fun drawChargedShots() {
+                        requireNotNull(weapon)
 
-                    val filter = when (clockOn) {
-                        true -> mainColour
-                        false -> Colour.white // Don't filter the already-greyed image
-                    }
-                    icon.draw(pos.x + 32, pos.y + 20, filter)
+                        val filter = mainColour
+                        val max = weapon.maxTotalCharges
+                        val ready = weapon.totalReadyCharges
+                        val width = 11
+                        val baseX = pos.x + (size.x - max * 11) / 2
+                        val y = pos.y + 25
 
-                    if (clockOn) {
-                        val text = "+" + weapon.chainCount
-                        weaponNameText.drawString(pos.x + 50f, pos.y + 31f, text, filter)
+                        for (charge in 0 until max) {
+                            val suffix = when {
+                                charge < ready -> "use"
+                                else -> "on"
+                            }
+
+                            val img = game.getImg("img/combatUI/icon_chain_$suffix.png")
+                            val x = baseX + charge * width
+                            img.draw(x, y, filter)
+                        }
+                    }
+
+                    private fun drawChainIcon() {
+                        requireNotNull(weapon)
+                        val boost = weapon.type.boost
+                        requireNotNull(boost)
+
+                        val clockOn = when {
+                            weapon.chainCount == 0 -> false
+                            !isPowered -> false
+                            else -> true
+                        }
+
+                        val mode = when (clockOn) {
+                            true -> "on"
+                            false -> "off"
+                        }
+                        val iconName = when (boost.type) {
+                            AbstractWeaponBlueprint.BoostType.COOLDOWN -> "img/combatUI/icon_clock_$mode.png"
+                            AbstractWeaponBlueprint.BoostType.DAMAGE -> "img/combatUI/icon_arrow_$mode.png"
+                        }
+                        val icon = game.getImg(iconName)
+
+                        val filter = when (clockOn) {
+                            true -> mainColour
+                            false -> Colour.white // Don't filter the already-greyed image
+                        }
+                        icon.draw(pos.x + 32, pos.y + 20, filter)
+
+                        if (clockOn) {
+                            val text = "+" + weapon.chainCount
+                            weaponNameText.drawString(pos.x + 50f, pos.y + 31f, text, filter)
+                        }
                     }
                 }
             }
