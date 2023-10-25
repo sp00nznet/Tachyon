@@ -51,6 +51,11 @@ class Animations(df: Datafile) {
                 else -> error("Invalid element name '${elem.name}' in animations XML")
             }
         }
+
+        // Late-bind the weapon animations to their boost animations
+        for (weapon in weaponAnimations.values) {
+            weapon.finishLoading(this)
+        }
     }
 
     private fun buildSheet(elem: Element, name: String): SpriteSheetSpec? {
@@ -117,7 +122,12 @@ class Animations(df: Datafile) {
 
         val chargeImage = xml.getChild("chargeImage")?.textTrim?.let { "img/$it" }
 
-        val boostAnim = xml.getChildTextTrim("boost")?.let { animations.getValue(it) }
+        // The boost animation, unlike the animation sheet, references the
+        // last animation that was defined. Thus you can reference the boost
+        // animation before it's declared.
+        // Thus we have to reference it by name, instead of looking it up,
+        // and then resolve it at the end.
+        val boostAnim = xml.getChildTextTrim("boost")
 
         return WeaponAnimationSpec(
             anim.sheet,
@@ -153,12 +163,14 @@ class Animations(df: Datafile) {
          */
         val chargeOffset: Int,
 
+        private val boostAnimName: String?
+    ) {
         /**
          * For charge weapons and weapons that improve over time, this has the
          * lights that indicate their progress.
          */
-        val boostAnim: AnimationSpec?
-    ) {
+        var boostAnim: AnimationSpec? = null
+            private set
 
         fun spriteAt(spriteSheet: Image, i: Int): Image {
             if (i >= length) throw IndexOutOfBoundsException(i)
@@ -188,6 +200,16 @@ class Animations(df: Datafile) {
             val fireLength = length - startFrame
 
             return (progress * fireLength).toInt().coerceIn(0 until fireLength) + startFrame
+        }
+
+        fun finishLoading(animations: Animations) {
+            if (boostAnimName == null)
+                return
+
+            boostAnim = animations[boostAnimName]
+            if (boostAnim == null) {
+                println("[WARN] Invalid boost animation '$boostAnimName', not found.")
+            }
         }
     }
 
