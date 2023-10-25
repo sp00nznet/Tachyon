@@ -748,13 +748,20 @@ class Ship(
 
         // Draw the crew
         for (crew in crew) {
-            crew.draw(g)
+            // If the crew provides vision, that works if playerHasVision
+            // isn't set. This prevents flickering as the crew walks between
+            // rooms without sensors.
+            if (crew.room.playerHasVision || crew.providesPlayerVision) {
+                crew.draw(g)
+            }
         }
 
         // Draw the health bars on top of all the other crew, so two
         // fighting crewmembers can't block one of their health bars.
         for (crew in crew) {
-            crew.drawForeground(g)
+            if (crew.room.playerHasVision || crew.providesPlayerVision) {
+                crew.drawForeground(g)
+            }
         }
 
         // Draw the system foregrounds

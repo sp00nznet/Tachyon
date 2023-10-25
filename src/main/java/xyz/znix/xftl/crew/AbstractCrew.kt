@@ -102,6 +102,11 @@ abstract class AbstractCrew(
     open val showRedOutline: Boolean
         get() = (mode == SlotType.INTRUDER) == (room.ship == game.player)
 
+    /**
+     * True if the player can see inside the crewmember's room.
+     */
+    open val providesPlayerVision: Boolean
+        get() = false
 
     init {
         // Initialise pixelPosition, pixelPositionCentre, and roomPosition

@@ -154,6 +154,8 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
 
         override val mode: SlotType get() = occupancySlotType
 
+        override val providesPlayerVision: Boolean get() = isPowered && ownerShip.isPlayerShip
+
         override fun update(dt: Float) {
             // If the ship powering this drone has jumped away, destroy it.
             // Also self-destruct if the pawn field no longer points to this

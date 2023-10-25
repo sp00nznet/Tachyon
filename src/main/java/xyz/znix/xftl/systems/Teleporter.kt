@@ -164,6 +164,11 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun drawRoom(g: Graphics) {
+        if (!room!!.playerHasVision) {
+            super.drawRoom(g)
+            return
+        }
+
         val padImage = when {
             powerSelected == 0 -> padOffImage
             onCooldown -> padActiveImage

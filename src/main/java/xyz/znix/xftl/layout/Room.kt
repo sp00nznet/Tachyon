@@ -58,6 +58,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         }
 
     /**
+     * True if the player can see the contents of the room.
+     */
+    var playerHasVision: Boolean = false
+        private set
+
+    /**
      * Is the oxygen level so low the crew will suffocate?
      */
     val isOxygenCritical: Boolean get() = oxygen < Oxygen.OXYGEN_CRITICAL_LEVEL
@@ -106,6 +112,19 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         system?.update(dt)
 
+        // Check whether the player can see inside this room
+        playerHasVision = crew.any { it.providesPlayerVision }
+
+        val playerSensors = ship.sys.player?.sensors
+        if (playerSensors != null && playerSensors.effectivePower >= 2) {
+            // View the enemy ship via L2 sensors
+            playerHasVision = true
+        }
+        if (playerSensors != null && playerSensors == ship.sensors && playerSensors.effectivePower >= 1) {
+            // View the player's own ship via L1 sensors
+            playerHasVision = true
+        }
+
         // Ships loose 1.2% oxygen per second, but gain whatever the oxygen
         // system is providing.
         val refillRate = (ship.oxygen?.refillRate ?: 0f) - Oxygen.ROOM_DRAIN_RATE
@@ -142,43 +161,15 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val x = offsetX
         val y = offsetY
 
-        g.colour = Colour(FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)).apply { a = alpha }
-        g.fillRect(
-            x.f,
-            y.f,
-            pixelWidth.f,
-            pixelHeight.f
-        )
-
-        if (isOxygenCritical) {
-            val img = ship.sys.getImg("img/effects/low_o2_stripes_${width}x${height}.png")
-            img.draw(x.f, y.f, 0.5f)
-        }
-
-        g.colour = FLOOR_GRID_COLOUR
-        for (i in 1 until width) {
-            g.drawLine(
-                (x + i * ROOM_SIZE - 1).f,
-                y.f,
-                (x + i * ROOM_SIZE - 1).f,
-                (y + pixelHeight - 1).f
-            )
-        }
-
-        for (i in 1 until height) {
-            g.drawLine(
-                x.f,
-                (y + ROOM_SIZE * i - 1).f,
-                (x + pixelWidth - 1).f,
-                (y + ROOM_SIZE * i - 1).f
-            )
-        }
+        drawFloor(g, alpha)
 
         renderSystemStuff(g)
 
         // Breaches are drawn on top of the room image
-        for (breach in breaches) {
-            breach?.draw()
+        if (playerHasVision) {
+            for (breach in breaches) {
+                breach?.draw()
+            }
         }
 
         // Draw the pathing-to boxes, if required
@@ -201,8 +192,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         }
 
         // Draw any fires
-        for (fire in fires) {
-            fire?.draw()
+        if (playerHasVision) {
+            for (fire in fires) {
+                fire?.draw()
+            }
         }
 
         // Draw the highlight on the room if it's being selected for weapon targeting.
@@ -241,9 +234,63 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         drawDebugFires(g)
     }
 
+    private fun drawFloor(g: Graphics, alpha: Float) {
+        val x = offsetX
+        val y = offsetY
+
+        if (!playerHasVision) {
+            g.colour = Colour(FLOOR_COLOUR_NO_VISION).apply { a = alpha }
+            g.fillRect(
+                x.f,
+                y.f,
+                pixelWidth.f,
+                pixelHeight.f
+            )
+            return
+        }
+
+        g.colour = Colour(FLOOR_COLOUR_NO_OXYGEN.lerp(FLOOR_COLOUR, oxygen)).apply { a = alpha }
+        g.fillRect(
+            x.f,
+            y.f,
+            pixelWidth.f,
+            pixelHeight.f
+        )
+
+        if (isOxygenCritical) {
+            val img = ship.sys.getImg("img/effects/low_o2_stripes_${width}x${height}.png")
+            img.draw(x.f, y.f, 0.5f)
+        }
+
+        g.colour = FLOOR_GRID_COLOUR
+        for (i in 1 until width) {
+            g.drawLine(
+                (x + i * ROOM_SIZE - 1).f,
+                y.f,
+                (x + i * ROOM_SIZE - 1).f,
+                (y + pixelHeight - 1).f
+            )
+        }
+
+        for (i in 1 until height) {
+            g.drawLine(
+                x.f,
+                (y + ROOM_SIZE * i - 1).f,
+                (x + pixelWidth - 1).f,
+                (y + ROOM_SIZE * i - 1).f
+            )
+        }
+    }
+
     private fun renderSystemStuff(g: Graphics) {
         val system = system ?: return
         val config = system.configuration
+
+        // Draw only the system icon for non-visible rooms
+        if (!playerHasVision) {
+            system.drawRoom(g)
+            return
+        }
 
         val x = offsetX
         val y = offsetY

@@ -6,6 +6,7 @@ public class Constants {
     public static final int ROOM_SIZE = 35;
 
     public static final Colour FLOOR_COLOUR = new Colour(230, 226, 219);
+    public static final Colour FLOOR_COLOUR_NO_VISION = new Colour(55, 55, 55);
     public static final Colour FLOOR_COLOUR_NO_OXYGEN = new Colour(254, 178, 171);
     public static final Colour FLOOR_GRID_COLOUR = new Colour(0, 0, 0, 66);
     public static final Colour ROOM_BORDER_COLOUR = Colour.black;

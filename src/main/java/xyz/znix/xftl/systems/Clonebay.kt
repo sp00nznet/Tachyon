@@ -122,7 +122,9 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     override fun drawRoom(g: Graphics) {
         // Draw the cloning tub behind the system icon.
-        drawEquipment()
+        if (room!!.playerHasVision) {
+            drawEquipment()
+        }
 
         super.drawRoom(g)
     }

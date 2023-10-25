@@ -152,6 +152,11 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (room.ship != ship && room.ship.superShield > 0)
             return
 
+        // The player can only target rooms they have visibility onto
+        // TODO slug/lifeform scanner exception
+        if (ship.isPlayerShip && !room.playerHasVision)
+            return
+
         // If we're attacking a room on the player's ship, look for intruders.
         // Otherwise, look for crewmembers on enemy ships.
         val targetMode = when (room.ship) {
