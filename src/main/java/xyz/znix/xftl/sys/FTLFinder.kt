@@ -1,5 +1,6 @@
 package xyz.znix.xftl.sys
 
+import org.lwjgl.system.Platform
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -69,7 +70,10 @@ object FTLFinder {
                 continue
 
             val steamDir = Path.of(matcher.group(1))
-            val ftlDat = steamDir.resolve("steamapps/common/FTL Faster Than Light/data/ftl.dat")
+            val ftlDat = when (Platform.get()) {
+                Platform.MACOSX -> steamDir.resolve("steamapps/common/FTL Faster Than Light/FTL.app/Contents/Resources/ftl.dat")
+                else -> steamDir.resolve("steamapps/common/FTL Faster Than Light/data/ftl.dat")
+            }
             if (!Files.isRegularFile(ftlDat))
                 continue
 
