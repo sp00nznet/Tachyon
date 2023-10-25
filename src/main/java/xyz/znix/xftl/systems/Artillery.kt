@@ -125,8 +125,8 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         g.popTransform()
     }
 
-    override fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, x: Int, y: Int) {
-        super.drawIconAndPower(game, g, isPlayer, x, y)
+    override fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, drawPower: Boolean, x: Int, y: Int) {
+        super.drawIconAndPower(game, g, isPlayer, drawPower, x, y)
 
         if (!isPlayer)
             return

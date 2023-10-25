@@ -1823,7 +1823,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         override val disabled: Boolean get() = system !is MainSystem
 
         override fun draw(g: Graphics) {
-            system.drawIconAndPower(game, g, true, pos.x, pos.y)
+            system.drawIconAndPower(game, g, true, true, pos.x, pos.y)
         }
 
         override fun click(button: Int) {

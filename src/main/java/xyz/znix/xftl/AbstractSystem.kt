@@ -336,13 +336,22 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      * player's ship. This should be used to hide stuff like the clonebay
      * queue on an enemy ship.
      *
+     * [drawPower] is false for enemy ships without top-level sensors,
+     * otherwise it's true.
+     *
      * [x] and [y] specify the top-left corner of the box that contains
      * the system icon, NOT including the 19-pixel glow around the icon.
      */
-    open fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, x: Int, y: Int) {
+    open fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, drawPower: Boolean, x: Int, y: Int) {
         // Account for the 19px of padding
         val iconX = x - 19
         val iconY = y - 19
+
+        if (!drawPower) {
+            // TODO handle when the system is ionised
+            game.getImg("img/icons/s_${codename}_${iconColourName}1.png").draw(iconX, iconY)
+            return
+        }
 
         if (!isIonised) {
             // TODO flash blue when hacking/mind control/cloaking/backup battery is active

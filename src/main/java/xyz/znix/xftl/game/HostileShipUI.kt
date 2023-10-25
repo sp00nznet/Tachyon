@@ -184,13 +184,16 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             }
         }
 
+        val playerSensors = game.player.sensors
+        val powerVisible = playerSensors != null && playerSensors.effectivePower >= 4
+
         // Draw the enemy's systems
         // TODO sorting
         for ((i, sys) in enemy.systems.withIndex()) {
             val y = boxBottomY - 49
             val x = boxX + i * 30 + 49
 
-            sys.drawIconAndPower(game, g, false, x, y)
+            sys.drawIconAndPower(game, g, false, powerVisible, x, y)
         }
     }
 
