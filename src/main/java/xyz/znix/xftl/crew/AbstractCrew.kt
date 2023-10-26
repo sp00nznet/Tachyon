@@ -734,7 +734,8 @@ abstract class AbstractCrew(
         if (game.debugFlags.noCrewDamage.set)
             return
 
-        health = max(0f, health - damage.amount)
+        // Clamp max health to avoid over-healing with the heal burst
+        health = (health - damage.amount).coerceIn(0f, maxHealth)
 
         // Dying is handled in the update loop
     }
