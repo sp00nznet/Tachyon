@@ -660,49 +660,49 @@ class SystemInstallConfiguration(
     // Parse out the computer point and direction
     init {
         val defaultCompDir: Direction?
-        val defaultCompPoint: ConstPoint?
+        val defaultCompSlot: Int?
 
         // Load defaults
-        // TODO what is this for? Kestrel seems to work fine, and I wrote this ages ago and forgot
         when (system.info) {
             Weapons.INFO -> {
-                defaultCompPoint = ConstPoint(1, 0)
                 defaultCompDir = Direction.UP
+                defaultCompSlot = 1
             }
 
             Engines.INFO -> {
-                defaultCompPoint = ConstPoint(0, 1)
                 defaultCompDir = Direction.DOWN
+                defaultCompSlot = 2
             }
 
             Shields.INFO -> {
-                defaultCompPoint = ConstPoint(0, 0)
                 defaultCompDir = Direction.LEFT
+                defaultCompSlot = 0
             }
 
             Piloting.INFO -> {
-                defaultCompPoint = ConstPoint(0, 0)
                 defaultCompDir = Direction.RIGHT
+                defaultCompSlot = 0
+            }
+
+            // For clonebay/medbay, this sets the position of the obstruction
+            Clonebay.INFO -> {
+                defaultCompSlot = 1
+                defaultCompDir = null
+            }
+
+            Medbay.INFO -> {
+                defaultCompSlot = 1
+                defaultCompDir = null
             }
 
             else -> {
                 defaultCompDir = null
-                defaultCompPoint = null
+                defaultCompSlot = null
             }
         }
 
         var compDir = spec.slotDirection ?: defaultCompDir
-
-        var compPoint = when (spec.slotNumber) {
-            null -> defaultCompPoint
-            0 -> ConstPoint(0, 0)
-            1 -> ConstPoint(1, 0)
-            2 -> ConstPoint(0, 1)
-            3 -> ConstPoint(1, 1)
-            // -2 appears to be used for the medbay to indicate no obstruction in 2-cell medbays
-            -2 -> null
-            else -> error("Invalid point value ${spec.slotNumber}")
-        }
+        var compPoint = (spec.slotNumber ?: defaultCompSlot)?.let { room.slotToPoint(it).const }
 
         // Pick a room with the invalid computer position if it's a mannable system
         // and the computer is not set.
