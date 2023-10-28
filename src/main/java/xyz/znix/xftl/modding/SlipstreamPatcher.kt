@@ -46,7 +46,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
         log.info("Loading mods: ${mods.joinToString(", ") { it.name }}")
 
         // Track modified innerPaths in case they're clobbered.
-        val moddedItems: MutableList<String> = ArrayList()
+        val moddedItems = HashSet<String>()
 
         for (mod in mods) {
             log.info("Installing mod: ${mod.name}")
@@ -153,7 +153,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
     private fun processRegularEntry(
         mod: SlipstreamMod,
         filePath: String,
-        moddedItems: MutableList<String>
+        moddedItems: HashSet<String>
     ) {
         var innerPath = filePath
 
@@ -325,7 +325,19 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             return true
         }
 
-        if (ModUtilities.isJunkFile(filePath)) {
+        // ModUtilities.isJunkFile uses a regex, which takes a few hundred ms
+        // when loading Multiverse.
+        // Thus match the behaviour with faster checks here.
+        val lastStroke = filePath.lastIndexOf('/')
+        val fileName = when {
+            lastStroke == -1 -> filePath
+            else -> filePath.substring(lastStroke + 1)
+        }
+
+        if (fileName == "thumbs.db" || fileName == ".dropbox" || fileName.endsWith(".DS_Store")
+            || fileName.startsWith('~') || fileName.endsWith('~')
+            || (fileName.startsWith('#') && fileName.endsWith('#'))
+        ) {
             log.warning(String.format("Skipping junk file: %s", filePath))
             return true
         }
