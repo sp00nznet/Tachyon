@@ -1,6 +1,6 @@
 package xyz.znix.xftl.crew
 
-import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.Damage
 
 /**
  * This defines a unit of damage given to a crew.
@@ -20,7 +20,7 @@ class SuffocationDamage(amount: Float) : AbstractCrewDamage(amount)
 class FireDamage(amount: Float) : AbstractCrewDamage(amount)
 class CombatDamage(amount: Float, val attacker: AbstractCrew) : AbstractCrewDamage(amount)
 
-class WeaponDamage(amount: Float, val weapon: AbstractWeaponBlueprint) : AbstractCrewDamage(amount) {
+class ShipDamage(amount: Float, val source: Damage) : AbstractCrewDamage(amount) {
     override val halvedForDrone: Boolean get() = true
 }
 

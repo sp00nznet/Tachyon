@@ -1010,54 +1010,64 @@ class Ship(
      * Attack the shields, either damaging the super-shield or popping
      * a regular shield bubble.
      */
-    fun attackShields(type: AbstractWeaponBlueprint, damagePos: IPoint?) {
+    fun attackShields(damage: Damage, damagePos: IPoint?) {
         // Break super shields first
         // The reason this function is in Ship and not Shields is to support
         // ships with a super shield, but no shield system.
-        if (superShield == 0) {
-            shields?.popShieldLayer()
+        if (superShield != 0) {
+            // Clamp damages to at least zero, to avoid negative values
+            // repairing the super shield.
+            val damageValue = max(damage.ionDamage, 0) * 2 + max(damage.hullDamage, 0)
+            superShield -= damageValue
+
+            if (damagePos != null && damageValue > 0) {
+                showDamageTextAt(damagePos, damageValue, DAMAGE_COLOUR_ZOLTAN)
+            }
+
             return
         }
 
-        val damage = when {
-            type.ionDamage > 0 -> type.ionDamage * 2
-            type.damage > 0 -> type.damage
-            else -> type.sysDamage
+        // Only projectiles with hull damage pop shields!
+        if (damage.hullDamage > 0) {
+            shields?.popShieldLayer()
         }
-        superShield -= damage
 
-        if (damagePos != null) {
-            showDamageTextAt(damagePos, damage, DAMAGE_COLOUR_ZOLTAN)
-        }
+        attackShieldsIon(damage)
     }
 
-    fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
+    /**
+     * Apply the ion and system damage components of a [Damage] object to the shields.
+     *
+     * This is the standard behaviour that should be used when attacking shields with
+     * a weapon, if it can do ion damage to the ship's shield.
+     */
+    fun attackShieldsIon(damage: Damage) {
+        if (damage.ionDamage <= 0 || shields == null)
+            return
+
+        // TODO use a new damage object, copying over the ion and stun properties
+        damage(shields!!.room!!, 0, damage.pureSysDamage, damage.ionDamage)
+    }
+
+    fun damage(target: Room, damage: Damage) {
         var hullMult = 1
         if (target.system == null) {
             // TODO does this properly apply hullBust values other than 1 (vanilla doesn't do that)
-            hullMult += type.hullBust
+            hullMult += damage.emptyRoomBonus
         }
 
-        val crewDamage = (type.personnelDamage ?: type.damage) * 15
-        damage(target, type.damage * hullMult, type.sysDamage, type.ionDamage)
-        crewWeaponDamage(target, crewDamage, type)
+        damage(target, damage.hullDamage * hullMult, damage.effectiveSysDamage, damage.ionDamage)
+        crewWeaponDamage(target, damage.effectiveCrewDamage.f, damage)
 
-        if (Random.rollChance(type.fireChance * 10) && !sys.debugFlags.noDmg.set) {
+        // Fire and breach are mutually exclusive, if a fire spawns then a breach cannot.
+        if (Random.rollChance(damage.fireChance) && !sys.debugFlags.noDmg.set) {
             // Spawns two fires (or possibly only one, if they both roll on the same cell).
             target.spawnFire()
             target.spawnFire()
-        }
-
-        if (Random.rollChance(type.breachChance * 10) && !sys.debugFlags.noDmg.set) {
+        } else if (Random.rollChance(damage.breachChance) && !sys.debugFlags.noDmg.set) {
             // Spawns two fires (or possibly only one, if they both roll on the same cell).
             target.spawnBreach()
         }
-
-        if (!vfx) return
-
-        playDamageEffect(type, target.pixelCentre)
-
-        type.hitShipSounds?.get()?.play()
     }
 
     fun playDamageEffect(type: AbstractWeaponBlueprint, position: IPoint) {
@@ -1070,16 +1080,18 @@ class Ship(
         if (target.system == null && damage == 0)
             return
 
-        val damageNumber = maxOf(damage, systemDamage, ionDamage)
-        val damageColour = when {
-            ionDamage > 0 -> DAMAGE_COLOUR_ION
-            systemDamage > 0 && damage == 0 -> DAMAGE_COLOUR_SYSTEM
-            else -> Colour.white
+        // Damage numbers split based on their type, also huge thanks to Gabriel Cooper
+        // for helpfully providing data on the order of damage numbers!
+        if (ionDamage > 0) {
+            target.showDamageText(ionDamage, DAMAGE_COLOUR_ION)
         }
-
-        // Don't show a popup for fire bombs etc that don't do damage
-        if (damageNumber > 0) {
-            target.showDamageText(damageNumber, damageColour)
+        val extraSystemDamage = systemDamage - damage
+        if (extraSystemDamage > 0) {
+            // because the specific sys damage shown is that that exceeds the hull damage
+            target.showDamageText(extraSystemDamage, DAMAGE_COLOUR_SYSTEM)
+        }
+        if (damage > 0) {
+            target.showDamageText(damage, Colour.white)
         }
 
         if (sys.debugFlags.noDmg.set)
@@ -1108,9 +1120,9 @@ class Ship(
         showDamageTextAt(damagePos, imageName, colour)
     }
 
-    fun crewWeaponDamage(target: Room, damage: Int, weapon: AbstractWeaponBlueprint) {
+    fun crewWeaponDamage(target: Room, damage: Float, dmg: Damage) {
         for (crew in target.crew) {
-            crew.dealDamage(WeaponDamage(damage.f, weapon))
+            crew.dealDamage(ShipDamage(damage, dmg))
         }
     }
 

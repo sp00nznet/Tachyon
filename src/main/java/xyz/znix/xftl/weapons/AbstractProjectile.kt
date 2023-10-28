@@ -1,7 +1,6 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.f
@@ -350,13 +349,23 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         if (missed == true)
             return
 
+        val damage = computeDamage()
+
         // Check for shield piercing, which seems to work the same
         // way across all weapons. Missiles for example just have
         // a very high shieldPiercing of 5.
         // This doesn't apply when the player has a super-shield
         // active, which blocks everything.
-        if (type.shieldPiercing >= activeShields && ship.superShield == 0)
+        // (except the following: resisted ion shots and sys+pers only projectiles)
+        if (type.shieldPiercing >= activeShields && ship.superShield == 0) {
+            // Projectiles with ion and shield piercing do their ion damage twice:
+            // once as they pass the shields layer (ionising the shields system),
+            // and again when they hit their target room (ionising that).
+            // The same thing applies for system damage, surprisingly
+            // enough (though it's only applied when there's ion damage).
+            ship.attackShieldsIon(damage)
             return
+        }
 
         hitShields()
 
@@ -376,17 +385,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
     }
 
     protected open fun hitShields() {
-        var ionDamage = type.ionDamage
-        if (type.ionDamage != 0) {
-            ionDamage += chainDamage
-        }
-
-        if (ionDamage > 0 && ship.superShield == 0) {
-            ship.shields!!.dealDamage(0, ionDamage)
-            ship.showDamageTextAt(position, ionDamage, Constants.DAMAGE_COLOUR_ION)
-        } else {
-            ship.attackShields(type, position)
-        }
+        ship.attackShields(computeDamage(), position)
 
         ship.playDamageEffect(type, position)
         type.hitShieldSounds?.get()?.play()
@@ -396,18 +395,16 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         currentSpace.playDamageEffect(type, position)
     }
 
+    open fun computeDamage(): Damage {
+        val damage = Damage(type)
+        damage.applyWeaponChaining(chainDamage)
+        return damage
+    }
+
     protected open fun hitHull() {
-        ship.damage(target, type)
-
-        if (chainDamage != 0) {
-            // I'm guessing this is how vanilla determines the damage to be done?
-            val ionDamage = if (type.ionDamage != 0) chainDamage else 0
-            val hullDamage = if (type.damage != 0) chainDamage else 0
-            val crewDamage = type.personnelDamage ?: hullDamage
-
-            ship.damage(target, hullDamage, hullDamage, ionDamage)
-            ship.crewWeaponDamage(target, crewDamage * 15, type)
-        }
+        ship.damage(target, computeDamage())
+        ship.playDamageEffect(type, target.pixelCentre)
+        type.hitShipSounds?.get()?.play()
     }
 
     private fun resolveMissed() {

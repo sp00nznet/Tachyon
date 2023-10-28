@@ -21,7 +21,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
     // addition to the one represented by timeCharged.
     var extraCharges: Int = 0
 
-    // For chain weapons, this is the number of shots we've fired since
+    // For chain weapons, this is the number of volleys we've fired since
     // the weapon was powered off. This is limited to the maximum number
     // of shots that have an effect.
     var chainCount: Int = 0

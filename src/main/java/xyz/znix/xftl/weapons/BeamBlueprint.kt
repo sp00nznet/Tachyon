@@ -4,7 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.FTLAnimation
 import xyz.znix.xftl.PIf
 import xyz.znix.xftl.Ship
-import xyz.znix.xftl.crew.WeaponDamage
+import xyz.znix.xftl.crew.ShipDamage
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
@@ -205,6 +205,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             super.update(dt, chargeTime, canCharge)
 
             if (isFiring) {
+                val damage = Damage(type)
+                // TODO implement chain damage
+
                 val targetShip = target!!.targetShip
 
                 // Don't block charging while firing - it does appear
@@ -236,7 +239,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                         var shieldLayers = targetShip.shields?.activeShields ?: 0
                         shieldLayers = max(0, shieldLayers - type.shieldPiercing)
-                        val beamPower = max(0, damage - shieldLayers)
+                        val beamPower = max(0, damage.hullDamage - shieldLayers)
 
                         if ((shieldLayers > 0 && beamPower == 0) || targetShip.superShield > 0) {
                             // Couldn't pierce the shields?
@@ -254,24 +257,31 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                             var hullMult = 1
                             if (room.system == null) {
                                 // TODO does this properly apply hullBust values other than 1 (vanilla doesn't do that)
-                                hullMult += type.hullBust
+                                hullMult += damage.emptyRoomBonus
                             }
 
-                            targetShip.damage(room, beamPower * hullMult, beamPower, 0)
+                            val systemDamage = when (damage.noSysDamage) {
+                                true -> damage.pureSysDamage
+                                false -> damage.pureSysDamage + beamPower
+                            }
+                            targetShip.damage(room, beamPower * hullMult, systemDamage, damage.ionDamage)
                         }
 
                         // Deal crew damage - this is done on entry to a new cell, not only to a new room.
-                        val crewDamage = (personnelDamage ?: beamPower) * 15f
+                        val crewDamage = damage.pureCrewDamage.f + when (damage.noCrewDamage) {
+                            true -> 0f
+                            false -> beamPower * 15f
+                        }
                         val crew = room.crew.filter { it.findNearestRoomPos().shipPoint posEq tmp }
 
                         for (crewmember in crew) {
-                            crewmember.dealDamage(WeaponDamage(crewDamage, type))
+                            crewmember.dealDamage(ShipDamage(crewDamage, damage))
                         }
                     }
                 }
 
                 // Damage the super-shield, if applicable.
-                updateSuperShield(firingTime, newFiringTime)
+                updateSuperShield(firingTime, newFiringTime, damage)
 
                 // Save our updated progress.
                 firingTime = newFiringTime
@@ -300,7 +310,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
         }
 
-        private fun updateSuperShield(oldFiringTime: Float, newFiringTime: Float) {
+        private fun updateSuperShield(oldFiringTime: Float, newFiringTime: Float, dmg: Damage) {
             // Guard against zero-time updates to avoid doing damage
             // more than once.
             if (oldFiringTime == newFiringTime) {
@@ -327,13 +337,9 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 superShieldReady = false
 
                 // TODO ion armour (reverse ion field)
-
-                var damage = type.damage + type.ionDamage * 2
-
-                // For anti-bio and fire beams, clamp to at least one damage.
-                if (damage == 0) {
-                    damage = 1
-                }
+                // All beams do at least one damage against super-shields.
+                // Clamp here to avoid repairing them if the weapon does negative damage.
+                val damage = max(dmg.hullDamage, 1) + max(dmg.ionDamage, 0) * 2
 
                 targetShip.superShield -= damage
             }

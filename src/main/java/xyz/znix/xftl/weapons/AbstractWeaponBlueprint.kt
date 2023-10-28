@@ -19,18 +19,28 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val projectile: String? = xml.getChildTextTrim("image")
     open val explosion: String? = xml.getChildTextTrim("explosion")
     val shots = xml.getChildTextTrim("shots")?.toInt() ?: 1
-    val damage = xml.getChildTextTrim("damage").toInt()
-    val sysDamage = xml.getChildTextTrim("sysDamage")?.toInt() ?: damage
+    val damage = xml.getChildTextTrim("damage")?.toInt() ?: 1
+    val sysDamage = xml.getChildTextTrim("sysDamage")?.toInt() ?: 0
     val ionDamage = xml.getChildTextTrim("ion")?.toInt() ?: 0
     val shieldPiercing: Int = xml.getChildTextTrim("sp")?.toInt() ?: 0
     val missilesUsed: Int = xml.getChildTextTrim("missiles")?.toInt() ?: 0
     val speed: Int? = xml.getChildTextTrim("speed")?.toInt()
-    val personnelDamage: Int? = xml.getChildTextTrim("persDamage")?.toInt()
+    val personnelDamage: Int = xml.getChildTextTrim("persDamage")?.toInt() ?: 0
     val fireChance: Int = xml.getChildTextTrim("fireChance")?.toInt() ?: 0
     val breachChance: Int = xml.getChildTextTrim("breachChance")?.toInt() ?: 0
-    val stunChance: Int = xml.getChildTextTrim("stunChance")?.toInt() ?: 0
     val chargeLevels: Int? = xml.getChildTextTrim("chargeLevels")?.toInt()
     val hullBust: Int = xml.getChildTextTrim("hullBust")?.toInt() ?: 0
+
+    // If set, always 3s stun duration
+    val stunChance: Int = xml.getChildTextTrim("stunChance")?.toInt() ?: 0
+
+    // This is the duration, if set always 100% chance
+    val stun: Int = xml.getChildTextTrim("stun")?.toInt() ?: 0
+
+    // These tags are from Hyperspace, and disable the hull damage being added
+    // to personnel and system damage.
+    val noPersonnelDamage = xml.getChildTextTrim("noPersDamage")?.toBoolean() ?: false
+    val noSysDamage = xml.getChildTextTrim("noSysDamage")?.toBoolean() ?: false
 
     // Power, charge time and cost are null for drone blueprints.
     // Use some semi-sane defaults to avoid having to check everywhere.

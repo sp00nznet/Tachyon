@@ -138,7 +138,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         override fun hitShields() {
             if (!spec.fake) {
-                ship.attackShields(type, position)
+                ship.attackShields(computeDamage(), position)
 
                 // Surely there would be way too much sound if all the fake
                 // bits of flak hit.
@@ -149,10 +149,8 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         override fun hitHull() {
             // Fake projectiles are there for the visuals only
-            // For real projectiles, we have to turn the ship's automatic
-            // explosion animation off because we're drawing it ourselves.
             if (!spec.fake) {
-                ship.damage(target, type, false)
+                ship.damage(target, computeDamage())
             }
 
             // We always have to use our custom animation, so the explosion

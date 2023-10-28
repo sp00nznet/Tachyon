@@ -42,6 +42,9 @@ class InfoPanel(private val game: InGameState) {
     fun drawWeapon(blueprint: AbstractWeaponBlueprint) {
         val lines = ArrayList<String>()
 
+        // Properly calculate the effective system and crew damage.
+        val damage = Damage(blueprint)
+
         // Build all the weapon attributes that appear when hovering over it
 
         lines += game.translator["required_power"].replace("\\1", blueprint.power.toString())
@@ -84,13 +87,11 @@ class InfoPanel(private val game: InGameState) {
         if (blueprint.ionDamage != 0) {
             lines += game.translator["ion_damage"].replace("\\1", blueprint.ionDamage.toString())
         }
-        if (blueprint.personnelDamage != null) {
-            // Damage is specified in multiples of 15
-            val hpDamage = blueprint.personnelDamage * 15
-            lines += game.translator["personnel_damage"].replace("\\1", hpDamage.toString())
+        if (damage.effectiveCrewDamage != 0) {
+            lines += game.translator["personnel_damage"].replace("\\1", damage.effectiveCrewDamage.toString())
         }
-        if (blueprint.sysDamage != blueprint.damage) {
-            lines += game.translator["system_damage"].replace("\\1", blueprint.sysDamage.toString())
+        if (damage.effectiveSysDamage != blueprint.damage) {
+            lines += game.translator["system_damage"].replace("\\1", damage.effectiveSysDamage.toString())
         }
         if (blueprint.hullBust != 0) {
             lines += game.translator["double_damage"]

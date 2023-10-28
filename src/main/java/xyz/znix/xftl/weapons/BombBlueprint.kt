@@ -173,14 +173,25 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             currentSpace.projectiles.remove(this)
 
+            val damage = Damage(type)
+            // TODO implement chain damage for bombs
+
             if (missed) {
-                currentSpace.playDamageEffect(type, position)
+                // Don't deal any damage
             } else if (hitSuperShield) {
-                currentSpace.attackShields(type, position)
-                currentSpace.playDamageEffect(type, position)
+                // Add sys to hull damage for super shield damage, and for popping
+                // shield bubbles otherwise.
+                // (Note that if a bomb is fired while the super shield is still
+                //  up, but it goes down before the bomb explodes, then it'll
+                //  damage the regular shields)
+                damage.hullDamage += damage.pureSysDamage
+                currentSpace.attackShields(damage, position)
             } else {
-                currentSpace.damage(target, type)
+                currentSpace.damage(target, damage)
+                type.hitShipSounds?.get()?.play()
             }
+
+            currentSpace.playDamageEffect(type, position)
         }
 
         override fun render(g: Graphics, currentSpace: Ship) {
