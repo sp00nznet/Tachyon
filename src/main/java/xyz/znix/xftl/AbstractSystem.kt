@@ -511,6 +511,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
                 && hackedBy?.isPoweredUp != true
                 && undamagedEnergy > 0
                 && info.canBeManned
+                && !isIonised
     }
 
     /**
