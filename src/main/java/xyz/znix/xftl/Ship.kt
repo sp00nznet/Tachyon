@@ -1045,8 +1045,7 @@ class Ship(
         if (damage.ionDamage <= 0 || shields == null)
             return
 
-        // TODO use a new damage object, copying over the ion and stun properties
-        damage(shields!!.room!!, 0, damage.pureSysDamage, damage.ionDamage)
+        damage(shields!!.room!!, damage.copyIonAndSys())
     }
 
     fun damage(target: Room, damage: Damage) {
@@ -1056,15 +1055,23 @@ class Ship(
             hullMult += damage.emptyRoomBonus
         }
 
-        damage(target, damage.hullDamage * hullMult, damage.effectiveSysDamage, damage.ionDamage)
+        val hullDamage = damage.hullDamage * hullMult
+
+        showDamageText(target, hullDamage, damage.effectiveSysDamage, damage.ionDamage)
         crewWeaponDamage(target, damage.effectiveCrewDamage.f, damage)
 
+        if (sys.debugFlags.noDmg.set)
+            return
+
+        health -= hullDamage
+        target.system?.dealDamage(damage.effectiveSysDamage, damage.ionDamage)
+
         // Fire and breach are mutually exclusive, if a fire spawns then a breach cannot.
-        if (Random.rollChance(damage.fireChance) && !sys.debugFlags.noDmg.set) {
+        if (Random.rollChance(damage.fireChance)) {
             // Spawns two fires (or possibly only one, if they both roll on the same cell).
             target.spawnFire()
             target.spawnFire()
-        } else if (Random.rollChance(damage.breachChance) && !sys.debugFlags.noDmg.set) {
+        } else if (Random.rollChance(damage.breachChance)) {
             // Spawns two fires (or possibly only one, if they both roll on the same cell).
             target.spawnBreach()
         }
@@ -1075,7 +1082,7 @@ class Ship(
         playCentredAnimation(animation, position)
     }
 
-    fun damage(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
+    private fun showDamageText(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
         // Don't show the popup for system damage in a system-less room.
         if (target.system == null && damage == 0)
             return
@@ -1093,12 +1100,6 @@ class Ship(
         if (damage > 0) {
             target.showDamageText(damage, Colour.white)
         }
-
-        if (sys.debugFlags.noDmg.set)
-            return
-
-        health -= damage
-        target.system?.dealDamage(systemDamage, ionDamage)
     }
 
     /**

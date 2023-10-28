@@ -18,6 +18,7 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.systems.*
+import xyz.znix.xftl.weapons.Damage
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -312,7 +313,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         }
 
         // When the system breaks, it does a hull point of damage.
-        ship.damage(room!!, 1, 0, 0)
+        ship.damage(room!!, Damage.hullOnly(1))
 
         // Play the explosion animation
         val animation = ship.sys.animations["explosion1"]

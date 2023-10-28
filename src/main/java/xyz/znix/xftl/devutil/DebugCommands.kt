@@ -21,6 +21,7 @@ import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.Damage
 import xyz.znix.xftl.weapons.DroneBlueprint
 import java.io.IOException
 import java.lang.reflect.Parameter
@@ -346,7 +347,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             return
         }
 
-        enemy.damage(enemy.rooms.random(), 100, 0, 0)
+        enemy.damage(enemy.rooms.random(), Damage.hullOnly(100))
 
         // In case nodmg is set, manually set the health to zero.
         enemy.health = 0

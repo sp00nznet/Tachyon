@@ -35,6 +35,7 @@ import xyz.znix.xftl.systems.*;
 import xyz.znix.xftl.ui.SpecDeserialiser;
 import xyz.znix.xftl.ui.UIProvider;
 import xyz.znix.xftl.ui.Widget;
+import xyz.znix.xftl.weapons.Damage;
 
 import java.io.IOException;
 import java.util.*;
@@ -1453,7 +1454,7 @@ public class InGameState extends MainGame.GameState {
 
             Objects.requireNonNull(targetRoom);
 
-            player.damage(targetRoom, damage.getAmount(), damage.getAmount(), 0);
+            player.damage(targetRoom, Damage.hullAndSys(damage.getAmount()));
 
             if (damage.getEffectFire()) {
                 targetRoom.spawnFire();

@@ -12,6 +12,7 @@ import xyz.znix.xftl.rollChance
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sys.GameContainer
+import xyz.znix.xftl.weapons.Damage
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
@@ -171,7 +172,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
                 damagedRooms.add(room)
 
                 // Note no crew damage
-                ship.damage(room, 1, 1, 0)
+                ship.damage(room, Damage.hullAndSys(1))
             }
 
             numFires -= numStarted
