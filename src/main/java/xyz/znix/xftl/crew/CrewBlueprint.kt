@@ -2,6 +2,7 @@ package xyz.znix.xftl.crew
 
 import org.jdom2.Element
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.GameText
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.rendering.Colour
 
@@ -13,8 +14,8 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
      *
      * This is used for UI purposes only.
      */
-    val powerStringIds: List<String> =
-        elem.getChild("powerList")?.getChildren("power")?.map { it.getAttributeValue("id") }
+    val powerStringIds: List<GameText> =
+        elem.getChild("powerList")?.getChildren("power")?.map { GameText.parse(it) }
             ?: emptyList()
 
     /**
@@ -81,6 +82,7 @@ class CrewBlueprint(elem: Element) : Blueprint(elem) {
             "slug" -> CrewSlug(this, animations, room, mode)
             "crystal" -> CrewCrystal(this, animations, room, mode)
             "anaerobic" -> CrewAnaerobic(this, animations, room, mode)
+            "ghost" -> CrewGhost(this, animations, room, mode)
 
             // Until we've implemented all the others, don't give a hard error here.
             else -> {
