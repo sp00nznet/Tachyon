@@ -8,8 +8,6 @@ import java.io.File
 import java.io.InputStream
 import java.util.*
 import java.util.logging.Logger
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 import java.util.zip.ZipFile
 
 
@@ -53,9 +51,10 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
         for (mod in mods) {
             log.info("Installing mod: ${mod.name}")
 
-            for (fileName in mod.entries) {
-                val entry = buildEntry(fileName) ?: continue
-                processRegularEntry(mod, entry, moddedItems)
+            for (filePath in mod.entries) {
+                if (isJunkFile(filePath))
+                    continue
+                processRegularEntry(mod, filePath, moddedItems)
             }
         }
 
@@ -70,18 +69,18 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             // it on-demand - but the XSLT files shouldn't be very big, and
             // it'd be a pretty invasive change to load the libraries on-demand.
             for (filePath in mod.entries) {
-                val entry = buildEntry(filePath) ?: continue
+                if (isJunkFile(filePath))
+                    continue
 
                 if (!filePath.endsWith(".xsl")) {
                     continue
                 }
 
-                val innerPath = checkCase(entry.innerPath)
-                val key = entry.parentPath + entry.fileName
-                if (stylesheets.containsKey(key)) {
+                val innerPath = checkCase(filePath)
+                if (stylesheets.containsKey(filePath)) {
                     log.warning(String.format("Clobbering earlier stylesheet: %s", innerPath))
                 }
-                stylesheets[key] = mod.openFile(filePath).use { it.readAllBytes() }
+                stylesheets[filePath] = mod.openFile(filePath).use { it.readAllBytes() }
                 log.info("Added stylesheet to temporary database: $innerPath")
                 if (!moddedItems.contains(innerPath)) {
                     moddedItems.add(innerPath)
@@ -92,7 +91,8 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             // same basic form as above
             var noTransformsYet = true
             for (filePath in mod.entries) {
-                val entry = buildEntry(filePath) ?: continue
+                if (isJunkFile(filePath))
+                    continue
 
                 if (!filePath.endsWith(".xsl")) {
                     continue
@@ -103,7 +103,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
                     log.info("Applying XSL Transforms...")
                 }
 
-                var innerPath = entry.parentPath + entry.fileName.replace("[.]xsl$".toRegex(), ".xml")
+                var innerPath = filePath.removeSuffix(".xsl") + ".xml"
                 innerPath = checkCase(innerPath)
                 val oldFileSource = files[innerPath]
                 if (oldFileSource == null) {
@@ -113,7 +113,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
                             "Could not find base file: %s\n%sAssuming %s is an XSL library",
                             innerPath,
                             padding,
-                            entry.fileName
+                            filePath
                         )
                     )
                     continue
@@ -123,13 +123,13 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
                 files[innerPath] = object : FileSource {
                     override fun open(): InputStream {
                         oldFileSource.open().use { mainStream ->
-                            mod.openFile(entry.innerPath).use { append ->
+                            mod.openFile(filePath).use { append ->
                                 return ModUtilities.transformXMLFile(
                                     mainStream,
                                     append,
                                     "UTF-8",
                                     innerPath, // What mod did this file come from?
-                                    mod.name + ":" + entry.parentPath + entry.fileName,
+                                    mod.name + ":" + filePath,
                                     stylesheets
                                 )
                             }
@@ -152,16 +152,13 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
      */
     private fun processRegularEntry(
         mod: SlipstreamMod,
-        entry: ItemEntry,
+        filePath: String,
         moddedItems: MutableList<String>
     ) {
-        val fileName = entry.fileName
-        val parentPath = entry.parentPath
-        var innerPath = entry.innerPath
+        var innerPath = filePath
 
-        if (fileName.endsWith(".xml.append") || fileName.endsWith(".append.xml")) {
-            innerPath =
-                parentPath + fileName.replace("[.](?:xml[.]append|append[.]xml)$".toRegex(), ".xml")
+        if (filePath.endsWith(".xml.append") || filePath.endsWith(".append.xml")) {
+            innerPath = filePath.replace("[.](?:xml[.]append|append[.]xml)$".toRegex(), ".xml")
             innerPath = checkCase(innerPath)
 
             val previous = files[innerPath]
@@ -177,14 +174,14 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
                     val globalPanic = false
 
                     return previous.open().use { original ->
-                        mod.openFile(entry.innerPath).use { append ->
+                        mod.openFile(filePath).use { append ->
                             ModUtilities.patchXMLFile(
                                 original,
                                 append,
                                 "UTF-8",
                                 globalPanic,
                                 innerPath, // What mod did this file come from?
-                                mod.name + ":" + parentPath + fileName
+                                mod.name + ":" + filePath
                             )
                         }
                     }
@@ -196,8 +193,8 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             }
             return
         }
-        if (fileName.endsWith(".xml.rawappend") || fileName.endsWith(".rawappend.xml")) {
-            innerPath = parentPath + fileName.replace(
+        if (filePath.endsWith(".xml.rawappend") || filePath.endsWith(".rawappend.xml")) {
+            innerPath = filePath.replace(
                 "[.](?:xml[.]rawappend|rawappend[.]xml)$".toRegex(),
                 ".xml"
             )
@@ -212,13 +209,13 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             files[innerPath] = object : FileSource {
                 override fun open(): InputStream {
                     original.open().use { mainStream ->
-                        mod.openFile(entry.innerPath).use { append ->
+                        mod.openFile(filePath).use { append ->
                             return ModUtilities.appendXMLFile(
                                 mainStream,
                                 append,
                                 "UTF-8",
                                 innerPath, // What mod did this file come from?
-                                mod.name + ":" + parentPath + fileName
+                                mod.name + ":" + filePath
                             )
                         }
                     }
@@ -230,8 +227,8 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             }
             return
         }
-        if (fileName.endsWith(".xml.rawclobber") || fileName.endsWith(".rawclobber.xml")) {
-            innerPath = parentPath + fileName.replace(
+        if (filePath.endsWith(".xml.rawclobber") || filePath.endsWith(".rawclobber.xml")) {
+            innerPath = filePath.replace(
                 "[.](?:xml[.]rawclobber|rawclobber[.]xml)$".toRegex(),
                 ".xml"
             )
@@ -240,7 +237,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
 
             // Slipstream fiddles around with the line endings here,
             // we don't care as our parsers can tolerate either line ending.
-            files[innerPath] = ModFileSource(entry.innerPath, mod)
+            files[innerPath] = ModFileSource(filePath, mod)
 
             if (!moddedItems.contains(innerPath)) {
                 moddedItems.add(innerPath)
@@ -249,15 +246,15 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             }
             return
         }
-        if (fileName.endsWith(".xml")) {
+        if (filePath.endsWith(".xml")) {
             innerPath = checkCase(innerPath)
 
             files[innerPath] = object : FileSource {
                 override fun open(): InputStream {
-                    val baseStream = mod.openFile(entry.innerPath)
+                    val baseStream = mod.openFile(filePath)
                     return ModUtilities.rebuildXMLFile(
                         baseStream, "UTF-8",
-                        mod.name + ":" + parentPath + fileName,
+                        mod.name + ":" + filePath,
                         true
                     )
                 }
@@ -270,11 +267,11 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             }
             return
         }
-        if (fileName.endsWith(".txt")) {
+        if (filePath.endsWith(".txt")) {
             innerPath = checkCase(innerPath)
 
             // Don't care about newlines, our parsers can handle both
-            files[innerPath] = ModFileSource(entry.innerPath, mod)
+            files[innerPath] = ModFileSource(filePath, mod)
 
             if (!moddedItems.contains(innerPath)) {
                 moddedItems.add(innerPath)
@@ -291,7 +288,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             log.warning(String.format("Clobbering earlier mods: %s", innerPath))
         }
 
-        files[innerPath] = ModFileSource(entry.innerPath, mod)
+        files[innerPath] = ModFileSource(filePath, mod)
     }
 
 
@@ -321,37 +318,19 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
         return originalCase
     }
 
-    private fun buildEntry(innerPath: String): ItemEntry? {
-        // copied from below
-        val m: Matcher = PATH_PATTERN.matcher(innerPath)
-        if (!m.matches()) {
-            log.warning(String.format("Unexpected innerPath: %s", innerPath))
-            return null
-        }
-        val parentPath: String = m.group(1)
-        val root: String = m.group(2) // What is this?
-        val fileName: String = m.group(3)
-
+    private fun isJunkFile(filePath: String): Boolean {
         // Silently discard anything in a __MACOSX directory, as there
         // can be lots and lots of files there.
-        if (innerPath.contains("__MACOSX/")) {
-            return null
+        if (filePath.contains("__MACOSX/")) {
+            return true
         }
 
-        if (ModUtilities.isJunkFile(innerPath)) {
-            log.warning(String.format("Skipping junk file: %s", innerPath))
-            return null
+        if (ModUtilities.isJunkFile(filePath)) {
+            log.warning(String.format("Skipping junk file: %s", filePath))
+            return true
         }
 
-        // TODO clean this up, get rid of ItemEntry if we can
-        return ItemEntry(parentPath, fileName, innerPath)
-    }
-
-    private class ItemEntry(val parentPath: String, val fileName: String, val innerPath: String)
-
-    companion object {
-        // Group1: parentPath/, Group2: root/, Group3: fileName.
-        private val PATH_PATTERN: Pattern = Pattern.compile("^(?:(([^/]+/)(?:.*/)?))?([^/]+)$")
+        return false
     }
 }
 
