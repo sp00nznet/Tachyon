@@ -143,7 +143,7 @@ class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // Cut 20% from our cloak
         val previous = timeRemaining ?: return
-        timeRemaining = previous * 0.80f
+        timeRemaining = previous - duration * 0.20f
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
