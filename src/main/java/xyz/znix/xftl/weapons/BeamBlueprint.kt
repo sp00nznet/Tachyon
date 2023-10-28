@@ -25,6 +25,13 @@ import kotlin.random.nextInt
 class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     val length: Int = xml.getChildTextTrim("length").toInt()
 
+    /**
+     * Makes ion beams hit shield like zoltan shield. This is a Hyperspace tag.
+     *
+     * Without it, the ion damage is applied every frame.
+     */
+    val ionBeamFix: Boolean = xml.getChildTextTrim("ionBeamFix")?.toBoolean() ?: false
+
     // See the note on SPEED_MULTIPLIER.
     val speedPixelsPerSecond = (speed ?: DEFAULT_SPEED) * SPEED_MULTIPLIER
 
@@ -342,6 +349,16 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 val damage = max(dmg.hullDamage, 1) + max(dmg.ionDamage, 0) * 2
 
                 targetShip.superShield -= damage
+            }
+
+            // Apply the ion damage against the shields system.
+            // Without the ionBeamFix, this re-creates a vanilla bug where
+            // this damage is applied every frame, instantly zapping
+            // the shields system.
+            val activeShields = targetShip.shields?.activeShields ?: 0
+            if (targetShip.superShield == 0 && activeShields > 0 && (superShieldReady || !ionBeamFix)) {
+                superShieldReady = false
+                targetShip.attackShieldsIon(dmg)
             }
         }
 
