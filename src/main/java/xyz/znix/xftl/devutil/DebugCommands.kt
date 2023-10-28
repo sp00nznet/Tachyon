@@ -45,6 +45,30 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         ship.dronesCount = 99
     }
 
+    @ConsoleCommand(name = "scrap")
+    @CmdHelp("Gain or lose some amount of scrap")
+    private fun cmdScrap(@ParName("amount") amount: Int) {
+        game.player.scrap += amount
+    }
+
+    @ConsoleCommand(name = "drones")
+    @CmdHelp("Gain or lose some amount of drone parts")
+    private fun cmdDrones(@ParName("amount") amount: Int) {
+        game.player.dronesCount += amount
+    }
+
+    @ConsoleCommand(name = "missiles")
+    @CmdHelp("Gain or lose some amount of missiles")
+    private fun cmdMissiles(@ParName("amount") amount: Int) {
+        game.player.missilesCount += amount
+    }
+
+    @ConsoleCommand(name = "fuel")
+    @CmdHelp("Gain or lose some amount of fuel")
+    private fun cmdFuel(@ParName("amount") amount: Int) {
+        game.player.fuelCount += amount
+    }
+
     @ConsoleCommand(name = "weapon")
     @CmdHelp("Select a weapon, and add it to the ship's cargo area")
     private fun cmdWeapon(@ParName("name") weapon: AbstractWeaponBlueprint) {
