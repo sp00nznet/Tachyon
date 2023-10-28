@@ -661,7 +661,7 @@ class SystemInstallConfiguration(
     // Parse out the computer point and direction
     init {
         val defaultCompDir: Direction?
-        val defaultCompSlot: Int?
+        var defaultCompSlot: Int?
 
         // Load defaults
         when (system.info) {
@@ -700,6 +700,11 @@ class SystemInstallConfiguration(
                 defaultCompDir = null
                 defaultCompSlot = null
             }
+        }
+
+        // If the default computer slot doesn't fit the room, move it to slot zero.
+        if (defaultCompSlot != null && defaultCompSlot >= room.cellCount) {
+            defaultCompSlot = 0
         }
 
         var compDir = spec.slotDirection ?: defaultCompDir
