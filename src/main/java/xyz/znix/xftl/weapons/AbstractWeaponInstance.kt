@@ -2,6 +2,7 @@ package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.rendering.Colour
@@ -78,11 +79,14 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         }
 
     open fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
+        val speedMult = (1f + ship.getAugmentValue(AugmentBlueprint.AUTOMATED_RELOADERS))
+
         if (isPowered) {
             if (canCharge)
-                timeCharged += chargeTime
+                timeCharged += chargeTime * speedMult
         } else {
-            timeCharged -= dt * 10
+            // Automated reloaders make weapons turn off faster, too.
+            timeCharged -= dt * 10 * speedMult
 
             if (timeCharged <= 0) {
                 extraCharges = 0

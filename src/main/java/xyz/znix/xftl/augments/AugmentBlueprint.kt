@@ -29,6 +29,7 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
     open fun onShipSpawn(ship: Ship) {}
 
     companion object {
+        const val AUTOMATED_RELOADERS: String = "AUTO_COOLDOWN"
         const val LONG_RANGE_SCANNERS: String = "ADV_SCANNERS"
         const val RECONSTRUCTIVE_TELEPORT: String = "TELEPORT_HEAL"
         const val OXYGEN_MASKS: String = "O2_MASKS"

@@ -139,6 +139,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
 
             // Augments that use the default AugmentBlueprint and are implemented
             // as part of another system should be explicitly handled here.
+            AugmentBlueprint.AUTOMATED_RELOADERS -> AugmentBlueprint(elem)
             AugmentBlueprint.LONG_RANGE_SCANNERS -> AugmentBlueprint(elem)
             AugmentBlueprint.RECONSTRUCTIVE_TELEPORT -> AugmentBlueprint(elem)
             AugmentBlueprint.OXYGEN_MASKS -> AugmentBlueprint(elem)
