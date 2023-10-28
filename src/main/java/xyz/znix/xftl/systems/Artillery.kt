@@ -2,6 +2,7 @@ package xyz.znix.xftl.systems
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
+import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -85,7 +86,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             amount *= 5
         if (ship.opponentCloakActive)
             amount = 0f
-        chargeProgress += amount
+        chargeProgress += amount * (1f + ship.getAugmentValue(AugmentBlueprint.AUTOMATED_RELOADERS))
 
         if (chargeProgress >= 1f) {
             val targetShip = ship.sys.getEnemyOf(ship)
