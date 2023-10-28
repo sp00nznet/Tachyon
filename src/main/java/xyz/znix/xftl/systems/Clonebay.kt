@@ -146,7 +146,14 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         topImage.draw(x, y)
     }
 
-    override fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, drawPower: Boolean, x: Int, y: Int) {
+    override fun drawIconAndPower(
+        game: InGameState,
+        g: Graphics,
+        isPlayer: Boolean,
+        drawPower: Boolean,
+        x: Int,
+        y: Int
+    ) {
         super.drawIconAndPower(game, g, isPlayer, drawPower, x, y)
 
         if (!isPlayer)

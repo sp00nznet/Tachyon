@@ -2,7 +2,6 @@ package xyz.znix.xftl.sys
 
 import org.lwjgl.glfw.GLFW
 import org.newdawn.slick.InputListener
-import org.newdawn.slick.util.InputAdapter
 
 /**
  * A representation of all user input.

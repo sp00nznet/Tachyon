@@ -135,6 +135,7 @@ object BatteryEnergySource : EnergySource {
             battery.isHackActive -> {
                 power[ReactorEnergySource] = power[ReactorEnergySource]!! - 2
             }
+
             else -> {
                 power[BatteryEnergySource] = battery.contributedPower
             }
