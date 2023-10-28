@@ -39,7 +39,8 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         (1..4).map { game.getImg("img/systemUI/button_artillery_$it.png") }
     }
 
-    private val cooldown: Float get() = 60f - powerSelected * 10f
+    // The blueprint's cooldown is correct for a level-2 artillery system.
+    private val cooldown: Float get() = weapon.chargeTime * (1.5f - powerSelected * 0.25f)
 
     private val hardpoint by lazy {
         // Find out what our index is, in all the artillery systems specified
@@ -125,7 +126,14 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         g.popTransform()
     }
 
-    override fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, drawPower: Boolean, x: Int, y: Int) {
+    override fun drawIconAndPower(
+        game: InGameState,
+        g: Graphics,
+        isPlayer: Boolean,
+        drawPower: Boolean,
+        x: Int,
+        y: Int
+    ) {
         super.drawIconAndPower(game, g, isPlayer, drawPower, x, y)
 
         if (!isPlayer)
