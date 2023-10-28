@@ -75,7 +75,7 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         // The shield charge booster and manning multiply together, per the wiki.
-        val boosterRate = 1f + 0.15f * ship.augments.count { it.name == AugmentBlueprint.SHIELD_CHARGE_BOOSTER }
+        val boosterRate = 1f + ship.getAugmentValue(AugmentBlueprint.SHIELD_CHARGE_BOOSTER)
         val manningBonus = getSkillLevel(Skill.SHIELDS)?.let { SKILL_BONUSES[it.ordinal] } ?: 0
         val manningRate = 1f + manningBonus / 100f
         val chargeRate = boosterRate * manningRate
