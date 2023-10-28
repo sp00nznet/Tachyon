@@ -1006,6 +1006,31 @@ class Ship(
         }
     }
 
+    /**
+     * Attack the shields, either damaging the super-shield or popping
+     * a regular shield bubble.
+     */
+    fun attackShields(type: AbstractWeaponBlueprint, damagePos: IPoint?) {
+        // Break super shields first
+        // The reason this function is in Ship and not Shields is to support
+        // ships with a super shield, but no shield system.
+        if (superShield == 0) {
+            shields?.popShieldLayer()
+            return
+        }
+
+        val damage = when {
+            type.ionDamage > 0 -> type.ionDamage * 2
+            type.damage > 0 -> type.damage
+            else -> type.sysDamage
+        }
+        superShield -= damage
+
+        if (damagePos != null) {
+            showDamageTextAt(damagePos, damage, DAMAGE_COLOUR_ZOLTAN)
+        }
+    }
+
     fun damage(target: Room, type: AbstractWeaponBlueprint, vfx: Boolean = true) {
         var hullMult = 1
         if (target.system == null) {

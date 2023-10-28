@@ -1,17 +1,14 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import xyz.znix.xftl.Constants
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.Skill
-import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.max
 
 class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
@@ -130,22 +127,7 @@ class Shields(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
     }
 
-    fun popShieldLayer(type: AbstractWeaponBlueprint, damagePos: IPoint?) {
-        // Break super shields first
-        if (ship.superShield > 0) {
-            val damage = when {
-                type.ionDamage > 0 -> type.ionDamage * 2
-                type.damage > 0 -> type.damage
-                else -> type.sysDamage
-            }
-            ship.superShield -= damage
-
-            if (damagePos != null) {
-                ship.showDamageTextAt(damagePos, damage, Constants.DAMAGE_COLOUR_ZOLTAN)
-            }
-            return
-        }
-
+    fun popShieldLayer() {
         if (activeShields == 0)
             return
 

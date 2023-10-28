@@ -138,7 +138,7 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         override fun hitShields() {
             if (!spec.fake) {
-                ship.shields!!.popShieldLayer(type, position)
+                ship.attackShields(type, position)
 
                 // Surely there would be way too much sound if all the fake
                 // bits of flak hit.

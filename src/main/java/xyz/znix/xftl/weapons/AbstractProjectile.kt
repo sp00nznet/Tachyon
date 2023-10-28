@@ -385,7 +385,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
             ship.shields!!.dealDamage(0, ionDamage)
             ship.showDamageTextAt(position, ionDamage, Constants.DAMAGE_COLOUR_ION)
         } else {
-            ship.shields!!.popShieldLayer(type, position)
+            ship.attackShields(type, position)
         }
 
         ship.playDamageEffect(type, position)

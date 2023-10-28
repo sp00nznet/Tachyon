@@ -176,8 +176,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             if (missed) {
                 currentSpace.playDamageEffect(type, position)
             } else if (hitSuperShield) {
-                // TODO support ships without a shields system
-                currentSpace.shields?.popShieldLayer(type, position)
+                currentSpace.attackShields(type, position)
                 currentSpace.playDamageEffect(type, position)
             } else {
                 currentSpace.damage(target, type)
