@@ -289,7 +289,10 @@ class SILFontLoader {
                 nextWidth += ((info.w + postKern) * scale).roundToInt()
             }
 
-            if (currentWidth + nextWidth > maxWidth) {
+            // If this word would make the line to long, split it here.
+            // The exception is that if the line is currently empty, this word
+            // won't ever fit - so don't leave a blank line before it.
+            if (currentWidth + nextWidth > maxWidth && line.isNotEmpty()) {
                 lines.add(line.toString())
                 line.clear()
                 currentWidth = 0
