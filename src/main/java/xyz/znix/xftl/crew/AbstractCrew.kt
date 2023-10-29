@@ -539,6 +539,13 @@ abstract class AbstractCrew(
         enemyToAttack = null
         isPunching = false
 
+        // If we're an intruder and there's nothing for us to do, just stand idle.
+        // Otherwise, we'd start repairing breaches.
+        if (mode == SlotType.INTRUDER) {
+            currentAction = Action.IDLE
+            return
+        }
+
 
         // Check if this room is on fire, and we need to put it out.
         currentFireSlot = selectFireOrBreach(currentFireSlot, room.fires)
@@ -579,7 +586,7 @@ abstract class AbstractCrew(
 
         // Check if the system in this room is broken, and if so repair it.
         system?.let { sys ->
-            if (sys.damaged && mode == SlotType.CREW && canRepair) {
+            if (sys.damaged && canRepair) {
                 currentAction = Action.REPAIRING
                 // The base repair speed is 8% per second, or 12.5 seconds to
                 // repair one bar of damage.
@@ -592,7 +599,7 @@ abstract class AbstractCrew(
             }
         }
 
-        if (canManSystem && mode == SlotType.CREW && system?.isMannableBy(this) == true) {
+        if (canManSystem && system?.isMannableBy(this) == true) {
             val computerPoint = system.configuration.computerPoint!!
             if (computerPoint posEq roomPosition) {
                 currentAction = Action.MANNING
