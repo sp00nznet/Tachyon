@@ -1892,6 +1892,17 @@ class Ship(
             .any { it.ownerShip == otherShip }
     }
 
+    /**
+     * Checks if there's any crew onboard that don't belong to the player.
+     *
+     * This is needed to check for the enemy crew dead events, as FTL
+     * doesn't seem to care where the enemy crew ultimately came from.
+     */
+    fun hasCrewOwnedByAnyOtherShip(): Boolean {
+        return crew.filterIsInstance(LivingCrew::class.java)
+            .any { it.ownerShip != this }
+    }
+
     companion object {
         const val MAX_AUGMENTS: Int = 3
     }

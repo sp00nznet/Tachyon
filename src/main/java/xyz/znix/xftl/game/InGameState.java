@@ -596,7 +596,7 @@ public class InGameState extends MainGame.GameState {
             // Note we check the crew owners, so that mind-controlling the last
             // crew doesn't break it.
             boolean anyCrewLeft = enemy.hasCrewOwnedByShip(enemy);
-            boolean anyBoardersLeft = player.hasCrewOwnedByShip(enemy);
+            boolean anyBoardersLeft = player.hasCrewOwnedByAnyOtherShip();
             if (!anyCrewLeft && !anyBoardersLeft && !enemy.isAutoScout() && enemyIsHostile) {
                 if (enemy.getSpec() != null) {
                     IEvent event = enemy.getSpec().getDeadCrew();
