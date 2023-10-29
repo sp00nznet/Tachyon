@@ -36,6 +36,11 @@ class DebugFlagManager {
         "Show the 6x4 grid that all the beacons in the jump map fit within"
     )
 
+    val showEverything = DebugFlag(
+        "se", "Show everything (max level sensors)", true,
+        "Equivalent to manned max-level sensors"
+    )
+
     val fastWeaponCharge = DebugFlag(
         "fwc", "Fast Weapon Charge", false,
         "Weapons charge at ten times their normal speed"
@@ -100,6 +105,7 @@ class DebugFlagManager {
         showBeamVectors,
         showSunTimer,
         showMapGrid,
+        showEverything,
         fastWeaponCharge,
         noEnemyFire,
         noDmg,

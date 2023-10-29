@@ -185,6 +185,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         }
 
         val powerVisible = game.player.sensors?.showsEnemyPowerLevels == true
+                || game.debugFlags.showEverything.set
 
         // Draw the enemy's systems
         // TODO sorting

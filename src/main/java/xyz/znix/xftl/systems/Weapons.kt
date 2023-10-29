@@ -428,7 +428,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
             // Make sure the player has high enough level sensors to see the bar
             val game = ship.sys
-            if (game.player.sensors?.showsEnemyWeaponCharge != true)
+            if (game.player.sensors?.showsEnemyWeaponCharge != true && !game.debugFlags.showEverything.set)
                 return
 
             val enemyChargeBox = game.getImg("img/combatUI/box_hostiles_weapon_charge.png")
