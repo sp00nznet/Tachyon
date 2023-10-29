@@ -710,7 +710,12 @@ class SystemInstallConfiguration(
         }
 
         var compDir = spec.slotDirection ?: defaultCompDir
-        var compPoint = (spec.slotNumber ?: defaultCompSlot)?.let { room.slotToPoint(it).const }
+        var compPoint = (spec.slotNumber ?: defaultCompSlot)?.let {
+            // -2 appears to be used for the medbay to indicate no obstruction in 2-cell medbays
+            if (it == -2)
+                return@let null
+            room.slotToPoint(it).const
+        }
 
         // Pick a room with the invalid computer position if it's a mannable system
         // and the computer is not set.
