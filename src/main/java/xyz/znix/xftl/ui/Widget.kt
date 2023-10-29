@@ -188,6 +188,24 @@ abstract class Widget(val provider: UIProvider) {
         return emptyList()
     }
 
+    /**
+     * Update this component, based on where the mouse is.
+     *
+     * This is not called in-game; there, use [createGameButtons] for interactivity.
+     * Since those buttons can only exist in-game, this is used elsewhere.
+     */
+    open fun updateMouse(x: Int, y: Int) {
+    }
+
+    /**
+     * Called when a mouse button is clicked.
+     *
+     * This is not called in-game; there, use [createGameButtons] for interactivity.
+     * Since those buttons can only exist in-game, this is used elsewhere.
+     */
+    open fun mouseClicked(button: Int) {
+    }
+
     protected fun loadXML(elem: Element) {
         id = elem.getAttributeValue("id")
 

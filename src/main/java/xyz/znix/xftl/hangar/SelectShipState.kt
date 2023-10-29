@@ -1,44 +1,35 @@
 package xyz.znix.xftl.hangar
 
+import org.jdom2.JDOMException
+import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.*
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.game.ShipBlueprint
+import xyz.znix.xftl.game.ShipFamily
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.WindowRenderer
 import xyz.znix.xftl.sys.GameContainer
+import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.sys.ResourceContext
+import xyz.znix.xftl.ui.*
+import java.io.IOException
 
 class SelectShipState(private val datafile: Datafile, private val main: MainGame) : MainGame.GameState() {
     private val resourceContext = ResourceContext()
 
-    val font = SILFontLoader(resourceContext, datafile, datafile["fonts/c&c.font"])
-    val fontHL2 = SILFontLoader(resourceContext, datafile, datafile["fonts/HL2.font"])
-
     val mousePos = Point(0, 0)
     val shipOffset = Point(0, 0)
+
+    private val shipSelectorPos = ConstPoint(20, 50)
 
     // This is the size of the game window, not the full screen - but 'window'
     // also refers to in-game windows.
     val screenSize = Point(0, 0)
-
-    private val baseShipNames = listOf(
-        "PLAYER_SHIP_HARD",
-        "PLAYER_SHIP_CIRCLE",
-        "PLAYER_SHIP_FED",
-        "PLAYER_SHIP_ENERGY",
-
-        "PLAYER_SHIP_MANTIS",
-        "PLAYER_SHIP_JELLY",
-        "PLAYER_SHIP_ROCK",
-        "PLAYER_SHIP_STEALTH",
-
-        "PLAYER_SHIP_ANAEROBIC",
-        "PLAYER_SHIP_CRYSTAL"
-    )
 
     val blueprints: BlueprintManager = BlueprintManager(datafile, true)
     val translator: Translator = Translator(datafile, "en")
@@ -48,13 +39,8 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
 
     val windowRenderer: WindowRenderer
 
-    private val ships: List<ShipBlueprint> = blueprints.blueprints.values
-        .filterIsInstance(ShipBlueprint::class.java)
-        .filter { it.isPlayerShip }
-        .sortedBy { it.name }
-        .sortedBy { ship -> baseShipNames.indexOfFirst { ship.name.startsWith(it) } }
-
-    private var hovered: ShipBlueprint? = null
+    val shipFamilies: ShipFamily.FamilyTable
+    val ships: List<ShipBlueprint>
 
     private val current: EditableShip get() = editor.ship
     private val currentBlueprint: ShipBlueprint get() = blueprints[current.baseBlueprint] as ShipBlueprint
@@ -63,15 +49,24 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         private set
 
     private val images = HashMap<String, Image>()
+    private val fonts = HashMap<String, SILFontLoader>()
 
     private val editFileControls: EditFileControls
 
-    private var editor: ShipEditor
+    private lateinit var editor: ShipEditor
 
     private val startGameButton: StartGameButton
 
+    private val uiProvider: UIProvider = ShipSelectUIProvider()
+    private val shipSelector: WidgetContainer
+
+    private val shipList: ShipList
+    private var shipListVisible = false
+
+    val font = getFont("c&c")
+    val fontHL2 = getFont("HL2")
+
     init {
-        editor = ShipEditor(this, EditableShip.fromBlueprint(ships.first()))
         startGameButton = StartGameButton(this)
         editFileControls = EditFileControls(this)
 
@@ -79,6 +74,48 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         val outline = getImg("img/window_outline.png")
         val mask = getImg("img/window_mask.png")
         windowRenderer = WindowRenderer(background, outline, mask)
+
+        // TODO load this via the usual asset system, so mods can override it
+        // TODO de-duplicate with InGameState
+        val builder = SAXBuilder()
+        builder.setExpandEntities(false)
+        try {
+            val doc = builder.build(javaClass.getResourceAsStream("/assets/data/xftl_ships.xml"))
+            shipFamilies = ShipFamily.FamilyTable(doc)
+        } catch (e: IOException) {
+            throw RuntimeException("Failed to load ship data", e);
+        } catch (e: JDOMException) {
+            throw RuntimeException("Failed to parse ship data", e);
+        }
+        val familyNames = shipFamilies.families.map { it.ships[0] }
+
+        ships = blueprints.blueprints.values
+            .filterIsInstance(ShipBlueprint::class.java)
+            .filter { it.isPlayerShip }
+            .sortedBy { it.name }
+            .sortedBy { ship -> familyNames.indexOfFirst { ship.name.startsWith(it) } }
+
+        shipSelector = SpecDeserialiser(uiProvider).load("ship_list_abc").mainWidget
+
+        shipSelector.addButtonListener("random") { selectShip(ships.random()) }
+
+        shipSelector.addButtonListener("type_a") { selectShipVariant(0) }
+        shipSelector.addButtonListener("type_b") { selectShipVariant(1) }
+        shipSelector.addButtonListener("type_c") { selectShipVariant(2) }
+
+        shipSelector.addButtonListener("list") { shipListVisible = true }
+
+        // TODO hide/show rooms button
+        // TODO the arrow navigation buttons
+
+        shipList = ShipList(this) {
+            shipListVisible = false
+            if (it != null) {
+                selectShip(it)
+            }
+        }
+
+        selectShip(ships.first { it.name == shipFamilies.families.first().ships[0] })
     }
 
     override fun shutdown() {
@@ -91,32 +128,17 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         screenSize.x = container.width
         screenSize.y = container.height
 
-        hovered = null
-
-        val x = 30
-        var y = 40
-        val width = 175
-        val height = 17
-
-        for (ship in ships) {
-            val highlighted = mousePos.x in x..x + width && mousePos.y in y..y + height
-
-            if (highlighted) {
-                g.colour = Colour(50, 50, 150)
-                g.fillRect(x.f, y.f, width.f, height.f)
-                hovered = ship
-            }
-
-            font.drawString(x + 5f, y + 10f, ship.name, Colour.white)
-            y += height + 3
-        }
+        g.pushTransform()
+        g.translate(shipSelectorPos.x.f, shipSelectorPos.y.f)
+        shipSelector.draw(g)
+        g.popTransform()
 
         startGameButton.draw(g)
 
         editFileControls.draw(g)
 
         g.pushTransform()
-        shipOffset.x = x + width + 50 - currentBlueprint.hullOffset.x
+        shipOffset.x = 250 - currentBlueprint.hullOffset.x
         shipOffset.y = 100 - currentBlueprint.hullOffset.y
         g.translate(shipOffset.x.f, shipOffset.y.f)
         current.draw(g, this, false)
@@ -124,17 +146,23 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         editor.editorHeight = container.height - shipOffset.y
         editor.draw(g)
         g.popTransform()
+
+        if (shipListVisible) {
+            shipList.draw(container, g)
+        }
     }
 
     override fun update(container: GameContainer, delta: Float) {
         val input = container.input
         mousePos.x = input.mouseX
         mousePos.y = input.mouseY
+
+        shipSelector.updateMouse(mousePos.x - shipSelectorPos.x, mousePos.y - shipSelectorPos.y)
     }
 
     override fun mouseClicked(button: Int, x: Int, y: Int, clickCount: Int) {
-        if (hovered != null) {
-            editor = ShipEditor(this, EditableShip.fromBlueprint(hovered!!))
+        if (shipListVisible) {
+            shipList.mouseClicked(button)
             return
         }
 
@@ -146,34 +174,75 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         startGameButton.mouseClicked(button)
 
         editFileControls.mouseClicked(button)
+
+        shipSelector.mouseClicked(button)
     }
 
     override fun mousePressed(button: Int, x: Int, y: Int) {
+        if (shipListVisible)
+            return
         editor.mousePressed(button, x - shipOffset.x, y - shipOffset.y)
     }
 
     override fun mouseReleased(button: Int, x: Int, y: Int) {
+        if (shipListVisible)
+            return
         editor.mouseReleased(button, x - shipOffset.x, y - shipOffset.y)
     }
 
     override fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) {
+        if (shipListVisible)
+            return
         editor.mouseDragged(oldX - shipOffset.x, oldY - shipOffset.y, newX - shipOffset.x, newY - shipOffset.y)
     }
 
     override fun mouseMoved(oldX: Int, oldY: Int, newX: Int, newY: Int) {
+        if (shipListVisible)
+            return
         editor.mouseMoved(newX - shipOffset.x, newY - shipOffset.y)
     }
 
     override fun mouseWheelMoved(change: Int) {
+        if (shipListVisible) {
+            shipList.mouseWheelMoved(change)
+            return
+        }
+
         editor.mouseWheelMoved(change)
     }
 
     override fun keyReleased(key: Int, c: Char) {
+        if (shipListVisible) {
+            if (key == Input.KEY_ESCAPE)
+                shipListVisible = false
+            return
+        }
+
         editor.keyReleased(key, c)
     }
 
     fun getImg(path: String): Image {
-        return images.getOrPut(path) { datafile.readImage(resourceContext, datafile[path]) }
+        return getImgOrNull(path) ?: error("Invalid path for image: '$path'")
+    }
+
+    fun getImgOrNull(path: String): Image? {
+        images[path]?.let { return it }
+
+        val file = datafile.getOrNull(path) ?: return null
+        val img = datafile.readImage(resourceContext, file)
+        images[path] = img
+        return img
+    }
+
+    fun getFont(name: String): SILFontLoader {
+        // Always return a copy of the font, so our instance doesn't get broken
+        // when a consumer sets their instance's scale property or anything
+        // like that.
+        fonts[name]?.let { return SILFontLoader(it) }
+
+        val font = SILFontLoader(resourceContext, datafile, datafile["fonts/$name.font"])
+        fonts[name] = font
+        return SILFontLoader(font)
     }
 
     fun startGame(selected: Difficulty) {
@@ -190,5 +259,66 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
 
         // Re-create the editor to throw away the changes
         editor = ShipEditor(this, EditableShip.fromBlueprint(currentBlueprint))
+    }
+
+    private fun selectShip(blueprint: ShipBlueprint) {
+        editor = ShipEditor(this, EditableShip.fromBlueprint(blueprint))
+
+        // Update the A/B/C variant buttons
+        val family = shipFamilies.byShipId[blueprint.name]
+        val typeId = family?.ships?.indexOf(blueprint.name) ?: 0
+
+        fun updateTypeButton(id: String, idx: Int) {
+            val button = shipSelector.byId[id] as UIKitButton
+
+            if (idx == typeId) {
+                // Disable to prevent clicking, but still show as selected.
+                button.forceSelected = true
+                button.disabled = true
+            } else if (family == null || idx >= family.ships.size) {
+                button.forceSelected = false
+                button.disabled = true
+            } else {
+                button.forceSelected = false
+                button.disabled = false
+            }
+        }
+
+        updateTypeButton("type_a", 0)
+        updateTypeButton("type_b", 1)
+        updateTypeButton("type_c", 2)
+    }
+
+    /**
+     * Switch between the A/B/C variants of the current ship.
+     */
+    private fun selectShipVariant(index: Int) {
+        val family = shipFamilies.byShipId[current.baseBlueprint] ?: return
+        val shipId = family.ships.getOrNull(index) ?: return
+
+        val blueprint = ships.firstOrNull { it.name == shipId } ?: return
+        selectShip(blueprint)
+    }
+
+    private inner class ShipSelectUIProvider : UIProvider {
+        override fun getFont(name: String): SILFontLoader {
+            return this@SelectShipState.getFont(name)
+        }
+
+        override fun getImg(path: String): Image {
+            return this@SelectShipState.getImg(path)
+        }
+
+        override fun translate(key: String): String? {
+            return translator.translations[key]
+        }
+
+        override fun getDebugOutlineColour(widget: Widget): Colour? {
+            return null
+        }
+
+        override fun getWindowRenderer(): WindowRenderer {
+            return windowRenderer
+        }
     }
 }

@@ -47,6 +47,30 @@ class WidgetContainer(val root: Widget) {
         }
     }
 
+    /**
+     * Update the widgets based on the mouse position.
+     *
+     * This should not be called for any UI used in the in-game state, as that
+     * uses proper [Button] objects instead.
+     */
+    fun updateMouse(x: Int, y: Int) {
+        for (widget in sortedWidgets) {
+            widget.updateMouse(x, y)
+        }
+    }
+
+    /**
+     * Alert all widgets that a mouse button was clicked.
+     *
+     * This should not be called for any UI used in the in-game state, as that
+     * uses proper [Button] objects instead.
+     */
+    fun mouseClicked(button: Int) {
+        for (widget in sortedWidgets) {
+            widget.mouseClicked(button)
+        }
+    }
+
     fun addButtonListener(id: String, listener: () -> Unit) {
         val button = byId[id] as UIKitButton
         button.clickListener = listener

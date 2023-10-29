@@ -1,25 +1,23 @@
 package xyz.znix.xftl.ui
 
 import org.jdom2.Element
-import xyz.znix.xftl.Constants
+import xyz.znix.xftl.f
 import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.Buttons
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.Window
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.requireAttributeValue
 import xyz.znix.xftl.sys.Input
-import kotlin.math.max
 
-class UIKitButton(
+class ImageButton(
     provider: UIProvider,
-    val normalColour: Colour,
-    val highlightColour: Colour,
-    val disabledColour: Colour
+    val normalImage: Image,
+    val hoverImage: Image,
+    val disabledImage: Image
 ) : Widget(provider) {
-    override val size: Point = Point(0, 0)
+    override val size: IPoint get() = normalImage.imageSize
 
     /**
      * True if the button should show it's disabled version.
@@ -27,9 +25,9 @@ class UIKitButton(
     var disabled: Boolean = false
 
     /**
-     * True if the button should always show it's selected version.
+     * Horizontally flip the image.
      */
-    var forceSelected: Boolean = false
+    var mirror: Boolean = false
 
     /**
      * The button on-click listener.
@@ -41,20 +39,25 @@ class UIKitButton(
     private var hovered: Boolean = false
 
     override fun draw(g: Graphics) {
-        g.colour = when {
-            forceSelected -> highlightColour
-            disabled -> disabledColour
-            hovered -> highlightColour
-            else -> normalColour
+        val image = when {
+            disabled -> disabledImage
+            hovered -> hoverImage
+            else -> normalImage
         }
-        Buttons.drawRounded(g, position.x, position.y, size.x, size.y, 4)
+
+        if (mirror) {
+            image.draw(
+                position.x.f + size.x, position.y.f + size.y,
+                position.x.f, position.y.f,
+
+                0f, 0f,
+                size.x.f, size.y.f
+            )
+        } else {
+            image.draw(position)
+        }
 
         postDraw(g)
-    }
-
-    override fun attemptStretch(availableWidth: Int, availableHeight: Int) {
-        size.x = max(size.x, availableWidth)
-        size.y = max(size.y, availableHeight)
     }
 
     override fun updateSizes() {
@@ -86,30 +89,34 @@ class UIKitButton(
     }
 
     companion object {
-        fun fromXML(provider: UIProvider, elem: Element): UIKitButton {
-            val colour = SpecDeserialiser.parseColour(elem, "colour", Constants.SECTOR_CUTOUT_TEXT)
-            val highlight = SpecDeserialiser.parseColour(elem, "colour", Constants.UI_BUTTON_HOVER)
-            val disabled = SpecDeserialiser.parseColour(elem, "colour", Constants.JUMP_DISABLED)
+        fun fromXML(provider: UIProvider, elem: Element): ImageButton {
+            val normal: Image
+            val hover: Image
+            val disabled: Image
 
-            val view = UIKitButton(provider, colour, highlight, disabled)
+            // Shortcut for _on.png, _off.png, _select2.png
+            val select2 = elem.getAttributeValue("select2")
 
-            elem.getAttributeValue("w")?.let { view.size.x = it.toInt() }
-            elem.getAttributeValue("h")?.let { view.size.y = it.toInt() }
+            if (select2 != null) {
+                normal = provider.getImg("${select2}_on.png")
+                disabled = provider.getImg("${select2}_off.png")
+                hover = provider.getImg("${select2}_select2.png")
+            } else {
+                normal = provider.getImg(elem.requireAttributeValue("normal"))
+                hover = elem.getAttributeValue("hover")?.let(provider::getImg) ?: normal
+                disabled = elem.getAttributeValue("disabled")?.let(provider::getImg) ?: normal
+            }
 
+            val view = ImageButton(provider, normal, hover, disabled)
+            view.mirror = elem.getAttributeValue("mirror")?.toBoolean() ?: false
             view.loadXML(elem)
             return view
         }
     }
 
-    /**
-     * If we're running in-game (as opposed to the UI editor), an invisible
-     * in-game button is created, which handles stuff like hover detection
-     * and audio cues.
-     *
-     * We still render it as part of the widget though, to get the z-order
-     * correct with other components.
-     */
     private inner class InGameButton(game: InGameState, pos: IPoint) : Button(game, pos, size) {
+        override val disabled: Boolean get() = this@ImageButton.disabled
+
         override fun draw(g: Graphics) {
             // Do nothing, the widget does all the drawing.
         }
@@ -124,7 +131,7 @@ class UIKitButton(
         override fun update(x: Int, y: Int, blockHover: Boolean) {
             super.update(x, y, blockHover)
 
-            this@UIKitButton.hovered = hovered
+            this@ImageButton.hovered = hovered
         }
     }
 }
