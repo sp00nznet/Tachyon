@@ -513,6 +513,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
                 && undamagedEnergy > 0
                 && info.canBeManned
                 && !isIonised
+                && scriptedPowerLimit == null
     }
 
     /**
