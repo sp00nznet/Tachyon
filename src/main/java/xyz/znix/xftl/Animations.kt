@@ -82,7 +82,11 @@ class Animations(df: Datafile) {
         if (TMP_BROKEN_IMAGES.contains(sheetName))
             return null
 
-        val sheet = this.sheets[sheetName] ?: error("Unknown sheet $sheetName")
+        val sheet = this.sheets[sheetName]
+        if (sheet == null) {
+            println("[warn] Unknown animation sheet '$sheetName' for animation '$name'")
+            return null
+        }
 
         val desc = xml.getChild("desc")
 
@@ -144,13 +148,17 @@ class Animations(df: Datafile) {
         )
     }
 
-    operator fun get(name: String): AnimationSpec {
+    fun getOrNull(name: String): AnimationSpec? {
         if (name == "explosion_random") {
             val test = arrayOf("explosion_big2", "explosion_big3", "explosion_big4")
             return this[test.random()]
         }
 
-        return animations[name] ?: throw IllegalArgumentException("Cannot find animation $name")
+        return animations[name]
+    }
+
+    operator fun get(name: String): AnimationSpec {
+        return getOrNull(name) ?: throw IllegalArgumentException("Cannot find animation $name")
     }
 
     class WeaponAnimationSpec(
@@ -206,7 +214,7 @@ class Animations(df: Datafile) {
             if (boostAnimName == null)
                 return
 
-            boostAnim = animations[boostAnimName]
+            boostAnim = animations.getOrNull(boostAnimName)
             if (boostAnim == null) {
                 println("[WARN] Invalid boost animation '$boostAnimName', not found.")
             }
