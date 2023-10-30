@@ -179,6 +179,8 @@ public class InGameState extends MainGame.GameState {
         if (getSounds().getCurrentMusic() == null) {
             loadSectorMusic(currentBeacon.getSector().getType());
         }
+
+        updatePlayerCrew();
     }
 
     private InGameState(MainGame mainGame, GameContent content, GameContainer container) {
@@ -1651,6 +1653,10 @@ public class InGameState extends MainGame.GameState {
      * Update the list of player-owned crew, to account for crew being added or removed.
      */
     public void updatePlayerCrew() {
+        // Ignore calls during deserialisation
+        if (isCurrentlyLoadingSave)
+            return;
+
         playerCrew.clear();
 
         addPlayerCrew(player.getCrew());
