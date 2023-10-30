@@ -109,6 +109,8 @@ public class Constants {
     public static final Colour BEACON_LINE_HOVER = Colour.yellow;
     public static final Colour BEACON_LINE_FLAGSHIP = new Colour(230, 100, 100);
 
+    public static final Colour BEACON_NEBULA_CIRCLE = new Colour(0f, 0f, 1f, 0.25f);
+
     // These are the colours of the augment box
     public static final Colour AUGMENT_BOX_OUTLINE = SECTOR_CUTOUT_TEXT;
     public static final Colour AUGMENT_BOX_OUTLINE_HOVER = UI_BUTTON_HOVER;

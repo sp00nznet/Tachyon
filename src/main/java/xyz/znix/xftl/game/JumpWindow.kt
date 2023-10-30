@@ -173,6 +173,12 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             val showBasicInfo = beacon.visited || sector.mapRevealed || isNeighbour
             val showAdvInfo = beacon.visited || sector.mapRevealed || (isNeighbour && hasLRS)
 
+            // Draw the little blue transparent circle below nebulas
+            if (beacon.environmentType.isNebula) {
+                g.colour = Constants.BEACON_NEBULA_CIRCLE
+                g.fillOval(centrePos.x - 9f, centrePos.y - 9f, 20f, 20f)
+            }
+
             if (showAdvInfo && beacon.environmentType.isDangerous) {
                 beaconEnvironmentHazard.draw(pos.x - 5, pos.y - 5)
             }
