@@ -64,7 +64,8 @@ class Translator {
     }
 
     operator fun get(key: String): String {
-        return translations[key] ?: throw IllegalArgumentException("Missing translation key $key")
+        // Make it really obvious if a translation is missing
+        return translations[key] ?: "could not find: $key"
     }
 
     /**
