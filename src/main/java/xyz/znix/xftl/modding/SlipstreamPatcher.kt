@@ -6,9 +6,13 @@ import java.io.ByteArrayInputStream
 import java.io.Closeable
 import java.io.File
 import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
 import java.util.logging.Logger
 import java.util.zip.ZipFile
+import kotlin.io.path.name
+import kotlin.io.path.relativeTo
 
 
 /**
@@ -404,6 +408,28 @@ class SlipstreamZipMod(val file: File) : SlipstreamMod, Closeable {
 
     override fun close() {
         zip.close()
+    }
+}
+
+/**
+ * Represents an un-zipped Slipstream mod, which is often used for development.
+ */
+class SlipstreamDirectoryMod(val dir: Path) : SlipstreamMod, Closeable {
+    override val name: String get() = dir.name
+
+    override val entries: List<String> = Files.walk(dir)
+        .filter { Files.isRegularFile(it) }
+        .map { it.relativeTo(dir).toString() }
+        // Always use forward strokes, regardless of platform
+        .map { it.replace('\\', '/') }
+        .toList()
+
+    override fun openFile(name: String): InputStream {
+        return Files.newInputStream(dir.resolve(name))
+    }
+
+    override fun close() {
+        // Nothing required.
     }
 }
 

@@ -3,6 +3,7 @@ package xyz.znix.xftl
 import org.jdom2.Document
 import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.game.MainGame
+import xyz.znix.xftl.modding.SlipstreamDirectoryMod
 import xyz.znix.xftl.modding.SlipstreamMod
 import xyz.znix.xftl.modding.SlipstreamPatcher
 import xyz.znix.xftl.modding.SlipstreamZipMod
@@ -185,7 +186,14 @@ class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>
                 mods = Files.readAllLines(modOrderFile)
                     .filter { it.isNotBlank() }
                     .filter { !it.startsWith("//") } // Comments
-                    .map { SlipstreamZipMod(modDir.resolve(it).toFile()) }
+                    .map { modDir.resolve(it) }
+                    .map {
+                        if (Files.isDirectory(it)) {
+                            SlipstreamDirectoryMod(it)
+                        } else {
+                            SlipstreamZipMod(it.toFile())
+                        }
+                    }
             } else {
                 println("Missing mod order file, mods disabled: '$modOrderFile'")
                 mods = Collections.emptyList()
