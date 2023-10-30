@@ -186,15 +186,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         var nextPos = ConstPoint(531, 29)
 
         val jump = Buttons.JumpButton(nextPos, ship, game) {
-            currentWindow = JumpWindow(game, ::openSectorMap) {
-                if (it != null) {
-                    // Reset stuff after jumping
-                    storeAlreadyOpened = false
-                }
-
-                currentWindow = null
-                updateButtons() // A store may now be available
-            }
+            openJumpMap()
         }
         nextPos += ConstPoint(101, 0)
 
@@ -1466,6 +1458,21 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
      */
     fun mindControlSelected() {
         game.clickEvent = MindControlRoomListener()
+    }
+
+    fun openJumpMap() {
+        if (!ship.isFtlReady || !ship.canChargeFTL)
+            return
+
+        currentWindow = JumpWindow(game, ::openSectorMap) {
+            if (it != null) {
+                // Reset stuff after jumping
+                storeAlreadyOpened = false
+            }
+
+            currentWindow = null
+            updateButtons() // A store may now be available
+        }
     }
 
     fun openSectorMap() {

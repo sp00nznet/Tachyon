@@ -461,6 +461,36 @@ public class InGameState extends MainGame.GameState {
             shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
             shipUI.systemPowerHotkeyPressed(Clonebay.class, powerUp);
         }
+        if (in.isKeyPressed(Input.KEY_G))
+            shipUI.systemPowerHotkeyPressed(Teleporter.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_H))
+            shipUI.systemPowerHotkeyPressed(Cloaking.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_K))
+            shipUI.systemPowerHotkeyPressed(MindControl.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_L))
+            shipUI.systemPowerHotkeyPressed(Hacking.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_W))
+            shipUI.systemPowerHotkeyPressed(Weapons.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_E))
+            shipUI.systemPowerHotkeyPressed(Drones.class, powerUp);
+        if (in.isKeyPressed(Input.KEY_Y))
+            shipUI.systemPowerHotkeyPressed(Artillery.class, powerUp);
+
+        if (in.isKeyPressed(Input.KEY_C) && player.getCloaking() != null)
+            player.getCloaking().activateCloak();
+        if (in.isKeyPressed(Input.KEY_T) && player.getTeleporter() != null)
+            shipUI.teleportSelected(true);
+        if (in.isKeyPressed(Input.KEY_R) && player.getTeleporter() != null)
+            shipUI.teleportSelected(false);
+        if (in.isKeyPressed(Input.KEY_M) && player.getMindControl() != null)
+            shipUI.mindControlSelected();
+        if (in.isKeyPressed(Input.KEY_N) && player.getHacking() != null)
+            shipUI.hackSelected();
+        if (in.isKeyPressed(Input.KEY_B) && player.getBackupBattery() != null)
+            player.getBackupBattery().startBattery();
+
+        if (in.isKeyPressed(Input.KEY_J))
+            shipUI.openJumpMap();
 
         if (in.isKeyPressed(Input.KEY_Z))
             shipUI.openAllDoors();

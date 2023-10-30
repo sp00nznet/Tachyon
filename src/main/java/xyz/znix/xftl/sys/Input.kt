@@ -64,6 +64,10 @@ interface Input {
         const val KEY_F3: Int = GLFW.GLFW_KEY_F3
         const val KEY_F4: Int = GLFW.GLFW_KEY_F4
         const val KEY_F5: Int = GLFW.GLFW_KEY_F5
+        const val KEY_F6: Int = GLFW.GLFW_KEY_F6
+        const val KEY_F7: Int = GLFW.GLFW_KEY_F7
+        const val KEY_F8: Int = GLFW.GLFW_KEY_F8
+        const val KEY_F9: Int = GLFW.GLFW_KEY_F9
 
         const val KEY_UP: Int = GLFW.GLFW_KEY_UP
         const val KEY_DOWN: Int = GLFW.GLFW_KEY_DOWN
