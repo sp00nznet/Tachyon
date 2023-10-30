@@ -124,22 +124,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
                 }
 
                 log.info(String.format("Creating transform mapping for file: %s", innerPath))
-                files[innerPath] = object : FileSource {
-                    override fun open(): InputStream {
-                        oldFileSource.open().use { mainStream ->
-                            mod.openFile(filePath).use { append ->
-                                return ModUtilities.transformXMLFile(
-                                    mainStream,
-                                    append,
-                                    "UTF-8",
-                                    innerPath, // What mod did this file come from?
-                                    mod.name + ":" + filePath,
-                                    stylesheets
-                                )
-                            }
-                        }
-                    }
-                }
+                files[innerPath] = XSLTransformFileSource(oldFileSource, mod, filePath, stylesheets)
                 if (!moddedItems.contains(innerPath)) {
                     moddedItems.add(innerPath)
                 }
@@ -172,25 +157,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
                 return
             }
 
-            files[innerPath] = object : FileSource {
-                override fun open(): InputStream {
-                    // Don't abort if there's something wrong with the XML, keep going.
-                    val globalPanic = false
-
-                    return previous.open().use { original ->
-                        mod.openFile(filePath).use { append ->
-                            ModUtilities.patchXMLFile(
-                                original,
-                                append,
-                                "UTF-8",
-                                globalPanic,
-                                innerPath, // What mod did this file come from?
-                                mod.name + ":" + filePath
-                            )
-                        }
-                    }
-                }
-            }
+            files[innerPath] = XMLPatchFileSource(previous, mod, filePath)
 
             if (!moddedItems.contains(innerPath)) {
                 moddedItems.add(innerPath)
@@ -210,21 +177,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
             }
 
             log.warning(String.format("Appending xml as raw text: %s", innerPath))
-            files[innerPath] = object : FileSource {
-                override fun open(): InputStream {
-                    original.open().use { mainStream ->
-                        mod.openFile(filePath).use { append ->
-                            return ModUtilities.appendXMLFile(
-                                mainStream,
-                                append,
-                                "UTF-8",
-                                innerPath, // What mod did this file come from?
-                                mod.name + ":" + filePath
-                            )
-                        }
-                    }
-                }
-            }
+            files[innerPath] = XMLRawAppendFileSource(original, mod, filePath)
 
             if (!moddedItems.contains(innerPath)) {
                 moddedItems.add(innerPath)
@@ -253,16 +206,7 @@ class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
         if (filePath.endsWith(".xml")) {
             innerPath = checkCase(innerPath)
 
-            files[innerPath] = object : FileSource {
-                override fun open(): InputStream {
-                    val baseStream = mod.openFile(filePath)
-                    return ModUtilities.rebuildXMLFile(
-                        baseStream, "UTF-8",
-                        mod.name + ":" + filePath,
-                        true
-                    )
-                }
-            }
+            files[innerPath] = ReParseXMLFileSource(mod, filePath)
 
             if (!moddedItems.contains(innerPath)) {
                 moddedItems.add(innerPath)
@@ -373,10 +317,17 @@ interface SlipstreamMod {
  * the FTL assets, from a mod, or some combination thereof (via patching it).
  */
 interface FileSource {
+    /**
+     * The path of this file source, as shown in error messages.
+     */
+    val messagePath: String
+
     fun open(): InputStream
 }
 
 class VanillaFileSource(val df: VanillaDatafile, val file: VanillaDatafile.Entry) : FileSource {
+    override val messagePath: String get() = "FTL:${file.name}"
+
     override fun open(): InputStream {
         // TODO open and return a stream. This mostly matters for images.
         val bytes = df.read(file)
@@ -434,7 +385,98 @@ class SlipstreamDirectoryMod(val dir: Path) : SlipstreamMod, Closeable {
 }
 
 class ModFileSource(val path: String, val mod: SlipstreamMod) : FileSource {
+    override val messagePath: String get() = "${mod.name}:$path"
+
     override fun open(): InputStream {
         return mod.openFile(path)
+    }
+}
+
+class XSLTransformFileSource(
+    val previous: FileSource,
+    val mod: SlipstreamMod,
+    val xslFilePath: String,
+    val stylesheets: HashMap<String, ByteArray>
+) : FileSource {
+    override val messagePath: String get() = "${mod.name}:$xslFilePath"
+
+    override fun open(): InputStream {
+        previous.open().use { mainStream ->
+            mod.openFile(xslFilePath).use { append ->
+                return ModUtilities.transformXMLFile(
+                    mainStream,
+                    append,
+                    "UTF-8",
+                    previous.messagePath,
+                    messagePath,
+                    stylesheets
+                )
+            }
+        }
+    }
+}
+
+class XMLPatchFileSource(
+    val previous: FileSource,
+    val mod: SlipstreamMod,
+    val appendFilePath: String,
+) : FileSource {
+    override val messagePath: String get() = "${mod.name}:$appendFilePath"
+
+    override fun open(): InputStream {
+        // Don't abort if there's something wrong with the XML, keep going.
+        val globalPanic = false
+
+        return previous.open().use { original ->
+            mod.openFile(appendFilePath).use { append ->
+                ModUtilities.patchXMLFile(
+                    original,
+                    append,
+                    "UTF-8",
+                    globalPanic,
+                    previous.messagePath,
+                    messagePath
+                )
+            }
+        }
+    }
+}
+
+class XMLRawAppendFileSource(
+    val previous: FileSource,
+    val mod: SlipstreamMod,
+    val appendFilePath: String,
+) : FileSource {
+    override val messagePath: String get() = "${mod.name}:$appendFilePath"
+
+    override fun open(): InputStream {
+        previous.open().use { mainStream ->
+            mod.openFile(appendFilePath).use { append ->
+                return ModUtilities.appendXMLFile(
+                    mainStream,
+                    append,
+                    "UTF-8",
+                    previous.messagePath,
+                    messagePath
+                )
+            }
+        }
+    }
+}
+
+class ReParseXMLFileSource(
+    val mod: SlipstreamMod,
+    val filePath: String,
+) : FileSource {
+    override val messagePath: String get() = "${mod.name}:$filePath"
+
+    override fun open(): InputStream {
+        mod.openFile(filePath).use { baseStream ->
+            return ModUtilities.rebuildXMLFile(
+                baseStream, "UTF-8",
+                mod.name + ":" + filePath,
+                true
+            )
+        }
     }
 }
