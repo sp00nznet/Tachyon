@@ -8,6 +8,7 @@ import org.jdom2.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.newdawn.slick.SlickException;
+import org.newdawn.slick.opengl.PNGDecoder;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.VanillaDatafile;
@@ -46,6 +47,12 @@ public class MainGame implements Game {
     private SaveProfile profile;
 
     private Cursor currentCursor;
+
+    static {
+        // Make sure we're using our modified copy of PNGDecoder.
+        // This is a bit of an ugly place to put it, but it'll do.
+        PNGDecoder.FTL_MARKER = 2;
+    }
 
     public MainGame(CommandLineArgs args) {
         this.commandLineArgs = args;
