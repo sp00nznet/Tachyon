@@ -116,12 +116,12 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
             val spec = SoundSpec(elem)
             if (spec.loop) {
                 if (loops.containsKey(spec.name)) {
-                    error("Duplicate sound loop '${spec.name}' in sounds.xml")
+                    println("[WARN] Duplicate sound loop '${spec.name}' in sounds.xml")
                 }
                 loops[spec.name] = spec
             } else {
                 if (samples.containsKey(spec.name)) {
-                    error("Duplicate sound sample '${spec.name}' in sounds.xml")
+                    println("[WARN] Duplicate sound sample '${spec.name}' in sounds.xml")
                 }
                 samples[spec.name] = spec
             }
