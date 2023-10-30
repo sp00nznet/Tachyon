@@ -27,13 +27,9 @@ class DroneBlueprint(xml: Element) : Blueprint(xml) {
     // Nothing in vanilla uses it, but it's easy to implement.
     val dodge: Int? = xml.getChildTextTrim("dodge")?.toInt()
 
-    val weaponBlueprintName: String? = xml.getChildTextTrim("weaponBlueprint")
+    private val weaponBlueprintName: String? = xml.getChildTextTrim("weaponBlueprint")
     var weaponBlueprint: AbstractWeaponBlueprint? = null
         private set
-
-    init {
-        require(power > 0) { "Drone $name has non-positive power $power" }
-    }
 
     // The size of the icon, as it should appear in the UI. This is for roughly
     // positioning them, and obviously different drones are different sizes.
