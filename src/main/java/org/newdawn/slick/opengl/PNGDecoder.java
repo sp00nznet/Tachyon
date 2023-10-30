@@ -283,6 +283,8 @@ public class PNGDecoder {
                             copyPALtoRGBA(buffer, palLine);
                         } else if (fmt == BGRA) {
                             copyPALtoBGRA(buffer, palLine);
+                        } else if (fmt == RGB) {
+                            copyPALtoRGB(buffer, palLine);
                         } else {
                             throw new UnsupportedOperationException("Unsupported format for this image");
                         }
@@ -451,6 +453,16 @@ public class PNGDecoder {
                 byte a = (byte) 0xFF;
                 buffer.put(b).put(g).put(r).put(a);
             }
+        }
+    }
+
+    private void copyPALtoRGB(ByteBuffer buffer, byte[] curLine) {
+        for (int i = 1, n = curLine.length; i < n; i += 1) {
+            int idx = curLine[i] & 255;
+            byte r = palette[idx * 3 + 0];
+            byte g = palette[idx * 3 + 1];
+            byte b = palette[idx * 3 + 2];
+            buffer.put(r).put(g).put(b);
         }
     }
 
