@@ -359,7 +359,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // If the user was previously targeting a beam, cancel that.
         beamTargeting = null
 
-        val weapon = ship.hardpoints[id].weapon ?: return
+        val weapon = ship.hardpoints.getOrNull(id)?.weapon ?: return
 
         if (shiftPressed) {
             // Holding shift turns a weapon off
