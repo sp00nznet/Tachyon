@@ -16,6 +16,18 @@ abstract class AbstractCrewDamage(var amount: Float) {
     open val halvedForDrone: Boolean = false
 }
 
+/**
+ * 'damage' caused by a medbay, normally negative to represent healing,
+ * though this can be positive for a hacked medbay.
+ */
+class MedbayHealing(amount: Float) : AbstractCrewDamage(amount)
+
+/**
+ * 'damage' caused by a clonebay, always negative. Caused by the
+ * heal-on-jump mechanic.
+ */
+class ClonebayHealing(amount: Float) : AbstractCrewDamage(amount)
+
 class SuffocationDamage(amount: Float) : AbstractCrewDamage(amount)
 class FireDamage(amount: Float) : AbstractCrewDamage(amount)
 class CombatDamage(amount: Float, val attacker: AbstractCrew) : AbstractCrewDamage(amount)

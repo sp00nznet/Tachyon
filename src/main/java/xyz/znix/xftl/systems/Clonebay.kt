@@ -6,6 +6,7 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
+import xyz.znix.xftl.crew.ClonebayHealing
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.f
@@ -116,7 +117,7 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (crew.ownerShip != ship)
                 continue
 
-            crew.health = min(crew.health + healing, crew.maxHealth)
+            crew.dealDamage(ClonebayHealing(-healing.f))
         }
     }
 

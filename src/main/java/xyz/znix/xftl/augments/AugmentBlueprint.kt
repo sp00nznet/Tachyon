@@ -4,7 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.Blueprint
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.crew.LivingCrew
-import kotlin.math.min
+import xyz.znix.xftl.crew.MedbayHealing
 
 /**
  * The base augment class, which is suitable for augments which are
@@ -19,7 +19,7 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
     val stackable: Boolean = elem.getChildTextTrim("stackable")!!.toBoolean()
     val value: Float = elem.getChildTextTrim("value")?.toFloat() ?: 1f
 
-    open fun update(ship: Ship, dt: Float) {}
+    open fun update(ship: Ship, dt: Float, totalValue: Float) {}
 
     open fun onJump(ship: Ship) {}
 
@@ -41,14 +41,14 @@ open class AugmentBlueprint(elem: Element) : Blueprint(elem) {
 }
 
 class AugEngiMedbots(elem: Element) : AugmentBlueprint(elem) {
-    override fun update(ship: Ship, dt: Float) {
-        super.update(ship, dt)
+    override fun update(ship: Ship, dt: Float, totalValue: Float) {
+        super.update(ship, dt, totalValue)
 
         val medbay = ship.medbay ?: return
         if (medbay.powerSelected == 0)
             return
 
-        val healing = dt * 6.4f * value
+        val healing = dt * 6.4f * totalValue
 
         for (crew in ship.friendlyCrew) {
             if (crew !is LivingCrew)
@@ -58,7 +58,7 @@ class AugEngiMedbots(elem: Element) : AugmentBlueprint(elem) {
             if (crew.room == medbay.room)
                 continue
 
-            crew.health = min(crew.health + healing, crew.maxHealth)
+            crew.dealDamage(MedbayHealing(-healing))
         }
     }
 

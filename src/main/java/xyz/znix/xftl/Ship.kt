@@ -834,8 +834,8 @@ class Ship(
             ftlChargeProgress = 1f
         }
 
-        for (augment in augmentValues.keys) {
-            augment.update(this, dt)
+        for ((augment, totalValue) in augmentValues) {
+            augment.update(this, dt, totalValue)
         }
     }
 

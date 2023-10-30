@@ -5,10 +5,10 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.MedbayHealing
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
@@ -42,7 +42,7 @@ class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (crew.currentAction == AbstractCrew.Action.DYING)
                 continue
 
-            crew.health = min(crew.health + healing, crew.maxHealth)
+            crew.dealDamage(MedbayHealing(-healing))
         }
     }
 

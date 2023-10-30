@@ -748,6 +748,16 @@ abstract class AbstractCrew(
         if (game.debugFlags.noCrewDamage.set)
             return
 
+        // If we're currently playing the dying animation, nothing can stop it.
+        // Similarly, if we've hit zero health, we shouldn't then be able to
+        // heal back out of it.
+        // If on one update a crewmember was both damaged and then healed, they'd
+        // never be able to die as long as both of those were done before the
+        // crew's update function was called, as the health would be clamped at
+        // zero then incremented by healing.
+        if (currentAction == Action.DYING || health == 0f)
+            return
+
         // Clamp max health to avoid over-healing with the heal burst
         health = (health - damage.amount).coerceIn(0f, maxHealth)
 
