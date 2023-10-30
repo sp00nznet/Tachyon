@@ -51,7 +51,14 @@ public class MainGame implements Game {
     static {
         // Make sure we're using our modified copy of PNGDecoder.
         // This is a bit of an ugly place to put it, but it'll do.
-        PNGDecoder.FTL_MARKER = 2;
+        // Use reflection here, since Julk said this was causing issues
+        // with Gradle compiling against Slick's class (though it should
+        // always be correct at runtime).
+        try {
+            PNGDecoder.class.getField("FTL_MARKER");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("Couldn't verify modified PNG loader is in use", e);
+        }
     }
 
     public MainGame(CommandLineArgs args) {
