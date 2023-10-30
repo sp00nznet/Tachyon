@@ -347,7 +347,11 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
     private fun loadRawSound(spec: SoundSpec): FTLSound {
         val path = "audio/waves/" + spec.path
 
-        val buffer = loadBuffer(path)
+        // Only load the actual sounds on-demand, to speed up loading large
+        // mods (this is taking about a 5th the time spent loading Multiverse).
+        // TODO load sounds in the background, to avoid pauses from them being
+        //  loaded up on demand.
+        val buffer = lazy { loadBuffer(path) }
 
         return FTLSound(spec, buffer, this)
     }
@@ -412,13 +416,13 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
  * a sound can be playing twice at once, [SoundInstance]s are
  * used for that purpose.
  */
-class FTLSound(val spec: SoundSpec, private val buffer: Int, private val manager: SoundManager) {
+class FTLSound(val spec: SoundSpec, private val buffer: Lazy<Int>, private val manager: SoundManager) {
     /**
      * Play a non-looping sound.
      */
     fun play(): SoundInstance {
         require(!spec.loop)
-        return SoundInstance(spec, buffer, manager)
+        return SoundInstance(spec, buffer.value, manager)
     }
 
     /**
@@ -428,7 +432,7 @@ class FTLSound(val spec: SoundSpec, private val buffer: Int, private val manager
      */
     fun internalPlayRawLoop(): SoundInstance {
         require(spec.loop)
-        return SoundInstance(spec, buffer, manager)
+        return SoundInstance(spec, buffer.value, manager)
     }
 }
 
