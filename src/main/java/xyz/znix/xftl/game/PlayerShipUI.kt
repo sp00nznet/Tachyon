@@ -1098,9 +1098,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         // Oxygen and evasion indicator
 
+        // Note we hide the oxygen critical warning if the player doesn't
+        // have an oxygen system. This is Hyperspace behaviour, but it doesn't
+        // affect vanilla, and it's hard to imagine a mod where this is a problem.
         val avgOxygen = round(ship.averageOxygen * 100).toInt()
         val oxygenRed: Boolean
-        if (avgOxygen < 25) {
+        if (avgOxygen < 25 && ship.oxygen != null) {
             oxygenWarning.draw(g)
             oxygenRed = oxygenWarning.isFlashingHigh
         } else {
