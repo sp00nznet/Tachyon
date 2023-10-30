@@ -253,6 +253,10 @@ abstract class AbstractCrew(
     open fun update(dt: Float) {
         icon.update(dt)
 
+        // If we're moving we shouldn't be vertically offset to match
+        // the enemy, if not this will be updated later on.
+        sharesHostileCell = false
+
         // If we switched between being a crewmember and an intruder, update
         // the room slot reservation stuff, to make sure we're still valid
         // to stand in this cell.
