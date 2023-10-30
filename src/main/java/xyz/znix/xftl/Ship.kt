@@ -1229,6 +1229,8 @@ class Ship(
             crewMember.ownerShip = null
         }
 
+        sys.updatePlayerCrew()
+
         return crewMember
     }
 

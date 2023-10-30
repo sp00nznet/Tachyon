@@ -355,6 +355,9 @@ abstract class AbstractCrew(
                 updateAnimation()
 
                 onMidTeleport()
+
+                // Fix the UI, since we removed ourselves from the player list while teleporting
+                room.ship.sys.updatePlayerCrew()
             } else {
                 // Step 2 - we're done
                 teleportingTo = null
@@ -1145,6 +1148,9 @@ abstract class AbstractCrew(
     open fun removeFromShip() {
         room.ship.crew.remove(this)
         room.ship.updateCrewReservedSlots()
+
+        // If we're paused, make sure this applies immediately
+        room.ship.sys.updatePlayerCrew()
     }
 
     open fun onStartedDying() {

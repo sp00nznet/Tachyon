@@ -104,6 +104,12 @@ public class InGameState extends MainGame.GameState {
      */
     private final ArrayList<Event> delayedQuests = new ArrayList<>();
 
+    /**
+     * This is the list of all the player-owned crew, as used by the main UI
+     * and the ship upgrade window.
+     */
+    private final ArrayList<LivingCrew> playerCrew = new ArrayList<>();
+
     public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName, Difficulty difficulty, EditableShip customised) {
         this(mainGame, content, container);
         this.difficulty = difficulty;
@@ -567,6 +573,8 @@ public class InGameState extends MainGame.GameState {
 
         shipUI.update();
         player.update(dt);
+
+        updatePlayerCrew();
 
         if (enemy != null) {
             enemy.update(dt);
@@ -1637,6 +1645,37 @@ public class InGameState extends MainGame.GameState {
         // Print a message in the debug console, so the player knows what happened.
         debugConsoleVisible = true;
         getDebugConsole().onFailedSaveRestore();
+    }
+
+    /**
+     * Update the list of player-owned crew, to account for crew being added or removed.
+     */
+    public void updatePlayerCrew() {
+        playerCrew.clear();
+
+        addPlayerCrew(player.getCrew());
+        if (player.getClonebay() != null)
+            addPlayerCrew(player.getClonebay().getQueue());
+        if (enemy != null)
+            addPlayerCrew(enemy.getCrew());
+    }
+
+    private <T extends AbstractCrew> void addPlayerCrew(List<T> crewList) {
+        for (AbstractCrew crew : crewList) {
+            // Filter out drones
+            if (!(crew instanceof LivingCrew living))
+                continue;
+
+            // Filter out intruders, not including mind-controlled crew.
+            if (living.getOwnerShip() != player)
+                continue;
+
+            playerCrew.add(living);
+        }
+    }
+
+    public List<LivingCrew> getPlayerCrew() {
+        return playerCrew;
     }
 
     private void setEnemyIsHostile(boolean enemyIsHostile) {

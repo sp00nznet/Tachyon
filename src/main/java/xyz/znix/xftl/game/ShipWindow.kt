@@ -80,6 +80,9 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         crewDismissWidget.root.updateLayout()
 
         crewDismissWidget.addButtonListener("yes") {
+            // If the crewmember is in the cloning queue, remove them from there.
+            ship.clonebay?.queue?.remove(crewToDismiss!!)
+
             crewToDismiss!!.removeFromShip()
             crewToDismiss = null
             updateButtons()
@@ -468,10 +471,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     }
 
     private fun drawCrew(g: Graphics) {
-        // Find all the crew that belong to us - this way we exclude mind-control.
-        // TODO show crew that have teleported to the enemy ship.
-
-        val crew = ship.crew.mapNotNull { it as? LivingCrew }.filter { it.ownerShip == ship }
+        val crew = ship.sys.playerCrew
 
         // First row
         drawCrewBox(g, crew, ConstPoint(68 + 170 * 0, 88 + 133 * 0), 0)

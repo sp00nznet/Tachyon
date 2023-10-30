@@ -60,12 +60,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private var selectWeaponClickEvent: RoomClickListener? = null
     private var targetingSelectedWeapon: Int? = null
 
-    /**
-     * The list of all the crew that the player owns, including those in the
-     * enemy ship, and those that are currently being cloned.
-     */
-    private val playerCrew: MutableList<LivingCrew> = ArrayList()
-
     private val selectedCrew: MutableList<AbstractCrew> = ArrayList()
     private val hoveredCrew: MutableList<AbstractCrew> = ArrayList()
     private var skillsHoveredCrew: AbstractCrew? = null
@@ -318,7 +312,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     fun isCrewHovered(crew: AbstractCrew, mouseX: Int, mouseY: Int, crewPos: IPoint): Boolean {
         // Check if the crewmember's box is being hovered
-        val index = playerCrew.indexOf(crew)
+        val index = game.playerCrew.indexOf(crew)
         if (index != -1) {
             val boxY = crewBaseY + index * CREW_BOX_SPACING
             if (mouseX in crewX..crewX + CREW_BOX_WIDTH && mouseY in boxY..boxY + CREW_BOX_HEIGHT) {
@@ -484,12 +478,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     fun render(gc: GameContainer, g: Graphics) {
         height = gc.height
 
-        // Update the list of player-controlled crew
-        playerCrew.clear()
-        addPlayerCrew(ship.crew)
-        ship.clonebay?.let { addPlayerCrew(it.queue) }
-        game.enemy?.let { addPlayerCrew(it.crew) }
-
         drawTopBar(g)
         drawSystems(g)
         drawSubSystems(gc)
@@ -511,20 +499,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // Don't override another window to do this, however.
         if (currentWindow == null && game.playerHasTooManyCrew()) {
             showShipWindow()
-        }
-    }
-
-    private fun addPlayerCrew(crewList: List<AbstractCrew>) {
-        for (crew in crewList) {
-            // Filter out drones
-            if (crew !is LivingCrew)
-                continue
-
-            // Filter out intruders, not including mind-controlled crew.
-            if (crew.ownerShip != ship)
-                continue
-
-            playerCrew.add(crew)
         }
     }
 
@@ -1155,7 +1129,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         // Draw all the crew boxes
         crewBaseY = oxyY + 59
-        for ((index, crew) in playerCrew.withIndex()) {
+        for ((index, crew) in ship.sys.playerCrew.withIndex()) {
             val crewY = crewBaseY + index * CREW_BOX_SPACING
 
             drawCrewBox(g, crew, crewX, crewY)
