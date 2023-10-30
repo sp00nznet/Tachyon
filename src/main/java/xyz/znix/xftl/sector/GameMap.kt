@@ -41,7 +41,9 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
             when (elem.name) {
                 "sectorType" -> parseSectorType(elem, namedSectorTypes)
                 "sectorDescription" -> parseSectorDescription(elem)
-                else -> error("Unknown node type ${elem.name}")
+                // TODO sectorMap is used in Multiverse (but not vanilla), support it.
+                //  (note it might come from Hyperspace)
+                else -> println("[warn] Unknown node type '${elem.name}' in sector_data.xml")
             }
         }
 
@@ -196,7 +198,9 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
 
     private fun parseSectorType(elem: Element, namedSectorTypes: HashMap<String, List<String>>) {
         val name = elem.requireAttributeValue("name")
-        check(!namedSectorTypes.containsKey(name))
+        if (namedSectorTypes.containsKey(name)) {
+            println("[WARN] Overwriting sector type '$name'")
+        }
         namedSectorTypes[name] = elem.mapChildrenText("sector")
     }
 
