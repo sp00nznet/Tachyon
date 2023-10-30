@@ -1105,7 +1105,13 @@ public class InGameState extends MainGame.GameState {
         if (name.equals(Constants.MISSING_FILE_PATH))
             return getMissingImage();
 
-        img = df.readImage(content.resourceContext, df.get(name));
+        FTLFile file = df.getOrNull(name);
+        if (file != null) {
+            img = df.readImage(content.resourceContext, file);
+        } else {
+            System.out.printf("[WARN] Missing image: '%s'%n", name);
+            img = getMissingImage();
+        }
         content.images.put(name, img);
         return img;
     }
