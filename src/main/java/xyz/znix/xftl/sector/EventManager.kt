@@ -150,7 +150,7 @@ class EventManager(val df: Datafile, private val translator: Translator, private
             check(elem.name == "event")
 
         elem.getAttributeValue("load")?.let {
-            return lazy { events[it]!! }
+            return lazy { events[it] ?: error("Missing event '$it', referenced from '$debugId'") }
         }
 
         // Build a mapping of the events by their deserialisation ID, which
@@ -165,7 +165,7 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         }
 
         val text = elem.getChild("text")?.let(::loadText)
-        val choices = elem.getChildren("choice").withIndex().map { loadChoice(it.value, it.index, uniqueId) }
+        val choices = elem.getChildren("choice").withIndex().mapNotNull { loadChoice(it.value, it.index, uniqueId) }
         val event = Event(text, choices, elem, debugId, uniqueId, ::getImageList, ::loadText)
 
         byDeserialisationId[uniqueId] = event
@@ -173,11 +173,22 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         return lazyOf(event)
     }
 
-    private fun loadChoice(elem: Element, choiceIndex: Int, parentDeserialisationId: String): Choice {
+    private fun loadChoice(elem: Element, choiceIndex: Int, parentDeserialisationId: String): Choice? {
         check(elem.name == "choice")
+
+        // Apparently if the event element is missing it crashes in vanilla,
+        // but that only happens when the event is loaded.
+        // Thus mods (notably Multiverse 5.3) contain unused events without
+        // an event node in one of their choices.
+        val eventElem = elem.getChild("event")
+        if (eventElem == null) {
+            println("[WARN] Missing <event> tag in choice with parent deserialisation ID '$parentDeserialisationId'")
+            return null
+        }
+
         val text = elem.getChild("text").let(::loadText)
         val deserialisationId = "$parentDeserialisationId::choice$choiceIndex"
-        val event = loadEvent(elem.getChild("event"), "choice.ukn", deserialisationId)
+        val event = loadEvent(eventElem, "choice.ukn", deserialisationId)
 
         // We could use the same deserialisation ID for a choice and it's event,
         // but it's probably a bit nicer not to - if you're not that familiar
@@ -215,7 +226,10 @@ class EventManager(val df: Datafile, private val translator: Translator, private
         for (child in elem.children) {
             check(child.name == "img")
             val path = "img/" + child.textTrim
-            check(df.getOrNull(path) != null)
+            if (df.getOrNull(path) == null) {
+                println("[WARN] Non-existent image '$path' specified in image list '$name'")
+                continue
+            }
             images += EnvironmentImage(path)
         }
         imageLists[name] = ImageList(name, images)
