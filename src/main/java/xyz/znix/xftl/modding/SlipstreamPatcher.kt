@@ -1,15 +1,23 @@
+// Significant portions of this file (mainly that relating to XML handling)
+// are derived from Slipstream.
+
 package xyz.znix.xftl.modding
 
 import net.vhati.modmanager.core.ModUtilities
+import net.vhati.modmanager.core.XMLPatcher
+import org.jdom2.Content
+import org.jdom2.Document
+import org.jdom2.Element
+import org.jdom2.input.SAXBuilder
+import org.jdom2.output.Format
+import org.jdom2.output.XMLOutputter
 import xyz.znix.xftl.VanillaDatafile
-import java.io.ByteArrayInputStream
-import java.io.Closeable
-import java.io.File
-import java.io.InputStream
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
 import java.util.logging.Logger
+import java.util.regex.Pattern
 import java.util.zip.ZipFile
 import kotlin.io.path.name
 import kotlin.io.path.relativeTo
@@ -322,7 +330,84 @@ interface FileSource {
      */
     val messagePath: String
 
+    /**
+     * Open a raw input stream of this file source.
+     *
+     * If you're going to parse this file into an XML document, use [openXML]
+     * instead - that way, multiple back-to-back XML transforms don't have to
+     * repeatedly serialise/parse the same file.
+     */
     fun open(): InputStream
+
+    fun openXML(): Document
+
+    companion object {
+        /**
+         * Convenience methods for subclasses that only want to implement [openXML].
+         */
+        fun openFromXML(document: Document): InputStream {
+            val output = XMLOutputter(Format.getRawFormat())
+            val string = output.outputString(document)
+            return ByteArrayInputStream(string.toByteArray(Charsets.UTF_8))
+        }
+
+        /**
+         * Utility method to parse a mod XML file, while wrapping it in a wrapper tag.
+         *
+         * If [removeFtlTags], all <FTL> tags are removed.
+         */
+        fun parseModdedXML(input: InputStream, messagePath: String, removeFtlTags: Boolean): Document {
+            return BufferedReader(InputStreamReader(input)).use { reader ->
+                parseModdedXML(reader, messagePath, removeFtlTags)
+            }
+        }
+
+        private fun parseModdedXML(input: BufferedReader, messagePath: String, removeFtlTags: Boolean): Document {
+            val wrapperStart = "<wrapper" +
+                    " xmlns:mod='mod'" +
+                    " xmlns:mod-append='mod-append'" +
+                    " xmlns:mod-overwrite='mod-overwrite'" +
+                    " xmlns:mod-prepend='mod-prepend'" +
+                    " xmlns:mod-before='mod-before'" +
+                    " xmlns:mod-after='mod-after'>"
+            val wrapperEnd = "</wrapper>"
+
+            val modified = StringBuilder()
+            modified.append(wrapperStart)
+
+            // We'll only target the first XML declaration, this is what
+            // regular Slipstream does (plus it's faster).
+            var foundXmlDecl = false
+
+            while (true) {
+                var line = input.readLine() ?: break
+
+                // Get rid of the XML declaration
+                if (!foundXmlDecl && line.contains("<?xml")) {
+                    line = xmlDeclPattern.matcher(line).replaceFirst("")
+                    foundXmlDecl = true
+                }
+
+                // Get rid of FTL tags.
+                // This matches both start and end tags, but if it gets
+                // a false-positive the only cost is running replace twice.
+                if (removeFtlTags && line.contains("FTL>")) {
+                    line = line
+                        .replace("<FTL>", "")
+                        .replace("</FTL>", "")
+                }
+
+                modified.append(line)
+                modified.append('\n')
+            }
+
+            modified.append(wrapperEnd)
+
+            return ModUtilities.parseStrictOrSloppyXML(modified, "$messagePath (wrapped)")
+        }
+
+        private val xmlDeclPattern = Pattern.compile("<\\?xml [^>]*\\?>")
+    }
 }
 
 class VanillaFileSource(val df: VanillaDatafile, val file: VanillaDatafile.Entry) : FileSource {
@@ -332,6 +417,13 @@ class VanillaFileSource(val df: VanillaDatafile, val file: VanillaDatafile.Entry
         // TODO open and return a stream. This mostly matters for images.
         val bytes = df.read(file)
         return ByteArrayInputStream(bytes)
+    }
+
+    override fun openXML(): Document {
+        // Vanilla always has <FTL> tags, this is the simple case
+        val builder = SAXBuilder()
+        builder.expandEntities = false
+        return open().use { builder.build(it) }
     }
 }
 
@@ -390,6 +482,15 @@ class ModFileSource(val path: String, val mod: SlipstreamMod) : FileSource {
     override fun open(): InputStream {
         return mod.openFile(path)
     }
+
+    override fun openXML(): Document {
+        // This isn't really designed for handling XML files,
+        // but the rawclobber mode uses it.
+        println("[WARN] Loading ModFileSource as XML, won't add <FTL> tags: $messagePath")
+        val builder = SAXBuilder()
+        builder.expandEntities = false
+        return open().use { builder.build(it) }
+    }
 }
 
 class XSLTransformFileSource(
@@ -401,17 +502,14 @@ class XSLTransformFileSource(
     override val messagePath: String get() = "${mod.name}:$xslFilePath"
 
     override fun open(): InputStream {
-        previous.open().use { mainStream ->
-            mod.openFile(xslFilePath).use { append ->
-                return ModUtilities.transformXMLFile(
-                    mainStream,
-                    append,
-                    "UTF-8",
-                    previous.messagePath,
-                    messagePath,
-                    stylesheets
-                )
-            }
+        return FileSource.openFromXML(openXML())
+    }
+
+    override fun openXML(): Document {
+        val prevDoc = previous.openXML()
+
+        mod.openFile(xslFilePath).use { transformStream ->
+            return ModUtilities.transformDocument(prevDoc, transformStream, stylesheets)
         }
     }
 }
@@ -424,21 +522,24 @@ class XMLPatchFileSource(
     override val messagePath: String get() = "${mod.name}:$appendFilePath"
 
     override fun open(): InputStream {
-        // Don't abort if there's something wrong with the XML, keep going.
-        val globalPanic = false
+        return FileSource.openFromXML(openXML())
+    }
 
-        return previous.open().use { original ->
-            mod.openFile(appendFilePath).use { append ->
-                ModUtilities.patchXMLFile(
-                    original,
-                    append,
-                    "UTF-8",
-                    globalPanic,
-                    previous.messagePath,
-                    messagePath
-                )
-            }
+    override fun openXML(): Document {
+        val prevDoc = previous.openXML()
+
+        val appendDoc = mod.openFile(appendFilePath).use { appendStream ->
+            FileSource.parseModdedXML(appendStream, messagePath, true)
         }
+
+        val patcher = XMLPatcher()
+        patcher.setGlobalPanic(false)
+
+        // In regular Slipstream, there's always a wrapper as the root
+        // element for prevDoc, with the <FTL> element removed.
+        // We're using an element where the FTL element is the root one,
+        // so it ought to work fine.
+        return patcher.patch(prevDoc, appendDoc)
     }
 }
 
@@ -462,6 +563,15 @@ class XMLRawAppendFileSource(
             }
         }
     }
+
+    override fun openXML(): Document {
+        // We can probably do this properly, do it the easy way for now
+        // as this probably isn't used much?
+        println("[WARN] Using .rawappend, the fast-path for this is not yet implemented: $messagePath")
+        val builder = SAXBuilder()
+        builder.expandEntities = false
+        return open().use { builder.build(it) }
+    }
 }
 
 class ReParseXMLFileSource(
@@ -471,12 +581,33 @@ class ReParseXMLFileSource(
     override val messagePath: String get() = "${mod.name}:$filePath"
 
     override fun open(): InputStream {
-        mod.openFile(filePath).use { baseStream ->
-            return ModUtilities.rebuildXMLFile(
-                baseStream, "UTF-8",
-                mod.name + ":" + filePath,
-                true
-            )
+        return FileSource.openFromXML(openXML())
+    }
+
+    override fun openXML(): Document {
+        val doc = mod.openFile(filePath).use { baseStream ->
+            FileSource.parseModdedXML(baseStream, messagePath, false)
         }
+
+        // Wrap the document in a root <FTL> tag if required
+        if (doc.getRootElement().getChild("FTL") == null) {
+            val newRoot = doc.getRootElement()
+            val ftlNode = Element("FTL")
+            val rootContent: List<Content> =
+                ArrayList(newRoot.content)
+            for (c in rootContent) {
+                c.detach()
+            }
+            ftlNode.addContent(rootContent)
+            newRoot.addContent(ftlNode)
+        }
+
+        // Now we're certain we have the FTL root element, delete
+        // the wrapper element.
+        val ftlNode = doc.detachRootElement().getChild("FTL")!!
+        ftlNode.detach()
+        doc.rootElement = ftlNode
+
+        return doc
     }
 }

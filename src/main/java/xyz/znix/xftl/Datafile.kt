@@ -155,9 +155,7 @@ class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>
     }
 
     fun parseXML(file: FTLFile): Document {
-        val builder = SAXBuilder()
-        builder.expandEntities = false
-        return builder.build(open(file))
+        return patcher.files[file.name]!!.openXML()
     }
 
     fun open(file: FTLFile): InputStream {
