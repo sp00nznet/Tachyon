@@ -40,7 +40,7 @@ class EditableShip(
     var droneSlots: Int = 2
 
     fun draw(g: Graphics, state: SelectShipState, renderAll: Boolean) {
-        val blueprint = state.blueprints[baseBlueprint] as ShipBlueprint
+        val blueprint = state.blueprints.getShip(baseBlueprint)
 
         val hullImage = state.getImg(blueprint.hullImage)
         val floorImage = blueprint.floorImage?.let { state.getImg(it) }

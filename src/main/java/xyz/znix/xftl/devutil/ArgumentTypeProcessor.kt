@@ -1,8 +1,8 @@
 package xyz.znix.xftl.devutil
 
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.LazyShipBlueprint
 import xyz.znix.xftl.game.Achievement
-import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.game.ShipFamily
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import java.lang.reflect.Parameter
@@ -148,7 +148,7 @@ object ShipFamilyProcessor : ArgumentTypeProcessor {
     }
 
     override fun process(value: String, console: DebugConsole): ShipFamily? {
-        val ship = console.game.content.blueprintManager.blueprints[value] as? ShipBlueprint
+        val ship = console.game.content.blueprintManager.blueprints[value] as? LazyShipBlueprint
 
         if (ship == null) {
             console.addLine("No such ship blueprint '$value' (when reading family)")

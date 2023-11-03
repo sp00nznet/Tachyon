@@ -260,7 +260,7 @@ public class InGameState extends MainGame.GameState {
     }
 
     private void createNewPlayerShip(String shipName, EditableShip customised) {
-        ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipName);
+        ShipBlueprint blueprint = blueprintManager.getShip(shipName);
         Element playerXml = blueprint.loadElem(df);
         player = new Ship(blueprint, this, customised, null);
         player.loadDefaultContents();
@@ -756,7 +756,7 @@ public class InGameState extends MainGame.GameState {
             shipName += "_DLC";
         }
 
-        ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipName);
+        ShipBlueprint blueprint = blueprintManager.getShip(shipName);
         Ship flagship = new Ship(blueprint, this, null, null);
         flagship.loadDefaultContents();
 
@@ -1095,7 +1095,7 @@ public class InGameState extends MainGame.GameState {
             spec = content.eventManager.getShip(specId);
         }
 
-        ShipBlueprint blueprint = (ShipBlueprint) blueprintManager.get(shipId);
+        ShipBlueprint blueprint = blueprintManager.getShip(shipId);
 
         // And use that to build and deserialise the ship
         Ship ship = new Ship(blueprint, this, customised, spec);

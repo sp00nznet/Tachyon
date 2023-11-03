@@ -1,6 +1,7 @@
 package xyz.znix.xftl.hangar
 
 import xyz.znix.xftl.Constants
+import xyz.znix.xftl.LazyShipBlueprint
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.game.UIUtils
@@ -10,7 +11,7 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sys.GameContainer
 import xyz.znix.xftl.sys.Input
 
-class ShipList(private val state: SelectShipState, private val close: (ShipBlueprint?) -> Unit) {
+class ShipList(private val state: SelectShipState, private val close: (LazyShipBlueprint?) -> Unit) {
     private val pos = Point(0, 0)
     private val size = Point(0, 0)
 
@@ -19,12 +20,12 @@ class ShipList(private val state: SelectShipState, private val close: (ShipBluep
 
     private val title = state.translator["shiplist_title"]
 
-    private val ships: List<ShipBlueprint>
+    private val ships: List<LazyShipBlueprint>
 
     private var offsetY: Int = 0
     private var maxY: Int = 0
 
-    private var hovered: ShipBlueprint? = null
+    private var hovered: LazyShipBlueprint? = null
 
     init {
         // Ships in families only get the A variant, other (modded in) ships

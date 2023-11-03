@@ -40,10 +40,10 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
     val windowRenderer: WindowRenderer
 
     val shipFamilies: ShipFamily.FamilyTable
-    val ships: List<ShipBlueprint>
+    val ships: List<LazyShipBlueprint>
 
     private val current: EditableShip get() = editor.ship
-    private val currentBlueprint: ShipBlueprint get() = blueprints[current.baseBlueprint] as ShipBlueprint
+    private val currentBlueprint: ShipBlueprint get() = blueprints.getShip(current.baseBlueprint)
 
     var isShipEdited = false
         private set
@@ -90,14 +90,16 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         val familyNames = shipFamilies.families.map { it.ships[0] }
 
         ships = blueprints.blueprints.values
-            .filterIsInstance(ShipBlueprint::class.java)
-            .filter { it.isPlayerShip }
+            .asSequence()
+            .filterIsInstance(LazyShipBlueprint::class.java)
+            .filter { it.name.startsWith("PLAYER_SHIP_") }
             .sortedBy { it.name }
             .sortedBy { ship -> familyNames.indexOfFirst { ship.name.startsWith(it) } }
+            .toList()
 
         shipSelector = SpecDeserialiser(uiProvider).load("ship_list_abc").mainWidget
 
-        shipSelector.addButtonListener("random") { selectShip(ships.random()) }
+        shipSelector.addButtonListener("random") { selectShip(ships.random().real) }
 
         shipSelector.addButtonListener("type_a") { selectShipVariant(0) }
         shipSelector.addButtonListener("type_b") { selectShipVariant(1) }
@@ -111,11 +113,11 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         shipList = ShipList(this) {
             shipListVisible = false
             if (it != null) {
-                selectShip(it)
+                selectShip(it.real)
             }
         }
 
-        selectShip(ships.first { it.name == shipFamilies.families.first().ships[0] })
+        selectShip(ships.first { it.name == shipFamilies.families.first().ships[0] }.real)
     }
 
     override fun shutdown() {
@@ -302,7 +304,7 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         val shipId = family.ships.getOrNull(index) ?: return
 
         val blueprint = ships.firstOrNull { it.name == shipId } ?: return
-        selectShip(blueprint)
+        selectShip(blueprint.real)
     }
 
     private inner class ShipSelectUIProvider : UIProvider {

@@ -5,7 +5,6 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.sector.EventManager
 import xyz.znix.xftl.sector.IEvent
 import xyz.znix.xftl.systems.*
@@ -35,7 +34,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             println("Generating ship from spec '${spec.name}' with seed $seedStr")
         }
 
-        val shipBlueprint = spec.autoBlueprint.resolve(rand) as ShipBlueprint
+        val shipBlueprint = (spec.autoBlueprint.resolve(rand) as LazyShipBlueprint).real
         val elem = shipBlueprint.loadElem(df)
 
         val ship = Ship(shipBlueprint, sys, null, spec)

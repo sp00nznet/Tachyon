@@ -69,6 +69,11 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
 
     operator fun get(name: String): IBlueprint = blueprints[name] ?: error("Unknown blueprint $name")
 
+    fun getShip(name: String): ShipBlueprint {
+        val blueprint = this[name] as LazyShipBlueprint
+        return blueprint.real
+    }
+
     private fun loadFile(df: Datafile, name: String) {
         val file = df["data/$name"]
         val mutableBlueprints = blueprints as HashMap<String, IBlueprint>
@@ -89,7 +94,10 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
                 "systemBlueprint" -> buildSystemBlueprint(elem)
                 "crewBlueprint" -> buildCrewBlueprint(elem)
                 "augBlueprint" -> buildAugmentBlueprint(elem)
-                "shipBlueprint" -> ShipBlueprint(elem, df, file)
+
+                // We don't load the whole ShipBlueprint now for performance
+                // reasons, as it loads another XML file.
+                "shipBlueprint" -> LazyShipBlueprint(elem, df, file)
 
                 // Ignore unknown blueprints
                 else -> null
@@ -224,4 +232,24 @@ open class Blueprint(elem: Element) : IBlueprint {
  */
 class ItemBlueprint(elem: Element) : Blueprint(elem) {
     override val cost: Int = elem.getChildTextTrim("cost")!!.toInt()
+}
+
+/**
+ * This is a stub that's created instead of a real ship blueprint,
+ * which is significantly slower to load.
+ *
+ * Those can and should only be loaded when they're required.
+ */
+class LazyShipBlueprint(
+    private val elem: Element, private val df: Datafile, private val file: FTLFile
+) : Blueprint(elem) {
+
+    val real: ShipBlueprint by lazy { ShipBlueprint(elem, df, file) }
+
+    // Load a few bits and pieces that are used in places where
+    // we don't need to load the full ship.
+    val layout: String = elem.getAttributeValue("layout")
+    val img: String = elem.getAttributeValue("img")
+    val shipClass: GameText? = elem.getGameTextChild("class")
+    val shipTitle: GameText? = elem.getGameTextChild("name")
 }
