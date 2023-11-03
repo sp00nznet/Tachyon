@@ -26,10 +26,14 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val missilesUsed: Int = xml.getChildTextTrim("missiles")?.toInt() ?: 0
     val speed: Int? = xml.getChildTextTrim("speed")?.toInt()
     val personnelDamage: Int = xml.getChildTextTrim("persDamage")?.toInt() ?: 0
-    val fireChance: Int = xml.getChildTextTrim("fireChance")?.toInt() ?: 0
-    val breachChance: Int = xml.getChildTextTrim("breachChance")?.toInt() ?: 0
     val chargeLevels: Int? = xml.getChildTextTrim("chargeLevels")?.toInt()
     val hullBust: Int = xml.getChildTextTrim("hullBust")?.toInt() ?: 0
+
+    // Parse these as floats and round back to ints, as vanilla appears to
+    // accept but silently truncate them. The Insurrection+ mod has floats
+    // for these, and while it's probably a bug, we still have to load it.
+    val fireChance: Int = xml.getChildTextTrim("fireChance")?.toFloat()?.toInt() ?: 0
+    val breachChance: Int = xml.getChildTextTrim("breachChance")?.toFloat()?.toInt() ?: 0
 
     // If set, always 3s stun duration
     val stunChance: Int = xml.getChildTextTrim("stunChance")?.toInt() ?: 0
