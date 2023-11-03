@@ -101,7 +101,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // Set the weapon's time charged to match our charge progress. This is
         // so the flagship's weapons show their usual charging animation.
-        weapon.timeCharged = weapon.type.chargeTime * chargeProgress
+        weapon.timeCharged = weapon.chargeTime * chargeProgress
     }
 
     override fun drawBackground(g: Graphics) {

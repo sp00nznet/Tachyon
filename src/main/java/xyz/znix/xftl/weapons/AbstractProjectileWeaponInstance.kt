@@ -205,6 +205,11 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
         }
 
         entryAngle = (Math.random() * Math.PI * 2).toFloat()
+
+        // This applies boost for artillery weapons
+        // Eg multiverse's playable flagship.
+        fire()
+
         primeShot()
     }
 
