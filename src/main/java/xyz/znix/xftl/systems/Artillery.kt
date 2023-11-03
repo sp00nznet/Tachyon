@@ -111,14 +111,9 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         g.pushTransform()
 
         val anim = weapon.animation
-        g.translate(hardpoint.position.x.f, hardpoint.position.y.f)
-        g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
 
-        // The weapon assumes 'up' is the forwards direction, so we need to rotate
-        // the weapon on the player's ship to make this true.
-        if (ship.isPlayerShip) {
-            g.rotate(0f, 0f, 90f)
-        }
+        Weapons.translateHardpoint(g, hardpoint)
+        g.translate(-anim.mountPoint.x.f, -anim.mountPoint.y.f)
 
         weapon.render(g)
 
