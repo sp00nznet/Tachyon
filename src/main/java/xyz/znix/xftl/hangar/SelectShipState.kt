@@ -222,7 +222,12 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
     }
 
     fun getImg(path: String): Image {
-        return getImgOrNull(path) ?: error("Invalid path for image: '$path'")
+        getImgOrNull(path)?.let { return it }
+
+        println("[WARN] Invalid path for image: '$path'")
+        val fallback = getImgOrNull("img/nullResource.png") ?: error("Missing nullResource.png")
+        images[path] = fallback // Don't repeat the warning
+        return fallback
     }
 
     fun getImgOrNull(path: String): Image? {
