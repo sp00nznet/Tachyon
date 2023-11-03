@@ -1,12 +1,8 @@
 package xyz.znix.xftl
 
 import org.jdom2.Document
-import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.game.MainGame
-import xyz.znix.xftl.modding.SlipstreamDirectoryMod
-import xyz.znix.xftl.modding.SlipstreamMod
-import xyz.znix.xftl.modding.SlipstreamPatcher
-import xyz.znix.xftl.modding.SlipstreamZipMod
+import xyz.znix.xftl.modding.*
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
 import xyz.znix.xftl.sys.PlatformSpecific
@@ -108,6 +104,8 @@ class VanillaDatafile(val underlyingFile: File) {
     operator fun get(name: String): Entry =
         files[name] ?: throw IllegalArgumentException("No such file '$name'")
 
+    fun containsFile(name: String): Boolean = files.containsKey(name)
+
     fun read(file: Entry): ByteArray {
         fi.seek(file.offset.toLong())
         val bytes = ByteArray(file.length)
@@ -133,6 +131,7 @@ class VanillaDatafile(val underlyingFile: File) {
 class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>) {
     // TODO handle closing this, to close the zip files
     private val patcher = SlipstreamPatcher(vanilla)
+    private val xmlCache = PatchedXMLCache(PlatformSpecific.INSTANCE.xmlCacheDirectory)
     private val files: Map<String, FTLFile>
 
     init {
@@ -155,7 +154,28 @@ class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>
     }
 
     fun parseXML(file: FTLFile): Document {
-        return patcher.files[file.name]!!.openXML()
+        val source = patcher.files[file.name]!!
+
+        // Don't cache vanilla XML files, they're quick to parse.
+        // Also don't cache files added by mods, both because otherwise the cache
+        // files could build up over time from old mods, and because they're not
+        // usually patched by other mods and are thus relatively quick to parse.
+        val canCache = source !is VanillaFileSource && vanilla.containsFile(file.name)
+
+        if (canCache) {
+            // Try to re-use a previous copy of this file, if possible.
+            // Applying patches doesn't take that long, but it's not trivial either.
+            xmlCache.lookup(file, source)?.let { return it }
+        }
+
+        val document = source.openXML()
+
+        if (canCache) {
+            println("Caching patched XML file '${file.name}'")
+            xmlCache.save(file, source, document)
+        }
+
+        return document
     }
 
     fun open(file: FTLFile): InputStream {

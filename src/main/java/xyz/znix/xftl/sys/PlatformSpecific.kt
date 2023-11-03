@@ -26,6 +26,11 @@ sealed interface PlatformSpecific {
     val ftlDatPathFile: Path get() = saveGamePath.resolve("ftl-path.txt")
 
     /**
+     * The path to a directory, where the cache for modded XML files is stored.
+     */
+    val xmlCacheDirectory: Path get() = saveGamePath.resolve("mod-xml-cache")
+
+    /**
      * Look through the OS's running processes, to find FTL.
      *
      * If it's running, find the path to it's ftl.dat file.

@@ -13,8 +13,11 @@ import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import xyz.znix.xftl.VanillaDatafile
 import java.io.*
+import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributes
+import java.security.MessageDigest
 import java.util.*
 import java.util.logging.Logger
 import java.util.regex.Pattern
@@ -318,6 +321,14 @@ interface SlipstreamMod {
     val entries: List<String>
 
     fun openFile(name: String): InputStream
+
+    /**
+     * Put *something* into the message digest that's very, very likely to change
+     * if the given file also changes.
+     *
+     * This is used to implement caching, to check if a cache is out of date or not.
+     */
+    fun addCacheContribution(name: String, digest: MessageDigest)
 }
 
 /**
@@ -340,6 +351,14 @@ interface FileSource {
     fun open(): InputStream
 
     fun openXML(): Document
+
+    /**
+     * Put *something* into the message digest that's very, very likely to change
+     * if the result of this source changes.
+     *
+     * This is used to implement caching, to check if a cache is out of date or not.
+     */
+    fun addCacheContribution(digest: MessageDigest)
 
     companion object {
         /**
@@ -425,6 +444,18 @@ class VanillaFileSource(val df: VanillaDatafile, val file: VanillaDatafile.Entry
         builder.expandEntities = false
         return open().use { builder.build(it) }
     }
+
+    override fun addCacheContribution(digest: MessageDigest) {
+        digest.update(messagePath.toByteArray(Charsets.UTF_8))
+
+        // If the offset or length has changed, that ought to be enough
+        // to catch changes to ftl.dat.
+        val tmp = ByteBuffer.allocate(4 * 2)
+        tmp.putInt(file.length)
+        tmp.putInt(file.offset)
+        tmp.flip()
+        digest.update(tmp)
+    }
 }
 
 class SlipstreamZipMod(val file: File) : SlipstreamMod, Closeable {
@@ -449,6 +480,19 @@ class SlipstreamZipMod(val file: File) : SlipstreamMod, Closeable {
         return zip.getInputStream(entry)
     }
 
+    override fun addCacheContribution(name: String, digest: MessageDigest) {
+        val entry = zip.getEntry(name) ?: error("Missing entry '$name' for slipstream mod '$file'")
+
+        digest.update("ZIP-MOD".toByteArray(Charsets.UTF_8))
+
+        val tmp = ByteBuffer.allocate(8 * 3)
+        tmp.putLong(entry.crc)
+        tmp.putLong(entry.size)
+        tmp.putLong(entry.lastModifiedTime.toMillis())
+        tmp.flip()
+        digest.update(tmp)
+    }
+
     override fun close() {
         zip.close()
     }
@@ -471,6 +515,23 @@ class SlipstreamDirectoryMod(val dir: Path) : SlipstreamMod, Closeable {
         return Files.newInputStream(dir.resolve(name))
     }
 
+    override fun addCacheContribution(name: String, digest: MessageDigest) {
+        digest.update("FS-MOD".toByteArray(Charsets.UTF_8))
+
+        // This follows symbolic links by default, which is good.
+        val attributes = Files.readAttributes(
+            dir.resolve(name),
+            BasicFileAttributes::class.java
+        )
+
+        val tmp = ByteBuffer.allocate(8 * 3)
+        tmp.putLong(attributes.size())
+        tmp.putLong(attributes.creationTime().toMillis())
+        tmp.putLong(attributes.lastModifiedTime().toMillis())
+        tmp.flip()
+        digest.update(tmp)
+    }
+
     override fun close() {
         // Nothing required.
     }
@@ -490,6 +551,11 @@ class ModFileSource(val path: String, val mod: SlipstreamMod) : FileSource {
         val builder = SAXBuilder()
         builder.expandEntities = false
         return open().use { builder.build(it) }
+    }
+
+    override fun addCacheContribution(digest: MessageDigest) {
+        digest.update("ModFileSource[$messagePath]".toByteArray(Charsets.UTF_8))
+        mod.addCacheContribution(path, digest)
     }
 }
 
@@ -511,6 +577,23 @@ class XSLTransformFileSource(
         mod.openFile(xslFilePath).use { transformStream ->
             return ModUtilities.transformDocument(prevDoc, transformStream, stylesheets)
         }
+    }
+
+    override fun addCacheContribution(digest: MessageDigest) {
+        digest.update("XSLT[$messagePath,${stylesheets.size}]".toByteArray(Charsets.UTF_8))
+        mod.addCacheContribution(xslFilePath, digest)
+
+        for (stylesheet in stylesheets) {
+            digest.update("sheet[${stylesheet.key}]".toByteArray(Charsets.UTF_8))
+
+            // It's possible for this to cause problems if the stylesheet was
+            // designed to cause them, since we don't have any kind of secure
+            // marker at the end, but this isn't supposed to be secure.
+            // It's only there for cache invalidation.
+            digest.update(stylesheet.value)
+        }
+
+        previous.addCacheContribution(digest)
     }
 }
 
@@ -540,6 +623,12 @@ class XMLPatchFileSource(
         // We're using an element where the FTL element is the root one,
         // so it ought to work fine.
         return patcher.patch(prevDoc, appendDoc)
+    }
+
+    override fun addCacheContribution(digest: MessageDigest) {
+        digest.update("Patch[$messagePath]".toByteArray(Charsets.UTF_8))
+        mod.addCacheContribution(appendFilePath, digest)
+        previous.addCacheContribution(digest)
     }
 }
 
@@ -571,6 +660,12 @@ class XMLRawAppendFileSource(
         val builder = SAXBuilder()
         builder.expandEntities = false
         return open().use { builder.build(it) }
+    }
+
+    override fun addCacheContribution(digest: MessageDigest) {
+        digest.update("RawAppend[$messagePath]".toByteArray(Charsets.UTF_8))
+        mod.addCacheContribution(appendFilePath, digest)
+        previous.addCacheContribution(digest)
     }
 }
 
@@ -609,5 +704,10 @@ class ReParseXMLFileSource(
         doc.rootElement = ftlNode
 
         return doc
+    }
+
+    override fun addCacheContribution(digest: MessageDigest) {
+        digest.update("ReParse[$messagePath]".toByteArray(Charsets.UTF_8))
+        mod.addCacheContribution(filePath, digest)
     }
 }
