@@ -160,6 +160,10 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
     }
 
+    fun getDroneForcedPower(slot: Int): Int {
+        return powerManager.getForcedPower(slot)
+    }
+
     // The drone instances are all serialised separate, but we store the blueprints here.
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
         for (drone in drones) {

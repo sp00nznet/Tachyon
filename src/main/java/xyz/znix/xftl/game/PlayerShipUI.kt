@@ -755,7 +755,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                     override val requiredPower: Int get() = drone!!.power
                     override val chargeTime: Float get() = error("Can't get charge time for drone")
                     override val chargeProgress: Float get() = error("Can't get charge progress for drone")
-                    override val zoltanPower: Int get() = 0 // TODO
+                    override val zoltanPower: Int get() = drones.getDroneForcedPower(i)
                     override val isPowered: Boolean get() = info!!.instance?.isPowered == true
                     override val isCharged: Boolean get() = isPowered // Always use the charged colour
                     override val isTargeted: Boolean get() = false
