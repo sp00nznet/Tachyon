@@ -8,6 +8,9 @@ plugins {
     application
 
     id("org.jetbrains.kotlin.jvm") version "1.9.10"
+
+    // Make JMH available for performance experiments
+    id("me.champeau.jmh") version "0.7.2"
 }
 
 repositories {
@@ -44,7 +47,7 @@ dependencies {
     implementation("org.jdom:jdom2:2.0.6.1")
 
     // Use JUnit test framework
-    testImplementation("junit:junit:4.12")
+    testImplementation("junit:junit:4.13.1")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
 
