@@ -22,6 +22,10 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     private lateinit var powerManager: WeaponPowerManager
 
+    // This is kinda horrible, but it's a convenient way to prevent
+    // zoltan power from deploying drones automatically.
+    private var allowDroneDeploy: DroneInfo? = null
+
     override fun initialise(ship: Ship) {
         super.initialise(ship)
 
@@ -92,11 +96,16 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
      * @return True if the given change was made.
      */
     fun setDronePower(slot: Int, power: Boolean): Boolean {
+        allowDroneDeploy = drones[slot]
         return powerManager.setItemPower(slot, power)
     }
 
     private fun setDronePowerInternal(slot: Int, power: Boolean) {
         val info = drones[slot] ?: return
+
+        // If we're allowed to deploy a drone, it only counts once
+        val allowDeploy = allowDroneDeploy == info
+        allowDroneDeploy = null
 
         // If the drone is already powered appropriately, nothing needs to be done.
         // This includes 'off' when the drone hasn't been spawned.
@@ -117,8 +126,13 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 return
             }
 
-            // Create the drone instance if it's not already.
+            // Create the drone instance if it's not already, and we're allowed to.
             if (info.instance == null) {
+                // Don't let zoltan power deploy drones.
+                if (!allowDeploy) {
+                    return
+                }
+
                 // Consume a drone part.
                 if (!ship.sys.debugFlags.infiniteDrones.set) {
                     if (ship.dronesCount <= 0)
