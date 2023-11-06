@@ -7,7 +7,11 @@ import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.TextureLoader
 import xyz.znix.xftl.sys.PlatformSpecific
 import xyz.znix.xftl.sys.ResourceContext
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.InputStream
+import java.io.RandomAccessFile
+import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.util.*
 
@@ -35,70 +39,64 @@ class VanillaDatafile(val underlyingFile: File) {
         check(fi.readUnsignedShort() == ENTRY_SIZE)
 
         val fileCount = fi.readInt()
-
-        @Suppress("UNUSED_VARIABLE") val nameSizeTODO = fi.readInt()
+        val nameSize = fi.readInt()
 
         val entriesStart = fi.filePointer
         check(entriesStart == HEADER_SIZE.toLong())
+
+        // We used to read the data directly out of the stream, but this caused
+        // lots and lots of syscalls, which wasn't great from a performance
+        // standpoint.
+        val entryData = ByteBuffer.allocate(fileCount * ENTRY_SIZE)
+        fi.readFully(entryData.array())
+
         val namesStart = entriesStart + fileCount * ENTRY_SIZE
+        check(namesStart == fi.filePointer)
+
+        val nameData = ByteBuffer.allocate(nameSize)
+        fi.readFully(nameData.array())
 
         for (i in 1..fileCount) {
-            fi.readInt() // The file name hash
+            entryData.getInt() // The file name hash
 
-            val flags = readByte(fi)
-
+            val flags = entryData.get().toInt()
             check(flags == 0) { "Datafile does not yet support compression" }
 
-            val nameOffset = read3byte(fi)
+            val nameOffset = read3byte(entryData)
 
-            val pos = fi.filePointer
-            fi.seek(nameOffset.toLong() + namesStart)
-            val name = readStringNulTerm(fi)
-            fi.seek(pos)
+            val name = readStringNulTerm(nameData, nameOffset)
 
-            val offset = fi.readInt()
-            val compressedSize = fi.readInt()
-            val decompressedSize = fi.readInt()
+            val offset = entryData.getInt()
+            val compressedSize = entryData.getInt()
+            val decompressedSize = entryData.getInt()
 
             check(compressedSize == decompressedSize) { "Compressed and uncompressed file sizes do not match" }
 
             files[name] = Entry(name, offset, decompressedSize)
 
-            check(fi.filePointer == entriesStart + i * ENTRY_SIZE)
+            check(entryData.position() == i * ENTRY_SIZE)
         }
     }
 
-    private fun readStringNulTerm(fi: RandomAccessFile): String {
-        val bytes = ByteArray(1024)
+    private fun readStringNulTerm(buf: ByteBuffer, position: Int): String {
         var count = 0
 
         while (true) {
-            val ch = readByte(fi)
-            if (ch == 0)
+            val ch = buf.get(position + count)
+            if (ch == 0.toByte())
                 break
 
-            bytes[count++] = ch.toByte()
+            count++
         }
 
-        return String(bytes, 0, count, Charsets.UTF_8)
+        return String(buf.array(), position, count, Charsets.UTF_8)
     }
 
-    private fun readByte(fi: RandomAccessFile): Int {
-        val n = fi.read()
-        if (n < 0)
-            throw EOFException()
-        return n
-    }
-
-    private fun read3byte(fi: RandomAccessFile): Int {
-        val ch1 = fi.read()
-        val ch2 = fi.read()
-        val ch3 = fi.read()
-        if ((ch1 or ch2 or ch3) < 0) {
-            throw EOFException()
-        } else {
-            return (ch1 shl 16) + (ch2 shl 8) + ch3
-        }
+    private fun read3byte(buf: ByteBuffer): Int {
+        val ch1 = buf.get().toInt() and 0xff
+        val ch2 = buf.get().toInt() and 0xff
+        val ch3 = buf.get().toInt() and 0xff
+        return (ch1 shl 16) + (ch2 shl 8) + ch3
     }
 
     operator fun get(name: String): Entry =
