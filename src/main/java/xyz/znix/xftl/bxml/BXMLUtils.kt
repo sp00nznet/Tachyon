@@ -39,8 +39,13 @@ class BXMLBufferedInputStream(val base: InputStream) {
     private val buffer = ByteArray(1024 * 8)
 
     fun readVarInt(): Int {
-        var value = 0
-        var shift = 0
+        val initial = readByte()
+        if (initial < 128) {
+            return initial
+        }
+
+        var value = initial and 0x7f
+        var shift = 7
         do {
             val byte = readByte()
 
@@ -59,7 +64,7 @@ class BXMLBufferedInputStream(val base: InputStream) {
      */
     fun readByte(): Int {
         if (bufOffset < bufAmount) {
-            return buffer[bufOffset++].toInt()
+            return buffer[bufOffset++].toInt() and 0xff
         }
 
         refill()

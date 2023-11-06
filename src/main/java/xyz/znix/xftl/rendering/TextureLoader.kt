@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11
 import org.newdawn.slick.opengl.ImageData
 import org.newdawn.slick.opengl.ImageDataFactory
 import org.newdawn.slick.opengl.InternalTextureLoader
+import org.newdawn.slick.opengl.PNGDecoder
 import xyz.znix.xftl.sys.ResourceContext
 import java.io.BufferedInputStream
 import java.io.IOException
@@ -12,6 +13,19 @@ import java.io.InputStream
 // Note: bits of this are copy/pasted from Slick's InternalTextureLoader.
 
 object TextureLoader {
+    init {
+        // Make sure we're using our modified copy of PNGDecoder.
+        // This is a bit of an ugly place to put it, but it'll do.
+        // Use reflection here, since Julk said this was causing issues
+        // with Gradle compiling against Slick's class (though it should
+        // always be correct at runtime).
+        try {
+            PNGDecoder::class.java.getField("FTL_MARKER")
+        } catch (e: NoSuchFieldException) {
+            throw RuntimeException("Couldn't verify modified PNG loader is in use", e)
+        }
+    }
+
     fun loadTexture(context: ResourceContext, imageData: ImageData): Texture {
         // Very heavily copied from InternalTextureLoader.
 
