@@ -330,6 +330,10 @@ abstract class AbstractCrew(
                 // Move to the other ship
                 destination.ship.crew.add(this)
 
+                // Set the current room to *somewhere* on the enemy ship, so
+                // the mode is then correct.
+                room = destination
+
                 // Change the room over, preserving our current position if possible.
 
                 val roomPosition = standingPosition
