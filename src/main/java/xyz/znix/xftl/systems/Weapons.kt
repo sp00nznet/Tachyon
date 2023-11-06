@@ -12,6 +12,7 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.utils.WeaponPowerManager
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
@@ -24,15 +25,9 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     val selectedTargets = TargetList()
 
-    /**
-     * The amount of Zoltan power each hardpoint receives.
-     *
-     * This is effectively just for caching, as it can be found purely
-     * from the current [forcedPower] value, and iterating through
-     * all the weapons.
-     */
-    private val weaponForcedPower: IntArray
-            by lazy { IntArray(ship.hardpoints.size) }
+    // Ship isn't set when constructed, and this reads the number of
+    // hardpoints when it's constructed, so lazy-init it.
+    val powerManager by lazy { WeaponPowerManager(this, WeaponPowerAccess()) }
 
     override fun update(dt: Float) {
         super.update(dt)
@@ -79,27 +74,6 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         selectedTargets.update()
     }
 
-    /**
-     * Shows how much power the currently-powered weapons are using.
-     *
-     * This should match [powerSelected], except when weapons are being
-     * turned on and off, hence why this is only used for power management.
-     */
-    private val currentWeaponPower: Int
-        get() {
-            // Only add up the non-forced power, so we don't have to account
-            // for power that's put into powered-off weapons.
-            var reactorPower = 0
-            for ((idx, hp) in ship.hardpoints.withIndex()) {
-                val weapon = hp.weapon ?: continue
-                if (weapon.isPowered)
-                    reactorPower += weapon.type.power - weaponForcedPower[idx]
-            }
-
-            // And add the forced power back on at the end.
-            return reactorPower + forcedPower
-        }
-
     override fun drawBackground(g: Graphics) {
         for (shipHardpoint in ship.hardpoints) {
             val weapon = shipHardpoint.weapon ?: continue
@@ -144,9 +118,8 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     fun getWeaponForcedPower(slot: Int): Int {
-        return weaponForcedPower[slot]
+        return powerManager.getForcedPower(slot)
     }
-
 
     fun getProjectileSpawnPos(weapon: AbstractWeaponInstance, firePoint: IPoint): IPoint {
         val hp = findHardpoint(weapon).spec
@@ -189,77 +162,15 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (ship.sys.isCurrentlyLoadingSave)
             return
 
-        // First, turn on any weapons that are fully powered by Zoltans.
-        // These ones can't be powered off by the player.
-        // This also updates weaponForcedPower.
-        weaponForcedPower.fill(0)
-        var remainingForcedPower = forcedPower
-        for ((idx, hp) in ship.hardpoints.withIndex()) {
-            val weapon = hp.weapon ?: continue
-
-            weaponForcedPower[idx] = remainingForcedPower.coerceAtMost(weapon.type.power)
-            remainingForcedPower -= weaponForcedPower[idx]
-            if (weaponForcedPower[idx] != weapon.type.power)
-                break
-
-            // TODO does this match vanilla behaviour with ions?
-            if (!weapon.isPowered) {
-                weapon.forceSetPowered(true)
-            }
-        }
-
-        // The weapons are arranged in order of priority, so turn the last ones off if possible.
-        for (hp in ship.hardpoints.asReversed()) {
-            if (powerSelected >= currentWeaponPower)
-                break
-
-            // Force-turn-off the weapon, even if we have ion damage.
-            // This is required since otherwise we could end up powering
-            // more weapons than we're allowed to, for example if
-            // we took damage while ion-locked.
-            hp.weapon?.forceSetPowered(false)
-        }
-
-        // If the system has too much power - more than the weapons are
-        // using - then get rid of that excess.
-        if (powerSelected != currentWeaponPower) {
-            setSystemPower(currentWeaponPower)
-        }
+        powerManager.powerStateChanged()
     }
 
     override fun increasePower() {
-        for ((idx, hp) in ship.hardpoints.withIndex()) {
-            val weapon = hp.weapon ?: continue
-
-            if (weapon.isPowered)
-                continue
-
-            val powerRequired = weapon.type.power - weaponForcedPower[idx]
-            if (powerRequired > powerUnused)
-                continue
-
-            if (!weapon.hasEnoughMissiles)
-                continue
-
-            hp.weapon?.let { setWeaponPower(it, true) }
-            return
-        }
+        powerManager.increasePower()
     }
 
     override fun decreasePower() {
-        for ((idx, hp) in ship.hardpoints.withIndex().reversed()) {
-            val weapon = hp.weapon ?: continue
-
-            if (!weapon.isPowered)
-                continue
-
-            // Purely Zoltan-powered, can't disable manually.
-            if (weaponForcedPower[idx] == weapon.type.power)
-                continue
-
-            setWeaponPower(weapon, false)
-            return
-        }
+        powerManager.decreasePower()
     }
 
     override fun drawManningIcon(g: Graphics, x: Int, y: Int) {
@@ -272,34 +183,8 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
      * Returns true if successful.
      */
     fun setWeaponPower(weapon: AbstractWeaponInstance, newPower: Boolean): Boolean {
-        if (weapon.isPowered == newPower)
-            return true
-
-        // Can't power weapons on or off with ion damage.
-        if (isPowerLocked)
-            return false
-
-        // Purely Zoltan-powered, can't disable manually.
         val idx = ship.hardpoints.indexOfFirst { it.weapon == weapon }
-        val nonZoltanPower = weapon.type.power - weaponForcedPower[idx]
-        if (!newPower && nonZoltanPower == 0)
-            return false
-
-        if (newPower) {
-            // Try to increase the system power to accommodate this weapon.
-            // This increase will be instantly reverted by powerStateChanged,
-            // as the weapon isn't actually turned on yet, but it lets us
-            // check if we have the available power or not.
-            if (!setSystemPower(currentWeaponPower + nonZoltanPower))
-                return false
-
-            if (!weapon.hasEnoughMissiles)
-                return false
-        }
-
-        weapon.forceSetPowered(newPower)
-        setSystemPower(currentWeaponPower)
-        return true
+        return powerManager.setItemPower(idx, newPower)
     }
 
     private fun onWeaponFired() {
@@ -399,6 +284,37 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         // If the user is currently aiming a beam, this marks it so the ship being targeted
         // can draw it. It's a bit ugly, but keeps all the target-drawing stuff in one place.
         var beamAiming: SelectedTarget.BeamAim? = null
+    }
+
+    private inner class WeaponPowerAccess : WeaponPowerManager.ItemAccess {
+        override val count: Int get() = ship.hardpoints.size
+
+        override fun hasItem(slot: Int): Boolean {
+            return ship.hardpoints[slot].weapon != null
+        }
+
+        override fun getItemPowerDraw(slot: Int): Int {
+            return ship.hardpoints[slot].weapon?.type?.power ?: 0
+        }
+
+        override fun isItemPowered(slot: Int): Boolean {
+            return ship.hardpoints[slot].weapon?.isPowered ?: false
+        }
+
+        override fun setItemPowered(slot: Int, powered: Boolean) {
+            val weapon = ship.hardpoints[slot].weapon ?: return
+
+            // If a weapon runs out of missiles, it turns off even if Zoltan-powered.
+            if (weapon.hasEnoughMissiles) {
+                weapon.forceSetPowered(powered)
+            } else {
+                weapon.forceSetPowered(false)
+            }
+        }
+
+        override fun setSystemPower(level: Int): Boolean {
+            return this@Weapons.setSystemPower(level)
+        }
     }
 
     companion object {

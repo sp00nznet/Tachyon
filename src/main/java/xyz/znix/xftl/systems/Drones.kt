@@ -8,6 +8,7 @@ import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
+import xyz.znix.xftl.utils.WeaponPowerManager
 import xyz.znix.xftl.weapons.DroneBlueprint
 
 class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
@@ -19,6 +20,8 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     private var playDroneLaunchSound = false
 
+    private lateinit var powerManager: WeaponPowerManager
+
     override fun initialise(ship: Ship) {
         super.initialise(ship)
 
@@ -29,18 +32,9 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         val droneSlots = ship.droneSlots ?: 3
         while (drones.size < droneSlots)
             drones.add(null)
-    }
 
-    /**
-     * Shows how much power the currently-powered drones are using.
-     *
-     * This should match [powerSelected], except when drones are being
-     * turned on and off, hence why this is only used for power management.
-     */
-    private val currentDronePower: Int
-        get() {
-            return drones.filter { it?.instance?.isPowered == true }.sumBy { it!!.type.power }
-        }
+        powerManager = WeaponPowerManager(this, DronePowerAccess())
+    }
 
     override fun powerStateChanged() {
         super.powerStateChanged()
@@ -49,71 +43,15 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         if (ship.sys.isCurrentlyLoadingSave)
             return
 
-        decrease@ while (currentDronePower > powerSelected) {
-            for (i in drones.size - 1 downTo 0) {
-                val drone = drones[i]?.instance ?: continue
-
-                // If the drone is powered, turn it off and check again if
-                // we need to shed more power.
-                if (drone.isPowered) {
-                    drone.isPowered = false
-                    continue@decrease
-                }
-            }
-
-            // We've turned off all our drones, and there's still too much
-            // power use? This should never happen!
-            throw IllegalStateException("Drones cannot meet provided power, selected $powerSelected available $powerAvailable")
-        }
-
-        // If the system has too much power - more than the drones are
-        // using - then get rid of that excess.
-        if (powerSelected != currentDronePower) {
-            setSystemPower(currentDronePower)
-        }
+        powerManager.powerStateChanged()
     }
 
     override fun increasePower() {
-        if (isPowerLocked)
-            return
-
-        // Find the first drone, and power it up
-        for ((i, drone) in drones.withIndex()) {
-            if (drone == null)
-                continue
-
-            // Skip already-powered drones
-            if (drone.instance?.isPowered == true)
-                continue
-
-            // Skip drones we can't afford to power
-            if (drone.type.power > powerAvailable)
-                continue
-
-            // We've found a suitable drone, turn it on.
-            setDronePower(i, true)
-            return
-        }
-
-        // No more drones to power up.
+        powerManager.increasePower()
     }
 
     override fun decreasePower() {
-        if (isPowerLocked)
-            return
-
-        // Find the last drone, and power it down
-        for (i in drones.size - 1 downTo 0) {
-            val drone = drones[i] ?: continue
-            val instance = drone.instance ?: continue
-
-            if (instance.isPowered) {
-                setDronePower(i, false)
-                return
-            }
-        }
-
-        // No drones are currently powered.
+        powerManager.decreasePower()
     }
 
     override fun update(dt: Float) {
@@ -136,8 +74,8 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             }
         }
 
-        // If a drone has been turned on or off, find out why and fix it.
-        if (powerSelected != currentDronePower) {
+        // If a drone has turned itself on or off, find out why and fix it.
+        if (powerSelected != powerManager.currentPower) {
             powerStateChanged()
         }
 
@@ -154,38 +92,29 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
      * @return True if the given change was made.
      */
     fun setDronePower(slot: Int, power: Boolean): Boolean {
-        val info = drones[slot] ?: return false
+        return powerManager.setItemPower(slot, power)
+    }
+
+    private fun setDronePowerInternal(slot: Int, power: Boolean) {
+        val info = drones[slot] ?: return
 
         // If the drone is already powered appropriately, nothing needs to be done.
         // This includes 'off' when the drone hasn't been spawned.
-        if (info.instance?.isPowered == power || (info.instance == null && !power))
-            return true
+        val currentPower = info.instance?.isPowered ?: false
+        if (currentPower == power)
+            return
 
-        // Can't change the drone power if we're ion-locked or hacked.
-        if (isPowerLocked)
-            return false
-
-        // If we're turning the drone on, check there's enough power for it.
         if (power) {
-            // Try to increase the system power to accommodate this drone.
-            // This increase will be instantly reverted by powerStateChanged,
-            // as the drone isn't actually turned on yet, but it lets us
-            // check if we have the available power or not.
-            if (!setSystemPower(currentDronePower + info.type.power)) {
-                // TODO show a 'not enough system power' or 'not enough reactor power' warning
-                return false
-            }
-
             // If this drone attacks hostile ships but there isn't
             // one present, we can't turn it on.
             val hostileShip = ship.sys.enemy
             if (info.type.type.needsHostileShip && hostileShip == null) {
-                return false
+                return
             }
 
             // Check the drone isn't on it's destroy cooldown
             if (info.cooldown != null) {
-                return false
+                return
             }
 
             // Create the drone instance if it's not already.
@@ -193,7 +122,7 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 // Consume a drone part.
                 if (!ship.sys.debugFlags.infiniteDrones.set) {
                     if (ship.dronesCount <= 0)
-                        return false
+                        return
                     ship.dronesCount--
                 }
 
@@ -208,8 +137,7 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         info.instance!!.isPowered = power
-        setSystemPower(currentDronePower)
-        return true
+        return
     }
 
     fun enemyShipUpdated() {
@@ -247,6 +175,30 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
          * deploy this drone again, after it was destroyed.
          */
         var cooldown: Float? = null
+    }
+
+    private inner class DronePowerAccess : WeaponPowerManager.ItemAccess {
+        override val count: Int get() = drones.size
+
+        override fun hasItem(slot: Int): Boolean {
+            return drones[slot] != null
+        }
+
+        override fun getItemPowerDraw(slot: Int): Int {
+            return drones[slot]?.type?.power ?: 0
+        }
+
+        override fun isItemPowered(slot: Int): Boolean {
+            return drones[slot]?.instance?.isPowered ?: false
+        }
+
+        override fun setItemPowered(slot: Int, powered: Boolean) {
+            setDronePowerInternal(slot, powered)
+        }
+
+        override fun setSystemPower(level: Int): Boolean {
+            return this@Drones.setSystemPower(level)
+        }
     }
 
     companion object {
