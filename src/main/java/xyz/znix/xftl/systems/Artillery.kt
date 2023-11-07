@@ -16,7 +16,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import kotlin.math.atan2
 import kotlin.math.max
-import kotlin.math.sqrt
+import kotlin.math.min
 
 class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
@@ -178,7 +178,11 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 )
                 aim.updateHitRooms()
 
-                val length = startRoom.pixelCentre.distTo(furthestRoom.pixelCentre)
+                // Don't swipe off the side of the ship, into empty space.
+                val length = min(
+                    startRoom.pixelCentre.distTo(furthestRoom.pixelCentre),
+                    (weapon.type as BeamBlueprint).length
+                )
 
                 weapon.fireFromArtillery(aim, length)
             }
