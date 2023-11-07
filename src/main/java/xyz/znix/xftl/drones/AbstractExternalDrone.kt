@@ -539,11 +539,6 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
     private var lastDestRotation: Float = 0f
     private var nextDestRotation: Float = 0f
 
-    // The distance between where we were when we selected our next
-    // destination, and the next destination. This can be used to
-    // interpolate the drone's rotation.
-    private var movementDistance: Float = 1f
-
     /**
      * Set to true when the drone should slow down and stop, ready
      * to take a shot.
@@ -712,11 +707,6 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
             ship.shieldOrigin.y + baseY.toInt()
         )
 
-        // Calculate the distance between this point and the next one.
-        // This is used to figure out how far along our flight we are,
-        // to correctly set the rotation.
-        movementDistance = sqrt(nextDestination.distToSq(position).f)
-
         // Pick the new rotation, and save the old one so we can
         // interpolate between them.
         lastDestRotation = nextDestRotation
@@ -734,7 +724,6 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         SaveUtil.addAttrFloat(elem, "pauseTimer", pauseTimer)
         SaveUtil.addAttrFloat(elem, "lastDestRotation", lastDestRotation)
         SaveUtil.addAttrFloat(elem, "nextDestRotation", nextDestRotation)
-        SaveUtil.addAttrFloat(elem, "movementDistance", movementDistance)
         SaveUtil.addAttrBool(elem, "paused", paused)
         SaveUtil.addAttrFloat(elem, "pauseStopTime", pauseStopTime)
     }
@@ -750,7 +739,6 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         pauseTimer = SaveUtil.getAttrFloat(elem, "pauseTimer")
         lastDestRotation = SaveUtil.getAttrFloat(elem, "lastDestRotation")
         nextDestRotation = SaveUtil.getAttrFloat(elem, "nextDestRotation")
-        movementDistance = SaveUtil.getAttrFloat(elem, "movementDistance")
         paused = SaveUtil.getAttrBool(elem, "paused")
         pauseStopTime = SaveUtil.getAttrFloat(elem, "pauseStopTime")
     }
