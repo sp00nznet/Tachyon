@@ -15,6 +15,7 @@ import kotlin.random.Random
 
 class ShipGib(val ship: ShipBlueprint, node: Element) {
     val imgPath: String
+    val imgPathGlow: String
 
     val velocityRange = parseRange(node.getChild("velocity"))
     val directionRange = parseRange(node.getChild("direction"))
@@ -22,12 +23,12 @@ class ShipGib(val ship: ShipBlueprint, node: Element) {
     val offset = ConstPoint(node.getChildTextTrim("x").toInt(), node.getChildTextTrim("y").toInt())
 
     init {
-        val imgBase = "img/" + if (ship.isPlayerShip) "ship" else "ships_glow"
-        imgPath = "$imgBase/${ship.img}_${node.name}.png"
+        imgPath = "img/ship/${ship.img}_${node.name}.png"
+        imgPathGlow = "img/ships_glow/${ship.img}_${node.name}.png"
     }
 
     fun createInstance(game: InGameState): Instance {
-        return Instance(game.getImg(imgPath))
+        return Instance(game.getImgIfExists(imgPath) ?: game.getImg(imgPathGlow))
     }
 
     companion object {

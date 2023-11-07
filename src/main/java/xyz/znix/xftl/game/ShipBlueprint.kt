@@ -48,7 +48,9 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
         }
 
     // These are the paths to the relevant images, to keep this class lightweight.
-    val hullImage: String
+    // For hullImage, there's multiple possible image paths - try them
+    // and use the first one that exists.
+    val hullImage: List<String>
     val floorImage: String?
     val cloakImage: String?
 
@@ -83,7 +85,10 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
         val layoutName = elem.getAttributeValue("layout")
         val layoutElem = df.parseXML(df["data/$layoutName.xml"]).rootElement
 
-        hullImage = "img/${if (isPlayerShip) "ship" else "ships_glow"}/${img}_base.png"
+        hullImage = listOf(
+            "img/ship/${img}_base.png",
+            "img/ships_glow/${img}_base.png"
+        )
         hullOffset = Utils.parsePosElem(layoutElem.getChild("img"))
 
         // Note that the stage-2 and stage-3 boss layouts don't have

@@ -42,7 +42,7 @@ class EditableShip(
     fun draw(g: Graphics, state: SelectShipState, renderAll: Boolean) {
         val blueprint = state.blueprints.getShip(baseBlueprint)
 
-        val hullImage = state.getImg(blueprint.hullImage)
+        val hullImage = blueprint.hullImage.firstNotNullOf { state.getImgOrNull(it) }
         val floorImage = blueprint.floorImage?.let { state.getImg(it) }
         val hullOffset = blueprint.hullOffset
         val floorOffset = blueprint.floorOffset

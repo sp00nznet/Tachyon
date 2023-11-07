@@ -83,7 +83,7 @@ class Ship(
     val breachSound: FTLSound = sys.sounds.getSample("hullBreach")
 
     val floorImage: Image? = type.floorImage?.let { sys.getImg(it) }
-    val hullImage: Image = sys.getImg(type.hullImage)
+    val hullImage: Image = type.hullImage.firstNotNullOf { sys.getImgIfExists(it) }
     val cloakImage: Image? = type.cloakImage?.let { sys.getImg(it) }
     val gibs: List<ShipGib.Instance>
 
