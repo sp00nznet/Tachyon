@@ -8,6 +8,7 @@ import xyz.znix.xftl.crew.ShipDamage
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
@@ -67,9 +68,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         // Copy this in as a mutable variable so it can be changed for drones.
         private var fireDuration: Float = this@BeamBlueprint.fireDuration
-
-        // Similarly, this is used for artillery
-        private var length: Int = this@BeamBlueprint.length
 
         // True if this beam is ready to pierce Zoltan shields. This has
         // to be kept, so a beam can instantly pierce a shield deployed
@@ -221,7 +219,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // across in this frame. This is done to ensure
                 // the beam can't skip rooms when running with
                 // high delta-times.
-                val onePixelTime = fireDuration / length
+                val onePixelTime = fireDuration / target!!.length
                 val newFiringTime = firingTime + dt
                 var t = firingTime
                 val tmp = Point(0, 0)
@@ -288,7 +286,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                     // Reset these to make the savegame more compact
                     fireDuration = this@BeamBlueprint.fireDuration
-                    length = this@BeamBlueprint.length
 
                     // Without this, if the first room hit was the same room as the
                     // last one hit on the previous shot, no damage would be dealt.
@@ -322,7 +319,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             if (SUPER_SHIELD_HIT_1 in oldProgress..newProgress) {
                 superShieldReady = true
             }
-            if (SUPER_SHIELD_HIT_2 in oldProgress..newProgress && length > 20) {
+            if (SUPER_SHIELD_HIT_2 in oldProgress..newProgress && target!!.length > 20) {
                 superShieldReady = true
             }
 
@@ -383,11 +380,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             fireDuration = duration
         }
 
-        fun fireFromArtillery(target: SelectedTarget.BeamAim, length: Int) {
-            fire(target)
-            this.length = length
-        }
-
         // For use by drones, so they can angle themselves correctly.
         fun getCurrentTargetPoint(): IPoint {
             if (!isFiring)
@@ -397,7 +389,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         private fun pointAtTime(time: Float): IPoint {
-            val distanceAcross = (length * time / fireDuration).toInt()
+            val distanceAcross = (target!!.length * time / fireDuration).toInt()
 
             return target!!.startShipPoint + ConstPoint(
                 (distanceAcross * cos(target!!.angle)).toInt(),
@@ -405,12 +397,34 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             )
         }
 
+        /**
+         * Generate a beam swipe, as used by the drones and enemy ship AI.
+         *
+         * This starts from the specified room, and moving towards
+         * the furthest-away room in that ship.
+         */
+        fun buildLongestAim(startRoom: Room): SelectedTarget.BeamAim {
+            val furthestRoom = startRoom.ship.rooms.maxBy { it.pixelCentre.distToSq(startRoom.pixelCentre) }
+
+            val aim = SelectedTarget.BeamAim(this, -1, startRoom.ship, startRoom.pixelCentre)
+            aim.angle = atan2(
+                furthestRoom.pixelCentre.y.f - startRoom.pixelCentre.y,
+                furthestRoom.pixelCentre.x.f - startRoom.pixelCentre.x
+            )
+
+            // Don't swipe off the side of the ship, into empty space.
+            aim.length = min(startRoom.pixelCentre.distTo(furthestRoom.pixelCentre), length)
+
+            aim.updateHitRooms()
+
+            return aim
+        }
+
         override fun saveToXML(elem: Element, refs: ObjectRefs) {
             super.saveToXML(elem, refs)
 
             SaveUtil.addTagFloat(elem, "firingTime", firingTime, 0f)
             SaveUtil.addTagFloat(elem, "fireDuration", fireDuration, this@BeamBlueprint.fireDuration)
-            SaveUtil.addTagInt(elem, "length", length, this@BeamBlueprint.length)
             SaveUtil.addTagBoolIfTrue(elem, "superShieldReady", superShieldReady)
 
             if (target != null) {
@@ -434,7 +448,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             firingTime = SaveUtil.getOptionalTagFloat(elem, "firingTime") ?: 0f
             fireDuration = SaveUtil.getOptionalTagFloat(elem, "fireDuration") ?: this@BeamBlueprint.fireDuration
-            length = SaveUtil.getOptionalTagInt(elem, "length") ?: this@BeamBlueprint.length
 
             val targetElem = elem.getChild("target")
             if (targetElem != null) {

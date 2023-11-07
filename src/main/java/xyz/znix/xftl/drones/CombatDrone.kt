@@ -1,22 +1,17 @@
 package xyz.znix.xftl.drones
 
 import org.jdom2.Element
-import xyz.znix.xftl.Constants
 import xyz.znix.xftl.Ship
-import xyz.znix.xftl.TWO_PI
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
-import xyz.znix.xftl.systems.SelectedTarget
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
-import kotlin.random.Random
 
 class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
     override val flightController = CombatFlightController(this)
@@ -124,32 +119,11 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         if (targetShip.isCloakActive)
             return
 
-        // Required for Kotlin smart-casting since 'weapon' is mutable
-        val weapon = weapon
-
-        when (weapon) {
+        when (val weapon = weapon) {
             is IRoomTargetingWeapon -> weapon.fireFromDrone(this, target)
 
             is BeamBlueprint.BeamInstance -> {
-                // Find a random point within the room to start the beam from
-                val startPos = ConstPoint(
-                    target.offsetX + (0 until target.width * Constants.ROOM_SIZE).random(),
-                    target.offsetY + (0 until target.height * Constants.ROOM_SIZE).random()
-                )
-
-                // Build a beam aiming
-                val aim = SelectedTarget.BeamAim(
-                    weapon,
-                    -1, // Only used to pick the hardpoint for the regular firing rendering
-                    targetShip,
-                    startPos
-                )
-
-                // Pick a random angle for the beam to move over, and use that
-                // to figure out which rooms it'll hit
-                aim.angle = Random.nextFloat() * TWO_PI
-
-                aim.updateHitRooms()
+                val aim = weapon.buildLongestAim(target)
 
                 // Set the weapon to start firing
                 weapon.fireFromDrone(this, aim, BEAM_FIRE_TIME)

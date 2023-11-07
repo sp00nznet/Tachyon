@@ -3,6 +3,7 @@ package xyz.znix.xftl.ai
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
+import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 
 /**
@@ -118,6 +119,17 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 is IRoomTargetingWeapon -> {
                     val remainingRooms = ArrayList(player.rooms)
                     weapon.fire { pickTarget(remainingRooms) }
+                }
+
+                is BeamBlueprint.BeamInstance -> {
+                    val startRoom = pickTarget(ArrayList(player.rooms))
+                    val aim = weapon.buildLongestAim(startRoom)
+
+                    // Set the weapon to start firing
+                    weapon.fire(aim)
+
+                    // Play the beam sound effect
+                    weapon.type.launchSounds?.get()?.play()
                 }
             }
         }

@@ -14,9 +14,7 @@ import xyz.znix.xftl.weapons.AbstractProjectileWeaponInstance
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
-import kotlin.math.atan2
 import kotlin.math.max
-import kotlin.math.min
 
 class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
@@ -166,25 +164,9 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         when (val weapon = this.weapon) {
             is BeamBlueprint.BeamInstance -> {
                 val startRoom = targetShip.rooms.random()
-                val furthestRoom = targetShip.rooms.maxByOrNull { it.pixelCentre.distToSq(startRoom.pixelCentre) }
+                val aim = weapon.buildLongestAim(startRoom)
 
-                // We know there must be at least one room, since we already picked one.
-                requireNotNull(furthestRoom)
-
-                val aim = SelectedTarget.BeamAim(weapon, -1, targetShip, startRoom.pixelCentre)
-                aim.angle = atan2(
-                    furthestRoom.pixelCentre.y.f - startRoom.pixelCentre.y,
-                    furthestRoom.pixelCentre.x.f - startRoom.pixelCentre.x
-                )
-                aim.updateHitRooms()
-
-                // Don't swipe off the side of the ship, into empty space.
-                val length = min(
-                    startRoom.pixelCentre.distTo(furthestRoom.pixelCentre),
-                    (weapon.type as BeamBlueprint).length
-                )
-
-                weapon.fireFromArtillery(aim, length)
+                weapon.fire(aim)
             }
 
             // This handles flak, missiles, and lasers.

@@ -402,6 +402,14 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
          */
         var visible: Boolean = false
 
+        /**
+         * The length of this beam swipe.
+         *
+         * This is lowered by AI-controlled attacks, which end before
+         * the beam goes off the side of the screen.
+         */
+        var length = (weapon.type as BeamBlueprint).length
+
         val beamWeapon get() = weapon as BeamBlueprint.BeamInstance
 
         /**
@@ -410,8 +418,6 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
         fun updateHitRooms() {
             hitRooms.clear()
             visible = true
-
-            val length = (weapon.type as BeamBlueprint).length
 
             // Loop over the pixels, marking whenever we cross one of the lines of the
             // grid all the enemy rooms are placed on.
@@ -458,6 +464,7 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
                 SaveUtil.addAttr(elem, "type", "beam")
                 SaveUtil.addPoint(elem, "startPos", startShipPoint)
                 SaveUtil.addAttrFloat(elem, "angle", angle)
+                SaveUtil.addAttrInt(elem, "length", length)
             }
         }
     }
@@ -490,6 +497,7 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
                 "beam" -> {
                     val startPos = SaveUtil.getPoint(elem, "startPos")
                     val angle = SaveUtil.getAttrFloat(elem, "angle")
+                    val length = SaveUtil.getAttrInt(elem, "length")
 
                     refs.asyncResolve(Ship::class.java, targetShipRef) { targetShip ->
                         val weapon = getWeapon(hardpointIndex)
@@ -497,6 +505,7 @@ sealed class SelectedTarget(val weapon: AbstractWeaponInstance, val weaponNumber
 
                         val target = BeamAim(weapon, hardpointIndex, targetShip!!, startPos)
                         target.angle = angle
+                        target.length = length
                         target.updateHitRooms()
                         onLoaded(target)
                     }
