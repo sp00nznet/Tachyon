@@ -34,8 +34,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
     // Note: missiles and asteroids count as the same thing
     private val shootsAtMissiles: Boolean = type.defenceTarget != DRONES_TARGET
-    private val shootsAtLasers: Boolean = type.defenceTarget == LASERS_TARGET
-    private val shootsAtDrones: Boolean = type.defenceTarget == DRONES_TARGET
+    private val shootsAtLasers: Boolean = type.defenceTarget == LASERS_TARGET || type.defenceTarget == OMNI_TARGET
+    private val shootsAtDrones: Boolean = type.defenceTarget == DRONES_TARGET || type.defenceTarget == OMNI_TARGET
 
     private lateinit var weapon: LaserBlueprint
     private var weaponSpeed: Int = 0
@@ -119,13 +119,27 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         cooldown = max(0f, cooldown - dt)
 
-        val bestTarget: InterceptResult? = if (shootsAtDrones) {
+        var bestTarget: InterceptResult? = if (shootsAtDrones) {
             pickBestDroneTarget()
         } else {
             pickBestProjectileTarget()
         }
 
+        // make omni-targeting drones actually able to shoot non-drones
+        // this doesn't work, please make it work (the intent is that if omni
+        // targeting that it aims at both drones and projectiles, what it
+        // chooses appears to be random like after shooting at a drone and
+        // missing it might on the next shot fire at a projecile the
+        // targeted drone fired)
+        if (bestTarget == null && shootsAtMissiles) {
+            bestTarget = pickBestProjectileTarget()
+        }
+
         // Can we shoot at something?
+        // note: if the drone uses a multi-shot gun (shots is > 1) then if no
+        // target is found in vanilla it will continue to fire in the same
+        // direction the gun is currently turned.
+        // TODO wormhole doesn't do that, implement it.
         if (cooldown == 0f && bestTarget != null) {
             shootAt(bestTarget)
         }
@@ -199,6 +213,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
                 // Ignore shots that were fired by another drone, since
                 // that'll distract this drone a lot, and it doesn't *seem*
                 // to happen in vanilla.
+                //it happens actually, more noticable on shieldless ships
                 if (projectile.firedByDrone)
                     continue
             }
@@ -420,6 +435,9 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         // Used by anti-drones, this only fires at drones.
         private const val DRONES_TARGET = "DRONES"
+
+        // Used by certain drones in Multiverse that can target solid projectiles, lasers and drones
+        private const val OMNI_TARGET = "ALL"
 
         fun loadProjectileFromXML(game: InGameState, elem: Element, refs: RefLoader, callback: (IProjectile) -> Unit) {
             val weaponName = SaveUtil.getAttr(elem, "weapon")
