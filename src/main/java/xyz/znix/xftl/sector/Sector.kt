@@ -12,7 +12,6 @@ import xyz.znix.xftl.savegame.SaveUtil
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.sqrt
 import kotlin.random.Random
 
 /**
@@ -298,7 +297,7 @@ class Sector {
             val path = findShortestPath(currentBeacon, it) ?: return@filter false
 
             if (!ignoreDistance) {
-                val distToFleet = sqrt(it.pos.distToSq(dangerZoneCentre).toFloat()).toInt() - DANGER_ZONE_RADIUS
+                val distToFleet = it.pos.distTo(dangerZoneCentre) - DANGER_ZONE_RADIUS
                 val timeUntilFleet = distToFleet / DANGER_ZONE_ADVANCE
 
                 // We must be able to reach the beacon *before* it's overrun

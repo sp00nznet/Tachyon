@@ -478,7 +478,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         // Find the delta vector between the two points we're drawing between, and the length of said vector
         val delta = toPos - fromPos
-        val dist = sqrt(delta.distToSq(ConstPoint.ZERO).f).toInt()
+        val dist = delta.distTo(ConstPoint.ZERO)
         val angle = atan2(delta.y.f, delta.x.f) * 180 / PIf
 
         // Translate to the start position, and rotate so that positive x runs along our line.

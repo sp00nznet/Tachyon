@@ -1,6 +1,8 @@
 package xyz.znix.xftl.math
 
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 interface IPoint {
     val x: Int
@@ -69,6 +71,14 @@ interface IPoint {
         val dx = otherX - x
         val dy = otherY - y
         return dx * dx + dy * dy
+    }
+
+    fun distTo(other: IPoint): Int {
+        return sqrt(distToSq(other).toFloat()).roundToInt()
+    }
+
+    fun distTo(otherX: Int, otherY: Int): Int {
+        return sqrt(distToSq(otherX, otherY).toFloat()).roundToInt()
     }
 
     fun divideTruncate(n: Float): IPoint {

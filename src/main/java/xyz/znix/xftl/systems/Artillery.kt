@@ -178,7 +178,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 )
                 aim.updateHitRooms()
 
-                val length = sqrt(startRoom.pixelCentre.distToSq(furthestRoom.pixelCentre).toFloat()).toInt()
+                val length = startRoom.pixelCentre.distTo(furthestRoom.pixelCentre)
 
                 weapon.fireFromArtillery(aim, length)
             }
