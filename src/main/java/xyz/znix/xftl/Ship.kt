@@ -1514,12 +1514,21 @@ class Ship(
      * are installed, their values are summed together.
      *
      * Returns 0 if the ship has no such augments.
-     *
-     * This throws an exception if the named blueprint doesn't exist.
      */
     fun getAugmentValue(name: String): Float {
-        val blueprint = sys.blueprintManager.getOrNull(name) as AugmentBlueprint? ?: return 0f
-        return augmentValues[blueprint] ?: 0f
+        return getAugmentValueOrNull(name) ?: 0f
+    }
+
+    /**
+     * Get the value for the given augment. If multiple of an augment
+     * are installed, their values are summed together.
+     *
+     * Returns null if the ship has no such augments, or if the specified
+     * augment doesn't exist.
+     */
+    fun getAugmentValueOrNull(name: String): Float? {
+        val blueprint = sys.blueprintManager.getOrNull(name) as AugmentBlueprint? ?: return null
+        return augmentValues[blueprint]
     }
 
     /**

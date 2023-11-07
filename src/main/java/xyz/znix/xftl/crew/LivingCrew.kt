@@ -79,9 +79,7 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
     override val suffocationMultiplier: Float
         get() {
-            if (hasAugment(AugmentBlueprint.OXYGEN_MASKS)) {
-                return 0.5f
-            }
+            getAugmentValue(AugmentBlueprint.OXYGEN_MASKS)?.let { return it }
             return 1f
         }
 
@@ -133,7 +131,7 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
         // Apply the reconstructive teleport effect now, since this
         // is both the mid-point of our animation, and we can't take
         // any more damage on the enemy ship.
-        if (currentAction != Action.DYING && hasAugment(AugmentBlueprint.RECONSTRUCTIVE_TELEPORT)) {
+        if (currentAction != Action.DYING && getAugmentValue(AugmentBlueprint.RECONSTRUCTIVE_TELEPORT) != null) {
             health = maxHealth
         }
     }
@@ -197,8 +195,8 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
     // Helper function
     fun getSkillLevel(skill: Skill): SkillLevel = info.getSkillLevel(skill)
 
-    protected fun hasAugment(name: String): Boolean {
-        return ownerShip?.hasAugment(name) == true
+    protected fun getAugmentValue(name: String): Float? {
+        return ownerShip?.getAugmentValueOrNull(name)
     }
 
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
