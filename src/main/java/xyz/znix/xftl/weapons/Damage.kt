@@ -47,16 +47,17 @@ class Damage() {
      */
     var pureCrewDamage: Int = 0
 
+    // Note that negative hull damage doesn't mean negative sys/pers damage!
     val effectiveSysDamage: Int
         get() = when (noSysDamage) {
             true -> pureSysDamage
-            false -> pureSysDamage + hullDamage
+            false -> pureSysDamage + hullDamage.coerceAtLeast(0)
         }
 
     val effectiveCrewDamage: Int
         get() = when (noCrewDamage) {
             true -> pureCrewDamage
-            false -> pureCrewDamage + hullDamage * 15
+            false -> pureCrewDamage + hullDamage.coerceAtLeast(0) * 15
         }
 
     /**
