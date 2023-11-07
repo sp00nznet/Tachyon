@@ -35,7 +35,7 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val description: GameText? get() = weapon.type.desc
 
     private val barImages: List<Image> by onInit { game ->
-        (1..4).map { game.getImg("img/systemUI/button_artillery_$it.png") }
+        (1..5).map { game.getImg("img/systemUI/button_artillery_$it.png") }
     }
 
     // The blueprint's cooldown is correct for a level-2 artillery system.
@@ -54,8 +54,9 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         require(index != -1) { "Artillery system is not in ship systems list!" }
 
         // Hardpoints 4 and up (zero-indexed) are used for artillery.
-        // I've confirmed this is how FTL does it.
-        ship.hardpoints[4 + index].spec
+        // If there's more than four regular weapons however, it starts
+        // after the last weapon hardpoint.
+        ship.hardpoints[max(4, ship.weaponSlots ?: 4) + index].spec
     }
 
     override fun initialise(ship: Ship) {
@@ -217,6 +218,7 @@ private object ArtilleryInfo : SystemInfo("artillery") {
             1 -> translator["artillery_2"]
             2 -> translator["artillery_3"]
             3 -> translator["artillery_4"]
+            4 -> translator["artillery_5"]
             else -> "INVALID LEVEL ${level + 1}"
         }
     }
