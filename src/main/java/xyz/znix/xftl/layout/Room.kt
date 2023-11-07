@@ -703,6 +703,8 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         } else {
             breaches[slot] = BreachInstance(this, slot)
         }
+
+        ship.breachSound.play()
     }
 
     /**

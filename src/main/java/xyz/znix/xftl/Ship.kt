@@ -80,6 +80,7 @@ class Ship(
 
     // Played when any two projectiles collide.
     private val projectileCollisionSound: FTLSound = sys.sounds.getSample("hitHull1")
+    val breachSound: FTLSound = sys.sounds.getSample("hullBreach")
 
     val floorImage: Image? = type.floorImage?.let { sys.getImg(it) }
     val hullImage: Image = sys.getImg(type.hullImage)
