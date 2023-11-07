@@ -17,7 +17,7 @@ import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 class ShipAI(val ship: Ship, val player: Ship) {
     private val fireAtChargeLevel = HashMap<AbstractWeaponInstance, Int>()
 
-    private var hadFirstUpdate = false
+    private var hadFirstUpdate = !ship.sys.isCurrentlyLoadingSave
 
     fun update(dt: Float) {
         // If the ship is dying, don't do anything.
