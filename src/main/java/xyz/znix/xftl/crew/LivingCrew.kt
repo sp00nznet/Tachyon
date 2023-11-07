@@ -49,8 +49,10 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
     override val showRedOutline: Boolean get() = ownerShip?.isPlayerShip != true
 
+    // If a crewmember is mind controlled, you have vision of it whether
+    // it belongs to the player or not.
     override val providesPlayerVision: Boolean
-        get() = ownerShip?.isPlayerShip == true && mindControlledBy == null
+        get() = ownerShip?.isPlayerShip == true || mindControlledBy != null
 
     @Suppress("SENSELESS_COMPARISON")
     override val backImg: Image?
