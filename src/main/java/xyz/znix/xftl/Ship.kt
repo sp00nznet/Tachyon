@@ -1550,14 +1550,18 @@ class Ship(
      * Perform the projectile missed test.
      *
      * This credits piloting/engine skills if it succeeds.
+     *
+     * [deltaEvasion] is added to the ship's evasion for this calculation. Note
+     * this is the opposite of [AbstractWeaponBlueprint.accuracyModifier], which
+     * when positive reduces the effective evasion.
      */
-    fun pickMissed(): Boolean {
+    fun pickMissed(deltaEvasion: Int = 0): Boolean {
         // Weapons fired at enemy ships before they surrender always
         // miss after a surrender.
         if (!isPlayerShip && sys.getEnemyOf(this) == null)
             return true
 
-        val missed = Random.rollChance(evasion)
+        val missed = Random.rollChance(evasion + deltaEvasion)
         if (missed) {
             piloting?.addSkillPoint(Skill.PILOTING)
             engines?.addSkillPoint(Skill.ENGINES)

@@ -74,7 +74,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             val firedAtSelf: Boolean = target.ship == ship
 
             // Bombs we fire at ourselves can't miss or hit the super-shield.
-            val missed = !firedAtSelf && target.ship.pickMissed()
+            val missed = !firedAtSelf && target.ship.pickMissed(-type.accuracyModifier)
             val hitSuperShield = !firedAtSelf && target.ship.superShield > 0 && !missed
 
             target.ship.projectiles += makeBomb(target, missed, hitSuperShield)

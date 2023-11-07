@@ -46,6 +46,9 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val noPersonnelDamage = xml.getChildTextTrim("noPersDamage")?.toBoolean() ?: false
     val noSysDamage = xml.getChildTextTrim("noSysDamage")?.toBoolean() ?: false
 
+    // Hyperspace tag, a flat reduction to the evasion used in calculations with that gun (can be negative)
+    val accuracyModifier: Int = xml.getChildTextTrim("accuracyMod")?.toInt() ?: 0
+
     // Power, charge time and cost are null for drone blueprints.
     // Use some semi-sane defaults to avoid having to check everywhere.
     val power = xml.getChildTextTrim("power")?.toInt() ?: 1
