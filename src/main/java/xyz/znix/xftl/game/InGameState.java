@@ -814,6 +814,10 @@ public class InGameState extends MainGame.GameState {
             shipUI.showGameOverScreen(GameOverWindow.Outcome.WIN);
         } else {
             sector.setFlagshipStage(stageKilled + 1);
+
+            // The event when you defeat a stage
+            Event event = eventManager.get("BOSS_ESCAPED").resolve();
+            shipUI.showEventDialogue(event);
         }
     }
 
