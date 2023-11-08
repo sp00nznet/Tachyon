@@ -477,13 +477,29 @@ class Ship(
 
         // Load all the weapon blueprints
         for ((index, name) in type.initialWeapons.withIndex()) {
-            val weapon = sys.blueprintManager[name] as AbstractWeaponBlueprint
+            // If there's a ship with invalid weapons, vanilla loads the weapon
+            // with an empty name.
+            // This empty-name weapon isn't actually set in the vanilla XML, but
+            // that's fine since only mods have ships with invalid weapon names.
+            var weapon = sys.blueprintManager.getOrNull(name)
+            if (weapon == null) {
+                println("[WARN] Invalid weapon '$name' in ship '${this.name}' initial weapons")
+                weapon = sys.blueprintManager[""]
+            }
+            check(weapon is AbstractWeaponBlueprint)
+
             hardpoints[index].weapon = weapon.buildInstance(this)
         }
 
         // Load all the drone blueprints
         for ((idx, name) in type.initialDrones.withIndex()) {
-            val drone = sys.blueprintManager[name] as DroneBlueprint
+            val drone = sys.blueprintManager.getOrNull(name) as DroneBlueprint?
+
+            // If a ship has an invalid drone, just ignore it.
+            if (drone == null) {
+                println("[WARN] Invalid drone '$name' in ship '${this.name}' initial drones")
+                continue
+            }
 
             // If the ship doesn't have enough drone slots, just give it some more.
             // This is required for the flagship at least, but it makes sense
@@ -498,7 +514,14 @@ class Ship(
 
         // Load any augments
         for (name in type.initialAugments) {
-            val augment = sys.blueprintManager[name] as AugmentBlueprint
+            val augment = sys.blueprintManager.getOrNull(name) as AugmentBlueprint?
+
+            // Also ignore invalid blueprints.
+            if (augment == null) {
+                println("[WARN] Invalid augment '$name' in ship '${this.name}' initial augments")
+                continue
+            }
+
             augment.onShipSpawn(this)
             augments.add(augment)
         }
@@ -1479,7 +1502,9 @@ class Ship(
      * This throws an exception if the named blueprint doesn't exist.
      */
     fun hasAugment(name: String): Boolean {
-        val blueprint = sys.blueprintManager[name] as AugmentBlueprint
+        // Multiverse removes the O2_MASKS blueprint, so we need to account
+        // for augments not existing.
+        val blueprint = sys.blueprintManager.getOrNull(name) as AugmentBlueprint? ?: return false
         return augmentValues.containsKey(blueprint)
     }
 
@@ -1492,7 +1517,7 @@ class Ship(
      * This throws an exception if the named blueprint doesn't exist.
      */
     fun getAugmentValue(name: String): Float {
-        val blueprint = sys.blueprintManager[name] as AugmentBlueprint
+        val blueprint = sys.blueprintManager.getOrNull(name) as AugmentBlueprint? ?: return 0f
         return augmentValues[blueprint] ?: 0f
     }
 

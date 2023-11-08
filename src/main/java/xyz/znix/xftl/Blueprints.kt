@@ -69,6 +69,8 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
 
     operator fun get(name: String): IBlueprint = blueprints[name] ?: error("Unknown blueprint $name")
 
+    fun getOrNull(name: String): IBlueprint? = blueprints[name]
+
     fun getShip(name: String): ShipBlueprint {
         val blueprint = this[name] as LazyShipBlueprint
         return blueprint.real
