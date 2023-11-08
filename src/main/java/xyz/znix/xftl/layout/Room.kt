@@ -685,6 +685,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         // spawned on the same tile in a 1/4 chance.
         val slot = fires.indices.random()
 
+        spawnFireAt(slot)
+    }
+
+    fun spawnFireAt(slot: Int) {
         val existingFire = fires[slot]
         if (existingFire != null) {
             existingFire.health = 1f
@@ -694,8 +698,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     }
 
     fun spawnBreach() {
+        spawnBreachAt(breaches.indices.random())
+    }
+
+    fun spawnBreachAt(slot: Int) {
         // Same mechanics as spawning a fire.
-        val slot = breaches.indices.random()
 
         val existingBreach = breaches[slot]
         if (existingBreach != null) {

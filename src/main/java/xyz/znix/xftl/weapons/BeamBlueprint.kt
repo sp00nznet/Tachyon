@@ -262,8 +262,19 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         if (lastRoomId != room.id) {
                             lastRoomId = room.id
 
+                            val roomDamage = damage.copy()
+
+                            // Don't do any crew damage, we do that per-cell
+                            roomDamage.pureCrewDamage = 0
+                            roomDamage.noCrewDamage = true
+
+                            // Same for fire/breach/stun
+                            roomDamage.fireChance = 0
+                            roomDamage.breachChance = 0
+                            roomDamage.stunChance = 0
+
                             // The damage number pops up right above where the beam is
-                            targetShip.damage(room, damage, pointAtTime(t))
+                            targetShip.damage(room, roomDamage, pointAtTime(t))
                         }
 
                         // Deal crew damage - this is done on entry to a new cell, not only to a new room.
@@ -272,6 +283,16 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                         for (crewmember in crew) {
                             crewmember.dealDamage(ShipDamage(crewDamage, damage))
+                        }
+
+                        // Fires and breaches (the latter is unused in vanilla) also
+                        // only spawn on entry to a new cell.
+                        val roomSlot = room.pointToSlot(tmp - room.position)
+                        if (Random.rollChance(damage.fireChance)) {
+                            room.spawnFireAt(roomSlot)
+                        }
+                        if (Random.rollChance(damage.breachChance)) {
+                            room.spawnBreachAt(roomSlot)
                         }
                     }
                 }
