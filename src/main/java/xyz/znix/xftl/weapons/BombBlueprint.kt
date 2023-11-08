@@ -146,6 +146,14 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override val antiDroneBP: AbstractWeaponBlueprint? get() = null
         override val antiDroneExemption: Ship? get() = null
 
+        /**
+         * If non-null, the bomb has already exploded and
+         * the explosion animation is ongoing.
+         *
+         * This is used to provide vision until the animation stops.
+         */
+        private var explosionTimer: Float? = null
+
         init {
             val ship = target.ship
             position = when {
@@ -178,12 +186,21 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         override fun update(dt: Float, currentSpace: Ship) {
+            if (explosionTimer != null) {
+                // We've already exploded, wait until that animation ends.
+                val newValue = explosionTimer!! - dt
+                explosionTimer = newValue
+
+                if (newValue <= 0f) {
+                    currentSpace.projectiles.remove(this)
+                }
+                return
+            }
+
             animation.update(dt)
 
             if (!animation.isStopped)
                 return
-
-            currentSpace.projectiles.remove(this)
 
             val damage = Damage(type)
             // TODO implement chain damage for bombs
@@ -203,14 +220,23 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 type.hitShipSounds?.get()?.play()
             }
 
-            currentSpace.playDamageEffect(type, position)
+            // Play the explosion animation, and note how long it'll take.
+            // We'll stay alive for that long, to keep the room vision available.
+            explosionTimer = currentSpace.playDamageEffect(type, position).spec.totalTime
         }
 
         override fun render(g: Graphics, currentSpace: Ship) {
+            if (explosionTimer != null)
+                return
+
             animation.draw(position.x.f - animation.width / 2, position.y.f - animation.height / 2)
         }
 
         override fun hitOtherProjectile(currentSpace: Ship) = error("Bombs have collision disabled")
+
+        override fun providesPlayerVision(room: Room): Boolean {
+            return room == target && !missed && !hitSuperShield
+        }
 
         override fun saveToXML(elem: Element, refs: ObjectRefs) {
             SaveUtil.addAttr(elem, "type", type.name)
@@ -222,6 +248,8 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             SaveUtil.addTagBoolIfTrue(elem, "missed", missed)
             SaveUtil.addTagBoolIfTrue(elem, "hitSuperShield", hitSuperShield)
 
+            SaveUtil.addTagFloat(elem, "explosionTimer", explosionTimer, null)
+
             // The position will always be the same if we hit, but if we miss
             // or hit a zoltan shield then it's randomised.
             SaveUtil.addPoint(elem, "position", position)
@@ -231,6 +259,8 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             position = SaveUtil.getPoint(elem, "position")
 
             animation.timer = SaveUtil.getAttrFloat(elem, "animationTimer")
+
+            explosionTimer = SaveUtil.getOptionalTagFloat(elem, "explosionTimer")
         }
     }
 

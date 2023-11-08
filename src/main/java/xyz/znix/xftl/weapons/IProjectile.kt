@@ -5,6 +5,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.drones.DefenceDrone
 import xyz.znix.xftl.environment.AsteroidProjectile
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -82,6 +83,13 @@ interface IProjectile {
     fun update(dt: Float, currentSpace: Ship)
 
     fun render(g: Graphics, currentSpace: Ship)
+
+    /**
+     * True if this projectile provides player vision for the given room.
+     *
+     * This is used by bombs.
+     */
+    fun providesPlayerVision(room: Room): Boolean = false
 
     /**
      * Called when this projectile hit another projectile, immediately

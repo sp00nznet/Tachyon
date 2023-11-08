@@ -133,6 +133,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             playerHasVision = true
         }
 
+        // This is used by bombs
+        if (ship.projectiles.any { it.providesPlayerVision(this) }) {
+            playerHasVision = true
+        }
+
         // Ships loose 1.2% oxygen per second, but gain whatever the oxygen
         // system is providing.
         val refillRate = (ship.oxygen?.refillRate ?: 0f) - Oxygen.ROOM_DRAIN_RATE

@@ -1101,9 +1101,9 @@ class Ship(
         }
     }
 
-    fun playDamageEffect(type: AbstractWeaponBlueprint, position: IPoint) {
+    fun playDamageEffect(type: AbstractWeaponBlueprint, position: IPoint): FloatingAnimation {
         val animation = sys.animations[type.explosion ?: error("Default explosion not set")]
-        playCentredAnimation(animation, position)
+        return playCentredAnimation(animation, position)
     }
 
     private fun showDamageText(target: Room, damage: Int, systemDamage: Int, ionDamage: Int, pos: IPoint?) {
@@ -1582,10 +1582,12 @@ class Ship(
         return missed
     }
 
-    fun playCentredAnimation(animation: AnimationSpec, centre: IPoint) {
+    fun playCentredAnimation(animation: AnimationSpec, centre: IPoint): FloatingAnimation {
         val firstFrame = animation.spriteAt(sys, 0)
         val offsetPos = ConstPoint(centre.x - firstFrame.width / 2, centre.y - firstFrame.height / 2)
-        animations += FloatingAnimation(sys, animation, offsetPos)
+        val floating = FloatingAnimation(sys, animation, offsetPos)
+        animations += floating
+        return floating
     }
 
     fun enemyShipUpdated() {
