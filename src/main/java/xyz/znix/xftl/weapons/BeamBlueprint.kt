@@ -71,6 +71,10 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // by a shield over-charger drone.
         private var superShieldReady: Boolean = false
 
+        // This is the chain count at the moment the weapon started firing.
+        // This is used for damage-chaining beams, which mods add.
+        private var firingChainCount: Int = 0
+
         // This is used to show the damage number against super shields.
         // It's a bit horrible, but figuring out where the beam is coming
         // from when we deal super shield damage would be even worse.
@@ -92,6 +96,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // Note we have to do this first, as we shift the beam inwards a little
                 // to fix the flagship beam.
                 val offset = animation.firePoint
+                val damage = computeDamage().hullDamage
                 val visibleStrength = max(1, damage)
                 drawBeam(
                     g, ship.sys, visibleStrength,
@@ -177,11 +182,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             // Beams that do no damage (eg the fire beam) still have a line
             // drawn, which is the same as a one-power beam.
-            val visualPower = max(1, damage)
-
-            var shieldLayers = targetShip.shields?.activeShields ?: 0
-            shieldLayers = max(0, shieldLayers - type.shieldPiercing)
-            val piercing = max(0, visualPower - shieldLayers)
+            val visualPower = computeDamage().hullDamage.coerceAtLeast(1)
+            val piercing = computeDamageWithShields(targetShip)?.hullDamage?.coerceAtLeast(1)
 
             // Find the shield bubble's tangent, and use that to set the angle
             // of the end of the beam, so it cleanly lines up with the shield.
@@ -196,7 +198,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             drawBeam(g, ship.sys, visualPower, from, shieldPoint, shieldNormal)
 
             // Draw the inside-the-shield-bubble part
-            if (piercing == 0 || target.targetShip.superShield > 0)
+            if (piercing == null)
                 return
 
             // Draw the beam from the target pos to the shield, so we can re-use
@@ -242,18 +244,14 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                             continue
                         }
 
-                        var shieldLayers = targetShip.shields?.activeShields ?: 0
-                        shieldLayers = max(0, shieldLayers - type.shieldPiercing)
+                        val damage = computeDamageWithShields(targetShip)
 
-                        val damage = Damage(type)
-                        // TODO implement chain damage
-                        damage.hullDamage = max(0, damage.hullDamage - shieldLayers)
-
-                        if ((shieldLayers > 0 && damage.hullDamage == 0) || targetShip.superShield > 0) {
-                            // Couldn't pierce the shields?
-                            // Note we need to check if shieldLayers is non-zero,
-                            // otherwise it'd block non-hull-damaging weapons even
-                            // when the shields are down.
+                        // Couldn't pierce the shields?
+                        // If so, update the last room - that way, if the shields
+                        // break while the beam is inside a room, it won't damage
+                        // that room (which matches vanilla). This can be used to
+                        // deal crew damage without doing any hull damage.
+                        if (damage == null) {
                             lastRoomId = room.id
                             continue
                         }
@@ -311,6 +309,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                     // Reset these to make the savegame more compact
                     fireDuration = this@BeamBlueprint.fireDuration
+                    firingChainCount = 0
 
                     // Without this, if the first room hit was the same room as the
                     // last one hit on the previous shot, no damage would be dealt.
@@ -380,7 +379,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             type.launchSounds?.get()?.play()
 
-            timeCharged = 0f
+            firingChainCount = chainCount
+            fire()
 
             // Find the point the beam is going to come from. Only do this once per
             // shot so the beam doesn't bounce around.
@@ -448,10 +448,53 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             return aim
         }
 
+        private fun computeDamage(): Damage {
+            val damage = Damage(type)
+            if (type.boost?.type == BoostType.DAMAGE) {
+                damage.applyWeaponChaining((type.boost.perShot * firingChainCount).toInt())
+            }
+            return damage
+        }
+
+        /**
+         * Calculate the damage we'll deal after passing through the
+         * given ship's shields layer.
+         *
+         * This returns null if we can't penetrate their shields.
+         */
+        private fun computeDamageWithShields(targetShip: Ship): Damage? {
+            if (targetShip.superShield > 0)
+                return null
+
+            val damage = computeDamage()
+
+            val shieldLayers = targetShip.shields?.activeShields ?: 0
+
+            // Check if we can get past the enemy shields.
+            // This is a bit weird, here's a few notable cases:
+            //    2 dmg + 2 sp, after 2 shields damage drops by 1 each
+            //    0 dmg + 2 sp, after 1 shields "damage" is done, after two no longer
+            //   -2 dmg + 4 sp, after 1 shield beam penetrates, afterwards no longer
+            val piercesShields = damage.hullDamage + type.shieldPiercing > shieldLayers || shieldLayers == 0
+            if (!piercesShields)
+                return null
+
+            // If we're doing negative damage (hull repair beams), then
+            // we'll do the full repair amount if we penetrate the shields.
+            // Otherwise, reduce the damage based on the number of shields.
+            if (damage.hullDamage > 0) {
+                val effectiveShields = (shieldLayers - type.shieldPiercing).coerceAtLeast(0)
+                damage.hullDamage = (damage.hullDamage - effectiveShields).coerceAtLeast(0)
+            }
+
+            return damage
+        }
+
         override fun saveToXML(elem: Element, refs: ObjectRefs) {
             super.saveToXML(elem, refs)
 
             SaveUtil.addTagFloat(elem, "firingTime", firingTime, 0f)
+            SaveUtil.addTagInt(elem, "firingChainCount", firingChainCount, 0)
             SaveUtil.addTagFloat(elem, "fireDuration", fireDuration, this@BeamBlueprint.fireDuration)
             SaveUtil.addTagBoolIfTrue(elem, "superShieldReady", superShieldReady)
 
@@ -475,6 +518,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             super.loadFromXML(elem, refs)
 
             firingTime = SaveUtil.getOptionalTagFloat(elem, "firingTime") ?: 0f
+            firingChainCount = SaveUtil.getOptionalTagInt(elem, "firingChainCount") ?: 0
             fireDuration = SaveUtil.getOptionalTagFloat(elem, "fireDuration") ?: this@BeamBlueprint.fireDuration
 
             val targetElem = elem.getChild("target")
