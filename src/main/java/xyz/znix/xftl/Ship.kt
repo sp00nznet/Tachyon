@@ -1071,7 +1071,7 @@ class Ship(
         damage(shields!!.room!!, damage.copyIonAndSys())
     }
 
-    fun damage(target: Room, damage: Damage) {
+    fun damage(target: Room, damage: Damage, textPos: IPoint? = null) {
         var hullMult = 1
         if (target.system == null) {
             // TODO does this properly apply hullBust values other than 1 (vanilla doesn't do that)
@@ -1080,7 +1080,7 @@ class Ship(
 
         val hullDamage = damage.hullDamage * hullMult
 
-        showDamageText(target, hullDamage, damage.effectiveSysDamage, damage.ionDamage)
+        showDamageText(target, hullDamage, damage.effectiveSysDamage, damage.ionDamage, textPos)
         crewWeaponDamage(target, damage.effectiveCrewDamage.f, damage)
 
         if (sys.debugFlags.noDmg.set)
@@ -1105,23 +1105,23 @@ class Ship(
         playCentredAnimation(animation, position)
     }
 
-    private fun showDamageText(target: Room, damage: Int, systemDamage: Int, ionDamage: Int) {
+    private fun showDamageText(target: Room, damage: Int, systemDamage: Int, ionDamage: Int, pos: IPoint?) {
         // Don't show the popup for system damage in a system-less room.
         if (target.system == null && damage == 0)
             return
 
         // Damage numbers split based on their type, also huge thanks to Gabriel Cooper
         // for helpfully providing data on the order of damage numbers!
-        if (ionDamage > 0) {
-            target.showDamageText(ionDamage, DAMAGE_COLOUR_ION)
+        if (ionDamage > 0 && target.system != null) {
+            target.showDamageText(ionDamage, DAMAGE_COLOUR_ION, pos)
         }
-        val extraSystemDamage = systemDamage - damage
-        if (extraSystemDamage > 0) {
+        val extraSystemDamage = systemDamage - damage.coerceAtLeast(0)
+        if (extraSystemDamage > 0 && target.system != null) {
             // because the specific sys damage shown is that that exceeds the hull damage
-            target.showDamageText(extraSystemDamage, DAMAGE_COLOUR_SYSTEM)
+            target.showDamageText(extraSystemDamage, DAMAGE_COLOUR_SYSTEM, pos)
         }
         if (damage > 0) {
-            target.showDamageText(damage, Colour.white)
+            target.showDamageText(damage, Colour.white, pos)
         }
     }
 

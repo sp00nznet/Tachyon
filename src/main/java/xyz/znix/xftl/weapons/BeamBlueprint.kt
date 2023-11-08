@@ -1,12 +1,9 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import xyz.znix.xftl.FTLAnimation
-import xyz.znix.xftl.PIf
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.ShipDamage
 import xyz.znix.xftl.drones.CombatDrone
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
@@ -73,6 +70,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // to be kept, so a beam can instantly pierce a shield deployed
         // by a shield over-charger drone.
         private var superShieldReady: Boolean = false
+
+        // This is used to show the damage number against super shields.
+        // It's a bit horrible, but figuring out where the beam is coming
+        // from when we deal super shield damage would be even worse.
+        private var shieldHitPos: IPoint? = null
 
         var isOnDrone: Boolean = false
 
@@ -160,6 +162,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             // if the beam leaves the shield layer.
             val iFirst = intersections.first
             val iSecond = intersections.second
+            shieldHitPos = intersections.first
             val shieldPoint: IPoint = when {
                 iFirst == null -> targetPos // No attenuation
                 iSecond == null -> iFirst // Crosses the bubble once, normal.
@@ -259,7 +262,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                         if (lastRoomId != room.id) {
                             lastRoomId = room.id
 
-                            targetShip.damage(room, damage)
+                            // The damage number pops up right above where the beam is
+                            targetShip.damage(room, damage, pointAtTime(t))
                         }
 
                         // Deal crew damage - this is done on entry to a new cell, not only to a new room.
@@ -326,11 +330,14 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             // Apply damage when applicable.
             if (targetShip.superShield > 0 && superShieldReady) {
                 superShieldReady = false
-
                 // TODO ion armour (reverse ion field)
                 // All beams do at least one damage against super-shields.
                 // Clamp here to avoid repairing them if the weapon does negative damage.
                 val damage = max(damage, 1) + max(ionDamage, 0) * 2
+
+                if (shieldHitPos != null && damage > 0) {
+                    targetShip.showDamageTextAt(shieldHitPos!!, damage, Constants.DAMAGE_COLOUR_ZOLTAN)
+                }
 
                 targetShip.superShield -= damage
             }

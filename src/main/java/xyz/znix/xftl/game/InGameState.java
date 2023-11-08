@@ -1500,7 +1500,7 @@ public class InGameState extends MainGame.GameState {
 
             Objects.requireNonNull(targetRoom);
 
-            player.damage(targetRoom, Damage.hullAndSys(damage.getAmount()));
+            player.damage(targetRoom, Damage.hullAndSys(damage.getAmount()), null);
 
             if (damage.getEffectFire()) {
                 targetRoom.spawnFire();
