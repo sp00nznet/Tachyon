@@ -19,7 +19,7 @@ class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         var healthPerSec = when (powerSelected) {
             0 -> 0f
-            else -> 6.4f * SPEEDS[powerSelected - 1]
+            else -> 6.4f * speedForLevel(powerSelected - 1)
         }
 
         // Hacking hurts the friendly crew, and rather quickly.
@@ -51,7 +51,12 @@ class Medbay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override fun loadSystem(elem: Element, refs: RefLoader) = Unit
 
     companion object {
-        val SPEEDS = listOf(1f, 1.5f, 3f)
+        fun speedForLevel(level: Int): Float {
+            return when (level) {
+                0 -> 1f
+                else -> level * 1.5f
+            }
+        }
 
         val INFO: SystemInfo = MedbayInfo
     }
@@ -64,7 +69,7 @@ private object MedbayInfo : SystemInfo("medbay") {
     override fun create(blueprint: SystemBlueprint) = Medbay(blueprint)
 
     override fun getLevelName(level: Int, translator: Translator): String {
-        val fixedPoint = (Medbay.SPEEDS[level] * 100).roundToInt()
+        val fixedPoint = (Medbay.speedForLevel(level) * 100).roundToInt()
         val speedStr = UIUtils.formatStringFTL(fixedPoint)
         return translator["medbay_healing"].replace("\\1", speedStr)
     }
