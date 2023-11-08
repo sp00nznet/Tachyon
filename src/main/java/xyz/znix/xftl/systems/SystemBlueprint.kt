@@ -16,6 +16,7 @@ class SystemBlueprint(xml: Element) : Blueprint(xml) {
 
     val onIconPath = "img/icons/s_${type}_green1.png"
     val roomIconPath: String = "img/icons/s_${type}_overlay.png"
+    val roomIconOutlinePath: String = "img/icons/s_${type}_overlay2.png"
 
     // No idea what the 'locked' flag does.
 

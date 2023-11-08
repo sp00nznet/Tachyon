@@ -39,6 +39,7 @@ class SystemObject(
         val iconColour = when {
             editor.isSelected(this) -> Constants.SYSTEM_IONISED
             editor.isHovered(this) -> Constants.SYSTEM_DAMAGED
+            system.startingPower == 0 -> Colour.white
             else -> Constants.SYSTEM_NORMAL
         }
 
@@ -48,6 +49,17 @@ class SystemObject(
             dragY - icon.height / 2,
             iconColour
         )
+
+        // Mark systems which aren't installed by default by drawing
+        // them as an outline.
+        if (system.startingPower == 0) {
+            val outline = editor.state.getImg(systemType.roomIconOutlinePath)
+            outline.draw(
+                dragX - outline.width / 2,
+                dragY - outline.height / 2,
+                Colour.lightGray
+            )
+        }
 
         // For artillery systems, draw the weapon name.
         if (room != null && !editor.isDragging(this) && systemType.info == Artillery.INFO) {

@@ -183,25 +183,37 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
     override fun mousePressed(button: Int, x: Int, y: Int) {
         if (shipListVisible)
             return
-        editor.mousePressed(button, x - shipOffset.x, y - shipOffset.y)
+
+        if (isShipEdited) {
+            editor.mousePressed(button, x - shipOffset.x, y - shipOffset.y)
+        }
     }
 
     override fun mouseReleased(button: Int, x: Int, y: Int) {
         if (shipListVisible)
             return
-        editor.mouseReleased(button, x - shipOffset.x, y - shipOffset.y)
+
+        if (isShipEdited) {
+            editor.mouseReleased(button, x - shipOffset.x, y - shipOffset.y)
+        }
     }
 
     override fun mouseDragged(oldX: Int, oldY: Int, newX: Int, newY: Int) {
         if (shipListVisible)
             return
-        editor.mouseDragged(oldX - shipOffset.x, oldY - shipOffset.y, newX - shipOffset.x, newY - shipOffset.y)
+
+        if (isShipEdited) {
+            editor.mouseDragged(oldX - shipOffset.x, oldY - shipOffset.y, newX - shipOffset.x, newY - shipOffset.y)
+        }
     }
 
     override fun mouseMoved(oldX: Int, oldY: Int, newX: Int, newY: Int) {
         if (shipListVisible)
             return
-        editor.mouseMoved(newX - shipOffset.x, newY - shipOffset.y)
+
+        if (isShipEdited) {
+            editor.mouseMoved(newX - shipOffset.x, newY - shipOffset.y)
+        }
     }
 
     override fun mouseWheelMoved(change: Int) {
@@ -210,7 +222,9 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
             return
         }
 
-        editor.mouseWheelMoved(change)
+        if (isShipEdited) {
+            editor.mouseWheelMoved(change)
+        }
     }
 
     override fun keyReleased(key: Int, c: Char) {

@@ -81,7 +81,8 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
         if (!editor.isSelected(this))
             return
 
-        val systemType = room.system?.getBP(editor.state)
+        val system = room.system
+        val systemType = system?.getBP(editor.state)
         val isArtillery = systemType?.info == Artillery.INFO
         val artilleryWeaponEntry = if (!isArtillery) null else {
             PopupMenu.Entry("Artillery weapon") {
@@ -100,6 +101,21 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
             }
         }
 
+        val startingPowerEntry = if (system == null || systemType == null) null else {
+            val powers = ArrayList<PopupMenu.Entry>()
+            for (i in systemType.maxPower downTo 0) {
+                var label = when (i) {
+                    0 -> "Not installed"
+                    else -> i.toString()
+                }
+                if (i == system.startingPower) {
+                    label = "[*] $label"
+                }
+                powers += PopupMenu.Entry(label) { system.startingPower = i }
+            }
+            PopupMenu.Entry("Starting power", powers) {}
+        }
+
         val setInteriorImage = if (systemType == null) null else {
             PopupMenu.Entry("Set interior image") {
                 editor.openMenu(InteriorImageSelector(editor, room))
@@ -108,6 +124,7 @@ class RoomObject(val editor: ShipEditor, val room: EditableRoom) : UIObject, Dra
 
         editor.openPopupMenu(
             artilleryWeaponEntry,
+            startingPowerEntry,
             setInteriorImage
         )
     }

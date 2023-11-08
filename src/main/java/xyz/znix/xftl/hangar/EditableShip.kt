@@ -172,7 +172,11 @@ class EditableShip(
                         idx / room.w
                     )
                 }
-                room.system = EditableSystem(type, system.interiorImage, computerPos, system.slotDirection)
+                room.system = EditableSystem(
+                    type, system.interiorImage,
+                    computerPos, system.slotDirection,
+                    if (system.availableByDefault) system.startingPower else 0
+                )
 
                 // If this is an artillery system, set its weapon.
                 if (system.weapon != null) {
@@ -463,12 +467,19 @@ data class EditableSystem(
     var interiorImage: String? = null,
     var computerPoint: ConstPoint? = null,
     var computerDirection: Direction? = null,
+
+    /**
+     * The level this system starts at, or 0 for systems that aren't installed by default.
+     */
+    var startingPower: Int = 0,
+
     var artilleryWeapon: String? = null // AbstractWeaponBlueprint name
 ) {
     fun getBP(state: SelectShipState): SystemBlueprint = state.blueprints[type] as SystemBlueprint
 
     fun saveToXML(elem: Element) {
         SaveUtil.addAttr(elem, "type", type)
+        SaveUtil.addAttrInt(elem, "startingPower", startingPower)
         interiorImage?.let { img -> SaveUtil.addAttr(elem, "interiorImage", img) }
         artilleryWeapon?.let { name -> SaveUtil.addAttr(elem, "artilleryWeapon", name) }
         computerPoint?.let { pos ->
@@ -481,6 +492,7 @@ data class EditableSystem(
     companion object {
         fun loadFromXML(elem: Element): EditableSystem {
             val type = SaveUtil.getAttr(elem, "type")
+            val startingPower = SaveUtil.getAttrInt(elem, "startingPower")
             val interiorImage = elem.getAttributeValue("interiorImage")
             val artilleryWeapon = elem.getAttributeValue("artilleryWeapon")
 
@@ -490,7 +502,7 @@ data class EditableSystem(
             )
             val computerDirection = elem.getAttributeValue("computerDir")?.let { Direction.valueOf(it) }
 
-            return EditableSystem(type, interiorImage, computerPoint, computerDirection, artilleryWeapon)
+            return EditableSystem(type, interiorImage, computerPoint, computerDirection, startingPower, artilleryWeapon)
         }
     }
 }
@@ -501,7 +513,7 @@ data class EditableSystem(
  * when the ship layout will no longer change.
  */
 class FinalisedEditableSystem(
-    val editableSystem: EditableSystem,
+    private val editableSystem: EditableSystem,
     override val systemIndex: Int,
     game: InGameState,
     room: Room
@@ -517,6 +529,6 @@ class FinalisedEditableSystem(
     override val slotNumber: Int? = editableSystem.computerPoint?.let { room.pointToSlot(it) }
     override val slotDirection: Direction? get() = editableSystem.computerDirection
 
-    override val startingPower: Int get() = system.startPower // TODO make this adjustable
-    override val availableByDefault: Boolean get() = true // TODO don't spawn all systems by default
+    override val startingPower: Int get() = editableSystem.startingPower
+    override val availableByDefault: Boolean get() = editableSystem.startingPower != 0
 }

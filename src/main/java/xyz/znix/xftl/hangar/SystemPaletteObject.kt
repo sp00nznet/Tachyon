@@ -77,7 +77,8 @@ class SystemPaletteObject(val editor: ShipEditor) : UIObject {
         systems.clear()
 
         for (system in nonInstalledSystems) {
-            systems += SystemObject(editor, null, 0, 0, EditableSystem(system.name))
+            val sys = EditableSystem(system.name, startingPower = system.startPower)
+            systems += SystemObject(editor, null, 0, 0, sys)
         }
 
         // It doesn't really matter what order we use, just make sure it's
