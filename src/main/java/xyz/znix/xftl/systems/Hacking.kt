@@ -559,6 +559,13 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             return bestDestPos
         }
 
+        override fun crossedShieldLine() {
+            if (target.ship.superShield > 0) {
+                hitOtherProjectile(target.ship)
+                dead = true
+            }
+        }
+
         private fun findLandingPoint(from: IPoint, movementDirection: Direction, bounds: IPoint): Pair<IPoint, Room>? {
             val rooms = target.ship.rooms
 
