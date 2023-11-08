@@ -54,9 +54,17 @@ class WeaponPowerManager(private val system: MainSystem, private val items: Item
             val powerDraw = items.getItemPowerDraw(slot)
 
             forcedPower[slot] = remainingForcedPower.coerceAtMost(powerDraw)
+
+            // Multiverse adds 'battery' weapons, which use a negative amount
+            // of power, which powers the next weapon in the list.
+            // This mostly 'just works', but we need to make sure we don't
+            // stop the loop as soon as we run out of zoltan power - otherwise
+            // battery weapons in any slot other than the first (assuming no
+            // Zoltans in the room) wouldn't do anything, as this check would
+            // always be skipped.
             remainingForcedPower -= forcedPower[slot]
             if (forcedPower[slot] != powerDraw)
-                break
+                continue
 
             // TODO does this match vanilla behaviour with ions?
             items.setItemPowered(slot, true)
