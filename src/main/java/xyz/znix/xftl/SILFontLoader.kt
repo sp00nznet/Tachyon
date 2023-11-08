@@ -10,12 +10,12 @@ import xyz.znix.xftl.sys.ResourceContext
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer
-import java.util.*
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 class SILFontLoader {
     private val chars: Map<Char, Charinfo>
+    private val unknownChar: Charinfo
     private val picture: Image
     private val renderer: BulkImageRenderer
 
@@ -138,6 +138,9 @@ class SILFontLoader {
 
         // Enlarged fonts are supposed to be pixelated.
         renderer.imageFiltering = GL11.GL_NEAREST
+
+        // Replace unknown characters with question marks
+        unknownChar = chars.getValue('?')
     }
 
     /**
@@ -147,6 +150,7 @@ class SILFontLoader {
      */
     constructor(other: SILFontLoader) {
         chars = other.chars
+        unknownChar = other.unknownChar
         picture = other.picture
         lineSpacing = other.lineSpacing
         baselineToTop = other.baselineToTop
@@ -161,8 +165,7 @@ class SILFontLoader {
     fun drawStringTruncated(x: Float, y: Float, width: Float, text: String, col: Colour) {
         var next = x
         for (ch in text) {
-            // Replace unknown characters with question marks
-            val info = chars[ch] ?: chars['?']!!
+            val info = chars[ch] ?: unknownChar
 
             val cy = y + (scale * -info.ascent).roundToInt()
             next += (info.prekern * scale).roundToInt()
@@ -201,8 +204,7 @@ class SILFontLoader {
 
         var next = x
         for (ch in text) {
-            // Replace unknown characters with question marks
-            val info = chars[ch] ?: chars['?']!!
+            val info = chars[ch] ?: unknownChar
 
             val cy = roundedY + (scale * -info.ascent).roundToInt()
             next += (info.prekern * scale).roundToInt()
@@ -217,7 +219,7 @@ class SILFontLoader {
             )
 
             // Push the image for the background font
-            val bgInfo = bgFont.chars[ch] ?: bgFont.chars['?']!!
+            val bgInfo = bgFont.chars[ch] ?: bgFont.unknownChar
             val bgCX = cx + 1 * scale // Shift 1px for hl1/hl2 alignment
             val bgCY = cy + 1 * scale
             bgFont.renderer.pushImage(
@@ -246,7 +248,7 @@ class SILFontLoader {
     fun getWidth(str: String): Int {
         var next = 0
         for ((i, ch) in str.withIndex()) {
-            val info = chars[ch] ?: error("Unknown char $ch")
+            val info = chars[ch] ?: unknownChar
             next += (info.prekern * scale).roundToInt()
 
             val last = i == str.length - 1
