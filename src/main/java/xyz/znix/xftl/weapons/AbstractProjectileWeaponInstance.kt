@@ -70,6 +70,12 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
             return
         }
 
+        // If we're powered off, instantly stop firing.
+        if (!isPowered) {
+            stopFiring()
+            return
+        }
+
         firingAnimationTimer += dt
 
         // Surprisingly, weapons charge while firing.
@@ -85,13 +91,7 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
 
         if (firingAnimationTimer >= Animations.PROJECTILE_WEAPON_FIRE_TIME) {
             if (targets.isEmpty()) {
-                isFiring = false
-
-                // Save space in the savefile, as these aren't written if they're zero.
-                entryAngle = 0f
-                firingAnimationTimer = 0f
-                shotsFired = 0
-                firingChainCount = 0
+                stopFiring()
             } else {
                 shotsFired++
                 primeShot()
@@ -220,6 +220,17 @@ abstract class AbstractProjectileWeaponInstance(type: AbstractWeaponBlueprint, s
             return
 
         ship.cloaking?.weaponFired()
+    }
+
+    protected fun stopFiring() {
+        isFiring = false
+        targets.clear()
+
+        // Save space in the savefile, as these aren't written if they're zero.
+        entryAngle = 0f
+        firingAnimationTimer = 0f
+        shotsFired = 0
+        firingChainCount = 0
     }
 
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
