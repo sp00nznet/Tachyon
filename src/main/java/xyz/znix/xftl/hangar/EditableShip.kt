@@ -172,6 +172,13 @@ class EditableShip(
                         idx / room.w
                     )
                 }
+
+                // If this room already has a system, don't replace it with a non-default system.
+                // This is specifically to handle the case of medbays/clonebays.
+                if (room.system != null && !system.availableByDefault) {
+                    continue
+                }
+
                 room.system = EditableSystem(
                     type, system.interiorImage,
                     computerPos, system.slotDirection,
