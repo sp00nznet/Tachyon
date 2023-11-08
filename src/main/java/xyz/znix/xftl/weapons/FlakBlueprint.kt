@@ -148,9 +148,13 @@ class FlakBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         override fun hitHull() {
-            // Fake projectiles are there for the visuals only
-            if (!spec.fake) {
-                ship.damage(target, computeDamage())
+            // Check what room (if any) we've actually hit.
+            // Fake projectiles are there for the visuals only, so exclude
+            // them too.
+            val targetPos = calculateTargetPosition()
+            val hitRoom = ship.rooms.firstOrNull { it.containsShipSpace(targetPos) }
+            if (!spec.fake && hitRoom != null) {
+                ship.damage(hitRoom, computeDamage())
             }
 
             // We always have to use our custom animation, so the explosion
