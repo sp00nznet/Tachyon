@@ -4,6 +4,7 @@ import xyz.znix.xftl.Ship
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 
 /**
@@ -44,6 +45,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
         }
 
         updateWeapons()
+        updateDrones()
 
         // Constantly try to trigger cloaking, it'll be ignored
         // whenever it's unavailable.
@@ -132,6 +134,24 @@ class ShipAI(val ship: Ship, val player: Ship) {
                     weapon.type.launchSounds?.get()?.play()
                 }
             }
+        }
+    }
+
+    private fun updateDrones() {
+        val drones = ship.drones ?: return
+
+        // Try and deploy all the drones we can, except for boarders
+        // when there's an enemy super-shield, as they just explode when
+        // they fly into it.
+        for ((i, drone) in drones.drones.withIndex()) {
+            if (drone == null)
+                continue
+
+            if (drone.type.type == DroneBlueprint.DroneType.BOARDER && player.superShield > 0) {
+                continue
+            }
+
+            drones.setDronePower(i, true)
         }
     }
 
