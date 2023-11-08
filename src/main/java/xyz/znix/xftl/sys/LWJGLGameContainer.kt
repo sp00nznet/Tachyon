@@ -234,7 +234,15 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
             val isFocused = glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE
 
             // Update the game state
-            game.update(this, deltaSec)
+            // If there's an exception, catch it instead of crashing the whole game.
+            // If we're in an invalid state this won't help, but on-click/on-keypress
+            // stuff should generally be OK.
+            try {
+                game.update(this, deltaSec)
+            } catch (ex: Exception) {
+                println("Exception during game update")
+                ex.printStackTrace()
+            }
 
             // Only render if the user can see the result
             if (!isFocused) {
