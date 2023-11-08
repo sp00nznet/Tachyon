@@ -19,7 +19,7 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val projectile: String? = xml.getChildTextTrim("image")
     open val explosion: String? = xml.getChildTextTrim("explosion")
     val shots = xml.getChildTextTrim("shots")?.toInt() ?: 1
-    val damage = xml.getChildTextTrim("damage")?.toInt() ?: 1
+    val damage = xml.getChildTextTrim("damage")?.toInt() ?: 0
     val sysDamage = xml.getChildTextTrim("sysDamage")?.toInt() ?: 0
     val ionDamage = xml.getChildTextTrim("ion")?.toInt() ?: 0
     val shieldPiercing: Int = xml.getChildTextTrim("sp")?.toInt() ?: 0
