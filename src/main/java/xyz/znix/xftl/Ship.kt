@@ -1350,6 +1350,10 @@ class Ship(
             hardpoints[i].weapon = null
         }
 
+        // Avoid power artefacts from Zoltan power interactions, as how that
+        // power is distributed needs to be updated when the weapons change.
+        weapons?.powerStateChanged()
+
         drones?.drones?.let { droneList ->
             var droneDest = 0
             for (drone in droneList) {
