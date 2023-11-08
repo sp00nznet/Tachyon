@@ -56,6 +56,14 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
             val target = this.target ?: return
 
+            if (!isPowered) {
+                // Instantly stop the firing animation if we're depowered
+                // The player has already been charged a missile part, so that's
+                // lost, which is fine as it matches vanilla.
+                stopFiring()
+                return
+            }
+
             firingAnimationTimer += dt
 
             if (!hasFired && fireAnimationFrame >= animation.fireFrame) {
@@ -64,10 +72,14 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             }
 
             if (firingAnimationTimer >= Animations.BOMB_FIRE_TIME) {
-                this.target = null
-                hasFired = false
-                firingAnimationTimer = 0f
+                stopFiring()
             }
+        }
+
+        private fun stopFiring() {
+            target = null
+            hasFired = false
+            firingAnimationTimer = 0f
         }
 
         private fun doBombFire(target: Room) {
