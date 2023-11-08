@@ -916,7 +916,6 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // Draw the hull bar
 
         // TODO support ships with more or less health
-        check(ship.maxHealth == 30)
 
         val hpW = 12f * ship.health
         val healthColour = when {
