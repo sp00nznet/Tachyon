@@ -76,6 +76,12 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         // Make Kotlin smart-casts work with a mutable field
         val weapon = this.weapon
 
+        // Turn the weapon on and off to match the drone.
+        // This makes beams stop firing when the drone is de-powered
+        // while shooting.
+        weapon.forceSetPowered(isRunning)
+        weapon.update(dt, dt, weapon.isPowered)
+
         if (!flightController.paused || !isRunning)
             return
 
@@ -92,7 +98,6 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
         // Fire our beam, if it's still active.
         var firingBeam = false
         if (weapon is BeamBlueprint.BeamInstance) {
-            weapon.update(dt, dt, true)
             firingBeam = weapon.isFiring
 
             // Match our rotation to that of the beam

@@ -52,7 +52,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     }
 
     inner class BeamInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
-        override val isFiring: Boolean get() = target != null
+        override val isFiring: Boolean get() = target != null && isPowered
         private var firingTime: Float = 0f
         private var target: SelectedTarget.BeamAim? = null
         private val originPos = Point(0, 0)
@@ -303,26 +303,32 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                 // Check if we've hit the end of our travel.
                 if (firingTime >= fireDuration) {
-                    firingTime = 0f
-                    superShieldReady = false
-                    target = null
-
-                    // Reset these to make the savegame more compact
-                    fireDuration = this@BeamBlueprint.fireDuration
-                    firingChainCount = 0
-
-                    // Without this, if the first room hit was the same room as the
-                    // last one hit on the previous shot, no damage would be dealt.
-                    lastPos.set(INVALID_CELL_POS)
-                    lastRoomId = null
-
-                    originPos.set(ConstPoint.ZERO)
-
-                    targetShip.inboundBeams.remove(this)
+                    stopFiring()
                 }
 
                 contact.update(dt)
+            } else if (target != null) { //if we aren't shooting then we reset the weapon
+                stopFiring()
             }
+        }
+
+        private fun stopFiring() {
+            target?.targetShip?.inboundBeams?.remove(this)
+
+            firingTime = 0f
+            superShieldReady = false
+            target = null
+
+            // Reset these to make the savegame more compact
+            fireDuration = this@BeamBlueprint.fireDuration
+            firingChainCount = 0
+
+            // Without this, if the first room hit was the same room as the
+            // last one hit on the previous shot, no damage would be dealt.
+            lastPos.set(INVALID_CELL_POS)
+            lastRoomId = null
+
+            originPos.set(ConstPoint.ZERO)
         }
 
         private fun updateSuperShield(oldFiringTime: Float, newFiringTime: Float) {
