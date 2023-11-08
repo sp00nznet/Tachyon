@@ -97,6 +97,10 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
     private var bigSparksRotation: Float = 0f
     private var bigSparksMaskX: Int = 0
 
+    // For flashing the light at the bottom of a room that comes on
+    // when a fire/breach is present.
+    private var fireLightTimer: Float = 0f
+
     fun initialise(doors: List<Door>) {
         check(_doors == null) { "Cannot reinitialise room" }
 
@@ -150,6 +154,9 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             }
             fireSpreadUpdated[idx] = false
         }
+
+        // Flash the fire warning light
+        fireLightTimer += dt
     }
 
     fun updateCrewInRoom() {
@@ -200,6 +207,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             for (fire in fires) {
                 fire?.draw()
             }
+        }
+
+        // Draw the flashing fire warning light, as required.
+        if (playerHasVision) {
+            drawFireLight(g)
         }
 
         // Draw the highlight on the room if it's being selected for weapon targeting.
@@ -378,6 +390,35 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         } else {
             bigSparksHackAnimation = null
         }
+    }
+
+    private fun drawFireLight(g: Graphics) {
+        if (fires.all { it == null } && breaches.all { it == null }) {
+            fireLightTimer = 0f
+            return
+        }
+
+        val baseImg = ship.sys.getImg("img/effects/light_base.png")
+        val glowImg = ship.sys.getImg("img/effects/light_glow.png")
+
+        // Goes on the centre of the bottom of the room
+        val bottomCentreX = offsetX + pixelWidth / 2
+        val bottomCentreY = offsetY + pixelHeight
+
+        val imgX = bottomCentreX - baseImg.width / 2
+        val imgY = bottomCentreY - baseImg.height
+
+        baseImg.draw(imgX, imgY)
+
+        // The glow flashes at 1Hz
+        if (fireLightTimer > 1f) {
+            fireLightTimer -= 1f
+        }
+        val alpha = when {
+            fireLightTimer < 0.5f -> fireLightTimer * 2f
+            else -> 1f - (fireLightTimer - 0.5f) * 2f
+        }
+        glowImg.draw(imgX, imgY, alpha)
     }
 
     private fun drawWall(g: Graphics, baseX: Int, baseY: Int, x: Int, y: Int, side: Direction) {
