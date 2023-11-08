@@ -67,7 +67,13 @@ class FTLAnimation(
     }
 
     fun spriteAt(i: Int): Image {
-        return sprites[i]
+        // Don't crash if there aren't enough frames (eg insufficient boost
+        // frames on weapon or missing crew animations). Instead, fall back
+        // to using the first frame.
+        // This isn't especially nice, so add an assertion here that only
+        // trips when -ea is specified on Java's command line.
+        assert(i in sprites.indices)
+        return sprites.getOrElse(i) { sprites.first() }
     }
 
     override fun draw(x: Float, y: Float) {
