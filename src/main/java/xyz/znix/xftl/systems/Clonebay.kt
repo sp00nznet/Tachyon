@@ -314,8 +314,8 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     companion object {
         val INFO: SystemInfo = ClonebayInfo
 
-        val CLONE_DURATIONS = listOf(12f, 9f, 7f)
-        val PASSIVE_HEALING = listOf(8, 16, 25)
+        val CLONE_DURATIONS = listOf(12f, 9f, 7f, 0.001f)
+        val PASSIVE_HEALING = listOf(8, 16, 25, 65536)
     }
 }
 
