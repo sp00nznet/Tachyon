@@ -119,8 +119,10 @@ class SystemObject(
         }
 
         // Clear out duplicate systems, with special exceptions for artillery
-        // (which allows multiple) and the clonebay/medbay (which remove each
-        // other). Other than these cases it shouldn't be possible for a ship
+        // (which allows multiple).
+        // Note we allow both a medbay and clonebay to be installed, though
+        // none of the vanilla ships use this.
+        // Other than these cases it shouldn't be possible for a ship
         // to have multiple of a system, but this check is here just in case
         // that does somehow happen.
         for (room in editor.ship.rooms) {
@@ -132,12 +134,6 @@ class SystemObject(
             // Multiple artillery weapons are allowed.
             if (systemType.info == Artillery.INFO)
                 continue
-
-            // Clonebays and medbays block each other
-            if (isMedical(systemType) && isMedical(roomSystem)) {
-                room.system = null
-                continue
-            }
 
             if (roomSystem.type == system.type) {
                 room.system = null
@@ -151,9 +147,5 @@ class SystemObject(
 
     override fun onDeletePressed() {
         room?.system = null
-    }
-
-    private fun isMedical(system: SystemBlueprint): Boolean {
-        return system.info == Medbay.INFO || system.info == Clonebay.INFO
     }
 }
