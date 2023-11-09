@@ -251,9 +251,11 @@ abstract class AbstractExternalDrone(
         // Note that ion damage doesn't affect unpowered drones
         // for whatever reason, leading to an exploit to defeat
         // enemy anti-drones (turn it off just afterr they shoot).
-        if (type.ionDamage > 0 || isPowered) {
-            // Five seconds per level of ion damage, same as systems.
-            ionStunTimer = 5f * type.ionDamage
+        if (type.ionDamage > 0) {
+            if (isPowered) {
+                // Five seconds per level of ion damage, same as systems.
+                ionStunTimer = 5f * type.ionDamage
+            }
             return
         }
 
