@@ -11,6 +11,8 @@ import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.ceil
+import kotlin.math.roundToInt
+import kotlin.math.sign
 
 abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint) {
     val basePos = pos.const
@@ -174,16 +176,58 @@ object Buttons {
         Button(game, pos, ConstPoint(74, 29)) {
 
         private val font = game.getFont("HL2", 2f)
+        private val labelFont = game.getFont("HL1", 1f)
 
         override val disabled: Boolean get() = !ship.isFtlReady || !ship.canChargeFTL
+
+        // The progress of the slide-in/slide-out jump unavailable pullout.
+        private var pulloutPos: Float = 0f
+
+        private var firstUpdate = true
 
         override fun draw(g: Graphics) {
             val ftlX = pos.x + 6
             val ftlY = pos.y + 4
 
-            game.getImg("img/buttons/FTL/FTL_base.png").draw(pos.x - 7, pos.y - 7)
-
             val canCharge = ship.canChargeFTL
+
+            // Animate the jump unavailable/not charging panel
+            var delta = game.renderingDeltaTime / 0.1f * when {
+                canCharge -> -1f
+                else -> 1f
+            }
+
+            // Set the initial values to stop the panel from flickering when
+            // the buttons are repopulated.
+            if (firstUpdate) {
+                firstUpdate = false
+                delta = delta.sign
+            }
+
+            pulloutPos = (pulloutPos + delta).coerceIn(0f..1f)
+
+            // Draw the pullout under the main button
+            if (pulloutPos != 0f) {
+                val offset = (35 * (1 - pulloutPos)).roundToInt()
+                val pulloutY = pos.y + 41 - offset
+                game.getImg("img/buttons/FTL/FTL_pullout.png").draw(pos.x + 11 - 7, pulloutY - 7)
+
+                val hasPilot = ship.isAutoScout || ship.friendlyCrew.any { it.room == ship.piloting!!.room }
+                val pilotPath = when (ship.piloting!!.undamagedEnergy > 0 && hasPilot) {
+                    true -> "img/buttons/FTL/FTL_pilot_on.png"
+                    false -> "img/buttons/FTL/FTL_pilot_off1.png"
+                }
+
+                val enginesPath = when (ship.engines!!.powerSelected >= 1) {
+                    true -> "img/buttons/FTL/FTL_engine_on.png"
+                    false -> "img/buttons/FTL/FTL_engine_off1.png"
+                }
+
+                game.getImg(pilotPath).draw(pos.x + 18, pulloutY + 10)
+                game.getImg(enginesPath).draw(pos.x + 45, pulloutY + 10)
+            }
+
+            game.getImg("img/buttons/FTL/FTL_base.png").draw(pos.x - 7, pos.y - 7)
 
             if (ship.isFtlCharged) {
                 g.colour = if (canCharge) Constants.JUMP_READY else Constants.JUMP_DISABLED
@@ -201,6 +245,13 @@ object Buttons {
                 val width = (ship.ftlChargeProgress * 74).toInt().coerceAtMost(74)
                 game.getImg("img/buttons/FTL/FTL_loadingbars$suffix.png").drawSection(ftlX - 1, ftlY + 2, width, 29)
             }
+
+            // Draw the 'FTL Drive' label
+            labelFont.drawStringCentred(
+                pos.x.f, pos.y - 3f, 84f,
+                game.translator["ftl_drive"],
+                Constants.SECTOR_CUTOUT_TEXT
+            )
         }
 
         override fun click(button: Int) {
