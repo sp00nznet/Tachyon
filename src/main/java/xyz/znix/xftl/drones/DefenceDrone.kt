@@ -401,7 +401,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
         override val serialisationType: String get() = LASER_SERIALISATION_TYPE
 
         override fun renderPreTranslated(g: Graphics) {
-            sprite.draw(-sprite.width.f, -sprite.height.f / 2)
+            sprite.draw(-sprite.width / 2f, -sprite.height / 2f)
         }
 
         override fun reachedTarget() {

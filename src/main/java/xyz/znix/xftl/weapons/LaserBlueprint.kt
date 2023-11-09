@@ -2,7 +2,6 @@ package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.rendering.Graphics
@@ -41,7 +40,8 @@ class LaserBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override val isLaserForDD: Boolean get() = true
 
         override fun renderPreTranslated(g: Graphics) {
-            spr.draw(-spr.width.f, -spr.height.f / 2)
+            // Hitbox for lasers is in the centre of the projectile
+            spr.draw(-spr.width / 2f, -spr.height / 2f)
         }
 
         override fun saveToXML(elem: Element, refs: ObjectRefs) {

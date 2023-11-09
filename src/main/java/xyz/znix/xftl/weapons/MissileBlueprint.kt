@@ -43,8 +43,8 @@ class MissileBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun renderPreTranslated(g: Graphics) {
             g.rotate(0f, 0f, 90f)
 
-            // TODO is the quarter length translation the same as vanilla FTL?
-            spr.draw(-spr.width.f / 2, -spr.height.f / 4)
+            // Hitbox for missiles is at the front of the projectile
+            spr.draw(-spr.width.f / 2, 0f)
         }
 
         override fun saveToXML(elem: Element, refs: ObjectRefs) {
