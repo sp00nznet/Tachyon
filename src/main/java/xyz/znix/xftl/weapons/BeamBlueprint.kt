@@ -6,9 +6,7 @@ import xyz.znix.xftl.crew.ShipDamage
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.math.*
 import xyz.znix.xftl.rendering.BulkColourRenderer
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -554,18 +552,18 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     private fun drawBeam(g: Graphics, game: InGameState, power: Int, src: IPoint, dst: IPoint, dstAngle: Float) {
         // The beam is drawn as a transparent-red-transparent gradient line
         // Find the tangent line of src-dst, and use that to find the edges of the beam
-        val tangent = FPos(-(src.y - dst.y).f, (src.x - dst.x).f)
-        val length = sqrt(tangent.x * tangent.x + tangent.y * tangent.y)
-        tangent.x /= length
-        tangent.y /= length
+        val tangent = MutFPoint(-(src.y - dst.y).f, (src.x - dst.x).f)
+        val length = sqrt(tangent.xf * tangent.xf + tangent.yf * tangent.yf)
+        tangent.xf /= length
+        tangent.yf /= length
 
         // Scale up the tangent vector based on the per-side width
         val width = 3 * power
-        tangent.x *= width
-        tangent.y *= width
+        tangent.xf *= width
+        tangent.yf *= width
 
-        val srcA = FPos(src.x + tangent.x, src.y + tangent.y)
-        val srcB = FPos(src.x - tangent.x, src.y - tangent.y)
+        val srcA = src.fConst + tangent
+        val srcB = src.fConst - tangent
 
         // The destination point has an angle, which determines the angle the
         // end of the beam is 'cut' at - this is so that it aligns cleanly with
@@ -582,8 +580,8 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val dstTangentX = cos(dstTangentAngle) * dstWidth
         val dstTangentY = sin(dstTangentAngle) * dstWidth
 
-        val dstA = FPos(dst.x + dstTangentX, dst.y + dstTangentY)
-        val dstB = FPos(dst.x - dstTangentX, dst.y - dstTangentY)
+        val dstA = ConstFPoint(dst.x + dstTangentX, dst.y + dstTangentY)
+        val dstB = ConstFPoint(dst.x - dstTangentX, dst.y - dstTangentY)
 
         g.drawCustomQuads { quads ->
             drawGradient(quads, srcA, srcB, dstA, dstB, transparentColour)
@@ -600,32 +598,32 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
      */
     private fun drawGradient(
         quads: BulkColourRenderer,
-        srcA: FPos, srcB: FPos,
-        dstA: FPos, dstB: FPos,
+        srcA: FPoint, srcB: FPoint,
+        dstA: FPoint, dstB: FPoint,
         colour: Colour
     ) {
         // Find the middle points where the colour should be strongest
-        val srcMidX = (srcA.x + srcB.x) / 2
-        val srcMidY = (srcA.y + srcB.y) / 2
+        val srcMidX = (srcA.xf + srcB.xf) / 2
+        val srcMidY = (srcA.yf + srcB.yf) / 2
 
-        val dstMidX = (dstA.x + dstB.x) / 2
-        val dstMidY = (dstA.y + dstB.y) / 2
+        val dstMidX = (dstA.xf + dstB.xf) / 2
+        val dstMidY = (dstA.yf + dstB.yf) / 2
 
         // Fade to transparent, but without blending to another colour in the process.
         val edge = Colour(colour)
         edge.a = 0f
 
         // Draw the A-side - srcA,srcMid,dstA,dstMid
-        quads.pushVert(srcA.x, srcA.y, edge)
-        quads.pushVert(dstA.x, dstA.y, edge)
+        quads.pushVert(srcA.xf, srcA.yf, edge)
+        quads.pushVert(dstA.xf, dstA.yf, edge)
         quads.pushVert(dstMidX, dstMidY, colour)
         quads.pushVert(srcMidX, srcMidY, colour)
 
         // Draw the B-side - srcB,srcMid,dstB,dstMid
         quads.pushVert(dstMidX, dstMidY, colour)
         quads.pushVert(srcMidX, srcMidY, colour)
-        quads.pushVert(srcB.x, srcB.y, edge)
-        quads.pushVert(dstB.x, dstB.y, edge)
+        quads.pushVert(srcB.xf, srcB.yf, edge)
+        quads.pushVert(dstB.xf, dstB.yf, edge)
     }
 
     private fun drawDebugVectorAngle(g: Graphics, origin: IPoint, angle: Float, length: Float, colour: Colour) {
@@ -745,9 +743,6 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         // If we have a non-null solution, always return it as the first argument
         return if (p1 == null) Pair(p2, null) else Pair(p1, p2)
     }
-
-    // Quick-and-dirty floating point vector
-    private class FPos(var x: Float, var y: Float)
 
     companion object {
         // Speed defaults to 5 according to:

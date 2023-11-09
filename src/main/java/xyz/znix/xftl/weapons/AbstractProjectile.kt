@@ -6,9 +6,7 @@ import xyz.znix.xftl.drones.AbstractDrone
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.math.*
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -50,19 +48,6 @@ abstract class AbstractProjectile(
     // Helper for maths
     val Float.squared get() = this * this
 
-    // The position of this projectile, whether it's inside
-    // the player or enemy ship space.
-    private var posX: Float = 0f
-        set(value) {
-            field = value
-            mutablePosition.x = posX.toInt()
-        }
-    private var posY: Float = 0f
-        set(value) {
-            field = value
-            mutablePosition.y = posY.toInt()
-        }
-
     // The position this projectile is flying towards.
     var targetPos: IPoint = ConstPoint.ZERO
 
@@ -74,11 +59,11 @@ abstract class AbstractProjectile(
     var rotation: Float = 0f
         private set
 
-    // The position point. This isn't authoritative, and is
-    // updated from the floating-point x,y values.
-    private val mutablePosition = Point(0, 0)
+    // The position of this projectile, whether it's inside
+    // the player or enemy ship space.
+    protected val pos = MutFPoint(0f, 0f)
 
-    override val position: IPoint get() = mutablePosition
+    override val position: FPoint get() = pos
 
     override fun update(dt: Float, currentSpace: Ship) {
         if (dead) {
@@ -112,7 +97,7 @@ abstract class AbstractProjectile(
         // Check if we're out-of-bounds. If so, either switch to the target
         // ship (if we're a departing projectile), or destroy ourselves.
         // See doc/projectiles
-        if (posX < -800 || posX > 800 || posY < -800 || posY > 800) {
+        if (pos.xf < -800 || pos.xf > 800 || pos.yf < -800 || pos.yf > 800) {
             currentSpace.projectiles.remove(this)
 
             // Are we a departing projectile? If so, switch ourselves to
@@ -152,20 +137,19 @@ abstract class AbstractProjectile(
         // find the correct path. Otherwise use the difference in
         // position to make sure we're always properly aligned.
         if (hasReachedTarget) {
-            posX += cos(rotation) * movementThisFrame
-            posY += sin(rotation) * movementThisFrame
+            pos.xf += cos(rotation) * movementThisFrame
+            pos.yf += sin(rotation) * movementThisFrame
             return false
         }
 
-        val deltaX = targetPos.x - posX
-        val deltaY = targetPos.y - posY
+        val deltaX = targetPos.x - pos.xf
+        val deltaY = targetPos.y - pos.yf
 
         val distance = sqrt(deltaX * deltaX + deltaY * deltaY)
 
         // Would we overshoot the target position?
         if (distance < movementThisFrame) {
-            posX = targetPos.x.f
-            posY = targetPos.y.f
+            pos.set(targetPos)
             hasReachedTarget = true
             return true
         }
@@ -174,8 +158,8 @@ abstract class AbstractProjectile(
         val unitX = deltaX / distance
         val unitY = deltaY / distance
 
-        posX += unitX * movementThisFrame
-        posY += unitY * movementThisFrame
+        pos.xf += unitX * movementThisFrame
+        pos.yf += unitY * movementThisFrame
 
         return false
     }
@@ -218,8 +202,8 @@ abstract class AbstractProjectile(
 
         val radius = (800 * 0.75).toInt()
 
-        posX = 200 + cos(entryAngle) * radius
-        posY = 200 + sin(entryAngle) * radius
+        pos.xf = 200 + cos(entryAngle) * radius
+        pos.yf = 200 + sin(entryAngle) * radius
 
         targetPos = calculateTargetPosition()
 
@@ -229,8 +213,7 @@ abstract class AbstractProjectile(
     }
 
     fun setInitialPath(initialPos: IPoint, targetPos: IPoint) {
-        posX = initialPos.x.f
-        posY = initialPos.y.f
+        pos.set(initialPos)
 
         this.targetPos = targetPos
 
@@ -238,12 +221,12 @@ abstract class AbstractProjectile(
     }
 
     private fun setRotationFromTarget() {
-        rotation = atan2(targetPos.y - posY, targetPos.x - posX)
+        rotation = atan2(targetPos.y - pos.yf, targetPos.x - pos.xf)
     }
 
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
-        SaveUtil.addAttrFloat(elem, "x", posX)
-        SaveUtil.addAttrFloat(elem, "y", posY)
+        SaveUtil.addAttrFloat(elem, "x", pos.xf)
+        SaveUtil.addAttrFloat(elem, "y", pos.yf)
 
         SaveUtil.addAttrFloat(elem, "entryAngle", entryAngle)
         SaveUtil.addAttrFloat(elem, "rotation", rotation)
@@ -266,8 +249,8 @@ abstract class AbstractProjectile(
      * a new one.
      */
     open fun loadPropertiesFromXML(elem: Element, refs: RefLoader) {
-        posX = SaveUtil.getAttrFloat(elem, "x")
-        posY = SaveUtil.getAttrFloat(elem, "y")
+        pos.xf = SaveUtil.getAttrFloat(elem, "x")
+        pos.yf = SaveUtil.getAttrFloat(elem, "y")
 
         entryAngle = SaveUtil.getAttrFloat(elem, "entryAngle")
         rotation = SaveUtil.getAttrFloat(elem, "rotation")

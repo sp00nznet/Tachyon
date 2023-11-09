@@ -5,6 +5,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.drones.CombatDrone
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstFPoint
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -12,7 +13,6 @@ import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.cos
-import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -136,7 +136,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         val hitSuperShield: Boolean
     ) : IProjectile {
 
-        override var position: ConstPoint = ConstPoint.ZERO
+        override var position: ConstFPoint = ConstFPoint.ZERO
             private set
 
         override val serialisationType: String get() = SERIALISATION_TYPE
@@ -164,20 +164,20 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                     val size = halfSize * 2
                     val rand = ConstPoint((Math.random() * size.x).toInt(), (Math.random() * size.y).toInt())
                     val shipCentre = ship.hullImage.let { ConstPoint(it.width / 2, it.height / 2) }
-                    shipCentre + rand - halfSize
+                    (shipCentre + rand - halfSize).fConst
                 }
 
                 hitSuperShield -> {
                     // Pick a random point on the ship's shield line
                     val halfSize = ship.shieldHalfSize
                     val angle = Random.nextFloat() * TWO_PI
-                    ship.shieldOrigin + ConstPoint(
-                        (halfSize.x * cos(angle)).roundToInt(),
-                        (halfSize.y * sin(angle)).roundToInt()
+                    ship.shieldOrigin.fConst + ConstFPoint(
+                        halfSize.x * cos(angle),
+                        halfSize.y * sin(angle)
                     )
                 }
 
-                else -> target.pixelCentre
+                else -> target.pixelCentre.fConst
             }
 
             if (missed) {
@@ -256,7 +256,7 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         }
 
         fun loadFromXML(elem: Element) {
-            position = SaveUtil.getPoint(elem, "position")
+            position = SaveUtil.getPoint(elem, "position").fConst
 
             animation.timer = SaveUtil.getAttrFloat(elem, "animationTimer")
 

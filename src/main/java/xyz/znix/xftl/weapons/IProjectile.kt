@@ -6,7 +6,7 @@ import xyz.znix.xftl.drones.DefenceDrone
 import xyz.znix.xftl.environment.AsteroidProjectile
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
-import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.FPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -17,7 +17,7 @@ interface IProjectile {
      * The position of this projectile on the screen, relative
      * to the ship in whose projectiles list it's in.
      */
-    val position: IPoint
+    val position: FPoint
 
     /**
      * If true, this projectile should be drawn underneath the

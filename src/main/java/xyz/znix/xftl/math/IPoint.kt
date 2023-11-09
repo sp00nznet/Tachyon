@@ -15,6 +15,7 @@ interface IPoint {
     val isCardinal: Boolean get() = !isZero && (x == 0 || y == 0)
 
     val const: ConstPoint get() = ConstPoint(this)
+    val fConst: ConstFPoint get() = ConstFPoint(this)
 
     operator fun plus(other: IPoint): ConstPoint {
         return ConstPoint(x + other.x, y + other.y)
