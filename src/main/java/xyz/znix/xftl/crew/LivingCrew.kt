@@ -6,6 +6,7 @@ import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.PlayerShipUI
 import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -41,6 +42,15 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
      * The mind control system that is actively controlling this crewmember.
      */
     var mindControlledBy: MindControl? = null
+
+    /**
+     * The position the player saved this crewmember to, for the
+     * return-to-stations button.
+     *
+     * This is only set for player crew, and is in the ship room (not
+     * ship pixel) coordinate systetm.
+     */
+    var savedPosition: ConstPoint? = null
 
     private var mindControlAnimation: FTLAnimation? = null
 
@@ -206,6 +216,8 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
         SaveUtil.addAttrRef(elem, "ownerShip", refs, ownerShip)
         info.saveToXML(elem, false)
+
+        savedPosition?.let { SaveUtil.addPoint(elem, "savedPos", it) }
     }
 
     override fun loadFromXML(elem: Element, refs: RefLoader) {
@@ -213,6 +225,10 @@ abstract class LivingCrew(blueprint: CrewBlueprint, anims: Animations, room: Roo
 
         SaveUtil.getAttrRef(elem, "ownerShip", refs, Ship::class.java) { ownerShip = it }
         info = LivingCrewInfo.loadFromXMLWithRace(elem, blueprint, game)
+
+        if (elem.getChild("savedPos") != null) {
+            savedPosition = SaveUtil.getPoint(elem, "savedPos")
+        }
     }
 
     companion object {

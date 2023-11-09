@@ -1103,7 +1103,7 @@ abstract class AbstractCrew(
         return false
     }
 
-    private fun setTargetRoom(value: Room, pos: IPoint): Boolean {
+    fun setTargetRoom(value: Room, pos: IPoint): Boolean {
         // Check if the slot is free. We have to do this *before* checking
         // if we're already pathing to or in the slot.
         // This only matters if we're not marked as occupying this slot - this

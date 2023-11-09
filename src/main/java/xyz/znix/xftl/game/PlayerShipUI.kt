@@ -1136,6 +1136,47 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             drawCrewBox(g, crew, crewX, crewY)
         }
+
+        // Add the save/restore crew position buttons
+        val lastCrewBoxY = crewBaseY + (ship.sys.playerCrew.size - 1).coerceAtLeast(0) * CREW_BOX_SPACING
+        val crewSaveLoadY = lastCrewBoxY + 32
+        if (updatingButtons) {
+            val saveImg = ButtonImageSet.select2(game, "img/statusUI/button_station_assign")
+            val loadImg = ButtonImageSet.select2(game, "img/statusUI/button_station_return")
+            val base = game.getImg("img/statusUI/button_station_base.png")
+
+            buttons += object : Button(game, ConstPoint(19 + 5, crewSaveLoadY + 5), saveImg.normal.imageSize) {
+                override fun draw(g: Graphics) {
+                    // 7px glow, and the button is 5px inside the wrapper
+                    base.draw(pos.x - 5 - 7, crewSaveLoadY - 7)
+
+                    saveImg.pick(this).draw(pos)
+                }
+
+                override fun click(button: Int) {
+                    if (button != Input.MOUSE_LEFT_BUTTON)
+                        return
+
+                    saveCrewPositions()
+                }
+            }
+
+            buttons += object : Button(game, ConstPoint(58 + 5, crewSaveLoadY + 5), loadImg.normal.imageSize) {
+                override fun draw(g: Graphics) {
+                    // 7px glow, and the button is 5px inside the wrapper
+                    base.draw(pos.x - 5 - 7, crewSaveLoadY - 7)
+
+                    loadImg.pick(this).draw(pos)
+                }
+
+                override fun click(button: Int) {
+                    if (button != Input.MOUSE_LEFT_BUTTON)
+                        return
+
+                    loadCrewPositions()
+                }
+            }
+        }
     }
 
     private fun drawCrewBox(g: Graphics, crew: LivingCrew, x: Int, y: Int) {
@@ -1559,6 +1600,40 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             if (hovered) {
                 hoveredCrew += crew
+            }
+        }
+    }
+
+    fun saveCrewPositions() {
+        for (crew in ship.friendlyCrew) {
+            if (crew !is LivingCrew)
+                continue
+
+            if (crew.ownerShip != ship)
+                continue
+
+            val currentPos = crew.pathingTarget ?: crew.standingPosition ?: continue
+            crew.savedPosition = currentPos.shipPoint
+        }
+    }
+
+    fun loadCrewPositions() {
+        // Note that since we change the crew target positions one at a time,
+        // if crew need to swap positions then we can end up not being able
+        // to do that, even if it should be valid.
+        for (crew in ship.friendlyCrew) {
+            if (crew !is LivingCrew)
+                continue
+
+            if (crew.ownerShip != ship)
+                continue
+
+            val saved = crew.savedPosition ?: continue
+            val roomPos = ship.shipToRoomPos(saved) ?: continue
+
+            if (!crew.setTargetRoom(roomPos.room, roomPos)) {
+                // If our spot is taken, go somewhere else in the room.
+                crew.setTargetRoom(roomPos.room)
             }
         }
     }

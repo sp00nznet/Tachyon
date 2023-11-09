@@ -79,6 +79,7 @@ interface Input {
         const val KEY_SPACE: Int = GLFW.GLFW_KEY_SPACE
         const val KEY_TAB: Int = GLFW.GLFW_KEY_TAB
         const val KEY_FULL_STOP: Int = GLFW.GLFW_KEY_PERIOD
+        const val KEY_STROKE: Int = GLFW.GLFW_KEY_SLASH
 
         const val KEY_LSHIFT: Int = GLFW.GLFW_KEY_LEFT_SHIFT
 

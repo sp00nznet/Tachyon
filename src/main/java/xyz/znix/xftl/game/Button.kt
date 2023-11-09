@@ -147,6 +147,18 @@ data class ButtonImageSet(val normal: Image, val off: Image, val hover: Image, v
             return ButtonImageSet(image, image, image)
         }
     }
+
+    /**
+     * Pick the image matching the disabled/hovered/normal state
+     * of the given button.
+     */
+    fun pick(button: Button): Image {
+        return when {
+            button.disabled -> off
+            button.hovered -> hover
+            else -> normal
+        }
+    }
 }
 
 object Buttons {

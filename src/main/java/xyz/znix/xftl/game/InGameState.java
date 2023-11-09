@@ -504,6 +504,11 @@ public class InGameState extends MainGame.GameState {
             shipUI.openAllDoors();
         if (in.isKeyPressed(Input.KEY_X))
             shipUI.closeAllDoors();
+
+        if (in.isKeyPressed(Input.KEY_STROKE))
+            shipUI.saveCrewPositions();
+        if (in.isKeyPressed(Input.KEY_ENTER))
+            shipUI.loadCrewPositions();
     }
 
     @Override
