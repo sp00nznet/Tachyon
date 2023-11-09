@@ -7,6 +7,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstFPoint
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.FPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -138,6 +139,8 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         override var position: ConstFPoint = ConstFPoint.ZERO
             private set
+
+        override val velocity: FPoint get() = ConstFPoint.ZERO
 
         override val serialisationType: String get() = SERIALISATION_TYPE
 

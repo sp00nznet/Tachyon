@@ -3,9 +3,7 @@ package xyz.znix.xftl.drones
 import org.jdom2.Element
 import xyz.znix.xftl.*
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.math.ConstPoint
-import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.math.*
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -314,9 +312,8 @@ abstract class DroneFlightController(val drone: AbstractExternalDrone) {
         }
     var rotation: Float = 0f
 
-    // Speeds in pixels per second are used by the anti-drone
-    abstract val speedX: Float
-    abstract val speedY: Float
+    // Veloctiy in pixels per second, as used by the anti-drone
+    abstract val velocity: FPoint
 
     private val mutablePosition = Point(0, 0)
     val position: IPoint get() = mutablePosition
@@ -381,10 +378,8 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
 
     private val Float.sq get() = this * this
 
-    override var speedX: Float = 0f
-        private set
-    override var speedY: Float = 0f
-        private set
+    private val vel = MutFPoint(0f, 0f)
+    override val velocity: FPoint get() = vel
 
     private var poweredLastFrame = false
 
@@ -406,17 +401,14 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
 
         if (!drone.isPowered) {
             // Copied from CombatFlightController
-            posX += speedX * dt
-            posY += speedY * dt
+            posX += vel.xf * dt
+            posY += vel.yf * dt
 
             val slowdownFactor = 0.1f * dt * 16
-            speedX *= 1 - slowdownFactor
-            speedY *= 1 - slowdownFactor
+            vel *= 1 - slowdownFactor
 
-            val totalSpeed = sqrt(speedX * speedX + speedY * speedY)
-            if (totalSpeed < 16) {
-                speedX = 0f
-                speedY = 0f
+            if (vel.fLength < 16) {
+                vel.set(0f, 0f)
             }
             return
         }
@@ -449,8 +441,8 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
 
         // Use this to set our speed, which is used for
         // coasting when we're powered off.
-        speedX = unitX * typeSpeed
-        speedY = unitY * typeSpeed
+        vel.xf = unitX * typeSpeed
+        vel.yf = unitY * typeSpeed
 
         // Calculate our position to stay locked to the ellipse
         // while moving at a constant rate.
@@ -493,8 +485,8 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
         super.saveToXML(elem, refs)
 
         SaveUtil.addAttrFloat(elem, "angleAboutShip", theta)
-        SaveUtil.addAttrFloat(elem, "speedX", speedX)
-        SaveUtil.addAttrFloat(elem, "speedY", speedY)
+        SaveUtil.addAttrFloat(elem, "speedX", vel.xf)
+        SaveUtil.addAttrFloat(elem, "speedY", vel.yf)
         SaveUtil.addAttrBool(elem, "poweredLastFrame", poweredLastFrame)
     }
 
@@ -502,8 +494,8 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
         super.loadFromXML(elem, refs)
 
         theta = SaveUtil.getAttrFloat(elem, "angleAboutShip")
-        speedX = SaveUtil.getAttrFloat(elem, "speedX")
-        speedY = SaveUtil.getAttrFloat(elem, "speedY")
+        vel.xf = SaveUtil.getAttrFloat(elem, "speedX")
+        vel.yf = SaveUtil.getAttrFloat(elem, "speedY")
         poweredLastFrame = SaveUtil.getAttrBool(elem, "poweredLastFrame")
     }
 }
@@ -525,11 +517,9 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
     // The speed in pixels per second
     private var typeSpeed: Float = 0f
 
-    // The drone's current speed
-    override var speedX: Float = 0f
-        private set
-    override var speedY: Float = 0f
-        private set
+    // The drone's current velocity
+    private val vel = MutFPoint(0f, 0f)
+    override val velocity: FPoint get() = vel
 
     // Times how long it's been since we started slowing down to fire
     private var pauseTimer: Float = 0f
@@ -596,25 +586,22 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
             if (remaining > 0f) {
                 val newSpeedMult = remaining / 1.5f
 
-                posX += speedX * dt * newSpeedMult
-                posY += speedY * dt * newSpeedMult
+                posX += vel.xf * dt * newSpeedMult
+                posY += vel.yf * dt * newSpeedMult
             }
 
             return
         }
 
         if (!drone.isPowered) {
-            posX += speedX * dt
-            posY += speedY * dt
+            posX += vel.xf * dt
+            posY += vel.yf * dt
 
             val slowdownFactor = 0.1f * dt * 16
-            speedX *= 1 - slowdownFactor
-            speedY *= 1 - slowdownFactor
+            vel *= 1 - slowdownFactor
 
-            val totalSpeed = sqrt(speedX * speedX + speedY * speedY)
-            if (totalSpeed < 16) {
-                speedX = 0f
-                speedY = 0f
+            if (vel.fLength < 16) {
+                vel.set(0f, 0f)
             }
 
             return
@@ -672,11 +659,11 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         val unitX = deltaX / distanceToDest
         val unitY = deltaY / distanceToDest
 
-        speedX = unitX * typeSpeed
-        speedY = unitY * typeSpeed
+        vel.xf = unitX * typeSpeed
+        vel.yf = unitY * typeSpeed
 
-        posX += speedX * dt
-        posY += speedY * dt
+        posX += vel.xf * dt
+        posY += vel.yf * dt
 
         return false
     }
@@ -719,8 +706,8 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         SaveUtil.addPoint(elem, "nextDestination", nextDestination)
         SaveUtil.addPoint(elem, "nextStopTarget", nextStopTarget)
         SaveUtil.addAttrFloat(elem, "currentDestAngle", currentDestAngle)
-        SaveUtil.addAttrFloat(elem, "speedX", speedX)
-        SaveUtil.addAttrFloat(elem, "speedY", speedY)
+        SaveUtil.addAttrFloat(elem, "speedX", vel.xf)
+        SaveUtil.addAttrFloat(elem, "speedY", vel.yf)
         SaveUtil.addAttrFloat(elem, "pauseTimer", pauseTimer)
         SaveUtil.addAttrFloat(elem, "lastDestRotation", lastDestRotation)
         SaveUtil.addAttrFloat(elem, "nextDestRotation", nextDestRotation)
@@ -734,8 +721,8 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         nextDestination = SaveUtil.getPoint(elem, "nextDestination")
         nextStopTarget = SaveUtil.getPoint(elem, "nextStopTarget")
         currentDestAngle = SaveUtil.getAttrFloat(elem, "currentDestAngle")
-        speedX = SaveUtil.getAttrFloat(elem, "speedX")
-        speedY = SaveUtil.getAttrFloat(elem, "speedY")
+        vel.xf = SaveUtil.getAttrFloat(elem, "speedX")
+        vel.yf = SaveUtil.getAttrFloat(elem, "speedY")
         pauseTimer = SaveUtil.getAttrFloat(elem, "pauseTimer")
         lastDestRotation = SaveUtil.getAttrFloat(elem, "lastDestRotation")
         nextDestRotation = SaveUtil.getAttrFloat(elem, "nextDestRotation")

@@ -18,4 +18,14 @@ class MutFPoint(
         xf = other.xf
         yf = other.yf
     }
+
+    fun set(newX: Float, newY: Float) {
+        xf = newX
+        yf = newY
+    }
+
+    operator fun timesAssign(value: Float) {
+        xf *= value
+        yf *= value
+    }
 }

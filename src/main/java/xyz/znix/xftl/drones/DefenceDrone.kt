@@ -6,6 +6,7 @@ import xyz.znix.xftl.environment.AsteroidProjectile
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.FPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Colour
@@ -77,7 +78,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         // Draw the little thruster flame.
         if (isRunning) {
-            val movementAngle = atan2(flightController.speedY, flightController.speedX)
+            val movementAngle = atan2(flightController.velocity.xf, flightController.velocity.yf)
             g.pushTransform()
             g.rotate(0f, 0f, Math.toDegrees(movementAngle.toDouble()).toFloat() + 90)
             drawCentred(engine)
@@ -181,7 +182,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         return calculateIntercept(
             null, fc.position,
-            fc.speedX, fc.speedY,
+            fc.velocity,
             weaponSpeed.f
         )
     }
@@ -247,8 +248,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
             val result = calculateIntercept(projectile, weaponSpeed.f) ?: continue
 
             // Check if the projectile will reach the target prior to the interception
-            val distanceToTarget = projectile.targetPos.distToSq(projectile.position)
-            val timeToIntercept = sqrt(distanceToTarget.f) / projectile.speed
+            val distanceToTarget = projectile.targetPos.distTo(projectile.position)
+            val timeToIntercept = distanceToTarget.f / projectile.speed
 
             if (timeToIntercept < result.time)
                 continue
@@ -261,12 +262,9 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
     }
 
     private fun calculateIntercept(projectile: AbstractProjectile, ourSpeed: Float): InterceptResult? {
-        val projVelX = cos(projectile.rotation) * projectile.speed.f
-        val projVelY = sin(projectile.rotation) * projectile.speed.f
-
         return calculateIntercept(
             projectile, projectile.position,
-            projVelX, projVelY,
+            projectile.velocity,
             ourSpeed
         )
     }
@@ -274,7 +272,7 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
     private fun calculateIntercept(
         projectile: AbstractProjectile?,
         targetPos: IPoint,
-        projVelX: Float, projVelY: Float, // The projectile velocity
+        projVel: FPoint,
         ourSpeed: Float
     ): InterceptResult? {
         // Centre the projectile at the origin by translating the drone
@@ -284,13 +282,13 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         val distanceToDrone = dronePos.distToSq(ConstPoint.ZERO).f
 
-        val projectileSpeedSq = projVelX.pow(2) + projVelY.pow(2)
+        val projectileSpeedSq = projVel.fLengthSq
 
         // This is largely based on the following article. Paste it's equations into Lyx to read them.
         // https://www.codeproject.com/Articles/990452/Interception-of-Two-Moving-Objects-in-D-Space
 
         val a = ourSpeed.pow(2) - projectileSpeedSq
-        val b = 2 * (dronePos.x * projVelX + dronePos.y * projVelY)
+        val b = 2 * projVel.dot(dronePos)
         val c = -distanceToDrone
 
         // If we're shooting at the exact same speed as the incoming projectile, we get
@@ -299,8 +297,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
             val interceptTime = distanceToDrone / b
 
             val interceptPos = Point(targetPos)
-            interceptPos.x += (projVelX * interceptTime).roundToInt()
-            interceptPos.y += (projVelY * interceptTime).roundToInt()
+            interceptPos.x += (projVel.xf * interceptTime).roundToInt()
+            interceptPos.y += (projVel.yf * interceptTime).roundToInt()
             return InterceptResult(projectile, interceptPos, interceptTime)
         }
 
@@ -328,8 +326,8 @@ class DefenceDrone(type: DroneBlueprint) : AbstractExternalDrone(type, false) {
 
         // From the intercept time, we can trivially solve the intercept point.
         val interceptPos = Point(targetPos)
-        interceptPos.x += (projVelX * bestInterceptTime).roundToInt()
-        interceptPos.y += (projVelY * bestInterceptTime).roundToInt()
+        interceptPos.x += (projVel.xf * bestInterceptTime).roundToInt()
+        interceptPos.y += (projVel.yf * bestInterceptTime).roundToInt()
 
         return InterceptResult(projectile, interceptPos, bestInterceptTime)
     }

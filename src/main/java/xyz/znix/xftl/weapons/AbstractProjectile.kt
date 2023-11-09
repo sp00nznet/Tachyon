@@ -65,6 +65,10 @@ abstract class AbstractProjectile(
 
     override val position: FPoint get() = pos
 
+    // This is continually updated from the speed variable.
+    protected val vel = MutFPoint(0f, 0f)
+    override val velocity: FPoint get() = vel
+
     override fun update(dt: Float, currentSpace: Ship) {
         if (dead) {
             currentSpace.projectiles.remove(this)
@@ -131,14 +135,19 @@ abstract class AbstractProjectile(
      * the target room (this isn't set if missed=true).
      */
     private fun updateMovement(dt: Float): Boolean {
-        val movementThisFrame = speed * dt
+        // Make sure we're consistent if a subclass does something silly
+        // with their speed, so we don't use different speeds for x/y.
+        val currentSpeed = speed
 
         // Update our position. If we've missed, use the rotation to
         // find the correct path. Otherwise use the difference in
         // position to make sure we're always properly aligned.
         if (hasReachedTarget) {
-            pos.xf += cos(rotation) * movementThisFrame
-            pos.yf += sin(rotation) * movementThisFrame
+            vel.xf = cos(rotation) * currentSpeed
+            vel.yf = sin(rotation) * currentSpeed
+
+            pos.xf += vel.xf * dt
+            pos.yf += vel.yf * dt
             return false
         }
 
@@ -148,7 +157,7 @@ abstract class AbstractProjectile(
         val distance = sqrt(deltaX * deltaX + deltaY * deltaY)
 
         // Would we overshoot the target position?
-        if (distance < movementThisFrame) {
+        if (distance < currentSpeed * dt) {
             pos.set(targetPos)
             hasReachedTarget = true
             return true
@@ -158,8 +167,11 @@ abstract class AbstractProjectile(
         val unitX = deltaX / distance
         val unitY = deltaY / distance
 
-        pos.xf += unitX * movementThisFrame
-        pos.yf += unitY * movementThisFrame
+        vel.xf = unitX * currentSpeed
+        vel.yf = unitY * currentSpeed
+
+        pos.xf += vel.xf * dt
+        pos.yf += vel.yf * dt
 
         return false
     }

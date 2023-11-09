@@ -20,6 +20,11 @@ interface IProjectile {
     val position: FPoint
 
     /**
+     * The current velocity of this projectile, in pixels per second.
+     */
+    val velocity: FPoint
+
+    /**
      * If true, this projectile should be drawn underneath the
      * ship whose space it occupies.
      *
