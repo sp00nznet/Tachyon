@@ -9,7 +9,7 @@ import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Rectangle
 import java.util.*
 
-class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(elem) {
+class ShipBlueprint(private val elem: Element, df: Datafile) : Blueprint(elem) {
     val layout: String = elem.getAttributeValue("layout")
     val img: String = elem.getAttributeValue("img")
 
@@ -260,16 +260,11 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
         return path
     }
 
-    fun loadElem(df: Datafile): Element {
-        val rootXml = df.parseXML(file)
-
-        for (item in rootXml.rootElement.children) {
-            if (item.requireAttributeValue("name") == name) {
-                return item
-            }
-        }
-
-        error("Could not find blueprint!")
+    // TODO remove this, after sorting out how the weaponList tags are
+    //  loaded for both ShipGenerator and for player ships.
+    @Deprecated("Load element attributes in ShipBlueprint directly")
+    fun loadElem(): Element {
+        return elem
     }
 
     class ParsedRoom(val id: Int, val pos: IPoint, val size: IPoint)

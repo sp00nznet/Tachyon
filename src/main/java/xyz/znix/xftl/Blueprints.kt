@@ -99,7 +99,7 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
 
                 // We don't load the whole ShipBlueprint now for performance
                 // reasons, as it loads another XML file.
-                "shipBlueprint" -> LazyShipBlueprint(elem, df, file)
+                "shipBlueprint" -> LazyShipBlueprint(elem, df)
 
                 // Ignore unknown blueprints
                 else -> null
@@ -243,10 +243,10 @@ class ItemBlueprint(elem: Element) : Blueprint(elem) {
  * Those can and should only be loaded when they're required.
  */
 class LazyShipBlueprint(
-    private val elem: Element, private val df: Datafile, private val file: FTLFile
+    private val elem: Element, private val df: Datafile
 ) : Blueprint(elem) {
 
-    val real: ShipBlueprint by lazy { ShipBlueprint(elem, df, file) }
+    val real: ShipBlueprint by lazy { ShipBlueprint(elem, df) }
 
     // Load a few bits and pieces that are used in places where
     // we don't need to load the full ship.
