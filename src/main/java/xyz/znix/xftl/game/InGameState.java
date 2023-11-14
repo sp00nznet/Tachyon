@@ -261,15 +261,12 @@ public class InGameState extends MainGame.GameState {
 
     private void createNewPlayerShip(String shipName, EditableShip customised) {
         ShipBlueprint blueprint = blueprintManager.getShip(shipName);
-        Element playerXml = blueprint.loadElem(df);
         player = new Ship(blueprint, this, customised, null);
         player.loadDefaultContents();
 
-        for (Element elem : playerXml.getChildren("crewCount")) {
-            int count = Integer.parseInt(elem.getAttributeValue("amount").strip());
-            String raceName = elem.getAttributeValue("class");
-            CrewBlueprint race = (CrewBlueprint) blueprintManager.get(raceName);
-            for (int i = 0; i < count; i++) {
+        for (ShipBlueprint.InitialCrewSpec spec : blueprint.getInitialCrew()) {
+            CrewBlueprint race = (CrewBlueprint) blueprintManager.get(spec.getRace());
+            for (int i = 0; i < spec.getAmount(); i++) {
                 LivingCrewInfo info = LivingCrewInfo.generateRandom(race, this);
                 player.addCrewMember(info, true, false);
             }

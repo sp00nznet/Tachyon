@@ -70,6 +70,12 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
     val initialDrones: List<String>
     val initialAugments: List<String>
 
+    /**
+     * A list of crew specifications, which can each spawn
+     * a variable number of crew.
+     */
+    val initialCrew: List<InitialCrewSpec>
+
     val initialMissiles: Int
     val initialDroneParts: Int
 
@@ -174,6 +180,14 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
         // Load any augments
         initialAugments = elem.getChildren("aug").map { it.getAttributeValue("name") }
         require(initialAugments.size <= Ship.MAX_AUGMENTS) { "Ship $name has too many augments: $initialAugments" }
+
+        // Load the initial crew
+        initialCrew = elem.getChildren("crewCount").map {
+            val amount = it.requireAttributeValueInt("amount")
+            val max = it.getAttributeValue("max")?.toInt()
+            val race = it.getAttributeValue("class") ?: "human"
+            InitialCrewSpec(amount, race, max)
+        }
     }
 
     private fun parseLayoutTxt(layout: String) {
@@ -268,6 +282,8 @@ class ShipBlueprint(elem: Element, df: Datafile, val file: FTLFile) : Blueprint(
         val gib: Int,
         val slide: Direction?
     )
+
+    class InitialCrewSpec(val amount: Int, val race: String, val max: Int?)
 
     class ParsedSystem(
         val room: ParsedRoom,

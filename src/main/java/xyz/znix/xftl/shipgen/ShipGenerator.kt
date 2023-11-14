@@ -48,21 +48,23 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
             ship.escapeHealth = ship.surrenderHealth - 1
         }
 
-        val crewCount = elem.getChild("crewCount")
-        crewCount?.let {
+        for (crewSpec in ship.type.initialCrew) {
             // See the link to the guide below, calculated same as system power
-            val min = crewCount.requireAttributeValueInt("amount")
-            val max = crewCount.requireAttributeValueInt("max")
+            val min = crewSpec.amount
+            var max = crewSpec.max
+
+            if (max == null) {
+                println("Missing max tag in crewCount tag for generated ship '${ship.name}'")
+                max = min
+            }
 
             val baseAmount = min + ((max - min) / 8f * effectiveSector).toInt()
 
             val crewOverride = spec.crewOverride?.specifiers ?: emptyList()
 
             if (crewOverride.isEmpty()) {
-                val type = crewCount.getAttributeValue("class") ?: "human"
-
                 for (i in 1..baseAmount) {
-                    val crewBP = sys.lootPool.getCrewOrRandom(type)
+                    val crewBP = sys.lootPool.getCrewOrRandom(crewSpec.race)
                     val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)
                     ship.addCrewMember(crewInfo, true)
                 }
