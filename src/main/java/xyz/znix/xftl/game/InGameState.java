@@ -7,7 +7,6 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.newdawn.slick.ImageBuffer;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.*;
@@ -1393,20 +1392,7 @@ public class InGameState extends MainGame.GameState {
         if (missingImage != null)
             return missingImage;
 
-        // Unfortunately we can't use nullResource, since it uses indexed
-        // colour and Slick doesn't support that.
-
-        ImageBuffer buffer = new ImageBuffer(64, 64);
-        for (int y = 0; y < buffer.getHeight(); y++) {
-            for (int x = 0; x < buffer.getWidth(); x++) {
-                // Produce a stripe pattern
-                boolean secondColour = ((x + y) / 4) % 2 == 0;
-                int rg = secondColour ? 255 : 0;
-
-                buffer.setRGBA(x, y, rg, rg, 0, 255);
-            }
-        }
-        missingImage = TextureLoader.INSTANCE.loadImage(content.resourceContext, buffer);
+        missingImage = df.readImage(content.resourceContext, df.get("img/nullResource.png"));
         return missingImage;
     }
 
