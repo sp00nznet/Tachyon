@@ -96,7 +96,7 @@ class WeaponPowerManager(private val system: MainSystem, private val items: Item
         if (system.isPowerLocked)
             return
 
-        for (slot in items.count - 1 downTo 0) {
+        for (slot in 0 until items.count) {
             if (items.isItemPowered(slot) || !items.hasItem(slot))
                 continue
 
@@ -104,7 +104,7 @@ class WeaponPowerManager(private val system: MainSystem, private val items: Item
             if (powerRequired > system.powerUnused)
                 continue
 
-            items.setItemPowered(slot, true)
+            setItemPower(slot, true)
             return
         }
     }
@@ -121,7 +121,7 @@ class WeaponPowerManager(private val system: MainSystem, private val items: Item
             if (forcedPower[slot] == items.getItemPowerDraw(slot))
                 continue
 
-            items.setItemPowered(slot, false)
+            setItemPower(slot, false)
             return
         }
     }
