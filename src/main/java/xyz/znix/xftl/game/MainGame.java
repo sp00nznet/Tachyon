@@ -8,7 +8,6 @@ import org.jdom2.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.newdawn.slick.SlickException;
-import org.newdawn.slick.opengl.PNGDecoder;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.VanillaDatafile;
@@ -114,7 +113,7 @@ public class MainGame implements Game {
     }
 
     public void startNewGame(@NotNull String shipName, Difficulty difficulty, EditableShip customised) {
-        InGameState inGameState = new InGameState(this, content, gameContainer, shipName, difficulty, customised);
+        InGameState inGameState = new InGameState(this, content, shipName, difficulty, customised);
         setCurrentState(inGameState);
     }
 
@@ -124,7 +123,7 @@ public class MainGame implements Game {
     }
 
     public void loadSavedGame(Document savedGame) {
-        InGameState inGameState = new InGameState(this, content, gameContainer, savedGame);
+        InGameState inGameState = new InGameState(this, content, savedGame);
         setCurrentState(inGameState);
     }
 
@@ -183,7 +182,7 @@ public class MainGame implements Game {
         Document savedGame;
         try {
             savedGame = oldGame.saveGameState();
-            newGame = new InGameState(this, content, gameContainer, savedGame);
+            newGame = new InGameState(this, content, savedGame);
         } catch (Exception ex) {
             oldGame.debugFailedSaveRestore();
             ex.printStackTrace();

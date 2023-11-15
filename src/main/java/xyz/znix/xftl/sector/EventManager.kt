@@ -8,7 +8,12 @@ import xyz.znix.xftl.Translator
 import xyz.znix.xftl.requireAttributeValue
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 
-class EventManager(val df: Datafile, private val translator: Translator, private val bp: BlueprintManager) {
+class EventManager(
+    val df: Datafile,
+    private val translator: Translator,
+    private val bp: BlueprintManager,
+    eventFileNames: List<String>
+) {
     private val events = HashMap<String, IEvent>()
     private val textLists = HashMap<String, TextList>()
     private val imageLists = HashMap<String, ImageList>()
@@ -23,11 +28,11 @@ class EventManager(val df: Datafile, private val translator: Translator, private
     init {
         imageLists[ImageList.NONE.name] = ImageList.NONE
 
-        for (event in FILE_NAMES) {
-            loadEvents(df.parseXML(df["data/$event.xml"]), true)
+        for (event in eventFileNames) {
+            loadEvents(df.parseXML(df[event]), true)
         }
-        for (event in FILE_NAMES) {
-            loadEvents(df.parseXML(df["data/$event.xml"]), false)
+        for (event in eventFileNames) {
+            loadEvents(df.parseXML(df[event]), false)
         }
 
         // Make sure all the referenced ships do exist
@@ -41,6 +46,12 @@ class EventManager(val df: Datafile, private val translator: Translator, private
             }
         }
     }
+
+    /**
+     * Load the standard vanilla event files.
+     */
+    constructor(df: Datafile, translator: Translator, bp: BlueprintManager) :
+            this(df, translator, bp, FILE_NAMES.map { "data/$it.xml" })
 
     operator fun get(name: String): IEvent = events[name] ?: error("Missing event $name")
 

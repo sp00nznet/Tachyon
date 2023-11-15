@@ -17,8 +17,17 @@ import xyz.znix.xftl.sys.SoundStore
 import java.io.InputStream
 import java.io.RandomAccessFile
 
-class SoundManager(private val df: Datafile, context: ResourceContext) : INativeResource {
-    private val sounds = HashMap<SoundSpec, FTLSound>()
+// Interface, to allow a no-op one for automated testing.
+interface SoundManager {
+    fun getSample(name: String): FTLSound
+    fun getSampleOrWarn(name: String): FTLSound?
+    fun getLoop(name: String): LoopHandle
+    fun getTrack(name: String): MusicSpec
+    fun switchMusicList(tracks: List<MusicSpec>)
+}
+
+class RealSoundManager(private val df: Datafile, context: ResourceContext) : SoundManager, INativeResource {
+    private val sounds = HashMap<SoundSpec, RealFTLSound>()
     private val rawBuffers = HashMap<String, Int>()
 
     // Nebula is both a sample and a loop
@@ -72,7 +81,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
             field = value
 
             // Update the volumes of any currently-playing sounds
-            SoundInstance.updateVolumes()
+            RealSoundInstance.updateVolumes()
         }
 
     var musicVolume: Float = 1f
@@ -135,12 +144,12 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         }
     }
 
-    fun getSample(name: String): FTLSound {
+    override fun getSample(name: String): FTLSound {
         val spec = samples[name] ?: error("No sound sample listed in sounds.xml for '$name'")
         return get(spec)
     }
 
-    fun getSampleOrWarn(name: String): FTLSound? {
+    override fun getSampleOrWarn(name: String): FTLSound? {
         val spec = samples[name]
         if (spec == null) {
             println("No sound sample listed in sounds.xml for '$name'")
@@ -154,7 +163,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
      *
      * This doesn't actually produce any audio unless [LoopHandle.continueLoopAnyShip] is called.
      */
-    fun getLoop(name: String): LoopHandle {
+    override fun getLoop(name: String): LoopHandle {
         val spec = loops[name] ?: error("No sound loop listed in sounds.xml for '$name'")
         return LoopHandle(spec, this)
     }
@@ -164,7 +173,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
      *
      * This doesn't create any resources, but it can be passed to [switchToMusic].
      */
-    fun getTrack(name: String): MusicSpec {
+    override fun getTrack(name: String): MusicSpec {
         return musicTracks[name] ?: error("No music track listed in sounds.xml for '$name'")
     }
 
@@ -266,7 +275,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
     /**
      * Set the list of soundtracks to loop through, as specified by the current sector.
      */
-    fun switchMusicList(tracks: List<MusicSpec>) {
+    override fun switchMusicList(tracks: List<MusicSpec>) {
         trackList.clear()
         trackList.addAll(tracks)
         switchToMusic(tracks.first(), usingCombatMusic, 0.75f, 2f)
@@ -336,7 +345,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         }
     }
 
-    private fun get(spec: SoundSpec): FTLSound {
+    private fun get(spec: SoundSpec): RealFTLSound {
         sounds[spec]?.let { return it }
 
         val sound = loadRawSound(spec)
@@ -344,7 +353,7 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         return sound
     }
 
-    private fun loadRawSound(spec: SoundSpec): FTLSound {
+    private fun loadRawSound(spec: SoundSpec): RealFTLSound {
         val path = "audio/waves/" + spec.path
 
         // Only load the actual sounds on-demand, to speed up loading large
@@ -353,14 +362,14 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
         //  loaded up on demand.
         val buffer = lazy { loadBuffer(path) }
 
-        return FTLSound(spec, buffer, this)
+        return RealFTLSound(spec, buffer, this)
     }
 
     private fun loadBuffer(path: String): Int {
         rawBuffers[path]?.let { return it }
 
         if (!SoundStore.get().soundWorks()) {
-            return SoundInstance.NO_SOUND_BUFFER
+            return RealSoundInstance.NO_SOUND_BUFFER
         }
 
         // Rather than using Slick's audio abstractions, use OpenAL directly.
@@ -415,14 +424,24 @@ class SoundManager(private val df: Datafile, context: ResourceContext) : INative
  * Note it doesn't represent a currently-playing sound - since
  * a sound can be playing twice at once, [SoundInstance]s are
  * used for that purpose.
+ *
+ * This is an interface for automated testing.
  */
-class FTLSound(val spec: SoundSpec, private val buffer: Lazy<Int>, private val manager: SoundManager) {
+interface FTLSound {
     /**
      * Play a non-looping sound.
      */
-    fun play(): SoundInstance {
+    fun play(): SoundInstance
+}
+
+private class RealFTLSound(
+    val spec: SoundSpec,
+    private val buffer: Lazy<Int>,
+    private val manager: RealSoundManager
+) : FTLSound {
+    override fun play(): SoundInstance {
         require(!spec.loop)
-        return SoundInstance(spec, buffer.value, manager)
+        return RealSoundInstance(spec, buffer.value, manager)
     }
 
     /**
@@ -432,7 +451,7 @@ class FTLSound(val spec: SoundSpec, private val buffer: Lazy<Int>, private val m
      */
     fun internalPlayRawLoop(): SoundInstance {
         require(spec.loop)
-        return SoundInstance(spec, buffer.value, manager)
+        return RealSoundInstance(spec, buffer.value, manager)
     }
 }
 
@@ -442,8 +461,21 @@ class FTLSound(val spec: SoundSpec, private val buffer: Lazy<Int>, private val m
  * of this sound.
  *
  * Instances of this class should be created via [FTLSound.play].
+ *
+ * This is an interface for automated testing.
  */
-class SoundInstance(private val spec: SoundSpec, buffer: Int, private val manager: SoundManager) {
+interface SoundInstance {
+    var isPaused: Boolean
+    var volume: Float
+
+    fun stop()
+}
+
+private class RealSoundInstance(
+    private val spec: SoundSpec,
+    buffer: Int,
+    private val manager: RealSoundManager
+) : SoundInstance {
     // This is only used by the single instance for a loop that the
     // sound manager owns and controls.
     private val loop: Boolean = spec.loop
@@ -480,7 +512,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int, private val manage
         }
 
     private var isPausedInternal: Boolean = false
-    var isPaused: Boolean
+    override var isPaused: Boolean
         get() {
             if (source == NO_SOURCE)
                 return false
@@ -506,7 +538,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int, private val manage
             isPausedInternal = value
         }
 
-    var volume: Float = 1f
+    override var volume: Float = 1f
         set(value) {
             if (value == field)
                 return
@@ -542,7 +574,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int, private val manage
     /**
      * Stop playing this sound.
      */
-    fun stop() {
+    override fun stop() {
         if (isStopped) {
             return
         }
@@ -560,7 +592,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int, private val manage
         // This lets us reliably check if we've been stopped, as otherwise
         // if our buffer is marked as playing we may have finished and
         // another sound started.
-        private val SOURCE_PLAYBACK = HashMap<Int, SoundInstance>()
+        private val SOURCE_PLAYBACK = HashMap<Int, RealSoundInstance>()
 
         fun updateVolumes() {
             for (sound in SOURCE_PLAYBACK.values) {
@@ -584,7 +616,7 @@ class SoundInstance(private val spec: SoundSpec, buffer: Int, private val manage
  * A handle can be re-used, calling [continueLoopAnyShip] on some frames and not
  * on others. It doesn't have to be re-created after it's first stopped.
  */
-class LoopHandle(val spec: SoundSpec, private val manager: SoundManager) {
+class LoopHandle(val spec: SoundSpec, private val manager: RealSoundManager) {
     /**
      * Sound loops will play until you stop calling this every
      * update, rather than playing until you tell them to stop.
@@ -644,10 +676,16 @@ private class VorbisInputStream(df: Datafile, file: FTLFile) : VorbisFile.Seekab
      *
      * TODO this will need special-casing for mods.
      */
-    private val fi: RandomAccessFile = RandomAccessFile(df.vanilla.underlyingFile, "r")
-    private val file: VanillaDatafile.Entry = df.vanilla[file.name]
+    private val fi: RandomAccessFile
+    private val file: VanillaDatafile.Entry
 
     init {
+        // This won't work for tests, but we don't load sounds there.
+        val vanilla = df.vanilla as VanillaDatafile
+
+        fi = RandomAccessFile(vanilla.underlyingFile, "r")
+        this.file = df.vanilla[file.name]
+
         // Without this, we start before the OGG file's position in the DAT file.
         seek(0)
     }

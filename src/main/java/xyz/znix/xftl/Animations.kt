@@ -1,30 +1,37 @@
 package xyz.znix.xftl
 
+import org.jdom2.Document
 import org.jdom2.Element
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.rendering.Image
 
-class Animations(df: Datafile) {
+class Animations {
     private val sheets: Map<String, SpriteSheetSpec>
     val animations: Map<String, AnimationSpec>
     val weaponAnimations: Map<String, WeaponAnimationSpec>
 
-    init {
+    constructor(specifications: List<Document>) {
         sheets = HashMap()
         animations = HashMap()
         weaponAnimations = HashMap()
 
-        load(df, "data/animations.xml")
-        load(df, "data/dlcAnimations.xml")
+        for (spec in specifications) {
+            load(spec)
+        }
     }
 
-    private fun load(df: Datafile, filePath: String) {
+    constructor(df: Datafile) : this(
+        listOf(
+            df.parseXML(df["data/animations.xml"]),
+            df.parseXML(df["data/dlcAnimations.xml"])
+        )
+    )
+
+    private fun load(doc: Document) {
         sheets as MutableMap
         animations as MutableMap
         weaponAnimations as MutableMap
-
-        val doc = df.parseXML(df[filePath])
 
         // Parse everything
         // Sadly, duplicate sprite sheets exist in vanilla (eg for the ion bomb,

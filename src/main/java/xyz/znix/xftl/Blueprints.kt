@@ -1,5 +1,6 @@
 package xyz.znix.xftl
 
+import org.jdom2.Document
 import org.jdom2.Element
 import xyz.znix.xftl.augments.AugEngiMedbots
 import xyz.znix.xftl.augments.AugPreigniter
@@ -12,35 +13,16 @@ import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.*
 import kotlin.random.Random
 
-class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
+class BlueprintManager {
     val blueprints: Map<String, IBlueprint>
     val itemBlueprints: Map<String, ItemBlueprint>
 
-    init {
+    private constructor(enableAE: Boolean, loader: (BlueprintManager) -> Unit) {
         blueprints = HashMap()
         itemBlueprints = HashMap()
 
-        loadFile(df, "blueprints.xml")
-        loadFile(df, "autoBlueprints.xml")
-        loadFile(df, "bosses.xml")
-        if (enableAE) {
-            loadFile(df, "dlcBlueprints.xml")
-            loadFile(df, "dlcBlueprintsOverwrite.xml")
-            loadFile(df, "dlcPirateBlueprints.xml")
-        }
-
-        // If AE is enabled, rename all the OVERRIDE blueprints to
-        // remove that prefix - thus they'll be used instead of the
-        // original ones.
-        if (enableAE) {
-            // Use toList to duplicate the entries list, since we'll
-            // be mutating the main blueprints map.
-            for ((name, bp) in blueprints.entries.toList()) {
-                if (!name.startsWith(AE_PREFIX))
-                    continue
-                blueprints[name.removePrefix(AE_PREFIX)] = bp
-            }
-        }
+        // Load all the blueprints
+        loader(this)
 
         // Remove the now-redundant override entries - this is probably
         // unnecessary, but it'll ensure we don't end up accidentally
@@ -55,7 +37,31 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
             if (bp !is BlueprintList) continue
             bp.cleanup()
         }
+
+        // If AE is enabled, rename all the OVERRIDE blueprints to
+        // remove that prefix - thus they'll be used instead of the
+        // original ones.
+        if (enableAE) {
+            // Use toList to duplicate the entries list, since we'll
+            // be mutating the main blueprints map.
+            for ((name, bp) in blueprints.entries.toList()) {
+                if (!name.startsWith(AE_PREFIX))
+                    continue
+                blueprints[name.removePrefix(AE_PREFIX)] = bp
+            }
+        }
     }
+
+    constructor(df: Datafile, enableAE: Boolean) : this(enableAE, {
+        it.loadFile(df, "blueprints.xml")
+        it.loadFile(df, "autoBlueprints.xml")
+        it.loadFile(df, "bosses.xml")
+        if (enableAE) {
+            it.loadFile(df, "dlcBlueprints.xml")
+            it.loadFile(df, "dlcBlueprintsOverwrite.xml")
+            it.loadFile(df, "dlcPirateBlueprints.xml")
+        }
+    })
 
     // Required to bind sounds to the weapons
     fun finishLoading(content: InGameState.GameContent) {
@@ -76,11 +82,16 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
         return blueprint.real
     }
 
+
     private fun loadFile(df: Datafile, name: String) {
         val file = df["data/$name"]
-        val mutableBlueprints = blueprints as HashMap<String, IBlueprint>
         val parseXML = df.parseXML(file)
-        for (elem in parseXML.rootElement.children) {
+        loadDocument(df, parseXML.rootElement)
+    }
+
+    private fun loadDocument(df: Datafile, rootElement: Element) {
+        val mutableBlueprints = blueprints as HashMap<String, IBlueprint>
+        for (elem in rootElement.children) {
             // The name 'drones' conflicts with the drones system, and it's the only such name
             // conflict. Since we only need them for stores, put them in a separate list.
             if (elem.name == "itemBlueprint") {
@@ -175,6 +186,18 @@ class BlueprintManager(df: Datafile, private val enableAE: Boolean) {
 
     companion object {
         const val AE_PREFIX = "OVERRIDE_"
+
+        /**
+         * Create a version of [BlueprintManager] for use in automated tests,
+         * loading a custom set of blueprint XML files.
+         */
+        fun createForTests(df: Datafile, files: List<Document>): BlueprintManager {
+            return BlueprintManager(true) {
+                for (doc in files) {
+                    it.loadDocument(df, doc.rootElement)
+                }
+            }
+        }
     }
 }
 

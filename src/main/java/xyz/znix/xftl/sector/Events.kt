@@ -561,6 +561,9 @@ class ImageList(val name: String, val images: List<EnvironmentImage>) {
         if (this == NONE)
             return null
 
+        if (images.isEmpty())
+            return null
+
         return images[seed.absoluteValue % images.size]
     }
 

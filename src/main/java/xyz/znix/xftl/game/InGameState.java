@@ -41,6 +41,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class InGameState extends MainGame.GameState {
+    @Nullable // Null only when running tests
     private final MainGame mainGame;
 
     private final GameContent content;
@@ -109,8 +110,8 @@ public class InGameState extends MainGame.GameState {
      */
     private final ArrayList<LivingCrew> playerCrew = new ArrayList<>();
 
-    public InGameState(MainGame mainGame, GameContent content, GameContainer container, String playerShipName, Difficulty difficulty, EditableShip customised) {
-        this(mainGame, content, container);
+    public InGameState(MainGame mainGame, GameContent content, String playerShipName, Difficulty difficulty, EditableShip customised) {
+        this(mainGame, content);
         this.difficulty = difficulty;
 
         gameMap = new GameMap(df, eventManager, enableAdvancedEdition, Random.Default);
@@ -125,18 +126,22 @@ public class InGameState extends MainGame.GameState {
         // Do this after setting the initial beacon, since the ship reads the current
         // beacon when calculating its power values.
         createNewPlayerShip(playerShipName, customised);
-        shipUI = new PlayerShipUI(player, this);
+
+        // Don't create PlayerShipUI in automated tests
+        if (mainGame != null) {
+            shipUI = new PlayerShipUI(player, this);
+        }
 
         // Show the starting beacon dialogue, since it wasn't displayed earlier
         // due to shipUI not existing yet.
-        shipUI.showEventDialogue(currentBeacon.getEvent());
+        showEventDialogue(currentBeacon.getEvent());
     }
 
     /**
      * Load a previously-saved game.
      */
-    public InGameState(MainGame mainGame, GameContent content, GameContainer container, Document saveGame) {
-        this(mainGame, content, container);
+    public InGameState(MainGame mainGame, GameContent content, Document saveGame) {
+        this(mainGame, content);
 
         Element root = saveGame.getRootElement();
         if (!root.getName().equals("xftlSaveGame")) {
@@ -175,14 +180,14 @@ public class InGameState extends MainGame.GameState {
         // To do this, just check if it's already playing something. Since
         // the sound manager is part of the game content, it's not cleared
         // across a reload.
-        if (getSounds().getCurrentMusic() == null) {
+        if (getSounds() instanceof RealSoundManager real && real.getCurrentMusic() == null) {
             loadSectorMusic(currentBeacon.getSector().getType());
         }
 
         updatePlayerCrew();
     }
 
-    private InGameState(MainGame mainGame, GameContent content, GameContainer container) {
+    private InGameState(MainGame mainGame, GameContent content) {
         this.mainGame = mainGame;
         this.content = content;
 
@@ -191,6 +196,10 @@ public class InGameState extends MainGame.GameState {
         enableAdvancedEdition = content.enableAdvancedEdition;
         blueprintManager = content.blueprintManager;
         eventManager = content.eventManager;
+
+        // Don't load any assets while running automated tests
+        if (!(df.getVanilla() instanceof VanillaDatafile))
+            return;
 
         pauseFont = getFont("c&c");
 
@@ -318,11 +327,14 @@ public class InGameState extends MainGame.GameState {
 
         hoveredRoom = null;
 
-        content.sounds.updateLoopedSounds(isPaused());
-        content.sounds.setCombatMusic(isInDanger());
-        content.sounds.updateMusic(delta);
-        content.sounds.setSoundEffectVolume(mainGame.getProfile().getSoundVolume());
-        content.sounds.setMusicVolume(mainGame.getProfile().getMusicVolume());
+        // Don't touch sounds in automated tests
+        if (content.sounds instanceof RealSoundManager sounds) {
+            sounds.updateLoopedSounds(isPaused());
+            sounds.setCombatMusic(isInDanger());
+            sounds.updateMusic(delta);
+            sounds.setSoundEffectVolume(mainGame.getProfile().getSoundVolume());
+            sounds.setMusicVolume(mainGame.getProfile().getMusicVolume());
+        }
 
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
             debugConsoleVisible = !debugConsoleVisible;
@@ -571,10 +583,18 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
-    private void updateGameState(float dt) {
+    /**
+     * Update the in-game state.
+     * <p>
+     * This is only public so that automated tests can call it - it should
+     * NOT be called elsewhere from the main code.
+     */
+    public void updateGameState(float dt) {
         currentBeacon.getEnvironment(this).update(dt);
 
-        shipUI.update();
+        if (shipUI != null)
+            shipUI.update();
+
         player.update(dt);
 
         updatePlayerCrew();
@@ -599,7 +619,7 @@ public class InGameState extends MainGame.GameState {
                 if (enemy.getSpec() != null && enemyIsHostile) {
                     IEvent event = enemy.getSpec().getDestroyed();
                     if (event != null)
-                        shipUI.showEventDialogue(event.resolve());
+                        showEventDialogue(event.resolve());
                 }
 
                 if (enemy.isFlagship()) {
@@ -627,7 +647,7 @@ public class InGameState extends MainGame.GameState {
                 currentBeacon.setShip(null);
 
                 if (jumpEvent != null) {
-                    shipUI.showEventDialogue(jumpEvent.resolve());
+                    showEventDialogue(jumpEvent.resolve());
                 }
 
                 return;
@@ -642,11 +662,11 @@ public class InGameState extends MainGame.GameState {
                 if (enemy.getSpec() != null) {
                     IEvent event = enemy.getSpec().getDeadCrew();
                     if (event != null)
-                        shipUI.showEventDialogue(event.resolve());
+                        showEventDialogue(event.resolve());
                 } else if (enemy.isFlagship()) {
                     // TODO turn the enemy into an autoscout
                     // Event event = eventManager.get("BOSS_AUTOMATED").resolve();
-                    // shipUI.showEventDialogue(event);
+                    // showEventDialogue(event);
                 }
 
                 setEnemyIsHostile(false);
@@ -700,7 +720,7 @@ public class InGameState extends MainGame.GameState {
 
             player.resetAfterJump();
             if (currentBeacon.getState() == Beacon.State.UNVISITED) {
-                shipUI.showEventDialogue(currentBeacon.getEvent());
+                showEventDialogue(currentBeacon.getEvent());
             }
         }
 
@@ -727,7 +747,7 @@ public class InGameState extends MainGame.GameState {
             }
 
             Event event = eventManager.get(eventName).resolve();
-            shipUI.showEventDialogue(event);
+            showEventDialogue(event);
         }
 
         // If the flagship is here, spawn it in. Doing this last overwrites
@@ -788,7 +808,7 @@ public class InGameState extends MainGame.GameState {
         setEnemyIsHostile(true);
 
         Event event = eventManager.get("BOSS_TEXT_" + stage).resolve();
-        shipUI.showEventDialogue(event);
+        showEventDialogue(event);
     }
 
     private void onFlagshipKilled() {
@@ -818,7 +838,7 @@ public class InGameState extends MainGame.GameState {
 
             // The event when you defeat a stage
             Event event = eventManager.get("BOSS_ESCAPED").resolve();
-            shipUI.showEventDialogue(event);
+            showEventDialogue(event);
         }
     }
 
@@ -1347,6 +1367,13 @@ public class InGameState extends MainGame.GameState {
      * Think carefully about why you need to use this!
      */
     public MainGame getMainGame() {
+        // This is only used for stuff like switching out of the main state,
+        // which we don't currently support testing. Since very few things
+        // do that, automated testing for that is overkill.
+        if (mainGame == null) {
+            throw new UnsupportedOperationException("Cannot get main state while running tests");
+        }
+
         return mainGame;
     }
 
@@ -1716,6 +1743,13 @@ public class InGameState extends MainGame.GameState {
         return crewCount;
     }
 
+    void showEventDialogue(Event event) {
+        // The UI is null for automated tests
+        if (shipUI != null) {
+            shipUI.showEventDialogue(event);
+        }
+    }
+
     public boolean isPlayerCrewFull() {
         return getPlayerCrewCount() >= 8;
     }
@@ -1775,7 +1809,7 @@ public class InGameState extends MainGame.GameState {
 
             blueprintManager = new BlueprintManager(datafile, enableAdvancedEdition);
             animations = new Animations(datafile);
-            sounds = new SoundManager(datafile, resourceContext);
+            sounds = new RealSoundManager(datafile, resourceContext);
             generator = new ShipGenerator(datafile, blueprintManager);
             translator = new Translator(datafile, "en");
             eventManager = new EventManager(datafile, translator, blueprintManager);
@@ -1793,6 +1827,32 @@ public class InGameState extends MainGame.GameState {
             } catch (JDOMException | IOException e) {
                 throw new RuntimeException("Failed to load ship data", e);
             }
+        }
+
+        /**
+         * Wrap some pre-loaded content.
+         * <p>
+         * This is used by automated tests.
+         */
+        public GameContent(
+                Datafile datafile, boolean enableAdvancedEdition,
+                BlueprintManager blueprintManager, EventManager eventManager,
+                CrewNameManager nameManager, Animations animations,
+                SoundManager sounds, Translator translator,
+                ShipGenerator generator, Achievement.AchievementTable achievements,
+                ShipFamily.FamilyTable shipFamilies
+        ) {
+            this.datafile = datafile;
+            this.enableAdvancedEdition = enableAdvancedEdition;
+            this.blueprintManager = blueprintManager;
+            this.eventManager = eventManager;
+            this.nameManager = nameManager;
+            this.animations = animations;
+            this.sounds = sounds;
+            this.translator = translator;
+            this.generator = generator;
+            this.achievements = achievements;
+            this.shipFamilies = shipFamilies;
         }
 
         public void freeResources() {

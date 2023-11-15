@@ -1,6 +1,7 @@
 package xyz.znix.xftl
 
 import org.jdom2.Document
+import org.newdawn.slick.ImageBuffer
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.modding.*
 import xyz.znix.xftl.rendering.Image
@@ -21,12 +22,29 @@ const val ENTRY_SIZE = 20
 /**
  * Represents a vanilla FTL .dat file, without any mods applied.
  *
+ * This is an interface, so tests can run without the vanilla assets.
+ *
  * [Datafile] acts as a layer over the top of this, applying changes from
  * [SlipstreamPatcher] and any other mod sources we might later have.
  */
-class VanillaDatafile(val underlyingFile: File) {
+interface IVanillaDatafile {
+    fun getAllFiles(): List<VanillaDatafile.Entry>
+    fun containsFile(name: String): Boolean
+    fun read(file: VanillaDatafile.Entry): ByteArray
+
+    /**
+     * True if patched files can be stored in the XML cache.
+     *
+     * This is notably false for automated tests.
+     */
+    val xmlCacheSupported: Boolean
+}
+
+class VanillaDatafile(val underlyingFile: File) : IVanillaDatafile {
     private val files: MutableMap<String, Entry> = HashMap()
     private val fi: RandomAccessFile = RandomAccessFile(underlyingFile, "r")
+
+    override val xmlCacheSupported: Boolean get() = true
 
     init {
         // Skip the 'PKG\n' header
@@ -102,16 +120,16 @@ class VanillaDatafile(val underlyingFile: File) {
     operator fun get(name: String): Entry =
         files[name] ?: throw IllegalArgumentException("No such file '$name'")
 
-    fun containsFile(name: String): Boolean = files.containsKey(name)
+    override fun containsFile(name: String): Boolean = files.containsKey(name)
 
-    fun read(file: Entry): ByteArray {
+    override fun read(file: Entry): ByteArray {
         fi.seek(file.offset.toLong())
         val bytes = ByteArray(file.length)
         fi.read(bytes)
         return bytes
     }
 
-    fun getAllFiles(): List<Entry> {
+    override fun getAllFiles(): List<Entry> {
         return files.values.toList()
     }
 
@@ -126,7 +144,7 @@ class VanillaDatafile(val underlyingFile: File) {
     }
 }
 
-class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>) {
+open class Datafile(val vanilla: IVanillaDatafile, slipstreamMods: List<SlipstreamMod>) {
     // TODO handle closing this, to close the zip files
     private val patcher = SlipstreamPatcher(vanilla)
     private val xmlCache = PatchedXMLCache(PlatformSpecific.INSTANCE.xmlCacheDirectory)
@@ -159,6 +177,7 @@ class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>
         // files could build up over time from old mods, and because they're not
         // usually patched by other mods and are thus relatively quick to parse.
         val canCache = source !is VanillaFileSource && vanilla.containsFile(file.name)
+                && vanilla.xmlCacheSupported
 
         if (canCache) {
             // Try to re-use a previous copy of this file, if possible.
@@ -180,7 +199,7 @@ class Datafile(val vanilla: VanillaDatafile, slipstreamMods: List<SlipstreamMod>
         return ByteArrayInputStream(read(file))
     }
 
-    fun readImage(context: ResourceContext, file: FTLFile): Image {
+    open fun readImage(context: ResourceContext, file: FTLFile): Image {
         return TextureLoader.loadImage(context, open(file), file.name)
     }
 

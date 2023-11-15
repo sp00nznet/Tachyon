@@ -11,6 +11,7 @@ import org.jdom2.Element
 import org.jdom2.input.SAXBuilder
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
+import xyz.znix.xftl.IVanillaDatafile
 import xyz.znix.xftl.VanillaDatafile
 import java.io.*
 import java.nio.ByteBuffer
@@ -32,7 +33,7 @@ import kotlin.io.path.relativeTo
  * A lot of this is copied from net.vhati.modmanager.core.ModPatchThread, which
  * isn't included in xftl as rewriting the stuff we need here is easier.
  */
-class SlipstreamPatcher(private val vanilla: VanillaDatafile) {
+class SlipstreamPatcher(vanilla: IVanillaDatafile) {
     private val log: Logger = Logger.getLogger(javaClass.name)
 
     val files = HashMap<String, FileSource>()
@@ -429,7 +430,7 @@ interface FileSource {
     }
 }
 
-class VanillaFileSource(val df: VanillaDatafile, val file: VanillaDatafile.Entry) : FileSource {
+class VanillaFileSource(val df: IVanillaDatafile, val file: VanillaDatafile.Entry) : FileSource {
     override val messagePath: String get() = "FTL:${file.name}"
 
     override fun open(): InputStream {
