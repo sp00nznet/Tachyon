@@ -159,6 +159,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     private val crewX: Int = 10
     private var crewBaseY: Int = 0 // Set while rendering
+    private var lastCrewCount: Int = 0
 
     /**
      * If the user is selecting a room to teleport to/from, this is non-null.
@@ -477,6 +478,15 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     fun render(gc: GameContainer, g: Graphics) {
         height = gc.height
+
+        // Update the buttons if crew have been added or removed, as this
+        // moves around the save/load position buttons.
+        // We have to do this here since we can't safely call updateButtons
+        // mid-way through drawing.
+        if (lastCrewCount != game.playerCrew.size) {
+            updateButtons()
+            lastCrewCount = game.playerCrew.size
+        }
 
         drawTopBar(g)
         drawSystems(g)
