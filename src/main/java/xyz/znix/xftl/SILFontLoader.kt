@@ -273,7 +273,7 @@ class SILFontLoader {
         var currentWidth = 0
         val line = StringBuilder()
 
-        for (word in string.split(' ', '\t')) {
+        fun addWord(word: String) {
             if (line.isNotEmpty()) {
                 line.append(' ')
                 currentWidth += spaceWidth
@@ -281,7 +281,7 @@ class SILFontLoader {
 
             var nextWidth = 0
             for (ch in word) {
-                val info = chars[ch] ?: error("Unknown char $ch")
+                val info = chars[ch] ?: unknownChar
                 nextWidth += (info.prekern * scale).roundToInt()
 
                 // Always include the postkern, since we'll be writing
@@ -302,6 +302,18 @@ class SILFontLoader {
 
             line.append(word)
             currentWidth += nextWidth
+        }
+
+        for ((lineNum, unwrappedLine) in string.split('\n').withIndex()) {
+            if (lineNum != 0) {
+                lines.add(line.toString())
+                line.clear()
+                currentWidth = 0
+            }
+
+            for (word in unwrappedLine.split(' ', '\t')) {
+                addWord(word)
+            }
         }
 
         lines.add(line.toString())

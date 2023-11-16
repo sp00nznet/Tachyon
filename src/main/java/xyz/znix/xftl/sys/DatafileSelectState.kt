@@ -50,7 +50,7 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
 
         val description = translator["xftl_select_datafile_desc"]
             .replace("\\1", PlatformSpecific.INSTANCE.ftlDatPathFile.toString())
-        descriptionLines = description.split('\n').flatMap { font.wrapString(it, 500) }
+        descriptionLines = font.wrapString(description, 500)
     }
 
     override fun update(container: GameContainer, delta: Float) {
