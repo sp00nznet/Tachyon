@@ -179,8 +179,8 @@ class FireInstance(val room: Room, val slot: Int) {
             "img/effects/fire_smoke.png",
             34, 34, 238, 34
         )
-        private val SMOKE_ANIMATION = AnimationSpec(
-            SMOKE_SPRITE_SHEET, "hardcoded_smoke",
+        val SMOKE_ANIMATION = AnimationSpec(
+            SMOKE_SPRITE_SHEET, "xftl_hardcoded_smoke",
             0, 0,
             SMOKE_SPRITE_SHEET.horizontalCount,
             1f / SMOKE_SPRITE_SHEET.horizontalCount

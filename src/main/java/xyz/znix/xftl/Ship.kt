@@ -11,10 +11,7 @@ import xyz.znix.xftl.drones.AbstractIndoorsDrone
 import xyz.znix.xftl.game.*
 import xyz.znix.xftl.hangar.EditableShip
 import xyz.znix.xftl.hangar.FinalisedEditableSystem
-import xyz.znix.xftl.layout.Door
-import xyz.znix.xftl.layout.OxygenTransfer
-import xyz.znix.xftl.layout.PathFinder
-import xyz.znix.xftl.layout.Room
+import xyz.znix.xftl.layout.*
 import xyz.znix.xftl.math.*
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
@@ -1993,8 +1990,13 @@ class Ship(
 
         companion object {
             fun loadFromXML(elem: Element, game: InGameState): FloatingAnimation {
-                val name = SaveUtil.getAttr(elem, "name")
-                val spec = game.animations[name]
+                val spec = when (val name = SaveUtil.getAttr(elem, "name")) {
+                    // Fires don't have an animation set in the XML,
+                    // so we have to grab the proper animation here.
+                    FireInstance.SMOKE_ANIMATION.name -> FireInstance.SMOKE_ANIMATION
+
+                    else -> game.animations[name]
+                }
 
                 val x = SaveUtil.getAttrInt(elem, "x")
                 val y = SaveUtil.getAttrInt(elem, "y")
