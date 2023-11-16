@@ -2,12 +2,10 @@ package xyz.znix.xftl.environment
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
-import xyz.znix.xftl.VisualRandom
 import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
-import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.EnvironmentImage
 import xyz.znix.xftl.sector.FleetBackground
@@ -23,36 +21,14 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
     private var planetImage: EnvironmentImage? = null
     private val backgroundShips = ArrayList<BackgroundShip>()
 
-    private var visualSeed: Int = VisualRandom.nextInt(99999)
-
-    // True if the backgroundImage/planetImage are used, and their indices
-    // should thus be saved.
-    protected open val serialiseImageIndexes: Boolean = true
-
     init {
-        initImages()
-    }
-
-    private fun initImages() {
-        // We have three goals here:
-        // 1. If the environment or event changes, the background should too.
-        // 3. We can't be random here, we need to deserialise to the same values each time.
-        // 3. Make the planet/background information easy to serialise.
-        // Thus pick the image list for the planet and background deterministically,
-        // and serialise the index into that list. If the list changes and the index
-        // becomes invalid, we can just pick a new one.
-        // This does have the limitation that if the event changes to one with a new
-        // image list that's larger than the previous one we won't be able to access
-        // all it's images. To get around it, we actually serialise a large random number
-        // which we then use as an index into the image list, modulo the list's size.
-
         var backgroundList: ImageList = game.eventManager.getImageList("BACKGROUND")
         var planetList: ImageList = game.eventManager.getImageList("PLANET")
 
         beacon.event.backImg?.let { backgroundList = it }
         beacon.event.planetImg?.let { planetList = it }
 
-        val rand = Random(visualSeed)
+        val rand = Random(beacon.environmentSeed)
 
         backgroundImage = backgroundList.getRandom(rand.nextInt())
         planetImage = planetList.getRandom(rand.nextInt())
@@ -142,20 +118,9 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
     }
 
     open fun saveToXML(elem: Element) {
-        if (!serialiseImageIndexes)
-            return
-
-        SaveUtil.addAttrInt(elem, "visualSeed", visualSeed)
     }
 
     open fun loadFromXML(elem: Element) {
-        if (!serialiseImageIndexes)
-            return
-
-        visualSeed = SaveUtil.getAttrInt(elem, "visualSeed")
-
-        // The indices have changed, we need to fetch the new images for them
-        initImages()
     }
 
     private class BackgroundShip(

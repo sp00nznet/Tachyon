@@ -19,7 +19,6 @@ import kotlin.random.Random
 
 class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(game, beacon) {
     override val type: Beacon.EnvironmentType get() = Beacon.EnvironmentType.SUN
-    override val serialiseImageIndexes: Boolean get() = false
 
     private val realBackground = game.getImg("img/stars/bg_dullstars.png")
 

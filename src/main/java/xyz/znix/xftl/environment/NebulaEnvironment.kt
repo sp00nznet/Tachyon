@@ -14,7 +14,6 @@ import kotlin.random.Random
 import kotlin.random.nextInt
 
 class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean) : AbstractEnvironment(game, beacon) {
-    override val serialiseImageIndexes: Boolean get() = false
     override val type: Beacon.EnvironmentType
         get() = when (ionStorm) {
             true -> Beacon.EnvironmentType.ION_STORM

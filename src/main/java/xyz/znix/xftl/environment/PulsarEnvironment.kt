@@ -20,7 +20,6 @@ import kotlin.random.Random
 
 class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(game, beacon) {
     override val type: Beacon.EnvironmentType get() = Beacon.EnvironmentType.PULSAR
-    override val serialiseImageIndexes: Boolean get() = false
 
     private val realBackground = game.getImg("img/stars/bg_dullstars.png")
 

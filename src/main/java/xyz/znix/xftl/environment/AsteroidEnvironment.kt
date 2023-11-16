@@ -27,7 +27,6 @@ import kotlin.random.nextInt
 class AsteroidEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(game, beacon) {
     // See doc/asteroids for more information about the mechanics here
 
-    override val serialiseImageIndexes: Boolean get() = false
     override val type: Beacon.EnvironmentType get() = Beacon.EnvironmentType.ASTEROID
 
     private var asteroidAnimationTimer = 0f

@@ -209,7 +209,12 @@ class Sector {
                 event = eventPool.pollFirst() ?: specialEvents.filler.resolve()
             }
 
-            val beacon = Beacon(pos.const, event, isFinish && !isLastStand, isFinish && isLastStand)
+            val beacon = Beacon(
+                pos.const, event,
+                isFinish && !isLastStand,
+                isFinish && isLastStand,
+                Random.nextInt()
+            )
             require(beacon.gridPos posEq gridPos)
             beacons += beacon
             cells[beacon] = gridPos

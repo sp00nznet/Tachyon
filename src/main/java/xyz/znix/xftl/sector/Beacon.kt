@@ -36,7 +36,13 @@ class Beacon(
     /**
      * True if this is the location of the rebel base, in the last stand.
      */
-    val isBase: Boolean
+    val isBase: Boolean,
+
+    /**
+     * The seed used for this beacon to generate the seeds for everything
+     * else (environment, store, etc).
+     */
+    private val masterSeed: Int,
 ) : ISerialReferencable {
 
     /**
@@ -84,6 +90,9 @@ class Beacon(
      */
     lateinit var neighbours: List<Beacon>
         private set
+
+    val environmentSeed: Int
+    val storeSeed: Int
 
     /**
      * The ship remaining here. Either the player jumped off while fighting it, or it was/became
@@ -150,6 +159,12 @@ class Beacon(
 
     private var actualEnvironment: AbstractEnvironment? = null
 
+    init {
+        val rand = Random(masterSeed)
+        environmentSeed = rand.nextInt()
+        storeSeed = rand.nextInt()
+    }
+
     fun getStore(game: InGameState): StoreData? {
         if (!hasStore)
             return null
@@ -212,6 +227,10 @@ class Beacon(
         // identify them, not store all their data.
         SaveUtil.addAttr(elem, "eventId", event.deserialisationId)
 
+        // Save the master seed, so we can regenerate all the other seeds
+        // without storing them separately.
+        SaveUtil.addAttrInt(elem, "seed", masterSeed)
+
         // This both marks the set environment, and whether the environment
         // object needs to be deserialised.
         if (actualEnvironment != null) {
@@ -250,6 +269,7 @@ class Beacon(
             // To create our beacon, we need to load a few things first.
             // Everything else goes in mutable variables, so we can set them later.
             val eventId = SaveUtil.getAttr(elem, "eventId")
+            val seed = SaveUtil.getAttrInt(elem, "seed")
             val event = game.eventManager.getByDeserialisationId(eventId)
             val isExit = SaveUtil.getOptionalTagBool(elem, "isExit") ?: false
             val isBase = SaveUtil.getOptionalTagBool(elem, "isBase") ?: false
@@ -261,7 +281,7 @@ class Beacon(
 
             // This gets us all the information we need to create and start
             // populating our beacon.
-            val beacon = Beacon(pos, event, isExit, isBase)
+            val beacon = Beacon(pos, event, isExit, isBase, seed)
             SaveUtil.registerObjectId(elem, refs, beacon)
 
             beacon.visited = SaveUtil.getAttrBool(elem, "visited")
