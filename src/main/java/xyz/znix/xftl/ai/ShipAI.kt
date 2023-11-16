@@ -6,6 +6,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponInstance
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
+import kotlin.random.Random
 
 /**
  * The overall enemy ship AI.
@@ -65,14 +66,14 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
             // The surrender event must exist, it's XML tag did
             // for surrenderHealth to be set.
-            ship.sys.shipUI.showEventDialogue(ship.spec!!.surrender!!.resolve())
+            ship.sys.shipUI.showEventDialogue(ship.spec!!.surrender!!.resolve(), Random.nextInt())
 
             // Use an else-if so we don't try and surrender and escape in
             // the same update cycle.
         } else if (ship.health <= ship.escapeHealth) {
             // Show the event and start the timer running
             ship.escapeHealth = 0
-            ship.sys.shipUI.showEventDialogue(ship.spec!!.escape!!.resolve())
+            ship.sys.shipUI.showEventDialogue(ship.spec!!.escape!!.resolve(), Random.nextInt())
             ship.escapeTimer = ship.spec.escapeTimer
         }
 

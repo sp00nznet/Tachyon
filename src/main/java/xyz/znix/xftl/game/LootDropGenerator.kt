@@ -1,71 +1,74 @@
 package xyz.znix.xftl.game
 
+import xyz.znix.xftl.rollChance
+import kotlin.random.Random
+
 object LootDropGenerator {
-    fun generateResource(resource: Resource, tier: RewardTier, sector: Int): ResourceSet {
+    fun generateResource(rand: Random, resource: Resource, tier: RewardTier, sector: Int): ResourceSet {
         val count = when (resource) {
-            Resource.FUEL -> generateFuel(tier)
-            Resource.MISSILES -> generateMissiles(tier)
-            Resource.DRONES -> generateDrones(tier)
-            Resource.SCRAP -> generateScrap(tier, sector)
+            Resource.FUEL -> generateFuel(rand, tier)
+            Resource.MISSILES -> generateMissiles(rand, tier)
+            Resource.DRONES -> generateDrones(rand, tier)
+            Resource.SCRAP -> generateScrap(rand, tier, sector)
         }
         return ResourceSet.of(resource, count)
     }
 
-    fun generateFuel(tier: RewardTier): Int = FUEL_DROPS[tier.resolve()].random()
-    fun generateMissiles(tier: RewardTier): Int = MISSILE_DROPS[tier.resolve()].random()
-    fun generateDrones(tier: RewardTier): Int = DRONE_DROPS[tier.resolve()].random()
+    fun generateFuel(rand: Random, tier: RewardTier): Int = FUEL_DROPS[tier.resolve(rand)].random(rand)
+    fun generateMissiles(rand: Random, tier: RewardTier): Int = MISSILE_DROPS[tier.resolve(rand)].random(rand)
+    fun generateDrones(rand: Random, tier: RewardTier): Int = DRONE_DROPS[tier.resolve(rand)].random(rand)
 
     /**
      * Generate a scrap reward for a given tier. Note that [sector] starts at zero for the first sector.
      */
-    fun generateScrap(tier: RewardTier, sector: Int): Int {
+    fun generateScrap(rand: Random, tier: RewardTier, sector: Int): Int {
         // Same reward system as FTL
         // Note: it seems that when calculating the scrap rewards, add one sector for easy mode and -1 for hard
-        val range = SCRAP_DROP_MULTS[tier.resolve()]
-        val rand = range.start + Math.random() * (range.endInclusive - range.start)
+        val range = SCRAP_DROP_MULTS[tier.resolve(rand)]
+        val multiplier = range.start + rand.nextFloat() * (range.endInclusive - range.start)
         val base = 15 + sector * 6
-        return (base * rand).toInt()
+        return (base * multiplier).toInt()
     }
 
-    fun generateRewards(game: InGameState, tier: RewardTier, type: RewardType, sector: Int): ResourceSet {
+    fun generateRewards(game: InGameState, rand: Random, tier: RewardTier, type: RewardType, sector: Int): ResourceSet {
         val resources = ResourceSet()
         var remainingType = type
 
-        val fmd = listOf(Resource.FUEL, Resource.MISSILES, Resource.DRONES).shuffled()
+        val fmd = listOf(Resource.FUEL, Resource.MISSILES, Resource.DRONES).shuffled(rand)
 
         if (remainingType == RewardType.STANDARD) {
-            resources.scrap += generateScrap(tier, sector)
-            resources += generateResource(fmd[0], RewardTier.LOW, sector)
-            resources += generateResource(fmd[1], RewardTier.LOW, sector)
-            if (Math.random() * 100 < 3) remainingType = RewardType.ITEM
+            resources.scrap += generateScrap(rand, tier, sector)
+            resources += generateResource(rand, fmd[0], RewardTier.LOW, sector)
+            resources += generateResource(rand, fmd[1], RewardTier.LOW, sector)
+            if (rand.rollChance(3)) remainingType = RewardType.ITEM
         }
 
         if (remainingType == RewardType.STUFF) {
-            resources.scrap += generateScrap(RewardTier.LOW, sector)
-            resources += generateResource(fmd[0], tier, sector)
-            resources += generateResource(fmd[1], tier, sector)
-            if (Math.random() * 100 < 6) remainingType = RewardType.ITEM
+            resources.scrap += generateScrap(rand, RewardTier.LOW, sector)
+            resources += generateResource(rand, fmd[0], tier, sector)
+            resources += generateResource(rand, fmd[1], tier, sector)
+            if (rand.rollChance(6)) remainingType = RewardType.ITEM
         }
 
         if (listOf(RewardType.FUEL, RewardType.DRONEPARTS, RewardType.MISSILES).contains(remainingType)) {
             remainingType = RewardType.valueOf(remainingType.name + "_ONLY")
-            resources.scrap += generateScrap(tier, sector)
+            resources.scrap += generateScrap(rand, tier, sector)
         }
 
         RewardType.ONLY_RESOURCE_MAPPINGS[remainingType]?.let { resource ->
-            resources += generateResource(resource, tier, sector)
+            resources += generateResource(rand, resource, tier, sector)
         }
 
         if (remainingType == RewardType.ITEM) {
-            remainingType = RewardType.ITEMS.random()
+            remainingType = RewardType.ITEMS.random(rand)
         }
 
         if (RewardType.ITEMS.contains(remainingType)) {
-            resources.scrap += generateScrap(tier, sector)
+            resources.scrap += generateScrap(rand, tier, sector)
             resources.items += when (remainingType) {
-                RewardType.WEAPON -> game.lootPool.getWeapon()
-                RewardType.DRONE -> game.lootPool.getDrone()
-                RewardType.AUGMENT -> game.lootPool.getAugment()
+                RewardType.WEAPON -> game.lootPool.getWeapon(rand)
+                RewardType.DRONE -> game.lootPool.getDrone(rand)
+                RewardType.AUGMENT -> game.lootPool.getAugment(rand)
                 else -> error("Unknown autoReward type: $remainingType")
             }
         }
@@ -85,10 +88,10 @@ enum class RewardTier {
     MEDIUM,
     HIGH,
     RANDOM {
-        override fun resolve(): Int = (LOW.resolve()..HIGH.resolve()).random()
+        override fun resolve(rand: Random): Int = (LOW.ordinal..HIGH.ordinal).random(rand)
     };
 
-    open fun resolve(): Int = ordinal
+    open fun resolve(rand: Random): Int = ordinal
 
     companion object {
         fun fromName(name: String): RewardTier {

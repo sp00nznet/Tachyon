@@ -36,24 +36,24 @@ class LootPool(private val bpManager: BlueprintManager, sector: SectorType?) {
         }
     }
 
-    fun getWeapon() = getRandom { it is AbstractWeaponBlueprint } ?: error("No available weapons!")
+    fun getWeapon(rand: Random) = getRandom(rand) { it is AbstractWeaponBlueprint } ?: error("No available weapons!")
 
-    fun getDrone() = getRandom { it is DroneBlueprint } ?: error("No available drones!")
+    fun getDrone(rand: Random) = getRandom(rand) { it is DroneBlueprint } ?: error("No available drones!")
 
-    fun getAugment() = getRandom { it is AugmentBlueprint } ?: error("No available augments!")
+    fun getAugment(rand: Random) = getRandom(rand) { it is AugmentBlueprint } ?: error("No available augments!")
 
-    fun getCrewOrRandom(race: String): CrewBlueprint {
+    fun getCrewOrRandom(rand: Random, race: String): CrewBlueprint {
         if (race != "random") {
-            return bpManager[race].resolve() as CrewBlueprint
+            return bpManager[race].resolve(rand) as CrewBlueprint
         }
 
-        return getRandom { it is CrewBlueprint } as CrewBlueprint? ?: error("No available crew!")
+        return getRandom(rand) { it is CrewBlueprint } as CrewBlueprint? ?: error("No available crew!")
     }
 
-    fun getRandom(filter: (Blueprint) -> Boolean): Blueprint? {
+    fun getRandom(rand: Random, filter: (Blueprint) -> Boolean): Blueprint? {
         val candidates = pool.asSequence().filter(filter).toList()
         if (candidates.isEmpty()) return null
-        return candidates.random()
+        return candidates.random(rand)
     }
 
     fun <T> getManyRandom(type: Class<T>, rand: Random, limit: Int): List<T> {

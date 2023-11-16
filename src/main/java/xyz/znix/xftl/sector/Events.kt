@@ -9,6 +9,7 @@ import xyz.znix.xftl.game.*
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.requireAttributeValue
 import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 // Many of the comments in this file came from ftlwiki.com (now unfortunately
 // offline, but accessable via the wayback machine):
@@ -267,16 +268,16 @@ class Event(
     /**
      * Evaluate all the random values in this event's rewards, and pack them into a ResourceSet
      */
-    fun resolveResources(game: InGameState): ResourceSet {
+    fun resolveResources(game: InGameState, rand: Random): ResourceSet {
         // The plain resources (fuel, missiles, etc)
-        val resourcesGained = ResourceSet(itemsModify.mapValues { it.value.random() })
+        val resourcesGained = ResourceSet(itemsModify.mapValues { it.value.random(rand) })
 
         // Add all the blueprints
         resourcesGained.items += blueprintRewards.map { name ->
             when (name) {
-                "xftl_rand_weapon" -> game.lootPool.getWeapon()
-                "xftl_rand_drone" -> game.lootPool.getDrone()
-                "xftl_rand_augment" -> game.lootPool.getAugment()
+                "xftl_rand_weapon" -> game.lootPool.getWeapon(rand)
+                "xftl_rand_drone" -> game.lootPool.getDrone(rand)
+                "xftl_rand_augment" -> game.lootPool.getAugment(rand)
                 else -> game.blueprintManager[name].resolve()
             }
         }
@@ -286,7 +287,7 @@ class Event(
             val race = if (crew.race != null) {
                 game.blueprintManager[crew.race] as CrewBlueprint
             } else {
-                game.lootPool.getRandom { it is CrewBlueprint } as CrewBlueprint
+                game.lootPool.getRandom(rand) { it is CrewBlueprint } as CrewBlueprint
             }
 
             val info = if (crew.nameId != null) {
@@ -333,7 +334,7 @@ class Event(
         if (boarderRace != null) {
             val count = boarderCount.random()
             for (i in 0 until count) {
-                val race = game.lootPool.getCrewOrRandom(boarderRace)
+                val race = game.lootPool.getCrewOrRandom(rand, boarderRace)
                 resourcesGained.intruders.add(LivingCrewInfo.generateRandom(race, game))
             }
         }
@@ -352,7 +353,7 @@ class Event(
         // eg destroying a ship usually gives STANDARD/MEDIUM rewards.
         if (autoRewards != null) {
             val sector = game.currentBeacon.sector.sectorNumber + 1
-            val rewards = LootDropGenerator.generateRewards(game, autoRewards.second, autoRewards.first, sector)
+            val rewards = LootDropGenerator.generateRewards(game, rand, autoRewards.second, autoRewards.first, sector)
             resourcesGained += rewards
         }
 
@@ -542,15 +543,15 @@ class Choice(val text: IEventText, lazyEvent: Lazy<IEvent>, elem: Element, val d
 }
 
 interface IEventText {
-    fun resolve(): String
+    fun resolve(rand: Random): String
 }
 
 class TextList(val name: String, val items: List<IEventText>) : IEventText {
-    override fun resolve(): String = items.random().resolve()
+    override fun resolve(rand: Random): String = items.random(rand).resolve(rand)
 }
 
 class EventText(val localised: String) : IEventText {
-    override fun resolve(): String = localised
+    override fun resolve(rand: Random): String = localised
 
     // TODO handle the 'planet' and 'back' image names
 }

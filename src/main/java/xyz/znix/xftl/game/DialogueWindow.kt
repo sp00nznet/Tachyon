@@ -21,6 +21,7 @@ import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.random.Random
 
 class DialogueWindow private constructor(val game: InGameState, val playerShip: Ship, val close: () -> Unit) :
     Window() {
@@ -57,15 +58,15 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
     private var extraText = ""
 
-    private val continueEvent = EvaluatedEvent(null, game, game.translator["continue"])
+    private val continueEvent = EvaluatedEvent(null, game, null, 0)
 
-    constructor(game: InGameState, playerShip: Ship, startingEvent: Event?, close: () -> Unit)
+    constructor(game: InGameState, playerShip: Ship, startingEvent: Event?, seed: Int, close: () -> Unit)
             : this(game, playerShip, close) {
 
         // Starting event can be null to get the window open before adding
         // a synthetic event.
         if (startingEvent != null) {
-            loadEvent(EvaluatedEvent(startingEvent, game, null))
+            loadEvent(EvaluatedEvent(startingEvent, game, null, seed))
         } else {
             // We have to set this for serialisation, and although it should
             // never be observed, it's still worth adding the continue event
@@ -136,8 +137,8 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         currentEvent = event
 
         val newOptions = ArrayList<EvaluatedEvent>()
-        for (choice in event.event.choices)
-            newOptions.add(EvaluatedEvent(choice.event.resolve(), game, choice.text.resolve(), choice))
+        for ((idx, choice) in event.event.choices.withIndex())
+            newOptions.add(EvaluatedEvent(choice.event.resolve(), game, choice, event.choiceSeeds[idx]))
 
         // Walk backwards from the end of the options list, removing
         // anything that's not suitable. Aside from iteration order,
@@ -794,7 +795,9 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
                         continue@removeStuff
                 }
             } else {
-                playerShip.removeBlueprint(blueprint.resolve())
+                // Cast is safe, as IBlueprint is always either
+                // Blueprint or BlueprintList.
+                playerShip.removeBlueprint(blueprint as Blueprint)
             }
         }
 
@@ -983,19 +986,9 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             return
         }
 
-        SaveUtil.addTag(elem, "eventId", event.event.deserialisationId)
-        event.choice?.deserialisationId?.let { SaveUtil.addTag(elem, "choiceId", it) }
-
-        // Save the localised version of the relevant text, since it's usually randomised
-        // and we wouldn't want it changing across reloads.
-        // We can't just save the localisation key, since text can be specified as-is without
-        // using the localisation system.
-        event.choiceText?.let { SaveUtil.addTag(elem, "choiceText", it) }
-        event.text?.let { SaveUtil.addTag(elem, "eventText", it) }
-
-        val resourcesElem = Element("resources")
-        event.resources.saveToXML(resourcesElem, refs)
-        elem.addContent(resourcesElem)
+        SaveUtil.addAttr(elem, "eventId", event.event.deserialisationId)
+        SaveUtil.addAttr(elem, "choiceId", event.choice?.deserialisationId ?: "")
+        SaveUtil.addAttrInt(elem, "seed", event.seed)
     }
 
     private fun loadEEFromXML(elem: Element, refs: RefLoader): EvaluatedEvent {
@@ -1003,22 +996,17 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             return continueEvent
         }
 
-        val eventId = SaveUtil.getTag(elem, "eventId")
+        val eventId = SaveUtil.getAttr(elem, "eventId")
         val event = game.eventManager.getByDeserialisationId(eventId)
-        val choiceId = SaveUtil.getOptionalTag(elem, "choiceId")
+        var choiceId: String? = SaveUtil.getAttr(elem, "choiceId")
+        if (choiceId == "") {
+            choiceId = null
+        }
         val choice = choiceId?.let { game.eventManager.getChoiceByDeserialisationId(it) }
 
-        val choiceText = SaveUtil.getOptionalTag(elem, "choiceText")
-        val text = SaveUtil.getOptionalTag(elem, "eventText")
+        val seed = SaveUtil.getAttrInt(elem, "seed")
 
-        val resourcesElem = elem.getChild("resources")
-        val resources = ResourceSet(resourcesElem, refs, game)
-
-        val evaluated = EvaluatedEvent(event, game, choiceText, choice)
-        evaluated.textOverride = text
-        evaluated.resourcesOverride = resources
-
-        return evaluated
+        return EvaluatedEvent(event, game, choice, seed)
     }
 
     /**
@@ -1036,13 +1024,37 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
     private class EvaluatedEvent(
         private val eventInt: Event?,
         game: InGameState,
-        val choiceText: String?,
-        val choice: Choice? = null
+        val choice: Choice?,
+        val seed: Int
     ) {
+        // The order this is used in must be deterministic, so only
+        // the resources can lazy-use this.
+        private val rand = Random(seed)
+
         val isContinue: Boolean = eventInt == null
         val event: Event get() = eventInt ?: throw Exception("Continue does not have an event")
-        val resources by lazy { resourcesOverride ?: event.resolveResources(game) }
-        val text by lazy { textOverride ?: event.text?.resolve() }
+        val resources by lazy { event.resolveResources(game, rand) }
+        val text: String? = eventInt?.text?.resolve(rand)
+
+        /**
+         * If this event is being displayed as a choice inside another event,
+         * this is the text it's option uses.
+         */
+        val choiceText: String = choice?.text?.resolve(rand) ?: game.translator["continue"]
+
+        /**
+         * The seeds used to initialise [EvaluatedEvent]s for each of
+         * the choices contained within this event.
+         *
+         * Note that unlike [choiceText], [choiceResources] and [choice], this
+         * field refers to the choices nested inside this event - NOT stuff
+         * related to when this event is being used as a choice inside another
+         * event.
+         */
+        val choiceSeeds: List<Int> = when {
+            isContinue -> emptyList()
+            else -> (0 until event.choices.size).map { rand.nextInt() }
+        }
 
         /**
          * The resources that should be displayed in a choice. This filters out
@@ -1070,11 +1082,6 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
             return@lazy result
         }
-
-        // These are set during deserialisation to replace the randomly-selected
-        // resources and text.
-        var resourcesOverride: ResourceSet? = null
-        var textOverride: String? = null
     }
 
     companion object {

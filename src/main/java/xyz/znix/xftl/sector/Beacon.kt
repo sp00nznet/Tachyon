@@ -93,6 +93,7 @@ class Beacon(
 
     val environmentSeed: Int
     val storeSeed: Int
+    val eventSeed: Int
 
     /**
      * The ship remaining here. Either the player jumped off while fighting it, or it was/became
@@ -163,6 +164,7 @@ class Beacon(
         val rand = Random(masterSeed)
         environmentSeed = rand.nextInt()
         storeSeed = rand.nextInt()
+        eventSeed = rand.nextInt()
     }
 
     fun getStore(game: InGameState): StoreData? {

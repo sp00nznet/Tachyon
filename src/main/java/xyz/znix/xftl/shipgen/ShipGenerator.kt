@@ -64,7 +64,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
 
             if (crewOverride.isEmpty()) {
                 for (i in 1..baseAmount) {
-                    val crewBP = sys.lootPool.getCrewOrRandom(crewSpec.race)
+                    val crewBP = sys.lootPool.getCrewOrRandom(rand, crewSpec.race)
                     val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)
                     ship.addCrewMember(crewInfo, true)
                 }
@@ -76,7 +76,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
                     }
 
                     for (i in 1..count) {
-                        val crewBP = sys.lootPool.getCrewOrRandom(crew.race)
+                        val crewBP = sys.lootPool.getCrewOrRandom(rand, crew.race)
                         val crewInfo = LivingCrewInfo.generateRandom(crewBP, sys)
                         ship.addCrewMember(crewInfo, true)
                     }

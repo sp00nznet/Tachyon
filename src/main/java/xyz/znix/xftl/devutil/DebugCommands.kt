@@ -122,7 +122,7 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
             game.currentBeacon.clearEnvironment()
             game.player.updateScriptedPowerLimits()
 
-            game.shipUI.showEventDialogue(game.currentBeacon.event)
+            game.shipUI.showEventDialogue(game.currentBeacon.event, Random.nextInt())
         }
     }
 

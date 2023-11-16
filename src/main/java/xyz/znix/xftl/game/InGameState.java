@@ -134,7 +134,7 @@ public class InGameState extends MainGame.GameState {
 
         // Show the starting beacon dialogue, since it wasn't displayed earlier
         // due to shipUI not existing yet.
-        showEventDialogue(currentBeacon.getEvent());
+        showEventDialogue(currentBeacon.getEvent(), Random.Default.nextInt());
     }
 
     /**
@@ -619,7 +619,7 @@ public class InGameState extends MainGame.GameState {
                 if (enemy.getSpec() != null && enemyIsHostile) {
                     IEvent event = enemy.getSpec().getDestroyed();
                     if (event != null)
-                        showEventDialogue(event.resolve());
+                        showEventDialogue(event.resolve(), Random.Default.nextInt());
                 }
 
                 if (enemy.isFlagship()) {
@@ -647,7 +647,7 @@ public class InGameState extends MainGame.GameState {
                 currentBeacon.setShip(null);
 
                 if (jumpEvent != null) {
-                    showEventDialogue(jumpEvent.resolve());
+                    showEventDialogue(jumpEvent.resolve(), Random.Default.nextInt());
                 }
 
                 return;
@@ -662,7 +662,7 @@ public class InGameState extends MainGame.GameState {
                 if (enemy.getSpec() != null) {
                     IEvent event = enemy.getSpec().getDeadCrew();
                     if (event != null)
-                        showEventDialogue(event.resolve());
+                        showEventDialogue(event.resolve(), Random.Default.nextInt());
                 } else if (enemy.isFlagship()) {
                     // TODO turn the enemy into an autoscout
                     // Event event = eventManager.get("BOSS_AUTOMATED").resolve();
@@ -720,7 +720,7 @@ public class InGameState extends MainGame.GameState {
 
             player.resetAfterJump();
             if (currentBeacon.getState() == Beacon.State.UNVISITED) {
-                showEventDialogue(currentBeacon.getEvent());
+                showEventDialogue(currentBeacon.getEvent(), currentBeacon.getEnvironmentSeed());
             }
         }
 
@@ -747,7 +747,7 @@ public class InGameState extends MainGame.GameState {
             }
 
             Event event = eventManager.get(eventName).resolve();
-            showEventDialogue(event);
+            showEventDialogue(event, Random.Default.nextInt());
         }
 
         // If the flagship is here, spawn it in. Doing this last overwrites
@@ -808,7 +808,7 @@ public class InGameState extends MainGame.GameState {
         setEnemyIsHostile(true);
 
         Event event = eventManager.get("BOSS_TEXT_" + stage).resolve();
-        showEventDialogue(event);
+        showEventDialogue(event, Random.Default.nextInt());
     }
 
     private void onFlagshipKilled() {
@@ -838,7 +838,7 @@ public class InGameState extends MainGame.GameState {
 
             // The event when you defeat a stage
             Event event = eventManager.get("BOSS_ESCAPED").resolve();
-            showEventDialogue(event);
+            showEventDialogue(event, Random.Default.nextInt());
         }
     }
 
@@ -1454,7 +1454,7 @@ public class InGameState extends MainGame.GameState {
             RemoveCrew info = removed.getInfo();
 
             if (player.getClonebay() != null) {
-                String cloneMessage = info.getCloneText().resolve();
+                String cloneMessage = info.getCloneText().resolve(Random.Default);
                 if (!cloneMessage.isBlank()) {
                     shipUI.showSyntheticDialogue(new DialogueWindow.SyntheticEvent(cloneMessage));
                 }
@@ -1725,10 +1725,10 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
-    void showEventDialogue(Event event) {
+    void showEventDialogue(Event event, int seed) {
         // The UI is null for automated tests
         if (shipUI != null) {
-            shipUI.showEventDialogue(event);
+            shipUI.showEventDialogue(event, seed);
         }
     }
 

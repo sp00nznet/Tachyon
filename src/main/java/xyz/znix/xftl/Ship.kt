@@ -1392,7 +1392,7 @@ class Ship(
             // gets paid for duplicate augments when they're full.
             if (!item.stackable && augments.any { it == item }) {
                 val realEvent = sys.eventManager["AUGMENT_FULL"].resolve()
-                val synthetic = DialogueWindow.SyntheticEvent(realEvent.text!!.resolve())
+                val synthetic = DialogueWindow.SyntheticEvent(realEvent.text!!.resolve(Random))
                 synthetic.resources.scrap = 25
                 sys.shipUI.showSyntheticDialogue(synthetic)
                 return true
