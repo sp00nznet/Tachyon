@@ -1725,24 +1725,6 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
-    public int getPlayerCrewCount() {
-        // TODO account for crew on the enemy ship, at the same time
-        //  as making ShipWindow do the same.
-        int crewCount = 0;
-
-        for (AbstractCrew crew : player.getCrew()) {
-            if (!(crew instanceof LivingCrew living))
-                continue;
-
-            if (living.getOwnerShip() != player)
-                continue;
-
-            crewCount++;
-        }
-
-        return crewCount;
-    }
-
     void showEventDialogue(Event event) {
         // The UI is null for automated tests
         if (shipUI != null) {
@@ -1751,11 +1733,11 @@ public class InGameState extends MainGame.GameState {
     }
 
     public boolean isPlayerCrewFull() {
-        return getPlayerCrewCount() >= 8;
+        return playerCrew.size() >= 8;
     }
 
     public boolean playerHasTooManyCrew() {
-        return getPlayerCrewCount() > 8;
+        return playerCrew.size() > 8;
     }
 
     public interface RoomClickListener {
