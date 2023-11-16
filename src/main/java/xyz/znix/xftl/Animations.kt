@@ -267,6 +267,8 @@ class Animations {
 
         // How long it takes a weapon animation to play from the charged frame to the end.
         // These were reverse-engineered from vanilla FTL.
+        // Note beams have their own unrelated logic.
+        // TODO should also be 1sec for charge weapons?
         const val PROJECTILE_WEAPON_FIRE_TIME = 0.25f
         const val BOMB_FIRE_TIME = 1f
     }

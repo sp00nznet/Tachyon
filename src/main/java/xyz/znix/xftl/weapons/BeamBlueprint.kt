@@ -51,7 +51,17 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
     inner class BeamInstance(ship: Ship) : AbstractWeaponInstance(this, ship) {
         override val isFiring: Boolean get() = target != null && isPowered
-        private var firingTime: Float = 0f
+        private val firingTime: Float get() = max(0f, attackTimer - preFireDuration)
+
+        /**
+         * True if the beam is currently swiping across the enemy ship.
+         *
+         * This is distinct from [isFiring] because that's true during
+         * the animation that runs before the beam switches on.
+         */
+        val isBeamOn: Boolean get() = isFiring && attackTimer >= preFireDuration
+        private var attackTimer: Float = 0f
+
         private var target: SelectedTarget.BeamAim? = null
         private val originPos = Point(0, 0)
 
@@ -60,6 +70,10 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         private var lastRoomId: Int? = null
 
         private val contact: FTLAnimation
+
+        // The duration and number of frames in the pre-firing animation
+        private val preFireFrames: Int
+        private val preFireDuration: Float
 
         // Copy this in as a mutable variable so it can be changed for drones.
         private var fireDuration: Float = this@BeamBlueprint.fireDuration
@@ -84,10 +98,16 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             // Turns out this is a one-frame animation, leave it looping in case
             // a mod replaces it or something.
             contact = ship.sys.animations[projectile!!].startLooping(ship.sys)
+
+            // Beams set a per-frame time of 2/frameCount for frames between
+            // the charged and fire frames.
+            val frameDuration = 2f / animation.length
+            preFireFrames = animation.fireFrame - animation.chargedFrame
+            preFireDuration = preFireFrames * frameDuration
         }
 
         override fun render(g: Graphics) {
-            if (isFiring) {
+            if (isBeamOn) {
                 // Draw the beam line
                 // Note that since we're in image space, forwards is up so forwards
                 // is negative Y. Use some 'long enough' arbitrary length.
@@ -106,13 +126,18 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // Manually compute the frames rather than using an animation, since
                 // we're controlling the laser progress on the same timer.
                 val progress = firingTime / fireDuration
-                val firstFiringFrame = animation.chargedFrame + 1
-                val firingFrames = animation.length - firstFiringFrame
-                val frameNum = firstFiringFrame + (firingFrames * progress).toInt()
+                val firingFrames = animation.length - animation.fireFrame
+                val frameNum = animation.fireFrame + (firingFrames * progress).toInt()
 
                 // Use coerceIn to ensure we don't access an invalid frame if the progress
                 // is somehow exactly fireDuration.
                 animation.spriteAt(ship.sys, frameNum.coerceIn(0 until animation.length)).draw()
+            } else if (isFiring) {
+                // Render the pre-beam-on animation
+                // This is used by mods, for example Multiverse's LANCE_1 beam.
+                val progress = (attackTimer / preFireDuration).coerceIn(0f, 1f)
+                val frameNum = animation.chargedFrame + (preFireFrames * progress).toInt()
+                animation.spriteAt(ship.sys, frameNum).draw()
             } else {
                 super.render(g)
             }
@@ -143,6 +168,11 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
         private fun renderInbound(g: Graphics, from: IPoint) {
             // Draw the beam on the enemy ship, including the little contact burning animation
+
+            // This runs during the pre-firing animation, so check if
+            // the beam is actually turned on yet or not.
+            if (!isBeamOn)
+                return
 
             // This means we don't have to put !! on every usage of target
             val target = target!!
@@ -212,7 +242,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
             super.update(dt, chargeTime, canCharge)
 
-            if (isFiring) {
+            if (isBeamOn) {
                 val targetShip = target!!.targetShip
 
                 // Don't block charging while firing - it does appear
@@ -223,7 +253,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 // the beam can't skip rooms when running with
                 // high delta-times.
                 val onePixelTime = fireDuration / target!!.length
-                val newFiringTime = firingTime + dt
+                val newFiringTime = min(firingTime + dt, fireDuration)
                 var t = firingTime
                 val tmp = Point(0, 0)
                 while (t < newFiringTime) {
@@ -297,7 +327,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 updateSuperShield(firingTime, newFiringTime)
 
                 // Save our updated progress.
-                firingTime = newFiringTime
+                attackTimer = preFireDuration + newFiringTime
 
                 // Check if we've hit the end of our travel.
                 if (firingTime >= fireDuration) {
@@ -305,7 +335,12 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
                 }
 
                 contact.update(dt)
-            } else if (target != null) { //if we aren't shooting then we reset the weapon
+            } else if (isFiring) {
+                // Play the pre-firing animation
+                attackTimer += dt
+            } else if (target != null) {
+                // If we aren't shooting then we reset the weapon.
+                // This handles the weapon being depowered while firing.
                 stopFiring()
             }
         }
@@ -313,7 +348,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         private fun stopFiring() {
             target?.targetShip?.inboundBeams?.remove(this)
 
-            firingTime = 0f
+            attackTimer = 0f
             superShieldReady = false
             target = null
 
@@ -497,7 +532,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun saveToXML(elem: Element, refs: ObjectRefs) {
             super.saveToXML(elem, refs)
 
-            SaveUtil.addTagFloat(elem, "firingTime", firingTime, 0f)
+            SaveUtil.addTagFloat(elem, "attackTimer", attackTimer, 0f)
             SaveUtil.addTagInt(elem, "firingChainCount", firingChainCount, 0)
             SaveUtil.addTagFloat(elem, "fireDuration", fireDuration, this@BeamBlueprint.fireDuration)
             SaveUtil.addTagBoolIfTrue(elem, "superShieldReady", superShieldReady)
@@ -521,7 +556,7 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
         override fun loadFromXML(elem: Element, refs: RefLoader) {
             super.loadFromXML(elem, refs)
 
-            firingTime = SaveUtil.getOptionalTagFloat(elem, "firingTime") ?: 0f
+            attackTimer = SaveUtil.getOptionalTagFloat(elem, "attackTimer") ?: 0f
             firingChainCount = SaveUtil.getOptionalTagInt(elem, "firingChainCount") ?: 0
             fireDuration = SaveUtil.getOptionalTagFloat(elem, "fireDuration") ?: this@BeamBlueprint.fireDuration
 

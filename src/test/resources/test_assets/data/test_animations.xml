@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <FTL>
     <!-- Something for per-test animations to reference -->
-    <animSheet name="dummy_sheet" w="152" h="114" fw="20" fh="20">ship/test_ship_base.png</animSheet>
+    <animSheet name="dummy_sheet" w="152" h="114" fw="1" fh="1">ship/test_ship_base.png</animSheet>
     <anim name="dummy_anim">
         <sheet>dummy_sheet</sheet>
         <desc length="1" x="0" y="0"/>
