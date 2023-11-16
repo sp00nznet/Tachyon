@@ -2,6 +2,7 @@ package xyz.znix.xftl.environment
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.VisualRandom
 import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Graphics
@@ -22,7 +23,7 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
     private var planetImage: EnvironmentImage? = null
     private val backgroundShips = ArrayList<BackgroundShip>()
 
-    private var visualSeed: Int = Random.nextInt(99999)
+    private var visualSeed: Int = VisualRandom.nextInt(99999)
 
     // True if the backgroundImage/planetImage are used, and their indices
     // should thus be saved.

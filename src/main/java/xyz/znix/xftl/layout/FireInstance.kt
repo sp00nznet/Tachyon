@@ -34,7 +34,7 @@ class FireInstance(val room: Room, val slot: Int) {
     init {
         // Start at a random point in the animation, to make sure we don't
         // have multiple fires that are in-sync with each other.
-        animation.timer = (0f..animation.duration).random(Random)
+        animation.timer = (0f..animation.duration).random(VisualRandom)
     }
 
     fun update(dt: Float) {

@@ -1132,7 +1132,7 @@ class Ship(
         val image = sys.getImg("img/numbers/$imageName.png")
         val floatingNum = DamageNumber(damagePos.x.f, damagePos.y.f, image, colour)
         floatingNum.y -= 30f
-        floatingNum.x += Random.nextInt(-10, 10).f
+        floatingNum.x += VisualRandom.nextInt(-10, 10).f
         damageNumbers.add(floatingNum)
     }
 

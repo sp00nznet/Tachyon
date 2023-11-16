@@ -2,6 +2,7 @@ package xyz.znix.xftl.sector
 
 import org.jdom2.Element
 import xyz.znix.xftl.Ship
+import xyz.znix.xftl.VisualRandom
 import xyz.znix.xftl.environment.*
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.StoreData
@@ -136,7 +137,7 @@ class Beacon(
      * animation on the beacon map, to ensure all the beacons
      * aren't flashing in sync.
      */
-    val overtakeFlashAnimationOffset: Float = Random.nextFloat()
+    val overtakeFlashAnimationOffset: Float = VisualRandom.nextFloat()
 
     var isOvertaken: Boolean = false
         set(value) {

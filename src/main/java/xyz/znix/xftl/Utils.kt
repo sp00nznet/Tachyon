@@ -13,6 +13,16 @@ import kotlin.random.Random
 const val PIf = PI.toFloat()
 const val TWO_PI = 2 * PIf
 
+/**
+ * A [Random] instance for use in purely visual stuff.
+ *
+ * This makes it easier to find un-seeded random usages, in the effort
+ * to properly seed everything.
+ *
+ * This must thus never be used for anything more than visuals.
+ */
+val VisualRandom: Random = Random.Default
+
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
 

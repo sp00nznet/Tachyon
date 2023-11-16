@@ -365,11 +365,11 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
                 // See doc/hacking for details about this
                 if (width == 1 || height == 1) {
-                    bigSparksMaskX = Random.nextInt(ROOM_SIZE)
+                    bigSparksMaskX = VisualRandom.nextInt(ROOM_SIZE)
                     bigSparksRotation = 0f
                 } else {
                     bigSparksMaskX = -1
-                    bigSparksRotation = PI.toFloat() / 2f * Random.nextInt(4)
+                    bigSparksRotation = PI.toFloat() / 2f * VisualRandom.nextInt(4)
                 }
             }
 

@@ -430,14 +430,14 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
             // randomisation in addition.
             originPos.set(1000, 1000)
 
-            if (Random.nextBoolean())
+            if (VisualRandom.nextBoolean())
                 originPos.x *= -1
-            if (Random.nextBoolean())
+            if (VisualRandom.nextBoolean())
                 originPos.y *= -1
 
             val range = 350
-            originPos.x += Random.nextInt(-range..range)
-            originPos.y += Random.nextInt(-range..range)
+            originPos.x += VisualRandom.nextInt(-range..range)
+            originPos.y += VisualRandom.nextInt(-range..range)
 
             originPos += target.targetShip.shieldOrigin
         }

@@ -172,8 +172,9 @@ class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
 
                 hitSuperShield -> {
                     // Pick a random point on the ship's shield line
+                    // We can't collide with anything, so it's safe to use VisualRandom.
                     val halfSize = ship.shieldHalfSize
-                    val angle = Random.nextFloat() * TWO_PI
+                    val angle = VisualRandom.nextFloat() * TWO_PI
                     ship.shieldOrigin.fConst + ConstFPoint(
                         halfSize.x * cos(angle),
                         halfSize.y * sin(angle)

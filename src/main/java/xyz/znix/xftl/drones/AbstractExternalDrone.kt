@@ -194,7 +194,7 @@ abstract class AbstractExternalDrone(
             stunSparksAnimation = game.animations["stun_spark_big"].startSingle(game)
 
             // See doc/hacking for details about this
-            stunSparksMirror = Random.nextBoolean()
+            stunSparksMirror = VisualRandom.nextBoolean()
         }
 
         val sparks = stunSparksAnimation!!.currentFrame

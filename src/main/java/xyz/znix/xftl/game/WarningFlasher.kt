@@ -1,5 +1,6 @@
 package xyz.znix.xftl.game
 
+import xyz.znix.xftl.VisualRandom
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Colour
@@ -27,7 +28,7 @@ class WarningFlasher(
     private var stopTime: Long = 0
 
     // Stop all the warnings flashing in sync.
-    private val flashOffset = Random.nextLong()
+    private val flashOffset = VisualRandom.nextLong()
 
     var timeRemaining: Float = 0f
         private set

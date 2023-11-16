@@ -977,7 +977,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         if (deltaScrap != 0) {
             lastResources.scrap = ship.scrap
             val rdt = ResourceDeltaText(460f, 30f, deltaScrap)
-            rdt.x += Random.nextInt(-10, 10)
+            rdt.x += VisualRandom.nextInt(-10, 10)
             resourceDeltaAnimations.add(rdt)
         }
 
@@ -1856,9 +1856,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (hackingSparks == null || hackingSparks?.isStopped == true) {
                 hackingSparks = ship.sys.animations["stun_spark_big"].startSingle(game)
 
-                hackingOffsetX = Random.nextInt(25)
-                hackingMaskY = Random.nextInt(31)
-                hackingMirror = Random.nextBoolean()
+                hackingOffsetX = VisualRandom.nextInt(25)
+                hackingMaskY = VisualRandom.nextInt(31)
+                hackingMirror = VisualRandom.nextBoolean()
             }
 
             // Update the animation regardless of whether we're paused.

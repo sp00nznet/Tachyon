@@ -1,14 +1,11 @@
 package xyz.znix.xftl.environment
 
-import xyz.znix.xftl.PIf
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.random
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.Beacon
@@ -35,8 +32,8 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
         for (xIdx in 0 until 5) {
             for (yIdx in 0 until 4) {
                 val pos = ConstPoint(
-                    xIdx * 350 + Random.nextInt(-60..60),
-                    yIdx * 230 + Random.nextInt(-40..40)
+                    xIdx * 350 + VisualRandom.nextInt(-60..60),
+                    yIdx * 230 + VisualRandom.nextInt(-40..40)
                 )
                 clouds += Cloud(pos)
             }
@@ -113,7 +110,7 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
         val centre: IPoint
     ) {
         var alpha = 0f
-        var scale = (3f..4f).random(Random)
+        var scale = (3f..4f).random(VisualRandom)
 
         var isFadingIn: Boolean = true
         var isReplaced: Boolean = false
@@ -122,7 +119,7 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
         var lightingTimer = 0f
         var lightningRotation = 0f
 
-        val replaceThreshold = (0.60f..0.90f).random(Random)
+        val replaceThreshold = (0.60f..0.90f).random(VisualRandom)
 
         fun update(dt: Float) {
             scale += 0.048f * dt
@@ -143,7 +140,7 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
             nextLightning -= dt
             if (nextLightning <= 0) {
                 lightingTimer = 0.25f
-                nextLightning = (6.25f..18.75f).random(Random)
+                nextLightning = (6.25f..18.75f).random(VisualRandom)
                 lightningRotation = (0..3).random() * (PIf / 2f)
             }
             lightingTimer = (lightingTimer - dt).coerceAtLeast(0f)

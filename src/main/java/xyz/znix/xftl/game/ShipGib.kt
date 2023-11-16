@@ -2,6 +2,7 @@ package xyz.znix.xftl.game
 
 import org.jdom2.Element
 import xyz.znix.xftl.TWO_PI
+import xyz.znix.xftl.VisualRandom
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -11,7 +12,6 @@ import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
 
 class ShipGib(val ship: ShipBlueprint, node: Element) {
     val imgPath: String
@@ -47,9 +47,9 @@ class ShipGib(val ship: ShipBlueprint, node: Element) {
      * this isn't referenced by [ShipBlueprint] and thus can have mutable variables.
      */
     inner class Instance(private val img: Image) {
-        private val velocity = velocityRange.random(Random)
-        private val direction = -directionRange.random(Random) / 360 * TWO_PI // Deg->rad
-        private val angular = angularVelocityRange.random(Random)
+        private val velocity = velocityRange.random(VisualRandom)
+        private val direction = -directionRange.random(VisualRandom) / 360 * TWO_PI // Deg->rad
+        private val angular = angularVelocityRange.random(VisualRandom)
 
         private var time = 0f
 
