@@ -187,14 +187,19 @@ class Animations {
         var boostAnim: AnimationSpec? = null
             private set
 
-        fun spriteAt(spriteSheet: Image, i: Int): Image {
-            if (i >= length) throw IndexOutOfBoundsException(i)
+        fun spriteAt(spriteSheet: Image, i: Int): Image? {
+            // Some weapons from Multiverse have invalid charged frame indices,
+            // and handling it here makes us more tolerant to invalid indices
+            // coming from other places too.
+            if (i >= length)
+                return null
+
             return sheet.getSprite(spriteSheet, x + i, y)
         }
 
         fun spriteAt(game: InGameState, i: Int): Image {
             val img = game.getImg(sheet.sheetPath)
-            return spriteAt(img, i)
+            return spriteAt(img, i) ?: game.missingImage
         }
 
         fun getChargedImage(game: InGameState): Image {

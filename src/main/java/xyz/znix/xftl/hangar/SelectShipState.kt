@@ -66,6 +66,8 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
     val font = getFont("c&c")
     val fontHL2 = getFont("HL2")
 
+    val missingImage = getImgOrNull("img/nullResource.png") ?: error("Missing nullResource.png")
+
     init {
         startGameButton = StartGameButton(this)
         editFileControls = EditFileControls(this)
@@ -241,9 +243,8 @@ class SelectShipState(private val datafile: Datafile, private val main: MainGame
         getImgOrNull(path)?.let { return it }
 
         println("[WARN] Invalid path for image: '$path'")
-        val fallback = getImgOrNull("img/nullResource.png") ?: error("Missing nullResource.png")
-        images[path] = fallback // Don't repeat the warning
-        return fallback
+        images[path] = missingImage // Don't repeat the warning for each getImg call
+        return missingImage
     }
 
     fun getImgOrNull(path: String): Image? {

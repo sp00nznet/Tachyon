@@ -175,7 +175,7 @@ class BlueprintSelector(
             val animation = editor.state.animations.weaponAnimations[weapon.launcher]
             if (animation != null) {
                 val sheet = editor.state.getImg(animation.sheet.sheetPath)
-                val icon = animation.spriteAt(sheet, animation.chargedFrame)
+                val icon = animation.spriteAt(sheet, animation.chargedFrame) ?: editor.state.missingImage
 
                 // The sprite is rotated 90°, so swap the width and height.
                 val iconX = (iconWindowWidth - icon.height) / 2

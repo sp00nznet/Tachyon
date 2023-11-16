@@ -74,7 +74,7 @@ class EditableShip(
 
             val anim = state.animations.weaponAnimations.getValue(weaponBp.launcher)
             val spriteSheet = state.getImg(anim.sheet.sheetPath)
-            val launcher = anim.spriteAt(spriteSheet, anim.chargedFrame)
+            val launcher = anim.spriteAt(spriteSheet, anim.chargedFrame) ?: state.missingImage
 
             g.pushTransform()
             g.translate(-shipBlueprint.roomOffset.x.f * ROOM_SIZE, -shipBlueprint.roomOffset.y.f * ROOM_SIZE)
