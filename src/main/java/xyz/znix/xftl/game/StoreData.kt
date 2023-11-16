@@ -2,7 +2,6 @@ package xyz.znix.xftl.game
 
 import org.jdom2.Element
 import xyz.znix.xftl.Blueprint
-import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
@@ -48,14 +47,14 @@ class StoreData {
      */
     val crew = ArrayList<LivingCrewInfo?>()
 
-    fun generateRandomContents(game: InGameState) {
+    fun generateRandomContents(game: InGameState, rand: Random) {
         // See doc/stores for generation details
-        availableResources[Resource.FUEL] = (3..7).random()
-        availableResources[Resource.MISSILES] = (2..6).random()
-        availableResources[Resource.DRONES] = (2..4).random()
+        availableResources[Resource.FUEL] = (3..7).random(rand)
+        availableResources[Resource.MISSILES] = (2..6).random(rand)
+        availableResources[Resource.DRONES] = (2..4).random(rand)
 
         // Generate the section types
-        val numSections = (2..4).random()
+        val numSections = (2..4).random(rand)
 
         val ship = game.player
         val numSystems = ship.systems.size
@@ -73,38 +72,39 @@ class StoreData {
 
         // If you have <11 systems (including subsystems), there's
         // a 50% chance the first section will be a systems section.
-        if (numSystems < 11 && Random.rollChance(50)) {
+        if (numSystems < 11 && rand.rollChance(50)) {
             possibleSections.remove(Section.SYSTEMS)
             sections += Section.SYSTEMS
         }
 
         // Randomly spawn the rest of the sections
         for (i in 0 until numSections) {
-            sections += possibleSections.removeAt(possibleSections.indices.random())
+            sections += possibleSections.removeAt(possibleSections.indices.random(rand))
         }
 
-        systems += generateSystems(game, ship)
+        systems += generateSystems(game, rand)
 
-        weapons += getForSection(game, Section.WEAPONS, AbstractWeaponBlueprint::class.java)
-        drones += getForSection(game, Section.DRONES, DroneBlueprint::class.java)
-        augments += getForSection(game, Section.AUGMENTS, AugmentBlueprint::class.java)
+        weapons += getForSection(game, rand, Section.WEAPONS, AbstractWeaponBlueprint::class.java)
+        drones += getForSection(game, rand, Section.DRONES, DroneBlueprint::class.java)
+        augments += getForSection(game, rand, Section.AUGMENTS, AugmentBlueprint::class.java)
 
         if (sections.contains(Section.CREW)) {
-            crew += game.lootPool.getManyRandom(CrewBlueprint::class.java, 3)
+            crew += game.lootPool.getManyRandom(CrewBlueprint::class.java, rand, 3)
                 .map { LivingCrewInfo.generateRandom(it, game) }
         }
     }
 
-    private fun <T> getForSection(game: InGameState, section: Section, type: Class<T>): List<T?> {
+    private fun <T> getForSection(game: InGameState, rand: Random, section: Section, type: Class<T>): List<T?> {
         // Return an empty list to reduce the savefile size
         if (!sections.contains(section)) {
             return emptyList()
         }
 
-        return game.lootPool.getManyRandom(type, 3)
+        return game.lootPool.getManyRandom(type, rand, 3)
     }
 
-    private fun generateSystems(game: InGameState, ship: Ship): List<SystemBlueprint?> {
+    private fun generateSystems(game: InGameState, rand: Random): List<SystemBlueprint?> {
+        val ship = game.player
         val systems = ArrayList<SystemBlueprint?>()
 
         // Return an empty list to reduce the savefile size
@@ -136,7 +136,7 @@ class StoreData {
 
         if (!playerHasMedical) {
             val medicalSystem = when {
-                game.content.enableAdvancedEdition -> listOf(medbaySystem, clonebaySystem!!).random()
+                game.content.enableAdvancedEdition -> listOf(medbaySystem, clonebaySystem!!).random(rand)
                 else -> medbaySystem
             }
 
@@ -169,7 +169,7 @@ class StoreData {
         val numSystems = min(3, possibleSystems.size)
 
         while (systems.size < numSystems) {
-            systems += possibleSystems.removeAt(possibleSystems.indices.random())
+            systems += possibleSystems.removeAt(possibleSystems.indices.random(rand))
         }
 
         return systems

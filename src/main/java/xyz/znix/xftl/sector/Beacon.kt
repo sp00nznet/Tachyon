@@ -172,7 +172,7 @@ class Beacon(
             return internalStore
 
         internalStore = StoreData()
-        internalStore!!.generateRandomContents(game)
+        internalStore!!.generateRandomContents(game, Random(storeSeed))
         return internalStore
     }
 
