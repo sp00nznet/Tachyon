@@ -176,20 +176,27 @@ class InfoPanel(private val game: InGameState) {
     ) {
         game.windowRenderer.render(position.x, position.y, 333, height)
 
+        var y = position.y + 30
+
         val titleStr = title?.get(game.translator)
         if (titleStr != null) {
-            titleFont.drawString(
-                position.x + 11f, position.y + 30f,
-                titleStr,
-                Colour.white
-            )
+            val lines = titleFont.wrapString(titleStr, 310)
+            for (line in lines) {
+                titleFont.drawString(
+                    position.x + 11f, y.f,
+                    line,
+                    Colour.white
+                )
+                y += 20
+            }
         }
+
+        y += 3
 
         val descriptionStr = description?.get(game.translator)
         if (descriptionStr != null) {
             val lines = descriptionFont.wrapString(descriptionStr, 310)
 
-            var y = position.y + 53
             for (line in lines) {
                 descriptionFont.drawString(position.x + 11f, y.f, line, Colour.white)
                 y += 17
