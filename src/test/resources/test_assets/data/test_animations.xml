@@ -16,4 +16,41 @@
         <firePoint x="0" y="0"/>
         <mountPoint x="0" y="0"/>
     </weaponAnim>
+
+    <!-- Crew testing -->
+    <anim name="test_crew_portrait">
+        <sheet>dummy_sheet</sheet>
+        <desc length="1" x="0" y="0"/>
+        <time>1</time>
+    </anim>
+    <anim name="test_crew_shoot_up">
+        <sheet>dummy_sheet</sheet>
+        <desc length="1" x="0" y="0"/>
+        <time>1</time>
+    </anim>
+    <anim name="test_crew_shoot_down">
+        <sheet>dummy_sheet</sheet>
+        <desc length="1" x="0" y="0"/>
+        <time>1</time>
+    </anim>
+    <anim name="test_crew_walk_up">
+        <sheet>dummy_sheet</sheet>
+        <desc length="1" x="0" y="0"/>
+        <time>1</time>
+    </anim>
+    <anim name="test_crew_walk_down">
+        <sheet>dummy_sheet</sheet>
+        <desc length="1" x="0" y="0"/>
+        <time>1</time>
+    </anim>
+    <anim name="test_crew_walk_left">
+        <sheet>dummy_sheet</sheet>
+        <desc length="1" x="0" y="0"/>
+        <time>1</time>
+    </anim>
+    <anim name="test_crew_walk_right">
+        <sheet>dummy_sheet</sheet>
+        <desc length="1" x="0" y="0"/>
+        <time>1</time>
+    </anim>
 </FTL>

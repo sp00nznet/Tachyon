@@ -2,6 +2,7 @@ package xyz.znix.xftl.testkit
 
 import org.jdom2.input.SAXBuilder
 import xyz.znix.xftl.*
+import xyz.znix.xftl.crew.CrewNameManager
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
@@ -30,6 +31,8 @@ class InGameTest(
             "data/test_ship.xml",
             "data/test_ship.txt",
             "img/ship/test_ship_base.png",
+
+            "data/names.xml",
 
             // Triggers a warning if this is missing
             "img/ship/enemy_shields.png",
@@ -65,6 +68,8 @@ class InGameTest(
 
         val sounds = NoOpSoundManager()
 
+        val names = CrewNameManager(df, "en")
+
         val defaultAnimationXML = df.parseXML(df["data/test_animations.xml"])
         val customAnimationXMLs = extraAnimations.map { sax.build(StringReader(it)) }
         val animations = Animations(listOf(defaultAnimationXML) + customAnimationXMLs)
@@ -74,7 +79,7 @@ class InGameTest(
             blueprints,
             // TODO put the proper values in for these nulls:
             events,
-            null,
+            names,
             animations,
             sounds,
             translator,

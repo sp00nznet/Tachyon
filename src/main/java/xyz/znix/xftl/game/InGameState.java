@@ -198,7 +198,7 @@ public class InGameState extends MainGame.GameState {
         eventManager = content.eventManager;
 
         // Don't load any assets while running automated tests
-        if (!(df.getVanilla() instanceof VanillaDatafile))
+        if (isRunningAutomatedTest())
             return;
 
         pauseFont = getFont("c&c");
@@ -1412,6 +1412,16 @@ public class InGameState extends MainGame.GameState {
     @Nullable
     public Room getHoveredRoom() {
         return hoveredRoom;
+    }
+
+    /**
+     * True if this 'game' is actually an automated test.
+     * <p>
+     * Try to avoid using this where possible to keep the tests accurate,
+     * but it's useful for things that relate to sound or rendering.
+     */
+    public boolean isRunningAutomatedTest() {
+        return mainGame == null;
     }
 
     @NotNull

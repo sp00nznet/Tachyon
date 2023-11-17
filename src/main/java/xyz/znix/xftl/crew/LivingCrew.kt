@@ -433,6 +433,11 @@ class LivingCrewInfo(
         // * Pick the last (space-separated) part of the name
         // * Pick the shortest-by-pixel-length part of the name, and truncate it
 
+        // If we're running in an automated test, we can't use fonts.
+        if (game.isRunningAutomatedTest) {
+            return name
+        }
+
         val font = game.getFont(PlayerShipUI.CREW_NAME_FONT)
 
         // Already short enough?
