@@ -1,6 +1,7 @@
 package xyz.znix.xftl.sector
 
 import org.jdom2.Element
+import xyz.znix.xftl.GameText
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
@@ -102,7 +103,18 @@ class Event(
             val count = crewElem.getAttributeValue("amount").toInt()
 
             val race = crewElem.getAttributeValue("class")
+
+            // Although it's not used by vanilla, a literal name
+            // can be inserted as the element's text.
+            // This is used by Insurrection+, you can check the
+            // DISTRESS_STATION_FIRE_RESCUE event to test it.
             val nameId = crewElem.getAttributeValue("id")
+            val nameLiteral = crewElem.textTrim
+            val name: GameText? = when {
+                nameId != null -> GameText.localised(nameId)
+                nameLiteral.isNotEmpty() -> GameText.literal(nameLiteral)
+                else -> null
+            }
 
             val skills = HashMap<Skill, Float>()
             crewElem.getAttributeValue("all_skills")?.toInt()?.let { level ->
@@ -118,7 +130,7 @@ class Event(
             }
 
             for (i in 0 until count) {
-                addedCrew.add(AddCrew(race, nameId, skills))
+                addedCrew.add(AddCrew(race, name, skills))
             }
 
             // Special-case the crew-removing event used in STATION_SICK
@@ -290,9 +302,9 @@ class Event(
                 game.lootPool.getRandom(rand) { it is CrewBlueprint } as CrewBlueprint
             }
 
-            val info = if (crew.nameId != null) {
+            val info = if (crew.name != null) {
                 // Specifically named by the event (eg Slocknog)
-                val name = game.translator[crew.nameId]
+                val name = game.translator[crew.name]
                 LivingCrewInfo.generateWithName(race, game, name)
             } else {
                 LivingCrewInfo.generateRandom(race, game)
@@ -394,7 +406,7 @@ class EventList(val name: String, events: List<Lazy<IEvent>>) : IEvent {
     override val debugId: String get() = name
 }
 
-class AddCrew(val race: String?, val nameId: String?, val skills: Map<Skill, Float>)
+class AddCrew(val race: String?, val name: GameText?, val skills: Map<Skill, Float>)
 
 class RemoveCrew(
     /**

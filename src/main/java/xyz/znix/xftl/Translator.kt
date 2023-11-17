@@ -89,6 +89,10 @@ class GameText private constructor(private val literal: String?, private val key
         return translator[key!!]
     }
 
+    // These are for use in automated tests only!
+    fun getLiteralForTesting(): String? = literal
+    fun getKeyForTesting(): String? = key
+
     companion object {
         fun parse(elem: Element): GameText {
             val id: String? = elem.getAttributeValue("id")

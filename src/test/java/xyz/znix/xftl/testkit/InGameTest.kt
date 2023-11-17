@@ -11,6 +11,7 @@ import java.io.StringReader
 class InGameTest(
     extraBlueprints: List<String> = emptyList(),
     extraAnimations: List<String> = emptyList(),
+    extraEvents: List<String> = emptyList(),
 ) {
     val state: InGameState
     val player: Ship get() = state.player
@@ -19,7 +20,7 @@ class InGameTest(
         val blueprintFiles = listOf(
             "data/generic_blueprints.xml",
         )
-        val eventFiles = listOf(
+        val eventFiles = mutableListOf(
             "data/generic_events.xml",
         )
         val miscFiles = listOf(
@@ -36,7 +37,16 @@ class InGameTest(
             "img/nullResource.png",
         )
         val allFiles = blueprintFiles + eventFiles + miscFiles
-        val df = FakeDatafile(allFiles)
+        val stringFiles = HashMap<String, String>()
+
+        // Inject the extra event files
+        for ((i, text) in extraEvents.withIndex()) {
+            val name = "data/test_extra_event_$i.xml"
+            eventFiles += name
+            stringFiles[name] = text
+        }
+
+        val df = FakeDatafile(allFiles, stringFiles)
 
         val sax = SAXBuilder()
 

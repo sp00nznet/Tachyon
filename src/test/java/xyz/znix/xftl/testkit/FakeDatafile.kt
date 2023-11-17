@@ -6,7 +6,9 @@ import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.rendering.Texture
 import xyz.znix.xftl.sys.ResourceContext
 
-class FakeDatafile(files: List<String>) : Datafile(FakeVanillaDatafile(files), emptyList()) {
+class FakeDatafile(files: List<String>, stringFiles: Map<String, String>) :
+    Datafile(FakeVanillaDatafile(files, stringFiles), emptyList()) {
+
     override fun readImage(context: ResourceContext, file: FTLFile): Image {
         val imageData = ImageDataFactory.getImageDataFor(file.name)
 
@@ -26,7 +28,10 @@ class FakeDatafile(files: List<String>) : Datafile(FakeVanillaDatafile(files), e
     }
 }
 
-private class FakeVanillaDatafile(private val files: List<String>) : IVanillaDatafile {
+private class FakeVanillaDatafile(
+    files: List<String>,
+    private val stringFiles: Map<String, String>
+) : IVanillaDatafile {
     private val fileSet: Set<String> = files.toSet()
     private val fontNames: Set<String> = HashSet(FontOverrideData.fonts.keys)
 
@@ -34,11 +39,11 @@ private class FakeVanillaDatafile(private val files: List<String>) : IVanillaDat
 
     override fun getAllFiles(): List<VanillaDatafile.Entry> {
         // Using the wrong length is fine, it's only used for caching etc.
-        return (fileSet + fontNames).map { VanillaDatafile.Entry(it, 0, 0) }
+        return (fileSet + fontNames + stringFiles.keys).map { VanillaDatafile.Entry(it, 0, 0) }
     }
 
     override fun containsFile(name: String): Boolean {
-        return fileSet.contains(name) || fontNames.contains(name)
+        return fileSet.contains(name) || fontNames.contains(name) || stringFiles.containsKey(name)
     }
 
     override fun read(file: VanillaDatafile.Entry): ByteArray {
@@ -46,6 +51,9 @@ private class FakeVanillaDatafile(private val files: List<String>) : IVanillaDat
         if (fontNames.contains(file.name)) {
             return readFromClasspath("baked/roboto.font")
         }
+
+        // String files are strings passed in by the test that pretend to be files.
+        stringFiles[file.name]?.let { return it.toByteArray(Charsets.UTF_8) }
 
         return readFromClasspath("test_assets/" + file.name)
     }
