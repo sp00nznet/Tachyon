@@ -10,6 +10,7 @@ import xyz.znix.xftl.math.FPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
+import xyz.znix.xftl.sq
 import xyz.znix.xftl.systems.Hacking
 
 interface IProjectile {
@@ -135,6 +136,63 @@ interface IProjectile {
                     error("Invalid serialised projectile with serialisation type '$serialisationType'")
                 }
             }
+        }
+
+        /**
+         * Check if two circles will touch at any point during the next frame.
+         *
+         * This implements CCD (continuous collision detection), which can tell if
+         * two projectiles passed through each other between frames. For example,
+         * if you have two lasers flying head-on with a high delta-time, it's quite
+         * possible to have them never overlap on any given frame.
+         */
+        fun checkCollision(
+            dt: Float,
+            posA: FPoint, posB: FPoint,
+            velA: FPoint, velB: FPoint,
+            radiusA: Float, radiusB: Float
+        ): Boolean {
+            // Run a CCD check
+            // In 3D physics systems you'd normally do some initial checks
+            // to see if the objects are definitely intersecting or definitely
+            // not intersecting to save time, but here it's actually about as
+            // fast to just run the CCD in all cases.
+
+            // Find the time of the closest contact point.
+            // This is a minimisation problem from the distance between the
+            // two projectiles. Setting the derivative to zero ultimately
+            // gets the result:
+            // t = -dot(deltaP, deltaV) / dot(deltaV, deltaV)
+            // Which is equivalent to:
+            // t = -1/len(deltaV) * dot(deltaP, unitDeltaV)
+            // So it's projecting the difference in position onto the line
+            // of the difference in velocity, which seems reasonable - if
+            // the projectiles are shifted in a direction perpendicular to
+            // their relative velocity, it won't change the time of
+            // nearest approach.
+            val dVx = velB.xf - velA.xf
+            val dVy = velB.yf - velA.yf
+            val dPx = posB.xf - posA.xf
+            val dPy = posB.yf - posA.yf
+
+            val velLenSq = dVx * dVx + dVy * dVy
+
+            val nearestTime = when {
+                velLenSq < 0.001f -> 0f
+                else -> -(dPx * dVx + dPy * dVy) / velLenSq
+            }
+
+            // This time can be in the future or the past, so clamp it
+            // to fall within this time step.
+            val time = nearestTime.coerceIn(0f, dt)
+
+            // Find how far apart the projectiles are at that instant.
+            // For convenience, use the dV and dP variables which represent
+            // the position and velocity of the B projectile, if Ais stationary
+            // at the origin.
+            val distSq = (dPx + dVx * time).sq + (dPy + dVy * time).sq
+
+            return distSq < (radiusA + radiusB).sq
         }
     }
 }

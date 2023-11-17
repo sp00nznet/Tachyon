@@ -26,6 +26,11 @@ val VisualRandom: Random = Random.Default
 // Make <int>.f a shorthand for <int>.toFloat(), cleaning things up a lot
 val Int.f get() = toFloat()
 
+/**
+ * The square of a given float.
+ */
+val Float.sq get() = this * this
+
 fun Element.requireAttributeValue(name: String): String {
     return getAttributeValue(name) ?: error("Missing mandatory attribute $name on element ${this.name}")
 }

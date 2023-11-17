@@ -916,14 +916,17 @@ class Ship(
                     continue
                 }
 
-                // Check how close the projectiles are - their collision shape is represented
-                // by a couple of circles, so this is how we do the check.
-                val distSq = first.position.distToSq(second.position)
-                val maxDist = first.hitboxRadius + second.hitboxRadius
-
-                // No overlap?
-                if (distSq > maxDist * maxDist)
+                // Run a CCD check to see if the projectiles have collided
+                // at any point between the last frame and this frame.
+                if (!IProjectile.checkCollision(
+                        dt,
+                        first.position, second.position,
+                        first.velocity, second.velocity,
+                        first.hitboxRadius.f, second.hitboxRadius.f
+                    )
+                ) {
                     continue
+                }
 
                 first.hitOtherProjectile(this)
                 second.hitOtherProjectile(this)
@@ -955,6 +958,16 @@ class Ship(
 
                 if (!proj.collisionsEnabled)
                     continue
+
+                if (!IProjectile.checkCollision(
+                        dt,
+                        drone.flightController.position, proj.position,
+                        drone.flightController.velocity, proj.velocity,
+                        drone.hitboxRadius.f, proj.hitboxRadius.f
+                    )
+                ) {
+                    continue
+                }
 
                 val distSq = drone.flightController.position.distToSq(proj.position)
                 val maxDist = drone.hitboxRadius + proj.hitboxRadius

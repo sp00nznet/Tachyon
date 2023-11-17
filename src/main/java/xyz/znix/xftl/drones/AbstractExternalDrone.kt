@@ -3,7 +3,10 @@ package xyz.znix.xftl.drones
 import org.jdom2.Element
 import xyz.znix.xftl.*
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.math.*
+import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.math.FPoint
+import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.MutFPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -162,8 +165,8 @@ abstract class AbstractExternalDrone(
     open fun renderExternal(g: Graphics) {
         g.pushTransform()
 
-        var x = flightController.posX
-        var y = flightController.posY
+        var x = flightController.position.xf
+        var y = flightController.position.yf
 
         if (flightController.pixelAligned) {
             x = x.roundToInt().f
@@ -302,23 +305,12 @@ abstract class DroneFlightController(val drone: AbstractExternalDrone) {
      */
     abstract val pixelAligned: Boolean
 
-    var posX: Float = 0f
-        set(value) {
-            field = value
-            mutablePosition.x = value.roundToInt()
-        }
-    var posY: Float = 0f
-        set(value) {
-            field = value
-            mutablePosition.y = value.roundToInt()
-        }
+    val position = MutFPoint(0f, 0f)
+
     var rotation: Float = 0f
 
     // Veloctiy in pixels per second, as used by the anti-drone
     abstract val velocity: FPoint
-
-    private val mutablePosition = Point(0, 0)
-    val position: IPoint get() = mutablePosition
 
     abstract fun update(dt: Float)
 
@@ -329,14 +321,14 @@ abstract class DroneFlightController(val drone: AbstractExternalDrone) {
     }
 
     open fun saveToXML(elem: Element, refs: ObjectRefs) {
-        SaveUtil.addAttrFloat(elem, "x", posX)
-        SaveUtil.addAttrFloat(elem, "y", posY)
+        SaveUtil.addAttrFloat(elem, "x", position.xf)
+        SaveUtil.addAttrFloat(elem, "y", position.yf)
         SaveUtil.addAttrFloat(elem, "rotation", rotation)
     }
 
     open fun loadFromXML(elem: Element, refs: RefLoader) {
-        posX = SaveUtil.getAttrFloat(elem, "x")
-        posY = SaveUtil.getAttrFloat(elem, "y")
+        position.xf = SaveUtil.getAttrFloat(elem, "x")
+        position.yf = SaveUtil.getAttrFloat(elem, "y")
         rotation = SaveUtil.getAttrFloat(elem, "rotation")
     }
 
@@ -403,8 +395,8 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
 
         if (!drone.isPowered) {
             // Copied from CombatFlightController
-            posX += vel.xf * dt
-            posY += vel.yf * dt
+            position.xf += vel.xf * dt
+            position.yf += vel.yf * dt
 
             val slowdownFactor = 0.1f * dt * 16
             vel *= 1 - slowdownFactor
@@ -417,8 +409,8 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
 
         // When we're turned on, snap back to the closest point on the shields
         if (wasStartedUp) {
-            val circleX = (posX - ship.shieldOrigin.x.f) / shieldBounds.x
-            val circleY = (posY - ship.shieldOrigin.y.f) / shieldBounds.y
+            val circleX = (position.xf - ship.shieldOrigin.x.f) / shieldBounds.x
+            val circleY = (position.yf - ship.shieldOrigin.y.f) / shieldBounds.y
             theta = atan2(circleY, circleX)
         }
 
@@ -479,8 +471,8 @@ class OrbitFlightController(drone: AbstractExternalDrone) : DroneFlightControlle
         theta = theta.rem(TWO_PI)
 
         rotation = 0f
-        posX = ship.shieldOrigin.x.f + (a * cos(theta))
-        posY = ship.shieldOrigin.y.f + (b * sin(theta))
+        position.xf = ship.shieldOrigin.x.f + (a * cos(theta))
+        position.yf = ship.shieldOrigin.y.f + (b * sin(theta))
     }
 
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
@@ -567,8 +559,8 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         currentDestAngle = Random.nextFloat() * TWO_PI
         pickNextDestination()
 
-        posX = nextDestination.x.f
-        posY = nextDestination.y.f
+        position.xf = nextDestination.x.f
+        position.yf = nextDestination.y.f
 
         // Pick another destination to fly to, as the first 'real' point.
         // This will avoid us firing a shot on the first update.
@@ -588,16 +580,16 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
             if (remaining > 0f) {
                 val newSpeedMult = remaining / 1.5f
 
-                posX += vel.xf * dt * newSpeedMult
-                posY += vel.yf * dt * newSpeedMult
+                position.xf += vel.xf * dt * newSpeedMult
+                position.yf += vel.yf * dt * newSpeedMult
             }
 
             return
         }
 
         if (!drone.isPowered) {
-            posX += vel.xf * dt
-            posY += vel.yf * dt
+            position.xf += vel.xf * dt
+            position.yf += vel.yf * dt
 
             val slowdownFactor = 0.1f * dt * 16
             vel *= 1 - slowdownFactor
@@ -621,8 +613,8 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
 
     // Moves, and returns true if we're in position.
     private fun updateMovement(dt: Float): Boolean {
-        val deltaX = nextDestination.x - posX
-        val deltaY = nextDestination.y - posY
+        val deltaX = nextDestination.x - position.xf
+        val deltaY = nextDestination.y - position.yf
         val distanceToDest = sqrt(deltaX * deltaX + deltaY * deltaY)
 
         // Update our rotation, to face towards the new target.
@@ -630,8 +622,7 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
 
         // If we'd move past the target on this update, snap to it.
         if (distanceToDest <= dt * typeSpeed) {
-            posX = nextDestination.x.f
-            posY = nextDestination.y.f
+            position.set(nextDestination)
             rotation = finalRotation
             return true
         }
@@ -664,8 +655,8 @@ class CombatFlightController(drone: AbstractExternalDrone) : DroneFlightControll
         vel.xf = unitX * typeSpeed
         vel.yf = unitY * typeSpeed
 
-        posX += vel.xf * dt
-        posY += vel.yf * dt
+        position.xf += vel.xf * dt
+        position.yf += vel.yf * dt
 
         return false
     }
