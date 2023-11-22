@@ -342,6 +342,10 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             if (ship.isPlayerShip)
                 return
 
+            // If the weapon is off, it's charge bar is instantly hidden.
+            if (!weapon.isPowered)
+                return
+
             // Make sure the player has high enough level sensors to see the bar
             val game = ship.sys
             if (game.player.sensors?.showsEnemyWeaponCharge != true && !game.debugFlags.showEverything.set)
