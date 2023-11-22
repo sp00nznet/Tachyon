@@ -128,7 +128,7 @@ class CombatDrone(type: DroneBlueprint) : AbstractExternalDrone(type, true) {
             is IRoomTargetingWeapon -> weapon.fireFromDrone(this, target)
 
             is BeamBlueprint.BeamInstance -> {
-                val aim = weapon.buildLongestAim(target)
+                val aim = weapon.buildAim(target, targetShip.rooms.random(), false)
 
                 // Set the weapon to start firing
                 weapon.fireFromDrone(this, aim, BEAM_FIRE_TIME)

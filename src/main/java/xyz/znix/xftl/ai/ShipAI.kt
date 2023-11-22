@@ -125,8 +125,10 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 }
 
                 is BeamBlueprint.BeamInstance -> {
-                    val startRoom = pickTarget(ArrayList(player.rooms))
-                    val aim = weapon.buildLongestAim(startRoom)
+                    val remainingRooms = ArrayList(player.rooms)
+                    val startRoom = pickTarget(remainingRooms)
+                    val endRoom = pickTarget(remainingRooms)
+                    val aim = weapon.buildAim(startRoom, endRoom, false)
 
                     // Set the weapon to start firing
                     weapon.fire(aim)

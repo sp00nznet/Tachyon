@@ -472,15 +472,20 @@ class BeamBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
          */
         fun buildLongestAim(startRoom: Room): SelectedTarget.BeamAim {
             val furthestRoom = startRoom.ship.rooms.maxBy { it.pixelCentre.distToSq(startRoom.pixelCentre) }
+            return buildAim(startRoom, furthestRoom, true)
+        }
 
+        fun buildAim(startRoom: Room, endRoom: Room, stopAtEnd: Boolean): SelectedTarget.BeamAim {
             val aim = SelectedTarget.BeamAim(this, -1, startRoom.ship, startRoom.pixelCentre)
             aim.angle = atan2(
-                furthestRoom.pixelCentre.y.f - startRoom.pixelCentre.y,
-                furthestRoom.pixelCentre.x.f - startRoom.pixelCentre.x
+                endRoom.pixelCentre.y.f - startRoom.pixelCentre.y,
+                endRoom.pixelCentre.x.f - startRoom.pixelCentre.x
             )
 
-            // Don't swipe off the side of the ship, into empty space.
-            aim.length = min(startRoom.pixelCentre.distTo(furthestRoom.pixelCentre), length)
+            if (stopAtEnd) {
+                // Don't swipe off the side of the ship, into empty space.
+                aim.length = min(startRoom.pixelCentre.distTo(endRoom.pixelCentre), length)
+            }
 
             aim.updateHitRooms()
 
