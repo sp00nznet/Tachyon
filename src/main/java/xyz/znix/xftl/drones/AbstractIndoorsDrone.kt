@@ -237,6 +237,14 @@ abstract class AbstractIndoorsDrone(type: DroneBlueprint) : AbstractDrone(type) 
             super.removeFromShip()
 
             // Cleanly kill the drone
+            // If pawn==null then we're being called by removeInstance,
+            // in which case we're not supposed to explode.
+            if (drone.pawn == null) {
+                // Call it again to be certain, though.
+                removeInstance()
+                return
+            }
+
             drone.pawn = null
             destroy()
 
