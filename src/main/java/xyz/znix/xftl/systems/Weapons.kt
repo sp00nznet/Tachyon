@@ -101,7 +101,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
                 weapon.render(g)
 
-                drawEnemyChargeBar(ship, weapon, isHackActive)
+                drawEnemyChargeBar(ship, weapon, hackedBy?.isPoweredUp == true, isHackActive)
             }
 
             g.popTransform()
@@ -337,7 +337,12 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             }
         }
 
-        fun drawEnemyChargeBar(ship: Ship, weapon: AbstractWeaponInstance, hacked: Boolean) {
+        fun drawEnemyChargeBar(
+            ship: Ship,
+            weapon: AbstractWeaponInstance,
+            passiveHacking: Boolean,
+            activeHacking: Boolean
+        ) {
             // The bars are only drawn on enemy weapons
             if (ship.isPlayerShip)
                 return
@@ -348,7 +353,11 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
             // Make sure the player has high enough level sensors to see the bar
             val game = ship.sys
-            if (game.player.sensors?.showsEnemyWeaponCharge != true && !game.debugFlags.showEverything.set)
+            if (
+                game.player.sensors?.showsEnemyWeaponCharge != true
+                && !passiveHacking
+                && !game.debugFlags.showEverything.set
+            )
                 return
 
             val enemyChargeBox = game.getImg("img/combatUI/box_hostiles_weapon_charge.png")
@@ -358,7 +367,7 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             // improved sensors.
             // These are level with the top of the weapon, and 10px out.
             val barX = weapon.animation.sheet.frameWidth + 10
-            val barColour = when (hacked) {
+            val barColour = when (activeHacking) {
                 true -> Constants.SYSTEM_HACKED
                 false -> Constants.SYS_ENERGY_REPAIR
             }
