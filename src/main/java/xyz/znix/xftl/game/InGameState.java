@@ -14,6 +14,7 @@ import xyz.znix.xftl.ai.ShipAI;
 import xyz.znix.xftl.crew.*;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.devutil.DebugFlagManager;
+import xyz.znix.xftl.drones.AbstractExternalDrone;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.layout.Room;
 import xyz.znix.xftl.math.ConstPoint;
@@ -894,6 +895,17 @@ public class InGameState extends MainGame.GameState {
         // Note the player won't be set by now, in the case of the first beacon.
         if (player != null && player.getDrones() != null) {
             player.getDrones().enemyShipUpdated();
+        }
+
+        // Turn off any drones flying around the player's ship if they belong
+        // to a now-gone ship.
+        if (player != null) {
+            for (AbstractExternalDrone drone : player.getExternalDrones()) {
+                if (isShipPresent(drone.getOwnerShip()))
+                    continue;
+
+                drone.setPowered(false);
+            }
         }
     }
 
