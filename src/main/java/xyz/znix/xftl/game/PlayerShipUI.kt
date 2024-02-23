@@ -1615,37 +1615,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun saveCrewPositions() {
-        for (crew in ship.friendlyCrew) {
-            if (crew !is LivingCrew)
-                continue
-
-            if (crew.ownerShip != ship)
-                continue
-
-            val currentPos = crew.pathingTarget ?: crew.standingPosition ?: continue
-            crew.savedPosition = currentPos.shipPoint
-        }
+        // TODO show the popup text
+        ship.saveCrewPositions()
     }
 
     fun loadCrewPositions() {
-        // Note that since we change the crew target positions one at a time,
-        // if crew need to swap positions then we can end up not being able
-        // to do that, even if it should be valid.
-        for (crew in ship.friendlyCrew) {
-            if (crew !is LivingCrew)
-                continue
-
-            if (crew.ownerShip != ship)
-                continue
-
-            val saved = crew.savedPosition ?: continue
-            val roomPos = ship.shipToRoomPos(saved) ?: continue
-
-            if (!crew.setTargetRoom(roomPos.room, roomPos)) {
-                // If our spot is taken, go somewhere else in the room.
-                crew.setTargetRoom(roomPos.room)
-            }
-        }
+        // TODO show the popup text
+        ship.loadCrewPositions()
     }
 
     fun saveToXML(elem: Element, refs: ObjectRefs) {

@@ -281,6 +281,10 @@ public class InGameState extends MainGame.GameState {
             }
         }
 
+        // Save the default crew positions, so the player can immediately
+        // load them again without first having to save them.
+        player.saveCrewPositions();
+
         // Set the default power levels. Don't turn on weapons or drones, both
         // to avoid running out of power for other stuff, and to avoid wasting
         // drone parts.

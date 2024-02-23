@@ -1623,6 +1623,46 @@ class Ship(
         }
     }
 
+    fun saveCrewPositions() {
+        for (member in crew) {
+            if (member.mode != AbstractCrew.SlotType.CREW)
+                continue
+
+            if (member !is LivingCrew)
+                continue
+
+            if (member.ownerShip != this)
+                continue
+
+            val currentPos = member.pathingTarget ?: member.standingPosition ?: continue
+            member.savedPosition = currentPos.shipPoint
+        }
+    }
+
+    fun loadCrewPositions() {
+        // Note that since we change the crew target positions one at a time,
+        // if crew need to swap positions then we can end up not being able
+        // to do that, even if it should be valid.
+        for (member in crew) {
+            if (member.mode != AbstractCrew.SlotType.CREW)
+                continue
+
+            if (member !is LivingCrew)
+                continue
+
+            if (member.ownerShip != this)
+                continue
+
+            val saved = member.savedPosition ?: continue
+            val roomPos = shipToRoomPos(saved) ?: continue
+
+            if (!member.setTargetRoom(roomPos.room, roomPos)) {
+                // If our spot is taken, go somewhere else in the room.
+                member.setTargetRoom(roomPos.room)
+            }
+        }
+    }
+
 
     /**
      * Serialise this ship and everything related to it (projectiles,
