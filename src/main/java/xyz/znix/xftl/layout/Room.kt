@@ -13,7 +13,6 @@ import xyz.znix.xftl.systems.Oxygen
 import java.util.*
 import kotlin.math.PI
 import kotlin.math.max
-import kotlin.random.Random
 
 data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: Int, val height: Int) {
 
@@ -135,6 +134,12 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
 
         // This is used by bombs
         if (ship.projectiles.any { it.providesPlayerVision(this) }) {
+            playerHasVision = true
+        }
+
+        // A powered hacking probe provides vision
+        val hacking = system?.hackedBy
+        if (hacking != null && hacking.room!!.ship.isPlayerShip && hacking.isPoweredUp) {
             playerHasVision = true
         }
 

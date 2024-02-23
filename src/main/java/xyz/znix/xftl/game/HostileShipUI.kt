@@ -193,7 +193,9 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             val y = boxBottomY - 49
             val x = boxX + i * 30 + 49
 
-            sys.drawIconAndPower(game, g, false, powerVisible, x, y)
+            val roomPowerVisible = powerVisible || sys.hackedBy?.isPoweredUp == true
+
+            sys.drawIconAndPower(game, g, false, roomPowerVisible, x, y)
         }
     }
 
