@@ -91,11 +91,17 @@ class ShipAI(val ship: Ship, val player: Ship) {
     private fun updateWeapons() {
         val weapons = ship.weapons ?: return
 
-        // Does nothing if already fully powered
-        weapons.increasePower()
-
-        for (hp in ship.hardpoints) {
+        for ((slot, hp) in ship.hardpoints.withIndex()) {
             val weapon = hp.weapon ?: continue
+
+            // Try powering up all the weapons
+            // Do it this way rather than by using weapons.increasePower, since
+            // if there's an out-of-ammo missile that'd block any later weapons
+            // from turning on.
+            if (!weapon.isPowered && weapon.hasEnoughMissiles) {
+                weapons.powerManager.setItemPower(slot, true)
+                continue
+            }
 
             if (!weapon.isCharged)
                 continue
