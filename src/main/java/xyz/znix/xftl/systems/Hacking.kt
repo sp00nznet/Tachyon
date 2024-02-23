@@ -268,7 +268,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         override val duration: Float get() = this@Hacking.duration
         override val isOff: Boolean
             get() = powerSelected == 0 || isPowerLocked || droneInFlight ||
-                    (droneLaunched && ship.dronesCount == 0)
+                    (!droneLaunched && ship.dronesCount == 0)
 
         override val forceHighlight: Boolean
             get() {
