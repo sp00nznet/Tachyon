@@ -216,6 +216,9 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             if (beacon.event.isDistressBeacon && !beacon.visited && showBasicInfo && !willBeOvertaken)
                 drawBeaconLabel(labelWhite, Constants.SECTOR_CUTOUT_TEXT, pos, game.translator["map_icon_distress"])
 
+            if (beacon.event.isLastStandRepair && !beacon.visited && !willBeOvertaken)
+                drawBeaconLabel(labelWhite, Constants.SECTOR_CUTOUT_TEXT, pos, game.translator["map_icon_repair"])
+
             // Note that quests and stores are cleared when the beacon is overrun,
             // so we don't have to check if willBeOvertaken is set.
             if (beacon.hasQuest && !beacon.visited)

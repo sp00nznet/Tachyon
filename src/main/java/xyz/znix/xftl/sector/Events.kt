@@ -70,6 +70,7 @@ class Event(
     val questName: String? = elem.getChild("quest")?.getAttributeValue("event")
 
     val revealMap: Boolean = elem.getChild("reveal_map") != null
+    val isLastStandRepair: Boolean = elem.getChild("repair") != null
 
     val fleetBackground: FleetBackground? = elem.getChildTextTrim("fleet")
         ?.let { name -> FleetBackground.values().first { it.xmlName == name } }
@@ -390,7 +391,7 @@ class Event(
             "ship", "img", "environment", "damage",
             "upgrade", "modifyPursuit", "status",
             "quest", "reveal_map", "remove", "fleet",
-            "unlockShip",
+            "unlockShip", "repair",
 
             // Used by the code loading the event
             "text", "choice"
