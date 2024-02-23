@@ -1577,11 +1577,16 @@ class Ship(
      * [deltaEvasion] is added to the ship's evasion for this calculation. Note
      * this is the opposite of [AbstractWeaponBlueprint.accuracyModifier], which
      * when positive reduces the effective evasion.
+     *
+     * If [missDeadEnemies] is true, this will always return true if this ship
+     * is an enemy ship that's been crew-killed. This should be set so that you
+     * can't kill an enemy ship with your in-flight volley after they surrender,
+     * however environmental stuff like asteroids should set this to false.
      */
-    fun pickMissed(deltaEvasion: Int = 0): Boolean {
+    fun pickMissed(deltaEvasion: Int = 0, missDeadEnemies: Boolean = true): Boolean {
         // Weapons fired at enemy ships before they surrender always
         // miss after a surrender.
-        if (!isPlayerShip && sys.getEnemyOf(this) == null)
+        if (!isPlayerShip && sys.getEnemyOf(this) == null && missDeadEnemies)
             return true
 
         val missed = Random.rollChance(evasion + deltaEvasion)

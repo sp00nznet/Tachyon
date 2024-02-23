@@ -281,6 +281,11 @@ abstract class AbstractProjectile(
 abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val target: Room) :
     AbstractProjectile(target.ship) {
 
+    /**
+     * See [Ship.pickMissed] for details.
+     */
+    protected open val missDeadEnemies: Boolean get() = true
+
     override val serialisationType: String get() = SERIALISATION_TYPE
 
     /**
@@ -406,7 +411,7 @@ abstract class AbstractWeaponProjectile(val type: AbstractWeaponBlueprint, val t
         if (missed != null)
             return
 
-        missed = target.ship.pickMissed(-type.accuracyModifier)
+        missed = target.ship.pickMissed(-type.accuracyModifier, missDeadEnemies)
 
         if (missed == true) {
             val missSound = type.missSounds?.get() ?: defaultMissSound

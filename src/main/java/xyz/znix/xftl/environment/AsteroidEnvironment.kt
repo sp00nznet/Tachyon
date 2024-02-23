@@ -224,6 +224,9 @@ class AsteroidProjectile(target: Room) : AbstractWeaponProjectile(TYPE, target) 
 
     override val isMissileForDD: Boolean get() = true
 
+    // Asteroids can kill ships that have surrendered
+    override val missDeadEnemies: Boolean get() = false
+
     // We need a custom serialisation type, since our fake blueprint isn't
     // in the blueprint manager and thus can't otherwise be deserialised.
     override val serialisationType: String get() = SERIALISATION_TYPE
