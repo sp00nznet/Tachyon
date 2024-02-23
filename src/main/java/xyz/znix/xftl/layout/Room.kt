@@ -324,7 +324,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         if (config.spec.interiorImage != null) {
             // Render the interior decals
             val bg = ship.sys.getImg(config.spec.interiorImage)
-            bg.draw(x, y)
+            bg.draw(x, y, 0.75f)
         } else if (config.computerPoint != null) {
             // AI ships rarely (never?) use proper room textures. For systems like
             // engines and piloting that can be manned, draw a standard computer image
