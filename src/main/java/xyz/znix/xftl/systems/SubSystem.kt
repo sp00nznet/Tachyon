@@ -49,6 +49,12 @@ abstract class SubSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint)
                     g.drawLine(x, y + 6, x + 16, y)
                 }
 
+                i >= undamagedEnergy -> {
+                    // System depowered due to ion
+                    g.colour = Constants.SYS_ENERGY_DEPOWERED
+                    g.drawRect(x, y, 16 - 1, 6 - 1)
+                }
+
                 else -> {
                     // Use the generic power bar visuals
                     ReactorEnergySource.drawSystemPowerBar(g, this, x, y, 16, 6)
