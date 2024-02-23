@@ -24,6 +24,19 @@ class BlueprintManager {
         // Load all the blueprints
         loader(this)
 
+        // If AE is enabled, rename all the OVERRIDE blueprints to
+        // remove that prefix - thus they'll be used instead of the
+        // original ones.
+        if (enableAE) {
+            // Use toList to duplicate the entries list, since we'll
+            // be mutating the main blueprints map.
+            for ((name, bp) in blueprints.entries.toList()) {
+                if (!name.startsWith(AE_PREFIX))
+                    continue
+                blueprints[name.removePrefix(AE_PREFIX)] = bp
+            }
+        }
+
         // Remove the now-redundant override entries - this is probably
         // unnecessary, but it'll ensure we don't end up accidentally
         // using something from AE in non-AE mode.
@@ -36,19 +49,6 @@ class BlueprintManager {
         for (bp in blueprints.values) {
             if (bp !is BlueprintList) continue
             bp.cleanup()
-        }
-
-        // If AE is enabled, rename all the OVERRIDE blueprints to
-        // remove that prefix - thus they'll be used instead of the
-        // original ones.
-        if (enableAE) {
-            // Use toList to duplicate the entries list, since we'll
-            // be mutating the main blueprints map.
-            for ((name, bp) in blueprints.entries.toList()) {
-                if (!name.startsWith(AE_PREFIX))
-                    continue
-                blueprints[name.removePrefix(AE_PREFIX)] = bp
-            }
         }
     }
 
