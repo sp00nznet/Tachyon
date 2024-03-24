@@ -21,6 +21,15 @@ abstract class Window {
      */
     open val windowCentreOffset: IPoint get() = ConstPoint.ZERO
 
+    /**
+     * If true, the window applies the background grey-out tint itself.
+     *
+     * (this is what makes everything in-game darker when a window is open)
+     *
+     * If not, the tint is applied by [PlayerShipUI] before the window is drawn.
+     */
+    open val appliesSelfTint: Boolean = false
+
     abstract val size: IPoint
 
     val buttons = ArrayList<Button>()

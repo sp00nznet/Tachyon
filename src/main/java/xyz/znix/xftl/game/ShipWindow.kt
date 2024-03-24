@@ -22,6 +22,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     // Make the system power stuff visible
     override val windowCentreOffset = ConstPoint(-10, 0)
 
+    override val appliesSelfTint: Boolean get() = crewToDismiss != null
+
     private val acceptButtonImage = game.getImg("img/upgradeUI/buttons_accept_base.png")
     private val undoButtonImage = game.getImg("img/upgradeUI/buttons_undo_base.png")
 
@@ -50,6 +52,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private val crewDismissWidgetPos = Point(0, 0)
     private var crewToDismiss: LivingCrew? = null
     private var crewDismissWidgetButtons: List<Button> = emptyList()
+    private val dismissHighlightButtons = ArrayList<Button>()
 
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
@@ -94,6 +97,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
     private fun updateButtons() {
         buttons.clear()
+        dismissHighlightButtons.clear()
 
         equipmentPanel.position = position
 
@@ -144,11 +148,38 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             updatingButtons = false
         }
 
-        for (button in buttons) {
-            button.draw(g)
+        // When we're dismissing crew we grey out everything else, this
+        // means fiddling with how the buttons are drawn.
+        if (crewToDismiss != null) {
+            drawButtonsDismissing(g)
+        } else {
+            for (button in buttons) {
+                button.draw(g)
+            }
         }
 
         equipmentPanel.drawDrag(g)
+    }
+
+    private fun drawButtonsDismissing(g: Graphics) {
+        for (button in buttons) {
+            if (dismissHighlightButtons.contains(button))
+                continue
+
+            button.draw(g)
+        }
+
+        // The dismiss popup has to be drawn over the buttons that make up other crewmembers
+        game.shipUI.drawWindowBackgroundTint(g)
+
+        for (button in dismissHighlightButtons) {
+            button.draw(g)
+        }
+
+        g.pushTransform()
+        g.translate(position.x + crewDismissWidgetPos.x.f, position.y + crewDismissWidgetPos.y.f)
+        crewDismissWidget.draw(g)
+        g.popTransform()
     }
 
     override fun shipModified() {
@@ -494,17 +525,10 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             drawCrewBox(g, crew, ConstPoint(324, 88 + 133 * 2), 7)
         }
 
-        if (crewToDismiss != null) {
-            g.pushTransform()
-            g.translate(position.x + crewDismissWidgetPos.x.f, position.y + crewDismissWidgetPos.y.f)
-            crewDismissWidget.draw(g)
-            g.popTransform()
-
-            if (updatingButtons) {
-                crewDismissWidgetButtons = crewDismissWidget.buildButtons(game, this, crewDismissWidgetPos)
-                for (button in crewDismissWidgetButtons) {
-                    button.windowOffset = position
-                }
+        if (crewToDismiss != null && updatingButtons) {
+            crewDismissWidgetButtons = crewDismissWidget.buildButtons(game, this, crewDismissWidgetPos)
+            for (button in crewDismissWidgetButtons) {
+                button.windowOffset = position
             }
         }
 
@@ -546,7 +570,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         if (!updatingButtons)
             return
 
-        buttons += object : Button(game, boxPos, boxNormal.imageSize) {
+        val mainButton = object : Button(game, boxPos, boxNormal.imageSize) {
             override val makesHoverNoise: Boolean get() = false
 
             override fun draw(g: Graphics) {
@@ -582,13 +606,22 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             }
         }
 
-        buttons += Buttons.BasicButton(
+        val dismissButton = Buttons.BasicButton(
             game, boxPos + ConstPoint(4, 70), ConstPoint(92, 12),
             game.translator["crewbox_dismiss"],
             2, dismissFont, 9
         ) {
             crewToDismiss = crew
             updateButtons()
+        }
+
+        buttons += mainButton
+        buttons += dismissButton
+
+        // Don't grey out the buttons corresponding to crew we're about to dismiss
+        if (crewToDismiss == crew) {
+            dismissHighlightButtons += mainButton
+            dismissHighlightButtons += dismissButton
         }
     }
 

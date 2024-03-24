@@ -28,7 +28,6 @@ import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.util.*
 import kotlin.math.*
-import kotlin.random.Random
 
 class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val font = game.getFont("HL2", 2f)
@@ -145,6 +144,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val beamTargetingStartPos = Point(0, 0)
 
     // Set by render
+    private var width: Int = 500
     private var height: Int = 500
 
     // The last position of the cursor. Try to avoid using this if possible, there's
@@ -490,6 +490,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun render(gc: GameContainer, g: Graphics) {
+        width = gc.width
         height = gc.height
 
         // Update the buttons if crew have been added or removed, as this
@@ -915,9 +916,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     private fun renderSingleMenu(container: GameContainer, g: Graphics, window: Window) {
-        // Add the tint over all the regular game stuff to make the window clearer.
-        g.colour = Colour(0f, 0f, 0f, 0.65f)
-        g.fillRect(0f, 0f, container.width.f, container.height.f)
+        if (!window.appliesSelfTint) {
+            drawWindowBackgroundTint(g)
+        }
 
         // Don't let tooltips show up through the tint
         g.tooltip = null
@@ -929,6 +930,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         )
 
         window.draw(g)
+    }
+
+    fun drawWindowBackgroundTint(g: Graphics) {
+        // Add the tint over all the regular game stuff to make the window clearer.
+        g.colour = Colour(0f, 0f, 0f, 0.65f)
+        g.fillRect(0, 0, width, height)
     }
 
     private fun drawTopBar(g: Graphics) {
