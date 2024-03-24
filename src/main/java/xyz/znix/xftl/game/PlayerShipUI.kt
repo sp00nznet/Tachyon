@@ -114,6 +114,15 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         game, ConstPoint(825, 64), "warning_ion_pulse", false, alwaysOn = true
     )
 
+    private val hullTooltip = FixedStandardTooltip(game, "tooltip_hull")
+    private val scrapTooltip = FixedStandardTooltip(game, "tooltip_scrapCount")
+    private val fuelTooltip = FixedStandardTooltip(game, "tooltip_fuelCount")
+    private val missileTooltip = FixedStandardTooltip(game, "tooltip_missileCount")
+    private val droneTooltip = FixedStandardTooltip(game, "tooltip_droneCount")
+    private val shieldTooltip = FixedStandardTooltip(game, "tooltip_shieldDisplay")
+    private val evasionTooltip = FixedStandardTooltip(game, "tooltip_evadeDisplay")
+    private val oxygenTooltip = FixedStandardTooltip(game, "tooltip_oxygenDisplay")
+
     private var lastHealth: Int = -1
 
     val isWindowOpen: Boolean get() = currentWindow != null || pauseWindow != null
@@ -137,6 +146,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
     // Set by render
     private var height: Int = 500
+
+    // The last position of the cursor. Try to avoid using this if possible, there's
+    // usually a better way to do stuff with a button.
+    private val mousePos = Point(0, 0)
 
     // The time remaining on the insufficient scrap flash animation
     private var insufficientScrapTimer: Float = 0f
@@ -926,6 +939,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         UIUtils.drawTab(font, hullText, hullLabelImg, 0f, 0f, 10f, 30f)
         font.drawString(9f, 25f, hullText, UI_TEXT_COLOUR_1)
 
+        if (mousePos.x in 10..370 && mousePos.y in 20..45) {
+            g.tooltip = hullTooltip
+        }
+
         // Draw the hull bar
 
         // TODO support ships with more or less health
@@ -982,6 +999,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val rdt = ResourceDeltaText(460f, 30f, deltaScrap)
             rdt.x += VisualRandom.nextInt(-10, 10)
             resourceDeltaAnimations.add(rdt)
+        }
+
+        if (mousePos.x in 383..505 && mousePos.y in 11..46) {
+            g.tooltip = scrapTooltip
         }
 
         // Going down the side, for the shields/oxygen
@@ -1056,7 +1077,18 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             shieldsWarning.draw(g)
         }
 
-        fun drawSmallCounter(name: String, x: Int, numAreaOffset: Int, count: Int, delta: Int, redThreshold: Int) {
+        if (mousePos.x in 12..128 && mousePos.y in 50..77) {
+            g.tooltip = shieldTooltip
+        }
+
+        fun drawSmallCounter(
+            name: String,
+            x: Int,
+            numAreaOffset: Int,
+            count: Int, delta: Int,
+            redThreshold: Int,
+            tooltip: ITooltipProvider
+        ) {
             val suffix = when {
                 count <= redThreshold -> "_red"
                 else -> ""
@@ -1074,6 +1106,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (delta != 0) {
                 val rdt = ResourceDeltaText(x + 40f, 65f, delta)
                 resourceDeltaAnimations.add(rdt)
+            }
+
+            if (mousePos.x in x + 7..x + 7 + 59 && mousePos.y in shieldY + 7..shieldY + 7 + 26) {
+                g.tooltip = tooltip
             }
         }
 
@@ -1100,13 +1136,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         lastResources.droneParts = ship.dronesCount
 
         // Fuel shows as red when there's three or less left.
-        drawSmallCounter("fuel", shieldsEndX, 0, ship.fuelCount, deltaFuel, 3)
+        drawSmallCounter("fuel", shieldsEndX, 0, ship.fuelCount, deltaFuel, 3, fuelTooltip)
 
         // Missiles only show as red when there's none left.
-        drawSmallCounter("missiles", shieldsEndX + 66, 1, ship.missilesCount, deltaMissiles, 0)
+        drawSmallCounter("missiles", shieldsEndX + 66, 1, ship.missilesCount, deltaMissiles, 0, missileTooltip)
 
         // Same for drones.
-        drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, ship.dronesCount, deltaDrones, 0)
+        drawSmallCounter("drones", shieldsEndX + 66 + 70, -2, ship.dronesCount, deltaDrones, 0, droneTooltip)
 
         // Oxygen and evasion indicator
 
@@ -1141,6 +1177,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         // Oxygen
         oxygenEvadeFont.drawStringLeftAligned(evadeTextRight, oxyY + 37f, "$avgOxygen%", Colour.white)
+
+        if (mousePos.x in 8..98 && mousePos.y in oxyY..oxyY + 20) {
+            g.tooltip = evasionTooltip
+        }
+        if (mousePos.x in 8..98 && mousePos.y in oxyY + 22..oxyY + 42) {
+            g.tooltip = oxygenTooltip
+        }
 
         // Draw all the crew boxes
         crewBaseY = oxyY + 59
@@ -1368,6 +1411,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun updateUI(x: Int, y: Int, playerShipPosition: IPoint) {
+        mousePos.set(x, y)
+
         pauseWindow?.let { win ->
             win.updateUI(x, y)
             return

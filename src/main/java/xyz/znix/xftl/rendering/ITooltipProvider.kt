@@ -3,10 +3,6 @@ package xyz.znix.xftl.rendering
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.rendering.TooltipConstants.BOX_BOTTOM_OFFSET
-import xyz.znix.xftl.rendering.TooltipConstants.BOX_LEFT_OFFSET
-import xyz.znix.xftl.rendering.TooltipConstants.BOX_TOP_OFFSET
-import xyz.znix.xftl.rendering.TooltipConstants.LINE_SPACING
 
 /**
  * Represents something that can draw a tooltip.
@@ -23,17 +19,44 @@ interface ITooltipProvider {
     )
 }
 
+abstract class StandardTooltip(game: InGameState) : ITooltipProvider {
+    private val font = game.getFont("JustinFont11Bold")
+
+    abstract fun getText(): String
+
+    override fun drawTooltip(
+        g: Graphics,
+        mouseX: Int, mouseY: Int,
+        firstFrame: Boolean,
+        screenWidth: Int, screenHeight: Int
+    ) {
+        // From base game: 350 with title, 275 without.
+        // (note this might be swapped, you may want to double-check. However,
+        //  the 350px doesn't seem to match the jump button)
+        val lines = font.wrapString(getText(), 275)
+
+        val height = TooltipConstants.heightOf(lines)
+        val width = TooltipConstants.widthOf(lines, font)
+
+        // Find the X/Y that keeps the tooltip inside the window
+        val x = mouseX.coerceAtMost(screenWidth - 40 - width)
+        var y = mouseY + 20
+
+        if (y + height >= screenHeight - 30) {
+            y = mouseY - height - 10
+        }
+
+        TooltipConstants.drawTooltip(g, font, x, y, width, height, lines)
+    }
+}
+
 /**
  * A tooltip that only shows up if the user stops moving the mouse for a period.
  *
  * TODO: Don't use InGameState
  */
-abstract class DelayedTooltip(private val game: InGameState) : ITooltipProvider {
+abstract class DelayedTooltip(private val game: InGameState) : StandardTooltip(game) {
     open val delayPeriod: Float = 0.25f // TODO check the actual value?
-
-    abstract fun getText(): String
-
-    private val font = game.getFont("JustinFont11Bold")
 
     private var showing: Boolean = false
     private var timer: Float = 0f
@@ -66,23 +89,7 @@ abstract class DelayedTooltip(private val game: InGameState) : ITooltipProvider 
             return
         }
 
-        // From base game: 350 with title, 275 without.
-        // (note this might be swapped, you may want to double-check. However,
-        //  the 350px doesn't seem to match the jump button)
-        val lines = font.wrapString(getText(), 275)
-
-        val height = TooltipConstants.heightOf(lines)
-        val width = TooltipConstants.widthOf(lines, font)
-
-        // Find the X/Y that keeps the tooltip inside the window
-        val x = mouseX.coerceAtMost(screenWidth - 40 - width)
-        var y = mouseY + 20
-
-        if (y + height >= screenHeight - 30) {
-            y = mouseY - height - 10
-        }
-
-        TooltipConstants.drawTooltip(g, font, x, y, width, height, lines)
+        super.drawTooltip(g, mouseX, mouseY, false, screenWidth, screenHeight)
     }
 }
 
@@ -90,6 +97,15 @@ abstract class DelayedTooltip(private val game: InGameState) : ITooltipProvider 
  * A [DelayedTooltip] instance that shows a translated string.
  */
 class FixedDelayedTooltip(private val game: InGameState, val textKey: String) : DelayedTooltip(game) {
+    override fun getText(): String {
+        return game.translator[textKey]
+    }
+}
+
+/**
+ * A [StandardTooltip] instance that shows a translated string.
+ */
+class FixedStandardTooltip(private val game: InGameState, val textKey: String) : StandardTooltip(game) {
     override fun getText(): String {
         return game.translator[textKey]
     }
