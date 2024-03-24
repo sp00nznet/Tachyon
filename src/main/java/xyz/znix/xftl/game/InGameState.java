@@ -74,6 +74,8 @@ public class InGameState extends MainGame.GameState {
     private RoomClickListener clickEvent;
     private final boolean[] mouseDownPrev = new boolean[3];
 
+    private ITooltipProvider lastFameTooltip;
+
     private PlayerShipUI shipUI;
     private HostileShipUI hostileShipUI;
 
@@ -584,8 +586,21 @@ public class InGameState extends MainGame.GameState {
         shipUI.renderMenus(container, g);
 
         if (debugConsoleVisible) {
+            g.setTooltip(null);
             getDebugConsole().render(container, g);
         }
+
+        // Render the tooltip
+        ITooltipProvider tooltip = g.getTooltip();
+        if (tooltip != null) {
+            Input in = container.getInput();
+            tooltip.drawTooltip(g,
+                    in.getMouseX(), in.getMouseY(),
+                    tooltip != lastFameTooltip,
+                    container.getWidth(), container.getHeight()
+            );
+        }
+        lastFameTooltip = tooltip;
     }
 
     /**

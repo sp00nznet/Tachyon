@@ -358,28 +358,6 @@ class LivingCrewInfo(
         }
     }
 
-    fun getSkillDescription(game: InGameState, skill: Skill): String {
-        val level = getSkillLevel(skill)
-        val levelNum = level.ordinal
-
-        return when (skill) {
-            Skill.PILOTING -> game.translator["pilot_skill"].replaceArg(Piloting.SKILL_BONUSES[levelNum])
-            Skill.ENGINES -> game.translator["engine_skill"].replaceArg(Engines.SKILL_BONUSES[levelNum])
-            Skill.SHIELDS -> game.translator["shield_skill"].replaceArg(Shields.SKILL_BONUSES[levelNum])
-            Skill.WEAPONS -> game.translator["weapon_skill"].replaceArg(Weapons.SKILL_BONUSES[levelNum])
-
-            Skill.REPAIRS -> when (level) {
-                SkillLevel.BASE -> game.translator["repair_0"]
-                else -> game.translator["repair_skilled"].replaceArg(LivingCrew.REPAIR_SKILL_BONUS[levelNum])
-            }
-
-            Skill.COMBAT -> when (level) {
-                SkillLevel.BASE -> game.translator["combat_0"]
-                else -> game.translator["combat_skilled"].replaceArg(LivingCrew.COMBAT_SKILL_BONUS[levelNum])
-            }
-        }
-    }
-
     fun drawSkillProgressBar(g: Graphics, x: Int, y: Int, width: Int, height: Int, skill: Skill) {
         val level = getSkillLevel(skill)
 
@@ -561,6 +539,27 @@ enum class Skill(
     // of no skills to yellow (with green being 0.5), while actionsPerLevel
     // is the number of actions to make one colour change (or 0.5 progress).
     val amountPerAction = 1f / (actionsPerLevel * 2f)
+
+    fun getDescription(game: InGameState, level: SkillLevel): String {
+        val levelNum = level.ordinal
+
+        return when (this) {
+            PILOTING -> game.translator["pilot_skill"].replaceArg(Piloting.SKILL_BONUSES[levelNum])
+            ENGINES -> game.translator["engine_skill"].replaceArg(Engines.SKILL_BONUSES[levelNum])
+            SHIELDS -> game.translator["shield_skill"].replaceArg(Shields.SKILL_BONUSES[levelNum])
+            WEAPONS -> game.translator["weapon_skill"].replaceArg(Weapons.SKILL_BONUSES[levelNum])
+
+            REPAIRS -> when (level) {
+                SkillLevel.BASE -> game.translator["repair_0"]
+                else -> game.translator["repair_skilled"].replaceArg(LivingCrew.REPAIR_SKILL_BONUS[levelNum])
+            }
+
+            COMBAT -> when (level) {
+                SkillLevel.BASE -> game.translator["combat_0"]
+                else -> game.translator["combat_skilled"].replaceArg(LivingCrew.COMBAT_SKILL_BONUS[levelNum])
+            }
+        }
+    }
 }
 
 enum class SkillLevel {

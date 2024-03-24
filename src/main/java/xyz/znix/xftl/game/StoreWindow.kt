@@ -7,6 +7,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.HotkeyDelayedTooltip
 import xyz.znix.xftl.sys.Input
 
 class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, private val close: () -> Unit) :
@@ -36,7 +37,8 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     private val buyTabButton = SimpleButton(
         game, ConstPoint(0, 0), ConstPoint(170, 46), ConstPoint(0, 0),
         game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_on.png"),
-        game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_select2.png")
+        game.getImg("img/upgradeUI/Equipment/tabButtons/sell_buy_select2.png"),
+        null
     ) {
         sellTab = false
     }
@@ -44,7 +46,8 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
     private val sellTabButton = SimpleButton(
         game, ConstPoint(163, 0), ConstPoint(179, 46), ConstPoint(0, 0),
         game.getImg("img/upgradeUI/Equipment/tabButtons/buy_sell_on.png"),
-        game.getImg("img/upgradeUI/Equipment/tabButtons/buy_sell_select2.png")
+        game.getImg("img/upgradeUI/Equipment/tabButtons/buy_sell_select2.png"),
+        null
     ) {
         sellTab = true
     }
@@ -53,7 +56,8 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         game, ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
         ConstPoint(5, 5), ConstPoint(111, 24),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_on.png"),
-        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_select2.png")
+        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page2_select2.png"),
+        HotkeyDelayedTooltip(game, "hotkey")
     ) {
         secondBuyTab = false
     }
@@ -61,7 +65,8 @@ class StoreWindow(val game: InGameState, val ship: Ship, val store: StoreData, p
         game, ConstPoint(GLOW_WIDTH + 348 - 3, GLOW_WIDTH + 9 - 5),
         ConstPoint(119, 5), ConstPoint(111, 24),
         game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_on.png"),
-        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_select2.png")
+        game.getImg("img/upgradeUI/Equipment/tabButtons/store_page1_select2.png"),
+        HotkeyDelayedTooltip(game, "hotkey")
     ) {
         secondBuyTab = true
     }

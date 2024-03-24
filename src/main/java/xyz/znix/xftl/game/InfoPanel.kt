@@ -132,7 +132,8 @@ class InfoPanel(private val game: InGameState) {
             info.drawSkillProgressBar(g, iconX + 30, iconY + 8, 110, 9, skill)
 
             // Draw the description text
-            val baseDescription = info.getSkillDescription(game, skill)
+            val level = info.getSkillLevel(skill)
+            val baseDescription = skill.getDescription(game, level)
             val skillLocName = when (skill) {
                 Skill.PILOTING -> "pilot"
                 Skill.ENGINES -> "engines"

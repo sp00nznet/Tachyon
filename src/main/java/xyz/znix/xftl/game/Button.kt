@@ -3,9 +3,7 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.*
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Colour
-import xyz.znix.xftl.rendering.Graphics
-import xyz.znix.xftl.rendering.Image
+import xyz.znix.xftl.rendering.*
 import xyz.znix.xftl.sys.Input
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
@@ -27,6 +25,12 @@ abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint
     val size = size.const
 
     var hovered: Boolean = false
+        private set
+
+    /**
+     * Like [hovered], but also set to true if the button is disabled.
+     */
+    var rawHovered: Boolean = false
         private set
 
     /**
@@ -72,13 +76,15 @@ abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint
     open fun update(x: Int, y: Int, blockHover: Boolean = false) {
         mouseObstructed = blockHover
 
+        rawHovered = contains(x, y)
+
         if (disabled || mouseObstructed) {
             hovered = false
             return
         }
 
         val lastHover = hovered
-        hovered = contains(x, y)
+        hovered = rawHovered
 
         if (hovered && !lastHover && makesHoverNoise) {
             game.sounds.getSample("hoverBeep").play()
@@ -92,7 +98,7 @@ abstract class Button(protected val game: InGameState, pos: IPoint, size: IPoint
 
 class SimpleButton(
     game: InGameState, pos: IPoint, size: IPoint, imgOffset: IPoint,
-    val normal: Image, val hover: Image?,
+    val normal: Image, val hover: Image?, val tooltip: ITooltipProvider?,
     private val callback: (Int) -> Unit
 ) : Button(game, pos, size) {
     val imgOffset = imgOffset.const
@@ -103,6 +109,10 @@ class SimpleButton(
         if (hovered && hover != null)
             image = hover
         image.draw(imagePos)
+
+        if (hovered) {
+            g.tooltip = tooltip
+        }
     }
 
     override fun positionUpdated() {
@@ -117,10 +127,10 @@ class SimpleButton(
         // rather than using pos and imgOffset to achive it.
         fun byRegion(
             game: InGameState, pos: IPoint, buttonOffset: IPoint, buttonSize: IPoint,
-            normal: Image, hover: Image?,
+            normal: Image, hover: Image?, tooltip: ITooltipProvider?,
             callback: (Int) -> Unit
         ): SimpleButton {
-            return SimpleButton(game, pos + buttonOffset, buttonSize, buttonOffset, normal, hover, callback)
+            return SimpleButton(game, pos + buttonOffset, buttonSize, buttonOffset, normal, hover, tooltip, callback)
         }
     }
 }
@@ -184,6 +194,8 @@ object Buttons {
         private var pulloutPos: Float = 0f
 
         private var firstUpdate = true
+
+        private val tooltip = HotkeyDelayedTooltip(game, "jump_button")
 
         override fun draw(g: Graphics) {
             val ftlX = pos.x + 6
@@ -252,6 +264,10 @@ object Buttons {
                 game.translator["ftl_drive"],
                 Constants.SECTOR_CUTOUT_TEXT
             )
+
+            if (hovered) {
+                g.tooltip = tooltip
+            }
         }
 
         override fun click(button: Int) {
@@ -301,6 +317,8 @@ object Buttons {
 
         override val disabled: Boolean get() = game.isInDanger
 
+        private val tooltip = HotkeyDelayedTooltip(game, "ship_info")
+
         override fun draw(g: Graphics) {
             val img = when {
                 disabled -> imgOff
@@ -309,6 +327,10 @@ object Buttons {
             }
 
             img.draw(imgPos)
+
+            if (rawHovered) {
+                g.tooltip = tooltip
+            }
         }
 
         override fun click(button: Int) {
@@ -326,6 +348,8 @@ object Buttons {
 
         private val font = game.getFont("HL2", 2f)
 
+        private val tooltip = HotkeyDelayedTooltip(game, "open_store")
+
         override fun draw(g: Graphics) {
             imgBase.draw(imgPos)
 
@@ -335,6 +359,7 @@ object Buttons {
             if (hovered) {
                 g.colour = Constants.UI_BUTTON_HOVER
                 drawRounded(g, imgPos.x + 12, imgPos.y + 12, 78, 31, 3)
+                g.tooltip = tooltip
             }
 
             font.drawString(pos.x + 11f, pos.y + 26f, "STORE", Constants.JUMP_DISABLED_TEXT)

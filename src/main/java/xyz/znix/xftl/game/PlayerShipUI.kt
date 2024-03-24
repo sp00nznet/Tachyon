@@ -16,9 +16,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
-import xyz.znix.xftl.rendering.Colour
-import xyz.znix.xftl.rendering.Cursor
-import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.*
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sector.Event
@@ -39,6 +37,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private val weaponNumberFont = game.getFont("c&c")
     private val numberFont = game.getFont("num_font")
     private val oxygenEvadeFont = game.getFont("JustinFont10")
+    private val tooltipFont = game.getFont("JustinFont11Bold")
 
     private val numberDeltaFont = game.getFont("HL2", 3f)
     private val numberDeltaFontBg = game.getFont("HL1", 3f)
@@ -201,7 +200,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val settings = SimpleButton(
             game, nextPos, ConstPoint(41, 41), ConstPoint(7, 7),
             game.getImg("img/statusUI/top_optionswrench_on.png"),
-            game.getImg("img/statusUI/top_optionswrench_select2.png")
+            game.getImg("img/statusUI/top_optionswrench_select2.png"),
+            FixedDelayedTooltip(game, "open_options")
         ) {
             showPauseWindow()
         }
@@ -898,6 +898,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         g.colour = Colour(0f, 0f, 0f, 0.65f)
         g.fillRect(0f, 0f, container.width.f, container.height.f)
 
+        // Don't let tooltips show up through the tint
+        g.tooltip = null
+
         // Centre the window.
         window.position = window.windowCentreOffset + ConstPoint(
             (container.width - window.size.x) / 2,
@@ -1156,11 +1159,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             val base = game.getImg("img/statusUI/button_station_base.png")
 
             buttons += object : Button(game, ConstPoint(19 + 5, crewSaveLoadY + 5), saveImg.normal.imageSize) {
+                val tooltip = HotkeyDelayedTooltip(game, "save_stations_tooltip")
+
                 override fun draw(g: Graphics) {
                     // 7px glow, and the button is 5px inside the wrapper
                     base.draw(pos.x - 5 - 7, crewSaveLoadY - 7)
 
                     saveImg.pick(this).draw(pos)
+
+                    if (hovered) {
+                        g.tooltip = tooltip
+                    }
                 }
 
                 override fun click(button: Int) {
@@ -1172,11 +1181,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             }
 
             buttons += object : Button(game, ConstPoint(58 + 5, crewSaveLoadY + 5), loadImg.normal.imageSize) {
+                val tooltip = HotkeyDelayedTooltip(game, "ret_stations_tooltip")
+
                 override fun draw(g: Graphics) {
                     // 7px glow, and the button is 5px inside the wrapper
                     base.draw(pos.x - 5 - 7, crewSaveLoadY - 7)
 
                     loadImg.pick(this).draw(pos)
+
+                    if (hovered) {
+                        g.tooltip = tooltip
+                    }
                 }
 
                 override fun click(button: Int) {
@@ -1280,6 +1295,30 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         if (cloneDyingProgress > 0f) {
             g.colour = CREW_BOX_CLONE_DYING_OVERLAY
             g.fillRect(x.f, y.f, CREW_BOX_WIDTH.f, CREW_BOX_HEIGHT * cloneDyingProgress)
+        }
+
+        // Add the tooltip
+        if (drawSkills) {
+            g.tooltip = object : ITooltipProvider {
+                override fun drawTooltip(
+                    g: Graphics,
+                    mouseX: Int, mouseY: Int,
+                    firstFrame: Boolean,
+                    screenWidth: Int, screenHeight: Int
+                ) {
+                    val lines = listOf(
+                        game.translator["health_tooltip"]
+                            .replace("\\1", crew.health.roundToInt().toString())
+                            .replace("\\2", crew.maxHealth.roundToInt().toString()),
+                        game.translator["hotkey"] // TODO
+                    )
+
+                    val width = TooltipConstants.widthOf(lines, tooltipFont)
+                    val height = TooltipConstants.heightOf(lines)
+
+                    TooltipConstants.drawTooltip(g, tooltipFont, x + 181, y, width, height, lines)
+                }
+            }
         }
     }
 
@@ -1866,8 +1905,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // to activate any hovering-related stuff for something you can't click.
         override val disabled: Boolean get() = system !is MainSystem
 
+        private val tooltip = system.createTooltip()
+
         override fun draw(g: Graphics) {
             system.drawIconAndPower(game, g, true, true, pos.x, pos.y)
+
+            if (rawHovered) {
+                g.tooltip = tooltip
+            }
         }
 
         override fun click(button: Int) {

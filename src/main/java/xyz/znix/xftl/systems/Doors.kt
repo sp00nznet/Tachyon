@@ -9,6 +9,7 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.HotkeyDelayedTooltip
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.sys.Input
@@ -67,6 +68,8 @@ class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
         override val disabled: Boolean get() = broken || isHackActive
 
+        private val tooltip = HotkeyDelayedTooltip(game, if (open) "open_doors" else "close_doors")
+
         override fun draw(g: Graphics) {
             val img = when {
                 disabled -> imgSet.off
@@ -79,6 +82,10 @@ class Doors(blueprint: SystemBlueprint) : SubSystem(blueprint) {
                 powerPos.x + 22 - 6,
                 powerPos.y - 49 - 6
             )
+
+            if (hovered) {
+                g.tooltip = tooltip
+            }
         }
 
         override fun click(button: Int) {

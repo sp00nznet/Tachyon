@@ -8,12 +8,14 @@ import xyz.znix.xftl.crew.SkillLevel
 import xyz.znix.xftl.game.Button
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.ShipBlueprint
+import xyz.znix.xftl.game.SystemButtonTooltip
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.ITooltipProvider
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -480,6 +482,10 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         if (showManning) {
             drawManningIcon(g, barX, statusIconY)
         }
+    }
+
+    open fun createTooltip(): ITooltipProvider {
+        return SystemButtonTooltip(ship.sys, this)
     }
 
     protected open fun drawManningIcon(g: Graphics, x: Int, y: Int) {

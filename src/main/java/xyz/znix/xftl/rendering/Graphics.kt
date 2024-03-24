@@ -15,6 +15,16 @@ class Graphics {
 
     var colour: Colour = Colour.white
 
+    /**
+     * The tooltip provider for whatever is currently moused over.
+     *
+     * It's a bit of a hack to put this in here, but every other option is worse.
+     *
+     * This isn't actually read by this class, instead whatever state (eg the
+     * in-game or menu state) should read and render from it.
+     */
+    var tooltip: ITooltipProvider? = null
+
     // The stack of transforms from pushTransform/popTransform calls.
     private val transformStack = ArrayList<Matrix3f>()
 
@@ -292,6 +302,9 @@ class Graphics {
 
         // In case something went horribly wrong last frame
         flushSuppression = 0
+
+        // We don't want the tooltip to stick around between frames.
+        tooltip = null
     }
 
     fun checkNoPushedTransforms() {
