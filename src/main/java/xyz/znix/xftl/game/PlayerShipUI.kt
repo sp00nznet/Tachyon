@@ -805,6 +805,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                             !wasPowered && button == Input.MOUSE_LEFT_BUTTON -> powerUpFailSound.play()
                         }
                     }
+
+                    override fun draw(g: Graphics) {
+                        super.draw(g)
+
+                        if (info?.instance != null) {
+                            game.getImg("img/ui_icons/icon_drones.png").draw(pos.x + 43 - 9, pos.y + 18 - 8, mainColour)
+                        }
+                    }
                 }
             }
         }
