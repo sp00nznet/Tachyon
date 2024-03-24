@@ -31,6 +31,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private val numberFont = game.getFont("num_font")
     private val reactorFont = game.getFont("HL1", 2f)
     private val crewNameFont = game.getFont("JustinFont8")
+    private val crewMessageFont = game.getFont("JustinFont10")
     private val dismissFont = game.getFont("HL1")
     private val maxFont = game.getFont("HL1", 2f)
 
@@ -503,6 +504,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
 
     private fun drawCrew(g: Graphics) {
         val crew = ship.sys.playerCrew
+
+        crewMessageFont.drawString(position.x + 19f, position.y + 67f, game.translator["rename_note"], Colour.white)
 
         // First row
         drawCrewBox(g, crew, ConstPoint(68 + 170 * 0, 88 + 133 * 0), 0)
