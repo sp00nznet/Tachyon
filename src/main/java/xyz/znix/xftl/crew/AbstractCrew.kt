@@ -742,8 +742,10 @@ abstract class AbstractCrew(
             val healthBox = game.getImg("img/people/health_box.png")
             healthBox.draw(screenX - 1f, screenY.f)
 
+            val friendly = (mode == SlotType.CREW) == room.ship.isPlayerShip
+
             val width = ceil(25f * health / maxHealth).toInt()
-            g.colour = Colour.green
+            g.colour = if (friendly) Colour.green else Colour.red
             g.fillRect(screenX + 4f, screenY + 3f, width.f, 3f)
         }
     }
