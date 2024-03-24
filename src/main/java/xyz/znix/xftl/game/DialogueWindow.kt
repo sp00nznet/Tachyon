@@ -513,12 +513,10 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         var textY = y
         var longestLine = 0
 
-        for (line in msg.split("\n")) {
-            for (splitLine in font.wrapString(line, maxWidth.toInt())) {
-                longestLine = longestLine.coerceAtLeast(font.getWidth(splitLine))
-                font.drawString(textX.f, textY.f, splitLine, colour)
-                textY += 20
-            }
+        for (line in font.wrapString(msg, maxWidth.toInt())) {
+            longestLine = longestLine.coerceAtLeast(font.getWidth(line))
+            font.drawString(textX.f, textY.f, line, colour)
+            textY += 20
         }
 
         // Remove the space used by the last line.
