@@ -77,4 +77,15 @@ abstract class Window {
      * weapons are added or moved around.
      */
     open fun shipModified() {}
+
+    /**
+     * Called when some text is inputted.
+     *
+     * For actual text input only - don't use it for hotkeys!
+     *
+     * @return True if the window consumed the key input.
+     */
+    open fun onTextInput(key: Int, c: Char): Boolean {
+        return false
+    }
 }

@@ -12,6 +12,7 @@ import xyz.znix.xftl.systems.SubSystem
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.ui.Label
 import xyz.znix.xftl.ui.WidgetContainer
+import kotlin.math.max
 
 private typealias UndoFn = () -> Unit
 
@@ -54,6 +55,10 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private var crewToDismiss: LivingCrew? = null
     private var crewDismissWidgetButtons: List<Button> = emptyList()
     private val dismissHighlightButtons = ArrayList<Button>()
+
+    // If non-null, this is the crewmember whose name we're changing
+    private var renamingCrew: LivingCrew? = null
+    private var cursorFlashTimer = 0f
 
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
@@ -576,6 +581,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         val mainButton = object : Button(game, boxPos, boxNormal.imageSize) {
             override val makesHoverNoise: Boolean get() = false
 
+            var nameHover = false
+
             override fun draw(g: Graphics) {
                 val box = if (hovered) boxHover else boxNormal
                 box.draw(pos)
@@ -583,10 +590,43 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 val dismissBox = if (hovered) dismissButtonBoxHover else dismissButtonBox
                 dismissBox.draw(pos.x.f, pos.y + 62f)
 
-                // Draw the name
-                val name = crew.info.shortName
-                val nameX = (96 - crewNameFont.getWidth(name)) / 2
-                crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, Colour.white)
+                if (renamingCrew == crew) {
+                    // Draw the rename box
+                    val width = 150
+                    val height = 23
+                    val boxX = pos.x + (size.x - width) / 2
+                    val boxY = pos.y + 43
+
+                    g.colour = Colour.white
+                    g.fillRect(boxX, boxY, width, height)
+                    g.colour = Colour.black
+                    g.fillRect(boxX + 1, boxY + 1, width - 2, height - 2)
+
+                    val name = crew.info.name
+                    val nameWidth = crewMessageFont.getWidth(name) + 2 + 2 // 2+2 for the gap and cursor
+                    val nameX = boxX + (width - nameWidth) / 2
+                    crewMessageFont.drawString(nameX.f, pos.y + 61f, name, Colour.white)
+
+                    // Draw the cursor
+                    cursorFlashTimer += game.renderingDeltaTime
+                    val period = 0.5f
+                    if (cursorFlashTimer > period)
+                        cursorFlashTimer -= period
+
+                    if (cursorFlashTimer < period / 2f) {
+                        g.colour = Colour.yellow
+                        g.fillRect(nameX + nameWidth - 2, boxY + 8, 2, 13)
+                    }
+                } else {
+                    // Draw the name
+                    val name = crew.info.shortName
+                    val nameX = (96 - crewNameFont.getWidth(name)) / 2
+                    val nameColour = when (nameHover) {
+                        true -> Constants.CREW_RENAME_TEXT_COLOUR
+                        false -> Colour.white
+                    }
+                    crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, nameColour)
+                }
 
                 // Draw the crewmember portrait
                 // TODO align properly
@@ -604,8 +644,17 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                 }
             }
 
+            override fun update(x: Int, y: Int, blockHover: Boolean) {
+                super.update(x, y, blockHover)
+
+                nameHover = x in (pos.x..pos.x + 100) && y in (pos.y + 49..pos.y + 65)
+            }
+
             override fun click(button: Int) {
-                // TODO renaming
+                if (button != Input.MOUSE_LEFT_BUTTON || !nameHover)
+                    return
+
+                renamingCrew = crew
             }
         }
 
@@ -642,6 +691,9 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
             }
             return
         }
+
+        // If we were renaming a crewmember, we're not any more
+        renamingCrew = null
 
         super.mouseClick(button, x, y)
 
@@ -683,6 +735,29 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         super.positionUpdated()
 
         infoPanel.position = position + ConstPoint(size.x + 13, 74)
+    }
+
+    override fun onTextInput(key: Int, c: Char): Boolean {
+        val info = renamingCrew?.info ?: return false
+
+        if (key == Input.KEY_BACK) {
+            val endPos = max(0, info.name.length - 1)
+            info.name = info.name.substring(0, endPos)
+            return true
+        }
+
+        if (key == Input.KEY_ENTER) {
+            renamingCrew = null
+            return true
+        }
+
+        if (c != 0.toChar()) {
+            if (info.name.length < 15)
+                info.name += c
+            return true
+        }
+
+        return false
     }
 
     private fun undoAllSystems() {

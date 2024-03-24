@@ -231,10 +231,16 @@ public class InGameState extends MainGame.GameState {
         container.getInput().addListener(new InputAdapter() {
             @Override
             public void keyPressed(int key, char c) {
-                if (!debugConsoleVisible)
+                if (debugConsoleVisible) {
+                    getDebugConsole().keyPressed(key, c);
                     return;
+                }
 
-                getDebugConsole().keyPressed(key, c);
+                // If the window uses the key for typing, then prevent it
+                // from being used as a hotkey too.
+                if (shipUI.onTextInput(key, c)) {
+                    container.getInput().clearInputPressedRecord();
+                }
             }
 
             @Override

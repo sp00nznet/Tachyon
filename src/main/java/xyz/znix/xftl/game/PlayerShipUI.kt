@@ -1775,6 +1775,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
+    fun onTextInput(key: Int, c: Char): Boolean {
+        return currentWindow?.onTextInput(key, c) ?: false
+    }
+
     private abstract inner class WeaponDroneButton(pos: IPoint, slotNumber: Int, size: ConstPoint) :
         Button(game, pos, size) {
 
