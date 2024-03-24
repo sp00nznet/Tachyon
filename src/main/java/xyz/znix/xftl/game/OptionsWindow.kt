@@ -23,6 +23,10 @@ class OptionsWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
         soundSlider.changeListener = this::updateVolumes
         musicSlider.changeListener = this::updateVolumes
+
+        widgetTree.addButtonListener("keybinds") {
+            game.shipUI.showKeybindWindow()
+        }
     }
 
     override fun draw(g: Graphics) {

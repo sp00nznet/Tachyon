@@ -245,10 +245,12 @@ public class InGameState extends MainGame.GameState {
 
             @Override
             public void mouseWheelMoved(int change) {
-                if (!debugConsoleVisible)
+                if (debugConsoleVisible) {
+                    getDebugConsole().mouseWheelMoved(change);
                     return;
+                }
 
-                getDebugConsole().mouseWheelMoved(change);
+                shipUI.mouseScroll(change);
             }
 
             @Override
@@ -1374,6 +1376,10 @@ public class InGameState extends MainGame.GameState {
         return eventManager;
     }
 
+    public HotkeyManager getHotkeyManager() {
+        return content.hotkeyManager;
+    }
+
     public List<GameMap.SectorInfo> getVisitedSectors() {
         return Collections.unmodifiableList(visitedSectors);
     }
@@ -1820,6 +1826,7 @@ public class InGameState extends MainGame.GameState {
         public final ShipGenerator generator;
         public final Achievement.AchievementTable achievements;
         public final ShipFamily.FamilyTable shipFamilies;
+        public final HotkeyManager hotkeyManager;
 
         // These are loaded on-demand
         private final Map<String, Image> images = new HashMap<>();
@@ -1844,6 +1851,7 @@ public class InGameState extends MainGame.GameState {
             eventManager = new EventManager(datafile, translator, blueprintManager);
             nameManager = new CrewNameManager(datafile, "en");
             achievements = new Achievement.AchievementTable(datafile);
+            hotkeyManager = new HotkeyManager();
 
             blueprintManager.finishLoading(this);
 
@@ -1869,7 +1877,7 @@ public class InGameState extends MainGame.GameState {
                 CrewNameManager nameManager, Animations animations,
                 SoundManager sounds, Translator translator,
                 ShipGenerator generator, Achievement.AchievementTable achievements,
-                ShipFamily.FamilyTable shipFamilies
+                ShipFamily.FamilyTable shipFamilies, HotkeyManager hotkeyManager
         ) {
             this.datafile = datafile;
             this.enableAdvancedEdition = enableAdvancedEdition;
@@ -1882,6 +1890,7 @@ public class InGameState extends MainGame.GameState {
             this.generator = generator;
             this.achievements = achievements;
             this.shipFamilies = shipFamilies;
+            this.hotkeyManager = hotkeyManager;
         }
 
         public void freeResources() {

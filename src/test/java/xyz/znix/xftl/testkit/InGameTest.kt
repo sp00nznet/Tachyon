@@ -85,6 +85,7 @@ class InGameTest(
             translator,
             null,
             null,
+            null,
             null
         )
         state = InGameState(null, content, "TEST_SHIP", Difficulty.NORMAL, null)

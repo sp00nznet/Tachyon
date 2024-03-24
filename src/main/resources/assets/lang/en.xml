@@ -21,4 +21,75 @@
         \1
     </text>
     <text name="xftl_select_datafile_not_found">No auto-detected FTL installations</text>
+
+    <!-- Hotkeys -->
+    <text name="xftl_hotkeys_crew_group">CREW MANAGEMENT</text>
+    <text name="xftl_hotkeys_system_power_group">SYSTEM POWER</text>
+    <text name="xftl_hotkeys_weapons_group">WEAPONS AND DRONES</text>
+    <text name="xftl_hotkeys_system_actions_group">SYSTEM ACTIONS</text>
+    <text name="xftl_hotkeys_ui_group">GAME CONTROL</text>
+
+    <!-- Key names, used for hotkey binding -->
+    <text name="xftl_key_f1">F1</text>
+    <text name="xftl_key_f2">F2</text>
+    <text name="xftl_key_f3">F3</text>
+    <text name="xftl_key_f4">F4</text>
+    <text name="xftl_key_f5">F5</text>
+    <text name="xftl_key_f6">F6</text>
+    <text name="xftl_key_f7">F7</text>
+    <text name="xftl_key_f8">F8</text>
+    <text name="xftl_key_f9">F9</text>
+    <text name="xftl_key_up">UP</text>
+    <text name="xftl_key_down">DOWN</text>
+    <text name="xftl_key_left">LEFT</text>
+    <text name="xftl_key_right">RIGHT</text>
+    <text name="xftl_key_enter">ENTER</text>
+    <text name="xftl_key_escape">ESCAPE</text>
+    <text name="xftl_key_space">SPACE</text>
+    <text name="xftl_key_tab">TAB</text>
+    <text name="xftl_key_full_stop">FULL_STOP</text>
+    <text name="xftl_key_stroke">/</text>
+    <text name="xftl_key_lshift">LEFT-SHIFT</text>
+    <text name="xftl_key_rshift">RIGHT-SHIFT</text>
+    <text name="xftl_key_lctrl">LEFT-CTRL</text>
+    <text name="xftl_key_rctrl">RIGHT-CTRL</text>
+    <text name="xftl_key_back">BACK</text>
+    <text name="xftl_key_delete">DELETE</text>
+    <text name="xftl_key_backtick">BACKTICK</text>
+    <text name="xftl_key_a">A</text>
+    <text name="xftl_key_b">B</text>
+    <text name="xftl_key_c">C</text>
+    <text name="xftl_key_d">D</text>
+    <text name="xftl_key_e">E</text>
+    <text name="xftl_key_f">F</text>
+    <text name="xftl_key_g">G</text>
+    <text name="xftl_key_h">H</text>
+    <text name="xftl_key_i">I</text>
+    <text name="xftl_key_j">J</text>
+    <text name="xftl_key_k">K</text>
+    <text name="xftl_key_l">L</text>
+    <text name="xftl_key_m">M</text>
+    <text name="xftl_key_n">N</text>
+    <text name="xftl_key_o">O</text>
+    <text name="xftl_key_p">P</text>
+    <text name="xftl_key_q">Q</text>
+    <text name="xftl_key_r">R</text>
+    <text name="xftl_key_s">S</text>
+    <text name="xftl_key_t">T</text>
+    <text name="xftl_key_u">U</text>
+    <text name="xftl_key_v">V</text>
+    <text name="xftl_key_w">W</text>
+    <text name="xftl_key_x">X</text>
+    <text name="xftl_key_y">Y</text>
+    <text name="xftl_key_z">Z</text>
+    <text name="xftl_key_0">0</text>
+    <text name="xftl_key_1">1</text>
+    <text name="xftl_key_2">2</text>
+    <text name="xftl_key_3">3</text>
+    <text name="xftl_key_4">4</text>
+    <text name="xftl_key_5">5</text>
+    <text name="xftl_key_6">6</text>
+    <text name="xftl_key_7">7</text>
+    <text name="xftl_key_8">8</text>
+    <text name="xftl_key_9">9</text>
 </FTL>

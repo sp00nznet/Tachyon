@@ -47,6 +47,9 @@ abstract class Window {
     open fun mouseReleased(button: Int, x: Int, y: Int) {
     }
 
+    open fun mouseScroll(change: Int) {
+    }
+
     /**
      * Called whenever the escape key is pressed.
      *

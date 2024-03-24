@@ -315,6 +315,18 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
+    fun mouseScroll(change: Int) {
+        pauseWindow?.let { win ->
+            win.mouseScroll(change)
+            return
+        }
+
+        currentWindow?.let { win ->
+            win.mouseScroll(change)
+            return
+        }
+    }
+
     fun crewScreenPos(crew: AbstractCrew, playerShipPosition: IPoint): IPoint {
         if (crew.room.ship == ship) {
             return ConstPoint(crew.screenX, crew.screenY) + playerShipPosition
@@ -1527,6 +1539,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // This uses the pause window slot, so it doesn't dismiss
         // a regular window, such as the dialogue or game-over windows.
         pauseWindow = OptionsWindow(game) { pauseWindow = null }
+    }
+
+    fun showKeybindWindow() {
+        // Switch back to the options window when it's closed, that's how
+        // vanilla behaves.
+        pauseWindow = HotkeysWindow(game) { showOptionsWindow() }
     }
 
     // Hack used to draw the selected crew from the ship, rather than some cleaner solution
