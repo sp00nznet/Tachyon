@@ -26,7 +26,9 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     private var offsetY: Int = 0
     private val mousePos = Point(0, 0)
 
-    private val groups: List<Pair<HotkeyGroup, HotkeyGroup?>>
+    private val multiColumn: List<HotkeyGroup>
+    private val leftColumn: List<HotkeyGroup>
+    private val rightColumn: List<HotkeyGroup>
 
     private val contentWidth = -PADDING + size.x - SCROLL_BAR_GAP - SCROLL_BAR_WIDTH - PADDING
 
@@ -39,35 +41,39 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     private var foundHover: Boolean = false
 
     init {
-        // Group single-column categories together (while wasting as little
-        // space as possible) so we can show them side-by-side.
-        val byCount = game.hotkeyManager.groups
+        val baseList = game.hotkeyManager.groups
+
+        // We'll show the multi-column groups at the top, and below that build
+        // two columns which are (as far as possible) equal in height.
+        multiColumn = baseList.filter { it.columns > 1 }
+
+        // Split the columns into two groups, ignoring their position in the XML file
+        val byCount = baseList
             .filter { it.columns == 1 }
             .sortedBy { it.hotkeys.size }
+        val remaining = ArrayList(byCount)
 
-        // Split them into pairs
-        val singleColumnPairs = HashMap<HotkeyGroup, HotkeyGroup>()
-        for (i in 0 until byCount.size - 1 step 2) {
-            val a = byCount[i]
-            val b = byCount[i + 1]
-            singleColumnPairs[a] = b
-            singleColumnPairs[b] = a
-        }
+        val unsortedLeft = ArrayList<HotkeyGroup>()
+        val unsortedRight = ArrayList<HotkeyGroup>()
+        var leftCount = 0
+        var rightCount = 0
 
-        // Build the final ordered list
-        val remaining = ArrayList(game.hotkeyManager.groups)
-        remaining.reverse()
-
-        groups = ArrayList()
         while (remaining.isNotEmpty()) {
-            val group = remaining.pop()
-            val paired = singleColumnPairs[group]
-            if (paired != null) {
-                remaining.remove(paired)
+            val entry = remaining.pop()
+            if (leftCount <= rightCount) {
+                unsortedLeft += entry
+                leftCount += entry.hotkeys.size
+            } else {
+                unsortedRight += entry
+                rightCount += entry.hotkeys.size
             }
-
-            groups.add(Pair(group, paired))
         }
+
+        // As far as possible, sort the columns back into their original
+        // order in the XML.
+        val groupToIndex = baseList.withIndex().associate { (idx, group) -> Pair(group, idx) }
+        leftColumn = unsortedLeft.sortedBy { groupToIndex.getValue(it) }
+        rightColumn = unsortedRight.sortedBy { groupToIndex.getValue(it) }
 
         updateBindCache()
     }
@@ -139,24 +145,23 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
         var y = 30
 
-        for ((left, right) in groups) {
-            // If we've got a pair of groups, draw them
-            if (right != null) {
-                val leftY = drawGroup(g, left, y, Layout.LEFT)
-                val rightY = drawGroup(g, right, y, Layout.RIGHT)
-                y = max(leftY, rightY)
-                continue
-            }
+        for (group in multiColumn) {
+            y = drawGroup(g, group, y, Layout.BOTH)
+        }
 
-            val layout = when {
-                left.columns == 1 -> Layout.LEFT
-                else -> Layout.BOTH
-            }
-            y = drawGroup(g, left, y, layout)
+        var leftColY = y
+        var rightColY = y
+
+        // Draw the side-by-side columns
+        for (group in leftColumn) {
+            leftColY = drawGroup(g, group, leftColY, Layout.LEFT)
+        }
+        for (group in rightColumn) {
+            rightColY = drawGroup(g, group, rightColY, Layout.RIGHT)
         }
 
         // This is used to set the scrollbar length.
-        maxY = y
+        maxY = max(leftColY, rightColY)
 
         // If the user moused off a hotkey, unmark it as the hovered item.
         if (!foundHover) {
