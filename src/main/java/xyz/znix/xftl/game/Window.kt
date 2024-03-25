@@ -91,4 +91,7 @@ abstract class Window {
     open fun onTextInput(key: Int, c: Char): Boolean {
         return false
     }
+
+    open fun hotkeyPressed(key: Hotkey) {
+    }
 }

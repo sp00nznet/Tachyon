@@ -198,7 +198,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         nextPos += ConstPoint(101, 0)
 
         val ship = Buttons.ShipButton(nextPos, game) {
-            showShipWindow()
+            showShipWindow(ShipWindow.Tab.UPGRADES)
         }
         nextPos += ConstPoint(ship.size.x + 17, 0)
 
@@ -534,7 +534,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         // If the player's ship is full of crew, open the window to dismiss one.
         // Don't override another window to do this, however.
         if (currentWindow == null && game.playerHasTooManyCrew()) {
-            showShipWindow()
+            showShipWindow(ShipWindow.Tab.CREW, true)
         }
     }
 
@@ -1517,16 +1517,24 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         }
     }
 
-    private fun showShipWindow() {
-        currentWindow = ShipWindow(game, ship) {
+    private fun showShipWindow(initialTab: ShipWindow.Tab, force: Boolean = false) {
+        if (!force && game.isInDanger)
+            return
+
+        currentWindow = ShipWindow(game, ship, initialTab) {
             currentWindow = null
         }
     }
 
     private fun showStoreWindow() {
+        if (game.isInDanger)
+            return
+
+        val store = game.currentBeacon.getStore(game) ?: return
+
         storeAlreadyOpened = true
 
-        currentWindow = StoreWindow(game, ship, game.currentBeacon.getStore(game)!!) {
+        currentWindow = StoreWindow(game, ship, store) {
             currentWindow = null
         }
     }
@@ -1663,6 +1671,20 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
      * This is the proper way to handle hotkey input, as it supports control rebinding.
      */
     fun hotkeyPressed(key: Hotkey, input: Input) {
+        // If a window is open, it absorbs all the input.
+        // This is particularly important for keybinds like the jump/ship
+        // ones as they open a window - the user could otherwise use them
+        // to replace the currently-open dialogue window, to avoid the
+        // result of an undesirable event.
+        pauseWindow?.let {
+            it.hotkeyPressed(key)
+            return
+        }
+        currentWindow?.let {
+            it.hotkeyPressed(key)
+            return
+        }
+
         for (system in ship.mainSystems) {
             if (key.id == "sys_power_${system.codename}") {
                 val powerUp: Boolean = !input.isKeyDown(Input.KEY_LSHIFT)
@@ -1673,13 +1695,17 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             }
         }
 
-
         for (system in ship.systems) {
             system.hotkeyPressed(key)
         }
 
         when (key.id) {
             VanillaHotkeys.FTL_JUMP -> openJumpMap()
+            VanillaHotkeys.SHIP_UPGRADES -> showShipWindow(ShipWindow.Tab.UPGRADES)
+            VanillaHotkeys.SHIP_CREW -> showShipWindow(ShipWindow.Tab.CREW)
+            VanillaHotkeys.SHIP_INVENTORY -> showShipWindow(ShipWindow.Tab.EQUIPMENT)
+            VanillaHotkeys.OPEN_STORE -> showStoreWindow()
+            VanillaHotkeys.OPEN_OPTIONS -> showOptionsWindow()
 
             VanillaHotkeys.SYS_ACTION_DOOR_OPEN -> openAllDoors()
             VanillaHotkeys.SYS_ACTION_DOOR_CLOSE -> closeAllDoors()

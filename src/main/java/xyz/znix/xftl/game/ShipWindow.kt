@@ -16,7 +16,7 @@ import kotlin.math.max
 
 private typealias UndoFn = () -> Unit
 
-class ShipWindow(val game: InGameState, val ship: Ship, private val close: () -> Unit) :
+class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private val close: () -> Unit) :
     Window() {
     override val size = ConstPoint(587, 464)
 
@@ -39,7 +39,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private val upgradeSystemSound = game.sounds.getSample("upgradeSystem")
     private val downgradeSystemSound = game.sounds.getSample("downgradeSystem")
 
-    private var tab: Tab = Tab.UPGRADES
+    private var tab: Tab = initialTab
 
     private val equipmentPanel = ShipEquipmentPanel(game, ship)
 
@@ -73,10 +73,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     )
 
     init {
-        // Auto-switch to the too-many-crew and too-many-items tabs
-        if (game.playerHasTooManyCrew()) {
-            tab = Tab.CREW
-        }
         // TODO too many items
 
         updateButtons()
@@ -104,8 +100,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
     private fun updateButtons() {
         buttons.clear()
         dismissHighlightButtons.clear()
-
-        equipmentPanel.position = position
 
         buttons += closeButton
 
@@ -735,6 +729,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         super.positionUpdated()
 
         infoPanel.position = position + ConstPoint(size.x + 13, 74)
+        equipmentPanel.position = position
     }
 
     override fun onTextInput(key: Int, c: Char): Boolean {
@@ -775,7 +770,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
         downgradeSystemSound.play()
     }
 
-    private enum class Tab(val textureName: String) {
+    enum class Tab(val textureName: String) {
         UPGRADES("upgrades"),
         CREW("crew"),
         EQUIPMENT("equipment"),
