@@ -1699,6 +1699,19 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             system.hotkeyPressed(key)
         }
 
+        // The select-one-crewmember hotkeys
+        for ((index, id) in VanillaHotkeys.SELECT_CREW.withIndex()) {
+            if (key.id != id)
+                continue
+
+            val crew = game.playerCrew.getOrNull(index) ?: continue
+            if (!crew.playerControllable)
+                continue
+
+            selectedCrew.clear()
+            selectedCrew += crew
+        }
+
         when (key.id) {
             VanillaHotkeys.FTL_JUMP -> openJumpMap()
             VanillaHotkeys.SHIP_UPGRADES -> showShipWindow(ShipWindow.Tab.UPGRADES)
@@ -1709,6 +1722,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             VanillaHotkeys.SYS_ACTION_DOOR_OPEN -> openAllDoors()
             VanillaHotkeys.SYS_ACTION_DOOR_CLOSE -> closeAllDoors()
+
+            VanillaHotkeys.SELECT_CREW_ALL -> {
+                // Should this include mind-controlled enemies?
+                selectedCrew.clear()
+                selectedCrew += game.playerCrew.filter { it.playerControllable }
+            }
+
+            // TODO crystal lockdown hotkey, when that's implemented
 
             VanillaHotkeys.LOAD_CREW_POS -> saveCrewPositions()
             VanillaHotkeys.SAVE_CREW_POS -> loadCrewPositions()
