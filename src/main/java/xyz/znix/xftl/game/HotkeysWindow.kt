@@ -8,6 +8,7 @@ import xyz.znix.xftl.pop
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     override val size: IPoint get() = ConstPoint(1050, 650)
@@ -61,12 +62,14 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
         val textWidth = titleFont.getWidth(titleText)
         val tabWidth = startWidth + textWidth + endWidth
 
-        game.windowRenderer.renderMasked(position.x, position.y, size.x, size.y, {
+        val intScroll = scroll.roundToInt()
+
+        game.windowRenderer.renderMasked(position.x, position.y, size.x, size.y, 0, intScroll, {
             g.colour = Colour.red // Anything non-transparent will do
             g.fillRect(position.x - 7, position.y - 7, tabWidth, titleTab.height)
         }, {
             g.pushTransform()
-            g.translate(position.x.f, position.y + scroll + 30f)
+            g.translate(position.x.f, position.y + intScroll + 30f)
             drawContent(g)
             g.popTransform()
         })

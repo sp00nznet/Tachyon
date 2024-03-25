@@ -59,7 +59,7 @@ class ShipList(private val state: SelectShipState, private val close: (LazyShipB
         val tabX = pos.x - 7
         val tabY = pos.y - 7
 
-        state.windowRenderer.renderMasked(pos.x, pos.y, size.x, size.y, {
+        state.windowRenderer.renderMasked(pos.x, pos.y, size.x, size.y, 0, 0, {
             g.colour = Colour.red // Anything non-transparent will do
 
             // Draw the title tab on the left

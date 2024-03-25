@@ -23,7 +23,7 @@ class WindowRenderer(
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
             drawOutlineOrMask(maskImage, x, y, width, height)
         }, {
-            drawTiled(x, y, width, height)
+            drawTiled(x, y, width, height, 0, 0)
         })
 
         // Draw the outline image
@@ -46,16 +46,22 @@ class WindowRenderer(
      * This also accepts a second function, which is rendered on the inside of
      * the while, masked by the mask image. This is an easy way to draw stuff
      * inside the window, making sure it doesn't leak out.
+     *
+     * [bgOffsetX] and [bgOffsetY] shift the background texture, and are intended
+     * for windows with scrolling content. They're wrapped to the texture size, so
+     * even large values won't leave gaps around the edges of the background.
      */
     fun renderMasked(
-        x: Int, y: Int, width: Int, height: Int,
+        x: Int, y: Int,
+        width: Int, height: Int,
+        bgOffsetX: Int, bgOffsetY: Int,
         maskFn: () -> Unit,
         drawFn: () -> Unit
     ) {
         Utils.drawStenciled(Utils.StencilMode.MASKING, {
             drawOutlineOrMask(maskImage, x, y, width, height)
         }, {
-            drawTiled(x, y, width, height)
+            drawTiled(x, y, width, height, bgOffsetX, bgOffsetY)
             drawFn()
         })
 
@@ -75,7 +81,7 @@ class WindowRenderer(
         val textWidth = font.getWidth(text)
         val tabWidth = startWidth + textWidth + endWidth
 
-        renderMasked(x, y, width, height, {
+        renderMasked(x, y, width, height, 0, 0, {
             g.colour = Colour.red // Anything non-transparent will do
             g.fillRect(x.f - GLOW, y.f - GLOW, tabWidth.f, tabImage.height.f)
         }, {})
@@ -85,10 +91,14 @@ class WindowRenderer(
     }
 
     // This draws more than the specified width/height, so it must be masked.
-    private fun drawTiled(x: Int, y: Int, width: Int, height: Int) {
-        var tileX = 0
+    private fun drawTiled(x: Int, y: Int, width: Int, height: Int, bgOffsetX: Int, bgOffsetY: Int) {
+        // These should always be <= 0 to avoid gaps
+        val wrappedOffsetX = bgOffsetX.mod(TILE_X) - TILE_X
+        val wrappedOffsetY = bgOffsetY.mod(TILE_Y) - TILE_Y
+
+        var tileX = wrappedOffsetX
         while (tileX <= width) {
-            var tileY = 0
+            var tileY = wrappedOffsetY
             while (tileY <= height) {
                 baseImage.pushImage(
                     x.f + tileX,
