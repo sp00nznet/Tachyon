@@ -5,7 +5,9 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.game.Button
+import xyz.znix.xftl.game.Hotkey
 import xyz.znix.xftl.game.SystemPowerButton
+import xyz.znix.xftl.game.VanillaHotkeys
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -94,6 +96,13 @@ class Cloaking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // The cloak sound only plays when the user unpauses
         shouldPlayCloakSound = true
+    }
+
+    override fun hotkeyPressed(key: Hotkey) {
+        super.hotkeyPressed(key)
+
+        if (key.id == VanillaHotkeys.SYS_ACTION_CLOAKING)
+            activateCloak()
     }
 
     override fun update(dt: Float) {

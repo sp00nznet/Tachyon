@@ -1658,6 +1658,50 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     /**
+     * Called whenever a hotkey is pressed.
+     *
+     * This is the proper way to handle hotkey input, as it supports control rebinding.
+     */
+    fun hotkeyPressed(key: Hotkey, input: Input) {
+        for (system in ship.mainSystems) {
+            if (key.id == "sys_power_${system.codename}") {
+                val powerUp: Boolean = !input.isKeyDown(Input.KEY_LSHIFT)
+                changeSystemPower(system, powerUp)
+            }
+            if (key.id == "sys_power_${system.codename}_off") {
+                changeSystemPower(system, false)
+            }
+        }
+
+
+        for (system in ship.systems) {
+            system.hotkeyPressed(key)
+        }
+
+        when (key.id) {
+            VanillaHotkeys.FTL_JUMP -> openJumpMap()
+
+            VanillaHotkeys.SYS_ACTION_DOOR_OPEN -> openAllDoors()
+            VanillaHotkeys.SYS_ACTION_DOOR_CLOSE -> closeAllDoors()
+
+            VanillaHotkeys.LOAD_CREW_POS -> saveCrewPositions()
+            VanillaHotkeys.SAVE_CREW_POS -> loadCrewPositions()
+
+            // These hotkey applies to both medbays and clonebays
+            VanillaHotkeys.SYS_POWER_MEDICAL -> {
+                val powerUp: Boolean = !input.isKeyDown(Input.KEY_LSHIFT)
+                ship.medbay?.let { changeSystemPower(it, powerUp) }
+                ship.clonebay?.let { changeSystemPower(it, powerUp) }
+            }
+
+            VanillaHotkeys.SYS_POWER_MEDICAL_OFF -> {
+                ship.medbay?.let { changeSystemPower(it, false) }
+                ship.clonebay?.let { changeSystemPower(it, false) }
+            }
+        }
+    }
+
+    /**
      * FOR DEBUG USE ONLY!
      *
      * See [InGameState.debugContinuousSaveRestore] for more information.

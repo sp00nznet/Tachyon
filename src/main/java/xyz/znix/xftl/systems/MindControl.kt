@@ -6,10 +6,7 @@ import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
-import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.GlowColour
-import xyz.znix.xftl.game.SystemPowerButton
-import xyz.znix.xftl.game.WarningFlasher
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -40,6 +37,8 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
     private val startSound by onInit { it.sounds.getSample("mindControl") }
     private val endSound by onInit { it.sounds.getSample("mindControlEnd") }
+
+    private var button: MindControlButton? = null
 
     val duration: Float
         get() {
@@ -140,7 +139,8 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun makeExtraButtons(powerPos: IPoint): List<Button> {
-        return listOf(MindControlButton(powerPos))
+        button = MindControlButton(powerPos)
+        return listOf(button!!)
     }
 
     fun selectRoom(room: Room) {
@@ -187,6 +187,15 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         timeRemaining = duration
 
         startSound.play()
+    }
+
+    override fun hotkeyPressed(key: Hotkey) {
+        super.hotkeyPressed(key)
+
+        if (key.id == VanillaHotkeys.SYS_ACTION_MIND) {
+            // This is a bit hacky, but it properly shows the super-shield warning
+            button?.click(Input.MOUSE_LEFT_BUTTON)
+        }
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
@@ -236,7 +245,7 @@ class MindControl(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         override val forceHighlight: Boolean
             get() = game.shipUI.isSelectingMindControlTarget
 
-        override fun click(button: Int) {
+        public override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 

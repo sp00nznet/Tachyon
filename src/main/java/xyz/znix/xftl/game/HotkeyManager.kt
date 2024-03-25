@@ -99,6 +99,7 @@ class HotkeyButton(val id: String, val keyID: Int) {
     val locKey: String = "xftl_key_$id"
 
     companion object {
+        @JvmField
         val ALL = listOf(
             HotkeyButton("f1", Input.KEY_F1),
             HotkeyButton("f2", Input.KEY_F2),
@@ -168,7 +169,61 @@ class HotkeyButton(val id: String, val keyID: Int) {
             HotkeyButton("9", Input.KEY_9),
         )
 
+        @JvmField
         val BY_NAME: Map<String, HotkeyButton> = ALL.associateBy { it.id }
+
+        @JvmField
         val BY_KEY_ID: Map<Int, HotkeyButton> = ALL.associateBy { it.keyID }
     }
+}
+
+/**
+ * Contains the string IDs for the vanilla hotkeys, to make stuff like searching
+ * and refactoring easier.
+ *
+ * It also makes it easy to see what hotkeys aren't yet implemented - anything
+ * that's shown as unused in your IDE is obviously unimplemented.
+ */
+object VanillaHotkeys {
+    const val PAUSE: String = "pause"
+    const val FTL_JUMP: String = "ftl_jump"
+    const val SHIP_INVENTORY: String = "ship_inventory"
+    const val SHIP_UPGRADES: String = "ship_upgrades"
+    const val SHIP_CREW: String = "ship_crew"
+    const val OPEN_STORE: String = "open_store"
+    const val OPEN_OPTIONS: String = "open_options"
+
+    @JvmField
+    val WEAPON_SLOTS: List<String> = listOf("weapon_slot_1", "weapon_slot_2", "weapon_slot_3", "weapon_slot_4")
+
+    @JvmField
+    val DRONE_SLOTS: List<String> = listOf("drone_slot_1", "drone_slot_2", "drone_slot_3")
+
+    const val WEAPON_AUTOFIRE_TOGGLE: String = "weapon_autofire_toggle"
+    const val WEAPON_AUTOFIRE_TARGET: String = "weapon_autofire_target"
+
+    // We don't have constants for the systems, as their ID is built from the blueprint name
+    // The exception is the medbay/clonebay which share a hotkey
+    const val SYS_POWER_MEDICAL: String = "sys_power_medical"
+    const val SYS_POWER_MEDICAL_OFF: String = "sys_power_medical_off"
+
+    const val SYS_ACTION_DOOR_OPEN: String = "sys_action_door_open"
+    const val SYS_ACTION_DOOR_CLOSE: String = "sys_action_door_close"
+    const val SYS_ACTION_CLOAKING: String = "sys_action_cloaking"
+    const val SYS_ACTION_TELEPORT_SEND: String = "sys_action_teleport_send"
+    const val SYS_ACTION_TELEPORT_RECV: String = "sys_action_teleport_recv"
+    const val SYS_ACTION_HACKING: String = "sys_action_hacking"
+    const val SYS_ACTION_MIND: String = "sys_action_mind"
+    const val SYS_ACTION_BATTERY: String = "sys_action_battery"
+
+    @JvmField
+    val SELECT_CREW: List<String> = listOf(
+        "select_crew_1", "select_crew_2", "select_crew_3", "select_crew_4",
+        "select_crew_5", "select_crew_6", "select_crew_7", "select_crew_8",
+    )
+
+    const val SELECT_CREW_ALL: String = "select_crew_all"
+    const val LOAD_CREW_POS: String = "load_crew_pos"
+    const val SAVE_CREW_POS: String = "save_crew_pos"
+    const val LOCKDOWN_ACTIVATE: String = "lockdown_activate"
 }

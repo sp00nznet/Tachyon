@@ -122,6 +122,13 @@ public class InGameState extends MainGame.GameState {
     private final HashMap<Hotkey, HotkeyButton> reverseHotkeyBindings = new HashMap<>();
     private final HashMap<HotkeyButton, Hotkey> forwardHotkeyBindings = new HashMap<>();
 
+    /**
+     * The hotkeys that have been pressed and queued up to be used by the game.
+     * <p>
+     * This is done in case a key is somehow dispatched while update() is running.
+     */
+    private final List<Hotkey> queuedHotkeys = Collections.synchronizedList(new ArrayList<>());
+
     public InGameState(MainGame mainGame, GameContent content, String playerShipName, Difficulty difficulty, EditableShip customised) {
         this(mainGame, content);
         this.difficulty = difficulty;
@@ -242,6 +249,7 @@ public class InGameState extends MainGame.GameState {
         container.getInput().addListener(new InputAdapter() {
             @Override
             public void keyPressed(int key, char c) {
+                // The debug console blocks all hotkeys
                 if (debugConsoleVisible) {
                     getDebugConsole().keyPressed(key, c);
                     return;
@@ -251,7 +259,21 @@ public class InGameState extends MainGame.GameState {
                 // from being used as a hotkey too.
                 if (shipUI.onTextInput(key, c)) {
                     container.getInput().clearInputPressedRecord();
+                    return;
                 }
+
+                // Check if there's a hotkey associated with this button
+                HotkeyButton button = HotkeyButton.BY_KEY_ID.get(key);
+                if (button == null) {
+                    return;
+                }
+                Hotkey matching = forwardHotkeyBindings.get(button);
+                if (matching == null) {
+                    return;
+                }
+
+                // And if so, queue it for the next update
+                queuedHotkeys.add(matching);
             }
 
             @Override
@@ -362,6 +384,7 @@ public class InGameState extends MainGame.GameState {
             sounds.setMusicVolume(mainGame.getProfile().getMusicVolume());
         }
 
+        // TODO hotkey-ify this, though it'll still need special handling.
         if (in.isKeyPressed(Input.KEY_GRAVE)) {
             debugConsoleVisible = !debugConsoleVisible;
 
@@ -370,11 +393,17 @@ public class InGameState extends MainGame.GameState {
             in.clearInputPressedRecord();
         }
 
-        // Block all key inputs if the debug console is open
-        if (!debugConsoleVisible) {
-            readKeyboardInput(in);
-        } else {
+        if (debugConsoleVisible) {
             getDebugConsole().update(container, delta);
+        }
+
+        while (!queuedHotkeys.isEmpty()) {
+            dispatchHotkey(queuedHotkeys.remove(0), in);
+        }
+
+        // Escape is special, it's not a hotkey and can't be rebound.
+        if (in.isKeyPressed(Input.KEY_ESCAPE)) {
+            shipUI.escapePressed();
         }
 
         boolean rightClicked = false;
@@ -473,76 +502,20 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
-    private void readKeyboardInput(Input in) {
-        if (in.isKeyPressed(Input.KEY_SPACE))
+    private void dispatchHotkey(Hotkey key, Input in) {
+        if (key.getId().equals(VanillaHotkeys.PAUSE))
             paused = !paused;
 
         boolean shiftPressed = in.isKeyDown(Input.KEY_LSHIFT);
-        if (in.isKeyPressed(Input.KEY_1))
-            shipUI.weaponHotkeyPressed(0, shiftPressed);
-        if (in.isKeyPressed(Input.KEY_2))
-            shipUI.weaponHotkeyPressed(1, shiftPressed);
-        if (in.isKeyPressed(Input.KEY_3))
-            shipUI.weaponHotkeyPressed(2, shiftPressed);
-        if (in.isKeyPressed(Input.KEY_4))
-            shipUI.weaponHotkeyPressed(3, shiftPressed);
-
-        if (in.isKeyPressed(Input.KEY_ESCAPE))
-            shipUI.escapePressed();
-
-        boolean powerUp = !in.isKeyDown(Input.KEY_LSHIFT);
-        if (in.isKeyPressed(Input.KEY_A))
-            shipUI.systemPowerHotkeyPressed(Shields.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_S))
-            shipUI.systemPowerHotkeyPressed(Engines.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_F))
-            shipUI.systemPowerHotkeyPressed(Oxygen.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_D)) {
-            // Try adjusting the power on both the medbay and clonebay, and
-            // one of these calls will be ignored as only one system is fitted.
-            shipUI.systemPowerHotkeyPressed(Medbay.class, powerUp);
-            shipUI.systemPowerHotkeyPressed(Clonebay.class, powerUp);
+        for (int i = 0; i < VanillaHotkeys.WEAPON_SLOTS.size(); i++) {
+            if (key.getId().equals(VanillaHotkeys.WEAPON_SLOTS.get(i))) {
+                shipUI.weaponHotkeyPressed(i, shiftPressed);
+            }
         }
-        if (in.isKeyPressed(Input.KEY_G))
-            shipUI.systemPowerHotkeyPressed(Teleporter.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_H))
-            shipUI.systemPowerHotkeyPressed(Cloaking.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_K))
-            shipUI.systemPowerHotkeyPressed(MindControl.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_L))
-            shipUI.systemPowerHotkeyPressed(Hacking.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_W))
-            shipUI.systemPowerHotkeyPressed(Weapons.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_E))
-            shipUI.systemPowerHotkeyPressed(Drones.class, powerUp);
-        if (in.isKeyPressed(Input.KEY_Y))
-            shipUI.systemPowerHotkeyPressed(Artillery.class, powerUp);
+        // TODO drone hotkeys
+        // TODO autofire
 
-        if (in.isKeyPressed(Input.KEY_C) && player.getCloaking() != null)
-            player.getCloaking().activateCloak();
-        if (in.isKeyPressed(Input.KEY_T) && player.getTeleporter() != null)
-            shipUI.teleportSelected(true);
-        if (in.isKeyPressed(Input.KEY_R) && player.getTeleporter() != null)
-            shipUI.teleportSelected(false);
-        if (in.isKeyPressed(Input.KEY_M) && player.getMindControl() != null)
-            shipUI.mindControlSelected();
-        if (in.isKeyPressed(Input.KEY_N) && player.getHacking() != null)
-            shipUI.hackSelected();
-        if (in.isKeyPressed(Input.KEY_B) && player.getBackupBattery() != null)
-            player.getBackupBattery().startBattery();
-
-        if (in.isKeyPressed(Input.KEY_J))
-            shipUI.openJumpMap();
-
-        if (in.isKeyPressed(Input.KEY_Z))
-            shipUI.openAllDoors();
-        if (in.isKeyPressed(Input.KEY_X))
-            shipUI.closeAllDoors();
-
-        if (in.isKeyPressed(Input.KEY_STROKE))
-            shipUI.saveCrewPositions();
-        if (in.isKeyPressed(Input.KEY_ENTER))
-            shipUI.loadCrewPositions();
+        shipUI.hotkeyPressed(key, in);
     }
 
     @Override

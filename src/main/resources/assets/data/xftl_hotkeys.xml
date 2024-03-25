@@ -16,6 +16,8 @@
     </group>
 
     <group id="system_power" ui_name="xftl_hotkeys_system_power_group" columns="2">
+        <!-- Note: the names of the systems must match those in the blueprints,
+             since these IDs are specially known by the code. -->
         <hotkey id="sys_power_shields" ui_name="hotkey_shields" default_bind="a"/>
         <hotkey id="sys_power_shields_off" ui_name="hotkey_un_shields"/>
         <hotkey id="sys_power_engines" ui_name="hotkey_engines" default_bind="s"/>

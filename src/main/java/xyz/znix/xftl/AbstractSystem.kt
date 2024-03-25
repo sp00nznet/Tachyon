@@ -5,10 +5,7 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.crew.SkillLevel
-import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.InGameState
-import xyz.znix.xftl.game.ShipBlueprint
-import xyz.znix.xftl.game.SystemButtonTooltip
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
@@ -555,6 +552,13 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
             return SkillLevel.BASE
 
         return manningCrew?.getSkillLevel(skill)
+    }
+
+    /**
+     * This is called whenever a hotkey is pressed. It's how systems should
+     * implement all key-based input.
+     */
+    open fun hotkeyPressed(key: Hotkey) {
     }
 
     /**

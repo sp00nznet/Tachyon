@@ -4,10 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
-import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.ButtonImageSet
-import xyz.znix.xftl.game.GlowColour
-import xyz.znix.xftl.game.WarningFlasher
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
@@ -27,6 +24,9 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     private val padActiveImage by onInit { it.getImg("img/ship/interior/teleporter_on.png") }
 
     private var onCooldown = false
+
+    private var sendButton: TeleporterButton? = null
+    private var recvButton: TeleporterButton? = null
 
     val isSendAvailable: Boolean
         get() {
@@ -154,12 +154,15 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         val bgButton = TeleporterButtonBackground(buttonBase, powerPos)
 
+        sendButton = TeleporterButton(buttonBase, ConstPoint(4, 4), true, top, bgButton.superShieldWarning)
+        recvButton = TeleporterButton(buttonBase, ConstPoint(4, 27), false, bottom, bgButton.superShieldWarning)
+
         return listOf(
             // The background comes first so it doesn't draw on top of the others
             bgButton,
 
-            TeleporterButton(buttonBase, ConstPoint(4, 4), true, top, bgButton.superShieldWarning),
-            TeleporterButton(buttonBase, ConstPoint(4, 27), false, bottom, bgButton.superShieldWarning)
+            sendButton!!,
+            recvButton!!
         )
     }
 
@@ -186,6 +189,18 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
 
         // Draw the icon on top
         super.drawRoom(g)
+    }
+
+    override fun hotkeyPressed(key: Hotkey) {
+        super.hotkeyPressed(key)
+
+        // Calling Button.click bit hacky, but it properly shows the super-shield warning
+        if (key.id == VanillaHotkeys.SYS_ACTION_TELEPORT_SEND) {
+            sendButton?.click(Input.MOUSE_LEFT_BUTTON)
+        }
+        if (key.id == VanillaHotkeys.SYS_ACTION_TELEPORT_RECV) {
+            recvButton?.click(Input.MOUSE_LEFT_BUTTON)
+        }
     }
 
     fun selectTeleportAction(send: Boolean, room: Room) {
@@ -250,7 +265,7 @@ class Teleporter(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             img.draw(base.x.f - BASE_GLOW, base.y.f - BASE_GLOW)
         }
 
-        override fun click(button: Int) {
+        public override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 

@@ -3,10 +3,7 @@ package xyz.znix.xftl.systems
 import org.jdom2.Element
 import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.game.Button
-import xyz.znix.xftl.game.EnergySource
-import xyz.znix.xftl.game.ReactorEnergySource
-import xyz.znix.xftl.game.SystemPowerButton
+import xyz.znix.xftl.game.*
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -76,6 +73,14 @@ class BackupBattery(blueprint: SystemBlueprint) : SubSystem(blueprint) {
 
     override fun makeExtraButtons(powerPos: IPoint): List<Button> {
         return listOf(BatteryButton(powerPos))
+    }
+
+    override fun hotkeyPressed(key: Hotkey) {
+        super.hotkeyPressed(key)
+
+        if (key.id == VanillaHotkeys.SYS_ACTION_BATTERY) {
+            startBattery()
+        }
     }
 
     override fun saveSystem(elem: Element, refs: ObjectRefs) {

@@ -57,6 +57,8 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     // until the next update, so you can cancel it.
     private var selectedTarget: Room? = null
 
+    private var button: HackButton? = null
+
     private var projectile: HackingDroneProjectile? = null
         set(value) {
             field = value
@@ -94,7 +96,8 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     override fun makeExtraButtons(powerPos: IPoint): List<Button> {
-        return listOf(HackButton(buttonHeight, powerPos))
+        button = HackButton(buttonHeight, powerPos)
+        return listOf(button!!)
     }
 
     override fun update(dt: Float) {
@@ -241,6 +244,15 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         startSound.play()
     }
 
+    override fun hotkeyPressed(key: Hotkey) {
+        super.hotkeyPressed(key)
+
+        if (key.id == VanillaHotkeys.SYS_ACTION_HACKING) {
+            // This is a bit hacky, but it properly shows the super-shield warning
+            button?.click(Input.MOUSE_LEFT_BUTTON)
+        }
+    }
+
     override fun saveSystem(elem: Element, refs: ObjectRefs) {
         SaveUtil.addTagFloat(elem, "timeRemaining", timeRemaining, null)
 
@@ -284,7 +296,7 @@ class Hacking(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             false, colour = GlowColour.WHITE
         )
 
-        override fun click(button: Int) {
+        public override fun click(button: Int) {
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
