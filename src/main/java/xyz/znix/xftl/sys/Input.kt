@@ -83,8 +83,8 @@ interface Input {
 
         const val KEY_LSHIFT: Int = GLFW.GLFW_KEY_LEFT_SHIFT
         const val KEY_RSHIFT: Int = GLFW.GLFW_KEY_RIGHT_SHIFT
-        const val KEY_LCTRL: Int = GLFW.GLFW_KEY_LEFT_SHIFT
-        const val KEY_RCTRL: Int = GLFW.GLFW_KEY_RIGHT_SHIFT
+        const val KEY_LCTRL: Int = GLFW.GLFW_KEY_LEFT_CONTROL
+        const val KEY_RCTRL: Int = GLFW.GLFW_KEY_RIGHT_CONTROL
 
         const val KEY_BACK: Int = GLFW.GLFW_KEY_BACKSPACE
         const val KEY_DELETE: Int = GLFW.GLFW_KEY_DELETE

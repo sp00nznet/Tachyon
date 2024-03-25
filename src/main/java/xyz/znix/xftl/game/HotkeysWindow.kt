@@ -4,9 +4,13 @@ import xyz.znix.xftl.Constants
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.pop
 import xyz.znix.xftl.rendering.Colour
+import xyz.znix.xftl.rendering.DelayedTooltip
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.replaceArg
+import xyz.znix.xftl.sys.Input
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -19,10 +23,19 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
     private var scroll: Float = 0f
     private var maxY: Int = size.y
+    private var offsetY: Int = 0
+    private val mousePos = Point(0, 0)
 
     private val groups: List<Pair<HotkeyGroup, HotkeyGroup?>>
 
     private val contentWidth = -PADDING + size.x - SCROLL_BAR_GAP - SCROLL_BAR_WIDTH - PADDING
+
+    private val binds = HashMap<Hotkey, HotkeyButton>()
+
+    private val tooltip = HotkeyTooltip()
+
+    private var currentlyBinding: Boolean = false
+    private var hovered: Hotkey? = null
 
     init {
         // Group single-column categories together (while wasting as little
@@ -54,6 +67,39 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
             groups.add(Pair(group, paired))
         }
+
+        updateBindCache()
+    }
+
+    /**
+     * Update our cache of which key each hotkey is bound to.
+     */
+    private fun updateBindCache() {
+        // TODO move this to InGameState, so the UI/in-game logic matches exactly
+
+        binds.clear()
+
+        val byId: Map<String, Hotkey> = game.hotkeyManager.groups
+            .flatMap { it.hotkeys }
+            .associateBy { it.id }
+
+        // Add the default mappings
+        for (hotkey in byId.values) {
+            binds[hotkey] = hotkey.default ?: continue
+        }
+
+        // Add our custom mappings
+        for ((actionId, keyId) in game.mainGame.profile.getKeybinds()) {
+            val action = byId[actionId] ?: continue
+
+            if (keyId == null) {
+                binds.remove(action)
+                continue
+            }
+
+            val key = HotkeyButton.BY_NAME[keyId] ?: continue
+            binds[action] = key
+        }
     }
 
     override fun draw(g: Graphics) {
@@ -71,7 +117,8 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
             g.fillRect(position.x - 7, position.y - 7, tabWidth, titleTab.height)
         }, {
             g.pushTransform()
-            g.translate(position.x.f, position.y + intScroll + 30f)
+            offsetY = position.y + intScroll + 30
+            g.translate(position.x.f, offsetY.f)
             drawContent(g)
             g.popTransform()
 
@@ -88,15 +135,6 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
             endWidth.f
         )
         titleFont.drawString(position.x.f - 7f + startWidth, position.y + 22f, titleText, Constants.JUMP_DISABLED_TEXT)
-
-        // TODO implement rebinding - for now show users a warning that they can't change it
-        titleFont.drawStringCentred(
-            position.x.f,
-            position.y + 25f,
-            size.x.f,
-            "REBINDING NOT YET IMPLEMENTED!",
-            Colour.red
-        )
     }
 
     private fun drawContent(g: Graphics) {
@@ -215,25 +253,48 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     }
 
     private fun drawHotkey(g: Graphics, key: Hotkey, y: Int, boxX: Int) {
+        val middleOfText = y - nameFont.baselineToTop / 2
+        val boxY = middleOfText - KEY_BOX_HEIGHT / 2
+
+        // If currentlyBinding is set (we've clicked on a key) then only highlight
+        // the box the user had clicked on.
+        val mouseX = mousePos.x - position.x
+        val mouseY = mousePos.y - offsetY
+        val hover = when (currentlyBinding) {
+            true -> hovered == key
+            false -> mouseX in boxX..boxX + KEY_BOX_WIDTH && mouseY in boxY..boxY + KEY_BOX_HEIGHT
+        }
+        val otherRebinding = currentlyBinding && !hover
+        val mainColour = when {
+            hover -> Constants.UI_BUTTON_HOVER
+            otherRebinding -> Constants.WEAPONS_ITEM_DESELECTED
+            else -> Colour.white
+        }
+        val textColour = when {
+            otherRebinding -> Constants.WEAPONS_ITEM_DESELECTED
+            else -> Constants.SECTOR_CUTOUT_TEXT
+        }
+
         nameFont.drawStringLeftAligned(
             boxX - 15f,
             y.f,
             game.translator[key.name],
-            Constants.SECTOR_CUTOUT_TEXT
+            textColour
         )
-
-        val middleOfText = y - nameFont.baselineToTop / 2
-        val boxY = middleOfText - KEY_BOX_HEIGHT / 2
 
         g.colour = Constants.REWARDS_BACKGROUND
         g.fillRect(boxX, boxY, KEY_BOX_WIDTH, KEY_BOX_HEIGHT)
-        g.colour = Colour.white
+        g.colour = mainColour
         g.drawRect(boxX, boxY, KEY_BOX_WIDTH - 1, KEY_BOX_HEIGHT - 1)
         g.drawRect(boxX + 1, boxY + 1, KEY_BOX_WIDTH - 3, KEY_BOX_HEIGHT - 3)
 
-        // TODO actually implement re-binding
-        val keyName = key.default?.locKey?.let { game.translator[it] } ?: "..."
-        nameFont.drawStringCentred(boxX.f, boxY + 17f, KEY_BOX_WIDTH.f, keyName, Colour.white)
+        val keyName = binds[key]?.locKey?.let { game.translator[it] } ?: "..."
+        nameFont.drawStringCentred(boxX.f, boxY + 17f, KEY_BOX_WIDTH.f, keyName, mainColour)
+
+        if (hover) {
+            hovered = key
+            g.tooltip = tooltip
+        }
     }
 
     private fun calcBoxX(column: Int, count: Int): Int {
@@ -257,6 +318,58 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
         // Can't scroll too far up
         if (scroll > 0f) {
             scroll = 0f
+        }
+    }
+
+    override fun updateUI(x: Int, y: Int) {
+        mousePos.set(x, y)
+        super.updateUI(x, y)
+    }
+
+    override fun mouseClick(button: Int, x: Int, y: Int) {
+        // If we're rebinding a key, clicking anywhere cancels
+        if (currentlyBinding) {
+            currentlyBinding = false
+            return
+        }
+
+        super.mouseClick(button, x, y)
+
+        // Start rebinding a key?
+        if (button == Input.MOUSE_LEFT_BUTTON && hovered != null) {
+            currentlyBinding = true
+        }
+    }
+
+    override fun onTextInput(key: Int, c: Char): Boolean {
+        if (!currentlyBinding)
+            return false
+        val hotkey = hovered ?: return false
+
+        // Check if we know about this key
+        val button = HotkeyButton.BY_KEY_ID[key] ?: return false
+
+        // Escape un-binds a key
+        when (key) {
+            Input.KEY_ESCAPE -> game.mainGame.profile.unbindKey(hovered!!)
+            else -> game.mainGame.profile.setKeybind(hotkey, button)
+        }
+        currentlyBinding = false
+        updateBindCache()
+        return true
+    }
+
+    private inner class HotkeyTooltip : DelayedTooltip(game) {
+        // This might get a bit annoying with a shorter delay
+        override val delayPeriod: Float get() = 0.75f
+
+        override fun getText(): String {
+            val key = hovered ?: return ""
+
+            return when (val default = key.default) {
+                null -> game.translator["xftl_hotkeys_default_tooltip_none"]
+                else -> game.translator["xftl_hotkeys_default_tooltip"].replaceArg(game.translator[default.locKey])
+            }
         }
     }
 

@@ -45,13 +45,13 @@ class HotkeyManager {
         val uiName = elem.requireAttributeValue("ui_name")
         val defaultId = elem.getAttributeValue("default_bind")
 
-        val default = defaultId?.let { HotkeyButton.BY_ID[it] ?: error("Invalid default keybind $it") }
+        val default = defaultId?.let { HotkeyButton.BY_NAME[it] ?: error("Invalid default keybind $it") }
 
         return Hotkey(id, GameText.localised(uiName), default)
     }
 }
 
-class HotkeyGroup(val id: String, val name: GameText, val columns: Int, val hotkeys: ArrayList<Hotkey>)
+class HotkeyGroup(val id: String, val name: GameText, val columns: Int, val hotkeys: List<Hotkey>)
 
 class Hotkey(val id: String, val name: GameText, val default: HotkeyButton?)
 
@@ -128,6 +128,7 @@ class HotkeyButton(val id: String, val keyID: Int) {
             HotkeyButton("9", Input.KEY_9),
         )
 
-        val BY_ID: Map<String, HotkeyButton> = ALL.associateBy { it.id }
+        val BY_NAME: Map<String, HotkeyButton> = ALL.associateBy { it.id }
+        val BY_KEY_ID: Map<Int, HotkeyButton> = ALL.associateBy { it.keyID }
     }
 }

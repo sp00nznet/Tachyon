@@ -30,6 +30,20 @@ class SaveProfile private constructor() {
      */
     private val unlockedShips = HashMap<String, AchievementUnlockInfo>()
 
+    /**
+     * Stores all the user-modified hotkeys. This maps from the hotkey ID
+     * to that of the key. It's stored here as a string mapping, as mods
+     * will be able to add their own keybinds and we don't want to delete
+     * those if the user loads up without said mod.
+     *
+     * Keys that are mapped to their default values aren't stored here,
+     * which means that adding a mod won't immediately fill your profile
+     * with all it's keybinds unless you modify them.
+     *
+     * Mapping to a null string means the key is unbound.
+     */
+    private val keybinds = HashMap<String, String?>()
+
     // These must be manually marked as dirty, since they can change quite
     // a lot when the slider is being moved.
     var musicVolume: Float = 1f
@@ -92,6 +106,25 @@ class SaveProfile private constructor() {
         dirty = true
     }
 
+    fun getKeybinds(): Map<String, String?> {
+        return keybinds
+    }
+
+    fun setKeybind(action: Hotkey, button: HotkeyButton) {
+        keybinds[action.id] = button.id
+        dirty = true
+    }
+
+    fun unbindKey(action: Hotkey) {
+        keybinds[action.id] = null
+        dirty = true
+    }
+
+    fun resetHotkeyToDefault(action: Hotkey) {
+        keybinds.remove(action.id)
+        dirty = true
+    }
+
     fun save(): Document {
         val doc = Document(Element("xftl-profile"))
         val root = doc.rootElement
@@ -110,6 +143,16 @@ class SaveProfile private constructor() {
 
             elem.setAttribute("unlockId", id)
             elem.setAttribute("diff", info.difficulty.name)
+        }
+
+        for ((hotkey, button) in keybinds) {
+            val elem = Element("hotkey")
+            root.addContent(elem)
+
+            elem.setAttribute("action", hotkey)
+            if (button != null) {
+                elem.setAttribute("key", button)
+            }
         }
 
         val volumes = Element("soundVolume")
@@ -151,6 +194,12 @@ class SaveProfile private constructor() {
             unlockedShips[id] = AchievementUnlockInfo(
                 Difficulty.valueOf(difficultyName)
             )
+        }
+
+        for (elem in root.getChildren("hotkey")) {
+            val action: String = elem.getAttributeValue("action")
+            val key: String? = elem.getAttributeValue("key")
+            keybinds[action] = key
         }
 
         val volumes = root.getChild("soundVolume")
