@@ -113,6 +113,15 @@ public class InGameState extends MainGame.GameState {
      */
     private final ArrayList<LivingCrew> playerCrew = new ArrayList<>();
 
+    /**
+     * The buttons each hotkey is bound to.
+     * <p>
+     * This is calculated from the profile and hotkey manager, so it shouldn't
+     * be modified externally.
+     */
+    private final HashMap<Hotkey, HotkeyButton> reverseHotkeyBindings = new HashMap<>();
+    private final HashMap<HotkeyButton, Hotkey> forwardHotkeyBindings = new HashMap<>();
+
     public InGameState(MainGame mainGame, GameContent content, String playerShipName, Difficulty difficulty, EditableShip customised) {
         this(mainGame, content);
         this.difficulty = difficulty;
@@ -221,6 +230,8 @@ public class InGameState extends MainGame.GameState {
             getImg("img/icons/s_" + system.getType() + "_grey1.png");
             getImg("img/icons/s_" + system.getType() + "_green1.png");
         }
+
+        updateHotkeyBindings();
     }
 
     @Override
@@ -1754,6 +1765,20 @@ public class InGameState extends MainGame.GameState {
 
     public List<LivingCrew> getPlayerCrew() {
         return playerCrew;
+    }
+
+    public Map<Hotkey, HotkeyButton> getReverseHotkeyBindings() {
+        return Collections.unmodifiableMap(reverseHotkeyBindings);
+    }
+
+    /**
+     * Update our cache of which key each hotkey is bound to.
+     * <p>
+     * This should be called if you modify the keybinds inside the [SaveProfile].
+     */
+    public void updateHotkeyBindings() {
+        assert mainGame != null;
+        getHotkeyManager().calculateBindings(mainGame.getProfile(), forwardHotkeyBindings, reverseHotkeyBindings);
     }
 
     private void setEnemyIsHostile(boolean enemyIsHostile) {

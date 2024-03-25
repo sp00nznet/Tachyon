@@ -30,6 +30,7 @@
     <text name="xftl_hotkeys_ui_group">GAME CONTROL</text>
     <text name="xftl_hotkeys_default_tooltip">Default: \1</text>
     <text name="xftl_hotkeys_default_tooltip_none">Default: none</text>
+    <text name="xftl_hotkeys_conflicts_tooltip">Conflicts with:</text>
 
     <!-- Key names, used for hotkey binding -->
     <text name="xftl_key_f1">F1</text>

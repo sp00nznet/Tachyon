@@ -49,6 +49,46 @@ class HotkeyManager {
 
         return Hotkey(id, GameText.localised(uiName), default)
     }
+
+    /**
+     * Updates the [forward] and [reverse] map with the hotkey-to-key bindings, including defaults.
+     */
+    fun calculateBindings(
+        profile: SaveProfile,
+        forward: HashMap<HotkeyButton, Hotkey>,
+        reverse: HashMap<Hotkey, HotkeyButton>
+    ) {
+        forward.clear()
+        reverse.clear()
+
+        val byId: Map<String, Hotkey> = groups
+            .flatMap { it.hotkeys }
+            .associateBy { it.id }
+
+        // Add the default mappings
+        for (hotkey in byId.values) {
+            reverse[hotkey] = hotkey.default ?: continue
+        }
+
+        // Add our custom mappings
+        for ((actionId, keyId) in profile.getKeybinds()) {
+            val action = byId[actionId] ?: continue
+
+            if (keyId == null) {
+                reverse.remove(action)
+                continue
+            }
+
+            val key = HotkeyButton.BY_NAME[keyId] ?: continue
+            reverse[action] = key
+        }
+
+        // Build the forward bindings map.
+        // Note some actions might overlap each other.
+        for ((action, key) in reverse) {
+            forward[key] = action
+        }
+    }
 }
 
 class HotkeyGroup(val id: String, val name: GameText, val columns: Int, val hotkeys: List<Hotkey>)

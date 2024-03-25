@@ -30,12 +30,13 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
     private val contentWidth = -PADDING + size.x - SCROLL_BAR_GAP - SCROLL_BAR_WIDTH - PADDING
 
-    private val binds = HashMap<Hotkey, HotkeyButton>()
+    private val conflicts = HashMap<Hotkey, List<Hotkey>>()
 
     private val tooltip = HotkeyTooltip()
 
     private var currentlyBinding: Boolean = false
     private var hovered: Hotkey? = null
+    private var foundHover: Boolean = false
 
     init {
         // Group single-column categories together (while wasting as little
@@ -75,30 +76,23 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
      * Update our cache of which key each hotkey is bound to.
      */
     private fun updateBindCache() {
-        // TODO move this to InGameState, so the UI/in-game logic matches exactly
+        game.updateHotkeyBindings()
 
-        binds.clear()
-
-        val byId: Map<String, Hotkey> = game.hotkeyManager.groups
-            .flatMap { it.hotkeys }
-            .associateBy { it.id }
-
-        // Add the default mappings
-        for (hotkey in byId.values) {
-            binds[hotkey] = hotkey.default ?: continue
+        // Calculate the conflicting keys (those where multiple
+        // hotkeys map to the same physical button)
+        val boundTo = HashMap<HotkeyButton, ArrayList<Hotkey>>()
+        for ((action, button) in game.reverseHotkeyBindings) {
+            boundTo.computeIfAbsent(button) { ArrayList() }.add(action)
         }
 
-        // Add our custom mappings
-        for ((actionId, keyId) in game.mainGame.profile.getKeybinds()) {
-            val action = byId[actionId] ?: continue
-
-            if (keyId == null) {
-                binds.remove(action)
+        conflicts.clear()
+        for (actions in boundTo.values) {
+            if (actions.size <= 1)
                 continue
-            }
 
-            val key = HotkeyButton.BY_NAME[keyId] ?: continue
-            binds[action] = key
+            for (action in actions) {
+                conflicts[action] = actions
+            }
         }
     }
 
@@ -138,6 +132,11 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     }
 
     private fun drawContent(g: Graphics) {
+        // This is used to check whether a user has moused off something, and
+        // thus set hovered=null. We can't just set hovered=null here, since
+        // hotkeys react when you hover over another hotkey they conflict with.
+        foundHover = false
+
         var y = 30
 
         for ((left, right) in groups) {
@@ -156,7 +155,13 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
             y = drawGroup(g, left, y, layout)
         }
 
+        // This is used to set the scrollbar length.
         maxY = y
+
+        // If the user moused off a hotkey, unmark it as the hovered item.
+        if (!foundHover) {
+            hovered = null
+        }
     }
 
     private fun drawScrollBar(g: Graphics) {
@@ -264,13 +269,21 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
             true -> hovered == key
             false -> mouseX in boxX..boxX + KEY_BOX_WIDTH && mouseY in boxY..boxY + KEY_BOX_HEIGHT
         }
+
         val otherRebinding = currentlyBinding && !hover
+
+        val hasConflict = conflicts.containsKey(key)
+        val conflictsWithHover = hovered?.let { conflicts[it] }?.contains(key) == true
+
         val mainColour = when {
             hover -> Constants.UI_BUTTON_HOVER
+            conflictsWithHover -> Constants.WEAPONS_ITEM_TARGETING
             otherRebinding -> Constants.WEAPONS_ITEM_DESELECTED
+            hasConflict -> Constants.WEAPONS_ITEM_TARGETING
             else -> Colour.white
         }
         val textColour = when {
+            conflictsWithHover -> Constants.WEAPONS_ITEM_TARGETING
             otherRebinding -> Constants.WEAPONS_ITEM_DESELECTED
             else -> Constants.SECTOR_CUTOUT_TEXT
         }
@@ -288,11 +301,12 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
         g.drawRect(boxX, boxY, KEY_BOX_WIDTH - 1, KEY_BOX_HEIGHT - 1)
         g.drawRect(boxX + 1, boxY + 1, KEY_BOX_WIDTH - 3, KEY_BOX_HEIGHT - 3)
 
-        val keyName = binds[key]?.locKey?.let { game.translator[it] } ?: "..."
+        val keyName = game.reverseHotkeyBindings[key]?.locKey?.let { game.translator[it] } ?: "..."
         nameFont.drawStringCentred(boxX.f, boxY + 17f, KEY_BOX_WIDTH.f, keyName, mainColour)
 
         if (hover) {
             hovered = key
+            foundHover = true
             g.tooltip = tooltip
         }
     }
@@ -360,16 +374,27 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     }
 
     private inner class HotkeyTooltip : DelayedTooltip(game) {
-        // This might get a bit annoying with a shorter delay
-        override val delayPeriod: Float get() = 0.75f
-
         override fun getText(): String {
             val key = hovered ?: return ""
 
-            return when (val default = key.default) {
+            var text = when (val default = key.default) {
                 null -> game.translator["xftl_hotkeys_default_tooltip_none"]
                 else -> game.translator["xftl_hotkeys_default_tooltip"].replaceArg(game.translator[default.locKey])
             }
+
+            // List the conflicts for this key
+            val conflicts = conflicts[key]
+            if (conflicts != null) {
+                text += "\n" + game.translator["xftl_hotkeys_conflicts_tooltip"]
+                for (other in conflicts) {
+                    if (key == other)
+                        continue
+
+                    text += "\n-" + game.translator[other.name]
+                }
+            }
+
+            return text
         }
     }
 
