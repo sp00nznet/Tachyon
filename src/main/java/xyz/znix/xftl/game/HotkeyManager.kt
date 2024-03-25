@@ -9,6 +9,11 @@ import xyz.znix.xftl.sys.Input
 class HotkeyManager {
     val groups: List<HotkeyGroup>
 
+    // These are special-cased, and thus we have to fish them out here
+    val keyDevConsole: Hotkey
+    val keyFrameStep: Hotkey
+    val keyFastForward: Hotkey
+
     init {
         groups = ArrayList()
 
@@ -24,6 +29,11 @@ class HotkeyManager {
 
             groups += parseGroup(groupElem)
         }
+
+        val allKeys = groups.flatMap { it.hotkeys }.associateBy { it.id }
+        keyDevConsole = allKeys.getValue(VanillaHotkeys.DEV_CONSOLE)
+        keyFrameStep = allKeys.getValue(VanillaHotkeys.DEV_FRAME_STEP)
+        keyFastForward = allKeys.getValue(VanillaHotkeys.DEV_FAST_FORWARD)
     }
 
     private fun parseGroup(elem: Element): HotkeyGroup {
@@ -226,4 +236,8 @@ object VanillaHotkeys {
     const val LOAD_CREW_POS: String = "load_crew_pos"
     const val SAVE_CREW_POS: String = "save_crew_pos"
     const val LOCKDOWN_ACTIVATE: String = "lockdown_activate"
+
+    const val DEV_CONSOLE: String = "dev_console"
+    const val DEV_FRAME_STEP: String = "dev_frame_step"
+    const val DEV_FAST_FORWARD: String = "dev_fast_forward"
 }

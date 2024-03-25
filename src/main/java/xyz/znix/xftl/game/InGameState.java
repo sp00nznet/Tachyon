@@ -366,10 +366,17 @@ public class InGameState extends MainGame.GameState {
 
         // For debugging, this lets you either step or fast-forward through time.
         // Don't do this in response to typing on the debug console, though.
-        if (container.getInput().isKeyDown(Input.KEY_TAB) && !debugConsoleVisible)
-            updateGameState(delta * 4);
-        if (container.getInput().isKeyPressed(Input.KEY_FULL_STOP) && !debugConsoleVisible)
-            updateGameState(0.01f);
+        if (!debugConsoleVisible) {
+            HotkeyButton fastForwardButton = reverseHotkeyBindings.get(getHotkeyManager().getKeyFastForward());
+            HotkeyButton stepButton = reverseHotkeyBindings.get(getHotkeyManager().getKeyFrameStep());
+
+            if (fastForwardButton != null && in.isKeyDown(fastForwardButton.getKeyID())) {
+                updateGameState(delta * 4);
+            }
+            if (fastForwardButton != null && in.isKeyPressed(stepButton.getKeyID())) {
+                updateGameState(0.01f);
+            }
+        }
 
         shipUI.updateAlways(delta);
 
@@ -384,8 +391,8 @@ public class InGameState extends MainGame.GameState {
             sounds.setMusicVolume(mainGame.getProfile().getMusicVolume());
         }
 
-        // TODO hotkey-ify this, though it'll still need special handling.
-        if (in.isKeyPressed(Input.KEY_GRAVE)) {
+        HotkeyButton consoleButton = reverseHotkeyBindings.get(getHotkeyManager().getKeyDevConsole());
+        if (consoleButton != null && in.isKeyPressed(consoleButton.getKeyID())) {
             debugConsoleVisible = !debugConsoleVisible;
 
             // Clear out any pending key presses, so keys pressed while

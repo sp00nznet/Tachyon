@@ -76,4 +76,10 @@
         <hotkey id="weapon_autofire_toggle" ui_name="hotkey_autofire" default_bind="v"/>
         <hotkey id="weapon_autofire_target" ui_name="hotkey_force_autofire" default_bind="lctrl"/>
     </group>
+
+    <group id="development" ui_name="xftl_hotkeys_dev_group">
+        <hotkey id="dev_console" ui_name="xftl_hotkeys_console" default_bind="backtick"/>
+        <hotkey id="dev_frame_step" ui_name="xftl_hotkeys_frame_step" default_bind="full_stop"/>
+        <hotkey id="dev_fast_forward" ui_name="xftl_hotkeys_fast_forward" default_bind="tab"/>
+    </group>
 </hotkeys>
