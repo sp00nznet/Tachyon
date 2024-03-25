@@ -18,9 +18,11 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     private val titleTab = game.getImg("img/map/side_beaconmap.png")
 
     private var scroll: Float = 0f
-    private var maxY: Int = 0
+    private var maxY: Int = size.y
 
     private val groups: List<Pair<HotkeyGroup, HotkeyGroup?>>
+
+    private val contentWidth = -PADDING + size.x - SCROLL_BAR_GAP - SCROLL_BAR_WIDTH - PADDING
 
     init {
         // Group single-column categories together (while wasting as little
@@ -72,6 +74,8 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
             g.translate(position.x.f, position.y + intScroll + 30f)
             drawContent(g)
             g.popTransform()
+
+            drawScrollBar(g)
         })
 
         UIUtils.drawTab(
@@ -117,6 +121,26 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
         maxY = y
     }
 
+    private fun drawScrollBar(g: Graphics) {
+        val areaHeight = size.y - PADDING * 2
+        val barHeight = (areaHeight * size.y.f / maxY).roundToInt()
+        val barY = (areaHeight * -scroll / maxY).roundToInt()
+
+        // The box showing the area the scroll bar can occupy
+        g.colour = Constants.REWARDS_BACKGROUND
+        g.fillRect(
+            position.x + size.x - PADDING - SCROLL_BAR_WIDTH, position.y + PADDING,
+            SCROLL_BAR_WIDTH, areaHeight
+        )
+
+        // The scroll bar itself
+        g.colour = Constants.SECTOR_CUTOUT_TEXT
+        g.fillRect(
+            position.x + size.x - PADDING - SCROLL_BAR_WIDTH, position.y + PADDING + barY,
+            SCROLL_BAR_WIDTH, barHeight
+        )
+    }
+
     private fun drawGroup(g: Graphics, group: HotkeyGroup, startY: Int, layout: Layout): Int {
         var y = startY
 
@@ -129,9 +153,9 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
         when (layout) {
             Layout.BOTH -> {
-                Buttons.drawRounded(g, PADDING, y - 17, size.x - PADDING * 2, 22, 4)
+                Buttons.drawRounded(g, PADDING, y - 17, contentWidth, 22, 4)
                 titleFont.drawStringCentred(
-                    0f, y.f, size.x.f,
+                    PADDING.f, y.f, contentWidth.f,
                     game.translator[group.name],
                     Constants.JUMP_DISABLED_TEXT
                 )
@@ -140,7 +164,7 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
             Layout.LEFT -> {
                 Buttons.drawRounded(g, PADDING, y - 17, titleSplitX - PADDING * 2, 22, 4)
                 titleFont.drawStringCentred(
-                    0f, y.f, size.x / 2f,
+                    PADDING.f, y.f, contentWidth / 2f,
                     game.translator[group.name],
                     Constants.JUMP_DISABLED_TEXT
                 )
@@ -150,7 +174,7 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
                 Buttons.drawRounded(
                     g,
                     titleSplitX + PADDING, y - 17,
-                    size.x - titleSplitX - PADDING * 2, 22,
+                    contentWidth - titleSplitX, 22,
                     4
                 )
                 titleFont.drawStringCentred(
@@ -213,8 +237,7 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     }
 
     private fun calcBoxX(column: Int, count: Int): Int {
-        val width = size.x - PADDING * 2
-        val rightEdgeX = PADDING + width * (column + 1) / count
+        val rightEdgeX = PADDING + contentWidth * (column + 1) / count
         return rightEdgeX - KEY_BOX_WIDTH
     }
 
@@ -223,7 +246,7 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
     }
 
     override fun mouseScroll(change: Int) {
-        scroll += change / 10f
+        scroll += change / 3f
 
         // Can't scroll too far down
         val maxDownScroll = size.y - maxY
@@ -241,6 +264,8 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
         private const val KEY_BOX_WIDTH = 120
         private const val KEY_BOX_HEIGHT = 22
         private const val PADDING = 15
+        private const val SCROLL_BAR_WIDTH = 4
+        private const val SCROLL_BAR_GAP = 10
     }
 
     /**
