@@ -3,7 +3,6 @@ package xyz.znix.xftl.hangar
 import xyz.znix.xftl.Constants
 import xyz.znix.xftl.LazyShipBlueprint
 import xyz.znix.xftl.f
-import xyz.znix.xftl.game.ShipBlueprint
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Colour

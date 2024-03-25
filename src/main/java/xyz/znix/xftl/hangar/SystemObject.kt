@@ -5,9 +5,6 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Artillery
-import xyz.znix.xftl.systems.Clonebay
-import xyz.znix.xftl.systems.Medbay
-import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import kotlin.math.pow
 

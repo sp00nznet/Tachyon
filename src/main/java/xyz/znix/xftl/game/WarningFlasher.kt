@@ -5,7 +5,6 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
-import kotlin.random.Random
 
 /**
  * Displays a message with an optional line pointing to it.
