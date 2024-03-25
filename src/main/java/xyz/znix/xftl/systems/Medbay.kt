@@ -7,6 +7,7 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.MedbayHealing
 import xyz.znix.xftl.game.UIUtils
+import xyz.znix.xftl.replaceArg
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import kotlin.math.roundToInt
@@ -71,6 +72,6 @@ private object MedbayInfo : SystemInfo("medbay") {
     override fun getLevelName(level: Int, translator: Translator): String {
         val fixedPoint = (Medbay.speedForLevel(level) * 100).roundToInt()
         val speedStr = UIUtils.formatStringFTL(fixedPoint)
-        return translator["medbay_healing"].replace("\\1", speedStr)
+        return translator["medbay_healing"].replaceArg(speedStr)
     }
 }

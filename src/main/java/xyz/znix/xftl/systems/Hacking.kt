@@ -675,6 +675,6 @@ private object HackingInfo : SystemInfo("hacking") {
 
     override fun getLevelName(level: Int, translator: Translator): String {
         val time = 4 + level * 3
-        return translator["hacking_duration"].replace("\\1", time.toString())
+        return translator["hacking_duration"].replaceArg(time)
     }
 }

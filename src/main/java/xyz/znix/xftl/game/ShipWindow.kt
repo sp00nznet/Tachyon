@@ -360,7 +360,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, private val close: () ->
                     // Draw the 'n power bars' text - this is annoyingly mixed between two fonts
                     // TODO mix them properly to work in languages where the power number doesn't
                     //  come first - is this something FTL does?
-                    val text = game.translator["upgrade_reactor_power"].replace("\\1", "")
+                    val text = game.translator["upgrade_reactor_power"].replaceArg("")
                     reactorFont.drawStringLeftAligned(pos.x + 179f, pos.y + 105f, text, fontColour)
                     numberFont.drawStringLeftAligned(
                         pos.x + 47f,

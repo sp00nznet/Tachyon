@@ -3,6 +3,7 @@ package xyz.znix.xftl.game
 import xyz.znix.xftl.AbstractSystem
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.rendering.DelayedTooltip
+import xyz.znix.xftl.replaceArg
 import xyz.znix.xftl.systems.*
 
 /**
@@ -21,8 +22,8 @@ class SystemButtonTooltip(val game: InGameState, val system: AbstractSystem) : D
                 val name = system.info.getLevelName(power - 1, game.translator)
 
                 game.translator["level"]
-                    .replace("\\1", power.toString())
-                    .replace("\\2", name)
+                    .replaceArg(power)
+                    .replaceArg(name, 2)
             }
         }
 
@@ -43,7 +44,7 @@ class SystemButtonTooltip(val game: InGameState, val system: AbstractSystem) : D
         if (skillLevel != null && power > 0) {
             val desc = skillType.getDescription(game, skillLevel)
             lines += ""
-            lines += game.translator["manning_bonus"].replace("\\1", desc)
+            lines += game.translator["manning_bonus"].replaceArg(desc)
         }
 
         lines += ""

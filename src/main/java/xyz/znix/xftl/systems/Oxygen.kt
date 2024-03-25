@@ -4,6 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.SystemInfo
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.game.UIUtils
+import xyz.znix.xftl.replaceArg
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import kotlin.math.max
@@ -57,6 +58,6 @@ private object OxygenInfo : SystemInfo("oxygen") {
     override fun getLevelName(level: Int, translator: Translator): String {
         val fixedPoint = (max(1f, Oxygen.REFILL_SCALING * level) * 100).roundToInt()
         val speedStr = UIUtils.formatStringFTL(fixedPoint)
-        return translator["oxygen_on"].replace("\\1", speedStr)
+        return translator["oxygen_on"].replaceArg(speedStr)
     }
 }

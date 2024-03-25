@@ -9,6 +9,7 @@ import xyz.znix.xftl.game.Hotkey
 import xyz.znix.xftl.game.SystemPowerButton
 import xyz.znix.xftl.game.VanillaHotkeys
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.replaceArg
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -195,6 +196,6 @@ private object CloakingInfo : SystemInfo("cloaking") {
 
     override fun getLevelName(level: Int, translator: Translator): String {
         val time = Cloaking.TIME_PER_POWER * (level + 1)
-        return translator["cloak"].replace("\\1", time.toInt().toString())
+        return translator["cloak"].replaceArg(time.toInt())
     }
 }

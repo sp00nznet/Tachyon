@@ -1,15 +1,12 @@
 package xyz.znix.xftl.systems
 
 import org.jdom2.Element
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.SystemInfo
-import xyz.znix.xftl.Translator
+import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.ClonebayHealing
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
-import xyz.znix.xftl.f
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.rendering.Colour
@@ -329,6 +326,6 @@ private object ClonebayInfo : SystemInfo("clonebay") {
     override fun getLevelName(level: Int, translator: Translator): String {
         val time = Clonebay.CLONE_DURATIONS[level].toInt()
         val heal = Clonebay.PASSIVE_HEALING[level]
-        return translator["clone_full"].replace("\\1", time.toString()).replace("\\2", heal.toString())
+        return translator["clone_full"].replaceArg(time).replaceArg(heal, 2)
     }
 }

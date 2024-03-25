@@ -10,7 +10,6 @@ import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sys.GameContainer
-import kotlin.random.Random
 import kotlin.random.nextInt
 
 class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean) : AbstractEnvironment(game, beacon) {

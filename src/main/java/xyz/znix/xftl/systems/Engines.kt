@@ -6,6 +6,7 @@ import xyz.znix.xftl.Translator
 import xyz.znix.xftl.crew.Skill
 import xyz.znix.xftl.game.UIUtils
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.replaceArg
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 
@@ -99,6 +100,6 @@ private object EngineInfo : SystemInfo("engines") {
         val chargeRate = 100 + 25 * level
         val chargeRateStr = UIUtils.formatStringFTL(chargeRate)
 
-        return translator["engine"].replace("\\1", evasion.toString()).replace("\\2", chargeRateStr)
+        return translator["engine"].replaceArg(evasion).replaceArg(chargeRateStr, 2)
     }
 }

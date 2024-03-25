@@ -1,9 +1,6 @@
 package xyz.znix.xftl.game
 
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
-import xyz.znix.xftl.Utils
-import xyz.znix.xftl.f
+import xyz.znix.xftl.*
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
@@ -204,7 +201,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
 
         if (enemy.type.shipClass != null) {
             val shipClassName = game.translator[enemy.type.shipClass]
-            val classStr = game.translator["combat_class"].replace("\\1", shipClassName)
+            val classStr = game.translator["combat_class"].replaceArg(shipClassName)
 
             statusFont.drawStringLeftAligned(x.f, classY.f, classStr, Constants.SHIP_STATUS_PLAIN)
         }
@@ -217,7 +214,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
             true -> Constants.SHIP_STATUS_HOSTILE
             false -> Constants.SHIP_STATUS_PLAIN
         }
-        val relationStr = game.translator["combat_relationship"].replace("\\1", relationText)
+        val relationStr = game.translator["combat_relationship"].replaceArg(relationText)
         statusFont.drawStringLeftAligned(x.f, relationY.f, relationStr, relationColour)
     }
 

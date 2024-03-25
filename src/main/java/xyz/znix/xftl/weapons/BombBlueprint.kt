@@ -15,7 +15,6 @@ import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
 
 class BombBlueprint(xml: Element) : AbstractWeaponBlueprint(xml) {
     override val explosion: String = super.explosion ?: "explosion_random"

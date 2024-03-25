@@ -391,7 +391,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
 
         for (crew in resourceSet.lostCrew) {
             val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
-            val message = game.translator[messageKey].replace("\\1", crew.crew.info.name)
+            val message = game.translator[messageKey].replaceArg(crew.crew.info.name)
 
             // There's 30 pixels for the crew member to fit on the left
             // of the 'so-and-so is gone' message.
@@ -584,7 +584,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         crew.crew.drawPortrait(x - 2, y - 2, false)
 
         val messageKey = if (crew.info.turnHostile) "traitor_crew" else "dead_crew"
-        val message = game.translator[messageKey].replace("\\1", crew.crew.info.name)
+        val message = game.translator[messageKey].replaceArg(crew.crew.info.name)
         resourceNumFont.drawString(x + 30f, y + 21f, message, Constants.SYS_ENERGY_BROKEN)
 
         return 32
@@ -862,12 +862,12 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
                 return Pair(null, Constants.SYS_ENERGY_BROKEN)
             }
 
-            val message = game.translator["heal_alert"].replace("\\1", realHealing.toString())
+            val message = game.translator["heal_alert"].replaceArg(realHealing)
             return Pair(message, Constants.SYS_ENERGY_ACTIVE)
         }
 
         val realDamage = min(playerShip.health, baseDamage)
-        val message = game.translator["damage_alert"].replace("\\1", realDamage.toString())
+        val message = game.translator["damage_alert"].replaceArg(realDamage)
         return Pair(message, Constants.SYS_ENERGY_BROKEN)
     }
 
@@ -877,7 +877,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         val systemName = game.translator[upgrade.system]
 
         if (system == null && !isReactor) {
-            val message = game.translator["upgrade_fail_missing"].replace("\\1", systemName)
+            val message = game.translator["upgrade_fail_missing"].replaceArg(systemName)
             return Pair(message, Colour.white)
         }
 
@@ -887,12 +887,12 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         }
 
         if (isMaxed) {
-            val message = game.translator["upgrade_fail_max"].replace("\\1", systemName)
+            val message = game.translator["upgrade_fail_max"].replaceArg(systemName)
             return Pair(message, Colour.white)
         }
 
         val message = game.translator["upgrade_success"]
-            .replace("\\1", systemName).replace("\\2", upgrade.amount.toString())
+            .replaceArg(systemName).replaceArg(upgrade.amount, 2)
         return Pair(message, Constants.SYS_ENERGY_ACTIVE)
     }
 
@@ -904,7 +904,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             }
 
             amount > 1 -> {
-                val message = game.translator["fleet_speed"].replace("\\1", amount.toString())
+                val message = game.translator["fleet_speed"].replaceArg(amount)
                 return Pair(message, Constants.SYS_ENERGY_BROKEN)
             }
 
@@ -914,7 +914,7 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
             }
 
             else -> {
-                val message = game.translator["fleet_delayed"].replace("\\1", (-amount).toString())
+                val message = game.translator["fleet_delayed"].replaceArg(-amount)
                 return Pair(message, Constants.SYS_ENERGY_BROKEN)
             }
         }

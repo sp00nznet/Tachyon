@@ -126,7 +126,7 @@ private object BatteryInfo : SystemInfo("battery") {
 
     override fun getLevelName(level: Int, translator: Translator): String {
         val power = 2 * (level + 1)
-        return translator["battery_power"].replace("\\1", power.toString())
+        return translator["battery_power"].replaceArg(power)
     }
 }
 

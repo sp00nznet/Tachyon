@@ -11,7 +11,6 @@ import xyz.znix.xftl.math.RoomPoint
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
-import kotlin.random.Random
 
 /**
  * This represents one cell of fire in a room.

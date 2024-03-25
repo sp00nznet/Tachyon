@@ -6,6 +6,7 @@ import xyz.znix.xftl.f
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.replaceArg
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -49,7 +50,7 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
         options.addAll(baseOptions)
 
         val description = translator["xftl_select_datafile_desc"]
-            .replace("\\1", PlatformSpecific.INSTANCE.ftlDatPathFile.toString())
+            .replaceArg(PlatformSpecific.INSTANCE.ftlDatPathFile.toString())
         descriptionLines = font.wrapString(description, 500)
     }
 

@@ -336,6 +336,6 @@ private object TeleporterInfo : SystemInfo("teleporter") {
 
     override fun getLevelName(level: Int, translator: Translator): String {
         val time = Teleporter.cooldownTime(level + 1)
-        return translator["teleporter_on"].replace("\\1", time.toString())
+        return translator["teleporter_on"].replaceArg(time)
     }
 }

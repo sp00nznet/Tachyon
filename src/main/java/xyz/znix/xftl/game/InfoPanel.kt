@@ -34,7 +34,7 @@ class InfoPanel(private val game: InGameState) {
 
     fun drawDrone(blueprint: DroneBlueprint) {
         val lines = ArrayList<String>()
-        lines += game.translator["required_power"].replace("\\1", blueprint.power.toString())
+        lines += game.translator["required_power"].replaceArg(blueprint.power)
         lines += game.translator["drone_required"]
         drawDescriptionBox(blueprint.title, blueprint.desc, blueprint.tip, lines, INFO_HEIGHT_DRONE)
     }
@@ -47,12 +47,12 @@ class InfoPanel(private val game: InGameState) {
 
         // Build all the weapon attributes that appear when hovering over it
 
-        lines += game.translator["required_power"].replace("\\1", blueprint.power.toString())
-        lines += game.translator["charge_time"].replace("\\1", UIUtils.formatFloat(blueprint.chargeTime))
+        lines += game.translator["required_power"].replaceArg(blueprint.power)
+        lines += game.translator["charge_time"].replaceArg(UIUtils.formatFloat(blueprint.chargeTime))
         if (blueprint.boost?.type == AbstractWeaponBlueprint.BoostType.COOLDOWN) {
             val maxBoost = blueprint.boost.maxCount * blueprint.boost.perShot
             lines += game.translator["boost_power_speed"]
-            lines += game.translator["speed_cap"].replace("\\1", maxBoost.toString())
+            lines += game.translator["speed_cap"].replaceArg(maxBoost)
         }
         if (blueprint.boost?.type == AbstractWeaponBlueprint.BoostType.DAMAGE) {
             // We have to include the initial damage in the max value shown.
@@ -60,38 +60,38 @@ class InfoPanel(private val game: InGameState) {
             val baseDamage = max(blueprint.damage, blueprint.ionDamage)
             val maxDamage = blueprint.boost.maxCount * blueprint.boost.perShot + baseDamage
             lines += game.translator["boost_power_damage"]
-            lines += game.translator["damage_cap"].replace("\\1", maxDamage.toString())
+            lines += game.translator["damage_cap"].replaceArg(maxDamage)
         }
         if (blueprint.missilesUsed > 0) {
             lines += game.translator["requires_missiles"]
         }
         if (blueprint is FlakBlueprint) {
-            lines += game.translator["shots"].replace("\\1", blueprint.projectileCount.toString())
+            lines += game.translator["shots"].replaceArg(blueprint.projectileCount)
         } else if (blueprint.shots != 1 || blueprint is LaserBlueprint) {
-            lines += game.translator["shots"].replace("\\1", blueprint.shots.toString())
+            lines += game.translator["shots"].replaceArg(blueprint.shots)
         }
         if (blueprint.chargeLevels != null) {
-            lines += game.translator["charge"].replace("\\1", blueprint.chargeLevels.toString())
+            lines += game.translator["charge"].replaceArg(blueprint.chargeLevels)
         }
         if (blueprint is BeamBlueprint) {
-            lines += game.translator["damage_room"].replace("\\1", blueprint.damage.toString())
+            lines += game.translator["damage_room"].replaceArg(blueprint.damage)
         } else {
-            lines += game.translator["damage_shot"].replace("\\1", blueprint.damage.toString())
+            lines += game.translator["damage_shot"].replaceArg(blueprint.damage)
         }
         if (blueprint.shieldPiercing != 0) {
-            lines += game.translator["shield_piercing"].replace("\\1", blueprint.shieldPiercing.toString())
+            lines += game.translator["shield_piercing"].replaceArg(blueprint.shieldPiercing)
         }
         addChanceString(lines, "fire_chance", blueprint.fireChance)
         addChanceString(lines, "breach_chance", blueprint.breachChance)
         addChanceString(lines, "stun_chance", blueprint.stunChance)
         if (blueprint.ionDamage != 0) {
-            lines += game.translator["ion_damage"].replace("\\1", blueprint.ionDamage.toString())
+            lines += game.translator["ion_damage"].replaceArg(blueprint.ionDamage)
         }
         if (damage.effectiveCrewDamage != 0) {
-            lines += game.translator["personnel_damage"].replace("\\1", damage.effectiveCrewDamage.toString())
+            lines += game.translator["personnel_damage"].replaceArg(damage.effectiveCrewDamage)
         }
         if (damage.effectiveSysDamage != blueprint.damage) {
-            lines += game.translator["system_damage"].replace("\\1", damage.effectiveSysDamage.toString())
+            lines += game.translator["system_damage"].replaceArg(damage.effectiveSysDamage)
         }
         if (blueprint.hullBust != 0) {
             lines += game.translator["double_damage"]
@@ -317,7 +317,7 @@ class InfoPanel(private val game: InGameState) {
         }
 
         val chanceStr = game.translator[chanceKey]
-        lines += baseStr.replace("\\1", chanceStr)
+        lines += baseStr.replaceArg(chanceStr)
     }
 
     companion object {

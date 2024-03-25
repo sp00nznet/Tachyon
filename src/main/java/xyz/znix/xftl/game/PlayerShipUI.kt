@@ -1378,8 +1378,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 ) {
                     val lines = listOf(
                         game.translator["health_tooltip"]
-                            .replace("\\1", crew.health.roundToInt().toString())
-                            .replace("\\2", crew.maxHealth.roundToInt().toString()),
+                            .replaceArg(crew.health.roundToInt())
+                            .replaceArg(crew.maxHealth.roundToInt(), 2),
                         game.translator["hotkey"] // TODO
                     )
 

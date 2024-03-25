@@ -1,7 +1,6 @@
 package xyz.znix.xftl
 
 import org.jdom2.Document
-import org.newdawn.slick.ImageBuffer
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.modding.*
 import xyz.znix.xftl.rendering.Image
