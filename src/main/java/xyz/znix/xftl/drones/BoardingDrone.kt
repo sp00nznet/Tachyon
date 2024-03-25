@@ -40,8 +40,8 @@ class BoardingDrone(type: DroneBlueprint) : AbstractIndoorsDrone(type) {
         val target = enemyShip.rooms.random()
         projectile = FlyingDrone(target)
 
-        // Start in the centre of the shields, for lack of a better place.
-        val startingPoint = ownerShip.shieldOrigin
+        // Start in the centre of the drones room, per vanilla
+        val startingPoint = ownerShip.drones!!.room!!.pixelCentre
 
         // The direction the drone flies in depends on whether this is
         // a player ship or an enemy ship, as it's supposed to go
