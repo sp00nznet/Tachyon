@@ -68,6 +68,12 @@ interface Input {
         const val KEY_F7: Int = GLFW.GLFW_KEY_F7
         const val KEY_F8: Int = GLFW.GLFW_KEY_F8
         const val KEY_F9: Int = GLFW.GLFW_KEY_F9
+        const val KEY_F10: Int = GLFW.GLFW_KEY_F10
+        const val KEY_F11: Int = GLFW.GLFW_KEY_F11
+        const val KEY_F12: Int = GLFW.GLFW_KEY_F12
+        const val KEY_F13: Int = GLFW.GLFW_KEY_F13
+        const val KEY_F14: Int = GLFW.GLFW_KEY_F14
+        const val KEY_F15: Int = GLFW.GLFW_KEY_F15
 
         const val KEY_UP: Int = GLFW.GLFW_KEY_UP
         const val KEY_DOWN: Int = GLFW.GLFW_KEY_DOWN
@@ -85,10 +91,20 @@ interface Input {
         const val KEY_RSHIFT: Int = GLFW.GLFW_KEY_RIGHT_SHIFT
         const val KEY_LCTRL: Int = GLFW.GLFW_KEY_LEFT_CONTROL
         const val KEY_RCTRL: Int = GLFW.GLFW_KEY_RIGHT_CONTROL
+        const val KEY_LALT: Int = GLFW.GLFW_KEY_LEFT_ALT
+        const val KEY_RALT: Int = GLFW.GLFW_KEY_RIGHT_ALT
+        const val KEY_LSUPER: Int = GLFW.GLFW_KEY_LEFT_SUPER
+        const val KEY_RSUPER: Int = GLFW.GLFW_KEY_RIGHT_SUPER
 
         const val KEY_BACK: Int = GLFW.GLFW_KEY_BACKSPACE
         const val KEY_DELETE: Int = GLFW.GLFW_KEY_DELETE
+        const val KEY_INSERT: Int = GLFW.GLFW_KEY_INSERT
+        const val KEY_END: Int = GLFW.GLFW_KEY_END
+        const val KEY_HOME: Int = GLFW.GLFW_KEY_HOME
+        const val KEY_PG_UP: Int = GLFW.GLFW_KEY_PAGE_UP
+        const val KEY_PG_DN: Int = GLFW.GLFW_KEY_PAGE_DOWN
         const val KEY_GRAVE: Int = GLFW.GLFW_KEY_GRAVE_ACCENT
+        const val KEY_MENU: Int = GLFW.GLFW_KEY_MENU
 
         const val KEY_A: Int = GLFW.GLFW_KEY_A
         const val KEY_B: Int = GLFW.GLFW_KEY_B
@@ -127,5 +143,24 @@ interface Input {
         const val KEY_7 = GLFW.GLFW_KEY_7
         const val KEY_8 = GLFW.GLFW_KEY_8
         const val KEY_9 = GLFW.GLFW_KEY_9
+
+        const val KEY_KEYPAD_0 = GLFW.GLFW_KEY_KP_0
+        const val KEY_KEYPAD_1 = GLFW.GLFW_KEY_KP_1
+        const val KEY_KEYPAD_2 = GLFW.GLFW_KEY_KP_2
+        const val KEY_KEYPAD_3 = GLFW.GLFW_KEY_KP_3
+        const val KEY_KEYPAD_4 = GLFW.GLFW_KEY_KP_4
+        const val KEY_KEYPAD_5 = GLFW.GLFW_KEY_KP_5
+        const val KEY_KEYPAD_6 = GLFW.GLFW_KEY_KP_6
+        const val KEY_KEYPAD_7 = GLFW.GLFW_KEY_KP_7
+        const val KEY_KEYPAD_8 = GLFW.GLFW_KEY_KP_8
+        const val KEY_KEYPAD_9 = GLFW.GLFW_KEY_KP_9
+
+        const val KEY_KEYPAD_ADD = GLFW.GLFW_KEY_KP_ADD
+        const val KEY_KEYPAD_SUB = GLFW.GLFW_KEY_KP_SUBTRACT
+        const val KEY_KEYPAD_MUL = GLFW.GLFW_KEY_KP_MULTIPLY
+        const val KEY_KEYPAD_DIV = GLFW.GLFW_KEY_KP_DIVIDE
+        const val KEY_KEYPAD_DEC = GLFW.GLFW_KEY_KP_DECIMAL
+        const val KEY_KEYPAD_ENTER = GLFW.GLFW_KEY_KP_ENTER
+        const val KEY_KEYPAD_EQ = GLFW.GLFW_KEY_KP_EQUAL
     }
 }

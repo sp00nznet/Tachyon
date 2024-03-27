@@ -280,7 +280,8 @@ private class LWJGLInput(val window: Long) : Input {
 
     private var scrollLeftover: Double = 0.0
 
-    private val pendingKeyPresses = BooleanArray(GLFW_KEY_LAST)
+    // Note that GLFW_KEY_LAST is the maximum possible ID, not one past it.
+    private val pendingKeyPresses = BooleanArray(GLFW_KEY_LAST + 1)
 
     val keyListeners = ArrayList<KeyListener>()
     val mouseListeners = ArrayList<MouseListener>()
