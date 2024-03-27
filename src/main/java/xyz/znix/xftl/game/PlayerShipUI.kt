@@ -1731,8 +1731,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             // TODO crystal lockdown hotkey, when that's implemented
 
-            VanillaHotkeys.LOAD_CREW_POS -> saveCrewPositions()
-            VanillaHotkeys.SAVE_CREW_POS -> loadCrewPositions()
+            VanillaHotkeys.SAVE_CREW_POS -> saveCrewPositions()
+            VanillaHotkeys.LOAD_CREW_POS -> loadCrewPositions()
 
             // These hotkey applies to both medbays and clonebays
             VanillaHotkeys.SYS_POWER_MEDICAL -> {
