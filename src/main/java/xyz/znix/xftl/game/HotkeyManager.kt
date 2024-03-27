@@ -8,6 +8,7 @@ import xyz.znix.xftl.sys.Input
 
 class HotkeyManager {
     val groups: List<HotkeyGroup>
+    val byID: Map<String, Hotkey>
 
     // These are special-cased, and thus we have to fish them out here
     val keyDevConsole: Hotkey
@@ -30,10 +31,10 @@ class HotkeyManager {
             groups += parseGroup(groupElem)
         }
 
-        val allKeys = groups.flatMap { it.hotkeys }.associateBy { it.id }
-        keyDevConsole = allKeys.getValue(VanillaHotkeys.DEV_CONSOLE)
-        keyFrameStep = allKeys.getValue(VanillaHotkeys.DEV_FRAME_STEP)
-        keyFastForward = allKeys.getValue(VanillaHotkeys.DEV_FAST_FORWARD)
+        byID = groups.flatMap { it.hotkeys }.associateBy { it.id }
+        keyDevConsole = byID.getValue(VanillaHotkeys.DEV_CONSOLE)
+        keyFrameStep = byID.getValue(VanillaHotkeys.DEV_FRAME_STEP)
+        keyFastForward = byID.getValue(VanillaHotkeys.DEV_FAST_FORWARD)
     }
 
     private fun parseGroup(elem: Element): HotkeyGroup {

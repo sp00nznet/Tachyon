@@ -570,8 +570,8 @@ public class InGameState extends MainGame.GameState {
             int imgX = container.getWidth() / 2 - pauseImg.getWidth() / 2;
             pauseImg.draw(imgX, imgY);
 
-            // TODO keybind names
-            String pauseText = getTranslator().get("paused_text").replace("\\1", "SPACE");
+            String pauseKey = getButtonNameForHotkey(VanillaHotkeys.PAUSE, "<unbound>");
+            String pauseText = getTranslator().get("paused_text").replace("\\1", pauseKey);
             pauseFont.drawStringCentred(
                     container.getWidth() / 2f, imgY + 11 + 53,
                     0,
@@ -1749,6 +1749,20 @@ public class InGameState extends MainGame.GameState {
 
     public Map<Hotkey, HotkeyButton> getReverseHotkeyBindings() {
         return Collections.unmodifiableMap(reverseHotkeyBindings);
+    }
+
+    public String getButtonNameForHotkey(String hotkeyID, String defaultName) {
+        Hotkey key = getHotkeyManager().getByID().get(hotkeyID);
+        if (key == null) {
+            return defaultName;
+        }
+
+        HotkeyButton button = reverseHotkeyBindings.get(key);
+        if (button == null) {
+            return defaultName;
+        }
+
+        return getTranslator().get(button.getLocKey());
     }
 
     /**
