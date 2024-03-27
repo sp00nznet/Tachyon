@@ -173,6 +173,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     private var crewBaseY: Int = 0 // Set while rendering
     private var lastCrewCount: Int = 0
 
+    // These time the message that shows up for a second when you save/restore
+    // your crew positions.
+    private var saveCrewPosMessageTimer: Float = 0f
+    private var saveCrewPosMessageText: String = ""
+
     /**
      * If the user is selecting a room to teleport to/from, this is non-null.
      * True if sending crew to an enemy ship, false if receiving.
@@ -1272,6 +1277,14 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 }
             }
         }
+
+        // The save/load stations messages, which fade out after a second
+        if (saveCrewPosMessageTimer > 0f) {
+            saveCrewPosMessageTimer -= game.renderingDeltaTime
+
+            val message = game.translator[saveCrewPosMessageText]
+            oxygenEvadeFont.drawString(11f, crewSaveLoadY + 55f, message, Colour.white)
+        }
     }
 
     private fun drawCrewBox(g: Graphics, crew: LivingCrew, x: Int, y: Int) {
@@ -1823,13 +1836,19 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     fun saveCrewPositions() {
-        // TODO show the popup text
         ship.saveCrewPositions()
+
+        // Show the popup text
+        saveCrewPosMessageTimer = 1f
+        saveCrewPosMessageText = "stations_saved"
     }
 
     fun loadCrewPositions() {
-        // TODO show the popup text
         ship.loadCrewPositions()
+
+        // Show the popup text
+        saveCrewPosMessageTimer = 1f
+        saveCrewPosMessageText = "return_stations"
     }
 
     fun saveToXML(elem: Element, refs: ObjectRefs) {
