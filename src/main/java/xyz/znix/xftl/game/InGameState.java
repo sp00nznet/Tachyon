@@ -1762,7 +1762,7 @@ public class InGameState extends MainGame.GameState {
             return defaultName;
         }
 
-        return getTranslator().get(button.getLocKey());
+        return getTranslator().get(button.getText());
     }
 
     /**

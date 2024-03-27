@@ -306,7 +306,7 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
         g.drawRect(boxX, boxY, KEY_BOX_WIDTH - 1, KEY_BOX_HEIGHT - 1)
         g.drawRect(boxX + 1, boxY + 1, KEY_BOX_WIDTH - 3, KEY_BOX_HEIGHT - 3)
 
-        val keyName = game.reverseHotkeyBindings[key]?.locKey?.let { game.translator[it] } ?: "..."
+        val keyName = game.reverseHotkeyBindings[key]?.text?.let { game.translator[it] } ?: "..."
         nameFont.drawStringCentred(boxX.f, boxY + 17f, KEY_BOX_WIDTH.f, keyName, mainColour)
 
         if (hover) {
@@ -384,7 +384,7 @@ class HotkeysWindow(val game: InGameState, val close: () -> Unit) : Window() {
 
             var text = when (val default = key.default) {
                 null -> game.translator["xftl_hotkeys_default_tooltip_none"]
-                else -> game.translator["xftl_hotkeys_default_tooltip"].replaceArg(game.translator[default.locKey])
+                else -> game.translator["xftl_hotkeys_default_tooltip"].replaceArg(game.translator[default.text])
             }
 
             // List the conflicts for this key
