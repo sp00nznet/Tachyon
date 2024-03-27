@@ -15,6 +15,7 @@ import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.SaveUtil
 import kotlin.math.abs
+import kotlin.math.max
 
 data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val isVertical: Boolean) {
     init {
@@ -188,6 +189,13 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         // If this is an airlock, instantly drain the air from this room.
         // Air transfer between non-airlock doors is handled by OxygenTransfer
         if (open && (left == null || right == null)) {
+            // If the door has only just opened, and we have more than 10% oxygen
+            // (a number pulled from vanilla) then play the whoosh sound.
+            val maxOxygen = max(left?.oxygen ?: 0f, right?.oxygen ?: 0f)
+            if (maxOxygen > 0.1f) {
+                ship.airLossSound.play()
+            }
+
             left?.oxygen = 0f
             right?.oxygen = 0f
         }

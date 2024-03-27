@@ -762,7 +762,16 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
             breaches[slot] = BreachInstance(this, slot)
         }
 
+        // The breach and air loss sounds are effectively combined
         ship.breachSound.play()
+
+        // It seems there's some buggy-ness with vanilla not playing this
+        // if the same room is breached repeatedly?
+        // Note that any minimal amount of oxygen is enough to enable this
+        // sound, even for nearly-drained rooms. This matches vanilla.
+        if (oxygen > 0f) {
+            ship.airLossSound.play()
+        }
     }
 
     /**
