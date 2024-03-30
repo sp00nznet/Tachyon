@@ -21,7 +21,7 @@ import kotlin.math.*
 // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
 // for us atm.
 class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Beacon?) -> Unit) : Window() {
-    override val size = ConstPoint(766, 548)
+    override val size = ConstPoint(752, 534)
 
     private val sectorInfoTab = game.getImg("img/map/side_sector.png")
     private val titleTab = game.getImg("img/map/side_beaconmap.png")
@@ -71,25 +71,38 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     private val labelGreen = (1..3).map { game.getImg("img/map/map_box_green_$it.png") }
     private val labelPurple = (1..3).map { game.getImg("img/map/map_box_purple_$it.png") }
 
-    val cancelButton = Buttons.BasicButton(
-        game, size + ConstPoint(10 - cancelButtonOutline.width, 1),
-        ConstPoint(124, 30), game.translator["button_cancel"],
-        3, font, 24,
-        ::cancelClicked
-    )
-
-    val nextSectorButton = Buttons.BasicButton(
-        game, ConstPoint(size.x - nextSectorTab.width - 11 + 19, 11 + 8),
-        ConstPoint(226, 36), game.translator["button_nextsector"],
-        3, font, 27, showSectorMap
-    )
+    val cancelButton: Button
+    val nextSectorButton: Button
 
     val background = game.getImg("img/map/zone_1.png")
 
     var hovered: Beacon? = null
 
     init {
+        // The buttons are fiddly to set up, as they move depending on
+        // the length of the text inside them.
+
+        // Cancel button
+        val cancelText = game.translator["button_cancel"]
+        val cancelTextWidth = font.getWidth(cancelText)
+        val cancelButtonWidth = cancelTextWidth + 3 * 2
+        cancelButton = Buttons.BasicButton(
+            game, size + ConstPoint(-31 - cancelButtonWidth, 7),
+            ConstPoint(cancelButtonWidth, 30), cancelText,
+            3, font, 24,
+            ::cancelClicked
+        )
         buttons += cancelButton
+
+        // Next sector button
+        val nsText = game.translator["button_nextsector"]
+        val nsTextWidth = font.getWidth(nsText)
+        val nsButtonWidth = nsTextWidth + 4 * 2
+        nextSectorButton = Buttons.BasicButton(
+            game, ConstPoint(size.x - 12 - nsButtonWidth, 12),
+            ConstPoint(nsButtonWidth, 36), nsText,
+            3, font, 27, showSectorMap
+        )
 
         if (game.currentBeacon.isExit)
             buttons += nextSectorButton
@@ -99,11 +112,11 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
      * Draw the insides of the window. This must be done with a stencil.
      */
     private fun drawMapContent(g: Graphics) {
-        // Draw the background image
-        background.draw(position.x + 11f, position.y + 11f)
+        // Draw the background image, offset 4px to account for the line wall of the window.
+        background.draw(position.x + 4f, position.y + 4f)
 
-        mapBase.x = position.x + GLOW + Sector.OFFSET.x
-        mapBase.y = position.y + GLOW + Sector.OFFSET.y
+        mapBase.x = position.x + Sector.OFFSET.x
+        mapBase.y = position.y + Sector.OFFSET.y
 
         // In the last stand, the danger stripes sit behind everything else.
         // TODO draw the player and boss ships below this.
@@ -343,10 +356,10 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             // Draw the stencil
             g.colour = Colour.red // Any non-transparent colour will work
 
-            // The glow means the inside of the window has an 11-pixel boundary
+            // The window edge width means the inside of the window has a four pixel boundary
             // This does leave a tiny area in the bevelled right-hand corner unstenciled,
             // but it seems unlikely anything will actually draw there.
-            g.fillRect(position.x + 11f, position.y + 11f, size.x - 22f, size.y - 22f)
+            g.fillRect(position.x + 4, position.y + 4, size.x - 8, size.y - 8)
         }, {
             // Draw the contents of the map
             drawMapContent(g)
@@ -354,8 +367,8 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         // Draw the top-left map label tab
         val tab = game.translator["map_title"]
-        val tabWidth = UIUtils.drawTab(font, tab, titleTab, position.x.f, position.y.f, 20f, 38f)
-        font.drawString(position.x + GLOW + 14f, position.y + GLOW + 25f, tab, Constants.JUMP_DISABLED_TEXT)
+        val tabWidth = UIUtils.drawTab(font, tab, titleTab, position.x.f - GLOW, position.y.f - GLOW, 20f, 38f)
+        font.drawString(position.x + 14f, position.y + 25f, tab, Constants.JUMP_DISABLED_TEXT)
 
         // Draw the rest of the top, going clockwise to the right side
         drawSide(Direction.UP, tabWidth.toInt())
@@ -369,21 +382,30 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         // Cancel button
         // This is done in a slightly weird way - the bottom line is drawn exactly how it usually is, but
-        // the cancel button is drawn just below it, cutting off part of it's glow. The glow at the edges
+        // the cancel button is drawn just below it, cutting off part of its glow. The glow at the edges
         // of the cancel button image are modified specially to fit the glow of the line, so it looks
         // seamless. Note that this must be done after the lines are drawn, otherwise their glow would overlap
         // the cancel button frame.
-        cancelButtonOutline.draw(position.x + size.x - cancelButtonOutline.width - 14, position.y + size.y - 7)
+        // Note we also have to stretch it to fit around the localised cancel button.
+        val cancelY = position.y + size.y - 1
+        val cancelH = cancelButtonOutline.height
+        cancelButtonOutline.drawSection(cancelButton.pos.x - 24, cancelY, 34, cancelH)
+        cancelButtonOutline.drawSection(cancelButton.pos.x + 10, cancelY, 20, cancelH, 34, 0, cancelButton.size.x - 20)
+        cancelButtonOutline.drawSection(cancelButton.pos.x + cancelButton.size.x - 10, cancelY, 35, cancelH, 138)
         cancelButton.draw(g)
 
         // Draw the 'next sector' button frame, which has a similar glow trick to the cancel button
         if (game.currentBeacon.isExit) {
-            nextSectorTab.draw(position.x + size.x - nextSectorTab.width - 11, position.y + 11)
+            val nsY = position.y + 4
+            val nsH = nextSectorTab.height
+            nextSectorTab.drawSection(nextSectorButton.pos.x - 19, nsY, 29, nsH)
+            nextSectorTab.drawSection(nextSectorButton.pos.x + 10, nsY, 20, nsH, 24, 0, nextSectorButton.size.x - 20)
+            nextSectorTab.drawSection(nextSectorButton.pos.x + nextSectorButton.size.x - 10, nsY, 18, nsH, 235)
             nextSectorButton.draw(g)
         }
 
         // Draw the sector info
-        sectorInfoTab.draw(position.x, position.y + size.y - 27)
+        sectorInfoTab.draw(position.x - GLOW, position.y + size.y - 20)
 
         // Cutouts for text
         fun drawCutout(x: Int, y: Int, width: Int, text: String) {
@@ -403,15 +425,15 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         }
 
         val sectorText = game.translator["map_sector"]
-        val sectorTextY = position.y + size.y - GLOW + 22f
-        font.drawString(position.x + 13f, sectorTextY, sectorText, Constants.JUMP_DISABLED_TEXT)
+        val sectorTextY = position.y + size.y + 22f
+        font.drawString(position.x + 6f, sectorTextY, sectorText, Constants.JUMP_DISABLED_TEXT)
 
         val sectorName = game.translator["sectorname_" + sector.type.name]
-        drawCutout(position.x + 141, position.y + size.y - 8, 38, (sector.sectorNumber + 1).toString())
-        drawCutout(position.x + 190, position.y + size.y - 8, 276, sectorName)
+        drawCutout(position.x + 134, position.y + size.y - 1, 38, (sector.sectorNumber + 1).toString())
+        drawCutout(position.x + 183, position.y + size.y - 1, 276, sectorName)
 
         // The top and bottom tabs are slightly different sizes, this compensates for them
-        drawSide(Direction.LEFT, 45, size.y - 27)
+        drawSide(Direction.LEFT, 45, size.y + GLOW * 2 - 27)
     }
 
     override fun updateUI(x: Int, y: Int) {
@@ -516,8 +538,8 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     }
 
     private fun drawCorner(edge: Direction) {
-        val x = position.x + edge.x.coerceAtLeast(0) * (size.x - 33)
-        val y = position.y + edge.y.coerceAtLeast(0) * (size.y - 36)
+        val x = position.x - GLOW + edge.x.coerceAtLeast(0) * (size.x + GLOW * 2 - 33)
+        val y = position.y - GLOW + edge.y.coerceAtLeast(0) * (size.y + GLOW * 2 - 36)
         val tx = edge.x.coerceAtLeast(0) * outlineImage.width / 2
         val ty = edge.y.coerceAtLeast(0) * outlineImage.height / 2
 
@@ -525,8 +547,11 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     }
 
     private fun drawSide(edge: Direction, start: Int? = null, stop: Int? = null) {
-        val xb = position.x + edge.x.coerceAtLeast(0) * (size.x - 33)
-        val yb = position.y + edge.y.coerceAtLeast(0) * (size.y - 36)
+        val paddedSizeX = size.x + GLOW * 2
+        val paddedSizeY = size.y + GLOW * 2
+
+        val xb = position.x - GLOW + edge.x.coerceAtLeast(0) * (paddedSizeX - 33)
+        val yb = position.y - GLOW + edge.y.coerceAtLeast(0) * (paddedSizeY - 36)
 
         val texPos = when (edge) {
             Direction.UP -> ConstPoint(33, 0)
@@ -549,13 +574,13 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             Direction.UP, Direction.DOWN -> {
                 x = xb + (start ?: 33)
                 y = yb
-                drawSize = ConstPoint((stop ?: size.x - 33) - (start ?: 33), 36)
+                drawSize = ConstPoint((stop ?: (paddedSizeX - 33)) - (start ?: 33), 36)
             }
 
             Direction.LEFT, Direction.RIGHT -> {
                 x = xb
                 y = yb + (start ?: 36)
-                drawSize = ConstPoint(33, (stop ?: size.y - 36) - (start ?: 36))
+                drawSize = ConstPoint(33, (stop ?: (paddedSizeY - 36)) - (start ?: 36))
             }
 
             else -> error("Invalid edge $edge")
