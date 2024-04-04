@@ -69,6 +69,15 @@ class RealSoundManager(private val df: Datafile, context: ResourceContext) : Sou
      */
     val activeMusicPlayer: OpenALStreamPlayer get() = musicPlayers[0]
 
+    /**
+     * Set to true every frame to play the out-of-fuel distress beacon sound.
+     *
+     * This is a very special case, as it's a looped sound that has to play
+     * while the game is paused.
+     */
+    var playingFuelDistressSound: Boolean = false
+    private var fuelDistressSound: SoundInstance? = null
+
     override var freed: Boolean = false
         private set
 
@@ -183,6 +192,22 @@ class RealSoundManager(private val df: Datafile, context: ResourceContext) : Sou
     }
 
     fun updateLoopedSounds(gamePaused: Boolean) {
+        // This is a bit of a horrible hack, but we have to handle the out-of-fuel
+        // distress beacon sound specially since it's a loop that plays while
+        // the game is paused.
+        if (playingFuelDistressSound) {
+            if (fuelDistressSound == null) {
+                val sound = get(loops["distress"] ?: error("Missing distress sound loop!"))
+                fuelDistressSound = sound.internalPlayRawLoop()
+            }
+
+            // Must be set to true again every frame
+            playingFuelDistressSound = false
+        } else {
+            fuelDistressSound?.stop()
+            fuelDistressSound = null
+        }
+
         if (gamePaused) {
             for (sound in loopSounds.values) {
                 sound.isPaused = true

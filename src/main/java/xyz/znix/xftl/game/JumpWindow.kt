@@ -1,10 +1,7 @@
 package xyz.znix.xftl.game
 
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.PIf
-import xyz.znix.xftl.Utils
+import xyz.znix.xftl.*
 import xyz.znix.xftl.augments.AugmentBlueprint
-import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
@@ -16,6 +13,7 @@ import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Sector
 import xyz.znix.xftl.sys.Input
 import kotlin.math.*
+import kotlin.random.Random
 
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
 // that (and the height). Currently we run much smaller than FTL so their size doesn't fit
@@ -30,6 +28,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     private val cancelButtonOutline = game.getImg("img/main_menus/button_cancel_base.png")
     private val sectorInfoFont = game.getFont("c&cnew", 2f)
     private val beaconLabelFont = game.getFont("HL1")
+    private val distressBeaconFont = game.getFont("HL1", 2f) // Out-of-fuel UI
 
     private val outlineImage = game.getImg("img/window_outline.png")
 
@@ -54,6 +53,10 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     private val playerShipNoFuel = game.getImg("img/map/map_icon_ship_fuel.png")
     private val flagshipIcon = game.getImg("img/map/map_icon_boss.png")
 
+    private val noFuelImage = game.getImg("img/map/map_fuel_text_nofuel.png")
+    private val waitDistressFrame = game.getImg("img/map/side_wait_distress.png")
+    private val fuelDistressFlashLight = game.getImg("img/map/side_distressbeacon_redlight.png")
+
     private val beaconOffset = Point(-beaconYellow.width / 2, -beaconYellow.height / 2)
 
     // The offsets to the coordinate system the beacons are positioned on
@@ -73,10 +76,24 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
     val cancelButton: Button
     val nextSectorButton: Button
+    val noFuelButtons: List<Button>
 
     val background = game.getImg("img/map/zone_1.png")
 
+    /**
+     * True if the player's out-of-fuel distress beacon is enabled.
+     */
+    var fuelDistressOn = false
+
+    private var fuelDistressFlashTimer: Float = 0f
+    private val fuelDistressFlashOn: Boolean get() = fuelDistressOn && fuelDistressFlashTimer < 0.5f
+
     var hovered: Beacon? = null
+
+    private var playerRotation: Float = (0f..10f).random(VisualRandom)
+    private var flagshipRotation: Float = (0f..10f).random(VisualRandom)
+
+    private val outOfFuel: Boolean get() = game.player.fuelCount == 0
 
     init {
         // The buttons are fiddly to set up, as they move depending on
@@ -104,8 +121,14 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             3, font, 27, showSectorMap
         )
 
-        if (game.currentBeacon.isExit)
+        if (game.currentBeacon.isExit && outOfFuel)
             buttons += nextSectorButton
+
+        // Hacky, the rendering code is also what populates the buttons
+        noFuelButtons = ArrayList()
+        drawNoFuelUI(noFuelButtons)
+        if (outOfFuel)
+            buttons += noFuelButtons
     }
 
     /**
@@ -256,33 +279,32 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             }
 
             // Draw the player ship rotating around the beacon.
-
-            // We go around once every 20 seconds.
-            val periodNS = 20_000_000_000
-            val timerNS = (System.nanoTime() % periodNS).toFloat()
-            val rotation = timerNS / periodNS * 360f
-
+            val rotationSpeed = TWO_PI / 20f // Go around every 20 seconds
             if (beacon == game.currentBeacon) {
-                @Suppress("IntroduceWhenSubject")
-                val icon = when {
-                    game.player.fuelCount == 0 -> playerShipNoFuel
-                    else -> playerShip
+                val icon = when (fuelDistressFlashOn) {
+                    true -> playerShipNoFuel
+                    false -> playerShip
+                }
+
+                // The player's ship doesn't rotate when they're out of fuel
+                if (!outOfFuel) {
+                    playerRotation += game.renderingDeltaTime * rotationSpeed
                 }
 
                 // These offsets are approximate
                 g.pushTransform()
-                g.rotate(centrePos.x.f, centrePos.y.f, -rotation)
+                g.rotate(centrePos.x.f, centrePos.y.f, -playerRotation)
                 icon.draw(centrePos.x - 8, centrePos.y - 32)
                 g.popTransform()
             }
 
             // Draw the flagship rotating around the beacon.
             if (beacon == sector.flagshipBeacon && !sector.flagshipJumping) {
+                flagshipRotation += game.renderingDeltaTime * rotationSpeed
+
                 // These offsets are approximate.
-                // Add an arbitrary rotation offset, so the player and boss
-                // ships aren't at the same angle.
                 g.pushTransform()
-                g.rotate(centrePos.x.f, centrePos.y.f, -rotation + 123f)
+                g.rotate(centrePos.x.f, centrePos.y.f, -flagshipRotation)
                 flagshipIcon.draw(centrePos.x - 8, centrePos.y - 32)
                 g.popTransform()
             }
@@ -303,6 +325,17 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
                     g.drawRect(mapBase.x + x * 110f, mapBase.y + y * 110f, 110f, 110f)
                 }
             }
+        }
+
+        // If we're out of fuel, tint the map black and draw the text on top
+        if (outOfFuel) {
+            g.colour = Constants.JUMP_NO_FUEL_TINT
+            g.fillRect(position.x, position.y, size.x, size.y)
+
+            noFuelImage.drawAlignedCentred(
+                position.x + size.x / 2, position.y + size.y / 2,
+                noFuelImage.width * 3f, noFuelImage.height * 3f
+            )
         }
     }
 
@@ -359,6 +392,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             // The window edge width means the inside of the window has a four pixel boundary
             // This does leave a tiny area in the bevelled right-hand corner unstenciled,
             // but it seems unlikely anything will actually draw there.
+            // FIXME this is visible - the background clips out
             g.fillRect(position.x + 4, position.y + 4, size.x - 8, size.y - 8)
         }, {
             // Draw the contents of the map
@@ -434,12 +468,126 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         // The top and bottom tabs are slightly different sizes, this compensates for them
         drawSide(Direction.LEFT, 45, size.y + GLOW * 2 - 27)
+
+        // Draw the out-of-fuel UI
+        if (outOfFuel) {
+            drawNoFuelUI(null)
+
+            for (button in noFuelButtons) {
+                button.draw(g)
+            }
+        }
+    }
+
+    // It's a bit horrible, but this function can both draw and create buttons, since
+    // most of the work is calculating the positions of everything.
+    private fun drawNoFuelUI(buttons: MutableList<Button>?) {
+        val rightX = position.x + size.x
+        val frameY = position.y + size.y - 57
+
+        // Calculate all the text-based positions
+        val offText = game.translator["button_distress_off"]
+        val onText = game.translator["button_distress_on"]
+        val toggleTextWidth = max(font.getWidth(offText), font.getWidth(onText))
+        val toggleButtonWidth = toggleTextWidth + 4 * 2
+        val toggleX = rightX - 12 - toggleButtonWidth
+
+        val distressText = game.translator["map_distress_beacon"]
+        val distressLabelWidth = distressBeaconFont.getWidth(distressText)
+        val labelAreaWidth = 7 + distressLabelWidth + 8
+        val labelAreaX = toggleX - 7 - labelAreaWidth
+
+        val waitText = game.translator["button_wait"]
+        val waitButtonWidth = font.getWidth(waitText) + 4 * 2
+        val waitButtonX = labelAreaX - 5 - 4 - waitButtonWidth
+
+        val leftX = waitButtonX - 4 - 5
+
+        if (buttons == null) {
+            // Draw the background box
+            val imgY = frameY - 10
+            val imgH = waitDistressFrame.height
+            waitDistressFrame.drawSection(leftX - 10, imgY, 22, imgH)
+            waitDistressFrame.drawSection(waitButtonX + 3, imgY, 1, imgH, 22, 0, waitButtonWidth - 6)
+            waitDistressFrame.drawSection(labelAreaX - 12, imgY, 22, imgH, 27)
+            waitDistressFrame.drawSection(labelAreaX + 10, imgY, 1, imgH, 49, 0, labelAreaWidth - 10 - 5)
+            waitDistressFrame.drawSection(toggleX - 7 - 5, imgY, 12, imgH, 48)
+            waitDistressFrame.drawSection(toggleX, imgY, 1, imgH, 60, 0, toggleButtonWidth - 3)
+            waitDistressFrame.drawSection(rightX - 15, imgY, 15, imgH, 62)
+
+            // Draw the beacon toggle button's label text
+            // Note the Y value comes from the DE localisation.
+            distressBeaconFont.drawStringCentredVertical(
+                labelAreaX, frameY + 33,
+                labelAreaWidth,
+                18,
+                distressText,
+                Constants.SECTOR_CUTOUT_TEXT
+            )
+
+            if (fuelDistressFlashOn) {
+                fuelDistressFlashLight.draw(rightX - 2 - 33, frameY + 45 - 23)
+            }
+
+            if (fuelDistressOn) {
+                fuelDistressFlashTimer = (fuelDistressFlashTimer + game.renderingDeltaTime).mod(1f)
+
+                // This sound is special-cased
+                (game.sounds as? RealSoundManager)?.playingFuelDistressSound = true
+            } else {
+                // Reset, so it immediately lights up when turned back on
+                fuelDistressFlashTimer = 0f
+            }
+        } else {
+            // Wait button
+            buttons += Buttons.BasicButton(
+                game,
+                ConstPoint(waitButtonX, frameY + 9), ConstPoint(waitButtonWidth, 36),
+                waitText, 4, font, 27
+            ) {
+                waitOutOfFuel()
+            }
+
+            // Toggle distress beacon
+            buttons += object : Button(game, ConstPoint(toggleX, frameY + 9), ConstPoint(toggleButtonWidth, 36)) {
+                override fun draw(g: Graphics) {
+                    g.colour = when {
+                        disabled -> Constants.JUMP_DISABLED
+                        hovered -> Constants.UI_BUTTON_HOVER
+                        else -> Constants.SECTOR_CUTOUT_TEXT
+                    }
+                    Buttons.drawRounded(g, pos.x, pos.y, size.x, size.y, 4)
+
+                    // Draw the background, which is rounded on the right only
+                    // Draw a bunch of overlapping rectangles, making a diagonal corner.
+                    for (i in 0..4) {
+                        g.fillRect(pos.x, pos.y + 4 - i, size.x - i, size.y - (4 - i) * 2)
+                    }
+
+                    val label = when (fuelDistressOn) {
+                        true -> onText
+                        false -> offText
+                    }
+
+                    font.drawStringCentred(pos.x.f, pos.y + 27f, size.x.f, label, Constants.JUMP_DISABLED_TEXT)
+                }
+
+                override fun click(button: Int) {
+                    fuelDistressOn = !fuelDistressOn
+                }
+            }
+        }
     }
 
     override fun updateUI(x: Int, y: Int) {
         super.updateUI(x, y)
 
         hovered = null
+
+        // Can't hover over beacons while out of fuel
+        if (outOfFuel) {
+            return
+        }
 
         val closest = sector.beacons.map {
             val bp = it.pos + mapBase
@@ -469,6 +617,8 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
         jump(hovered)
 
+        game.player.fuelCount--
+
         // Advance the fleet pursuit *before* changing the beacon, since
         // if we're in a nebula that slows down the fleet pursuit.
         game.advanceFleet()
@@ -476,6 +626,35 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         // Make sure we set the beacon after we've called the jump callback, so that the event
         // dialogue window doesn't get closed by the callback.
         game.currentBeacon = hovered
+    }
+
+    private fun waitOutOfFuel() {
+        // Close the window and advance the fleet
+        jump(game.currentBeacon)
+        game.advanceFleet()
+
+        // TODO the escape events that play when you were in a dangerous environment
+
+        // Pick a suitable event
+        val eventName: String = when {
+            // Rebels have overtaken this beacon
+            // TODO make the rebel fleet background and PDS (once implemented) show up
+            game.currentBeacon.isOvertaken -> when (game.content.enableAdvancedEdition) {
+                true -> "NO_FUEL_FLEET_DLC"
+                false -> "NO_FUEL_FLEET"
+            }
+
+            fuelDistressOn -> "NO_FUEL_DISTRESS"
+            else -> "NO_FUEL"
+        }
+        val event = game.eventManager[eventName].resolve()
+
+        // TODO make this seed reproducable if the game is reloaded?
+        game.shipUI.showEventDialogue(event, Random.nextInt())
+
+        // Clear the environment, so if the beacon was overtaken it now
+        // has the enemy background etc there.
+        game.currentBeacon.clearEnvironment()
     }
 
     override fun escapePressed() {

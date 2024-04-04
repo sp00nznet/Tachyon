@@ -10,6 +10,7 @@ import xyz.znix.xftl.sys.ResourceContext
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.ByteBuffer
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -241,21 +242,48 @@ class SILFontLoader {
         drawString(textX, y, text, col)
     }
 
+    /**
+     * Split a string into multiple lines, and draw it centred around a given Y value ([centreY]).
+     *
+     * [centreY] is the Y that, if the string is a single line, it will be drawn at.
+     */
+    fun drawStringCentredVertical(x: Int, centreY: Int, width: Int, spacing: Int, text: String, col: Colour) {
+        val lines = wrapString(text, width)
+
+        var y = centreY - (lines.size - 1) * spacing / 2
+
+        for (line in lines) {
+            drawStringCentred(x.f, y.f, width.f, line, col)
+            y += spacing
+        }
+    }
+
     fun drawStringLeftAligned(x: Float, y: Float, text: String, colour: Colour) {
         drawString(x - getWidth(text), y, text, colour)
     }
 
     fun getWidth(str: String): Int {
+        var maxLine = 0
+        var current = 0
         var next = 0
-        for ((i, ch) in str.withIndex()) {
+        for (ch in str) {
+            // If we hit a newline, keep track of this line if it's
+            // the longest one we've found. Then reset the width
+            // for the next line's length.
+            if (ch == '\n') {
+                maxLine = max(maxLine, current)
+                current = 0
+                next = 0
+                continue
+            }
+
             val info = chars[ch] ?: unknownChar
             next += (info.prekern * scale).roundToInt()
 
-            val last = i == str.length - 1
-            val postKern = if (last) 0f else info.postkern
-            next += ((info.w + postKern) * scale).roundToInt()
+            current = next + (info.w * scale).roundToInt()
+            next += ((info.w + info.postkern) * scale).roundToInt()
         }
-        return next
+        return max(current, maxLine)
     }
 
     fun supportsCharacter(c: Char): Boolean {

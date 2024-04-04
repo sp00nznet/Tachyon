@@ -188,7 +188,8 @@ object Buttons {
         private val font = game.getFont("HL2", 2f)
         private val labelFont = game.getFont("HL1", 1f)
 
-        override val disabled: Boolean get() = !ship.isFtlReady || !ship.canChargeFTL
+        private val outOfFuel: Boolean get() = ship.fuelCount == 0 && game.getEnemyOf(ship) != null
+        override val disabled: Boolean get() = !ship.isFtlReady || !ship.canChargeFTL || outOfFuel
 
         // The progress of the slide-in/slide-out jump unavailable pullout.
         private var pulloutPos: Float = 0f
@@ -241,7 +242,17 @@ object Buttons {
 
             game.getImg("img/buttons/FTL/FTL_base.png").draw(pos.x - 7, pos.y - 7)
 
-            if (ship.isFtlCharged) {
+            if (outOfFuel) {
+                // If the player is in combat without any fuel, their jump button is disabled.
+                g.colour = Constants.WARNING_COLOUR_RED
+                drawRounded(g, pos.x + 5, pos.y + 6, size.x, size.y, 3)
+
+                val jumpText = game.translator["button_jump"]
+                font.drawStringCentred(pos.x.f, pos.y + 26f, 84f, jumpText, Constants.JUMP_DISABLED_TEXT)
+
+                g.colour = Constants.JUMP_DISABLED_TEXT
+                g.fillRect(pos.x + 7, pos.y + 19, 70, 2)
+            } else if (ship.isFtlCharged) {
                 g.colour = if (canCharge) Constants.JUMP_READY else Constants.JUMP_DISABLED
                 drawRounded(g, pos.x + 5, pos.y + 6, size.x, size.y, 3)
 

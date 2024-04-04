@@ -46,6 +46,17 @@ class DebugCommands(console: DebugConsole) : ConsoleCommandProvider(console) {
         ship.dronesCount = 99
     }
 
+    @ConsoleCommand(name = "poor")
+    @CmdHelp("Remove all our scrap, fuel, drones, and missiles")
+    private fun cmdPoor() {
+        addLine("Resources removed.")
+
+        ship.scrap = 0
+        ship.fuelCount = 0
+        ship.missilesCount = 0
+        ship.dronesCount = 0
+    }
+
     @ConsoleCommand(name = "scrap")
     @CmdHelp("Gain or lose some amount of scrap")
     private fun cmdScrap(@ParName("amount") amount: Int) {

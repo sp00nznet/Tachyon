@@ -61,6 +61,8 @@ public class Constants {
     public static final Colour JUMP_DISABLED = new Colour(164, 171, 160);
     public static final Colour JUMP_DISABLED_TEXT = new Colour(25, 49, 51);
 
+    public static final Colour JUMP_NO_FUEL_TINT = new Colour(0.0f, 0.0f, 0.0f, 0.4f);
+
     public static final Colour SECTOR_CUTOUT = new Colour(53, 75, 89);
     public static final Colour SECTOR_CUTOUT_TEXT = new Colour(235, 245, 229);
     public static final Colour SECTOR_CUTOUT_TEXT_GREEN = new Colour(46, 236, 54);
