@@ -176,6 +176,7 @@ class Ship(
             // be working, and a pilot must be present.
             val hasPilot = isAutoScout || friendlyCrew.any { it.room == piloting!!.room }
             return engines!!.powerSelected > 0 && piloting!!.undamagedEnergy > 0 && hasPilot
+                    && !engines!!.isHackActive && !piloting!!.isHackActive
         }
 
     val maxReactorPower: Int get() = 25
