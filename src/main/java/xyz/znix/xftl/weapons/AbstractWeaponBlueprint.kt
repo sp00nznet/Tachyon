@@ -1,10 +1,7 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
-import xyz.znix.xftl.Animations
-import xyz.znix.xftl.Blueprint
-import xyz.znix.xftl.Constants
-import xyz.znix.xftl.Ship
+import xyz.znix.xftl.*
 import xyz.znix.xftl.game.FTLSound
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
@@ -59,6 +56,8 @@ abstract class AbstractWeaponBlueprint(xml: Element) : Blueprint(xml) {
     val hitShipSounds = xml.getChild("hitShipSounds")?.let { SoundList(it) }
     val hitShieldSounds = xml.getChild("hitShieldSounds")?.let { SoundList(it) }
     val missSounds = xml.getChild("missSounds")?.let { SoundList(it) }
+
+    val flavourType: GameText? = xml.getGameTextChild("flavorType")
 
     val boost: ChainBoost?
 

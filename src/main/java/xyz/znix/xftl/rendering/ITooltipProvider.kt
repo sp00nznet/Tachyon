@@ -21,6 +21,7 @@ interface ITooltipProvider {
 
 abstract class StandardTooltip(game: InGameState) : ITooltipProvider {
     private val font = game.getFont("JustinFont11Bold")
+    protected open val customMaxWidth: Int? = null
 
     abstract fun getText(): String
 
@@ -33,7 +34,7 @@ abstract class StandardTooltip(game: InGameState) : ITooltipProvider {
         // From base game: 350 with title, 275 without.
         // (note this might be swapped, you may want to double-check. However,
         //  the 350px doesn't seem to match the jump button)
-        val lines = font.wrapString(getText(), 275)
+        val lines = font.wrapString(getText(), customMaxWidth ?: 275)
 
         val height = TooltipConstants.heightOf(lines)
         val width = TooltipConstants.widthOf(lines, font)

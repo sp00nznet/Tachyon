@@ -1,12 +1,17 @@
 package xyz.znix.xftl.weapons
 
 import org.jdom2.Element
+import xyz.znix.xftl.GameText
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.drones.CombatDrone
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.rendering.Colour
+import xyz.znix.xftl.rendering.DelayedTooltip
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.ITooltipProvider
+import xyz.znix.xftl.replaceArg
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -77,6 +82,12 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
             return type.chargeTime - chainCount * type.boost.perShot
         }
+
+    /**
+     * The tooltip displayed when the player hovers the button they click to aim the weapon.
+     */
+    val weaponBarTooltip: ITooltipProvider? by lazy { createWeaponBarTooltip() }
+
 
     open fun update(dt: Float, chargeTime: Float, canCharge: Boolean) {
         val speedMult = (1f + ship.getAugmentValue(AugmentBlueprint.AUTOMATED_RELOADERS))
@@ -165,6 +176,119 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         isPowered = newPowerState
     }
 
+    protected open fun createWeaponBarTooltip(): ITooltipProvider {
+        val tr = ship.sys.translator
+        val sb = StringBuilder()
+
+        // Thus function is very heavily based off vanilla's WeaponBlueprint::GetDescription
+
+        // The "Type: Laser" line
+        var typeKey = when (type) {
+            is LaserBlueprint -> if (type.ionDamage > 0) "type_ion" else "type_laser"
+            is MissileBlueprint -> if (type.missilesUsed > 0) "type_missile" else "type_crystal"
+            is BeamBlueprint -> "type_beam"
+            is BombBlueprint -> "type_bomb"
+            is FlakBlueprint -> "type_burst"
+            else -> "type_unknown" // Mods need to override this - TODO find a clean way to do this
+        }
+        if (type.chargeLevels != null) {
+            typeKey += "_charge"
+        }
+        if (type.boost != null) {
+            typeKey += "_chain"
+        }
+        val typeText: GameText = type.flavourType ?: GameText.localised(typeKey)
+        val effectLines = ArrayList<GameText>()
+
+        if (type.missilesUsed > 0) {
+            effectLines.add(GameText.localised("type_missile_effect"))
+        }
+        if (type.ionDamage > 0) {
+            effectLines.add(GameText.localised("type_ion_effect"))
+        }
+        if (type.chargeLevels != null) {
+            effectLines.add(GameText.localised("type_charge_effect"))
+        }
+        if (type.boost != null) {
+            effectLines.add(GameText.localised("type_chain_effect"))
+        }
+
+        val typeEffectsString = effectLines.joinToString { tr[it] + "\n" }
+        sb.append(tr["type_desc"].replaceArg(tr[typeText]).replaceArg(typeEffectsString, 2) + "\n")
+
+        if (type.boost?.type == AbstractWeaponBlueprint.BoostType.COOLDOWN) {
+            sb.append(tr["boost_power_speed"] + "\n")
+            // Max boost speed isn't shown in the tooltip
+        }
+        if (type.boost?.type == AbstractWeaponBlueprint.BoostType.DAMAGE) {
+            // We have to include the initial damage in the max value shown.
+            // How does vanilla FTL do this?
+            // TODO deduplicate this calculation with the one in InfoPanel
+            val baseDamage = max(type.damage, type.ionDamage)
+            val maxDamage = type.boost.maxCount * type.boost.perShot + baseDamage
+            sb.append(tr["boost_power_damage"] + "\n")
+            sb.append(tr["damage_cap"].replaceArg(maxDamage) + "\n")
+        }
+
+        if (type is LaserBlueprint || type is FlakBlueprint || (type is MissileBlueprint && type.shots != 1)) {
+            sb.append(tr["shots"].replaceArg(type.shots) + "\n")
+        }
+
+        if (type.chargeLevels != null) {
+            sb.append(tr["charge"].replaceArg(type.chargeLevels) + "\n")
+        }
+
+        val damageKey = if (type is BeamBlueprint) "damage_room" else "damage_shot"
+        sb.append(tr[damageKey].replaceArg(type.damage) + "\n")
+
+        if (type.shieldPiercing != 0 && type.shieldPiercing != 5) {
+            sb.append(tr["shield_piercing"].replaceArg(type.shieldPiercing) + "\n")
+        }
+
+        val effects = ArrayList<GameText>()
+        if (type.breachChance != 0) {
+            effects.add(GameText.localised("chance_of_breach"))
+        }
+        if (type.fireChance != 0) {
+            effects.add(GameText.localised("chance_of_fire"))
+        }
+        if (type.stunChance != 0) {
+            effects.add(GameText.localised("chance_of_stun"))
+        }
+        if (effects.isNotEmpty()) {
+            // The separator XML tag includes a space (in the English locale),
+            // but we're stripping it out while loading the translations.
+            // It seems unlikely that it won't contain a space, so it's a bit
+            // ugly but we can just put it back in here.
+            val separator = tr["chance_of_separator"] + " "
+
+            val specialEffectsString = effects.joinToString(separator) { tr[it] }
+            sb.append(tr["chance_of"].replaceArg(specialEffectsString) + "\n")
+        }
+
+        if (type.ionDamage != 0) {
+            sb.append(tr["ion_damage"].replaceArg(type.ionDamage) + "\n")
+        }
+        if (type.stun != 0) {
+            sb.append(tr["stun_damage"].replaceArg(type.stun) + "\n")
+        }
+        if (type.personnelDamage != 0) {
+            sb.append(tr["personnel_damage"].replaceArg(type.personnelDamage) + "\n")
+        }
+        if (type.sysDamage != 0) {
+            sb.append(tr["system_damage"].replaceArg(type.sysDamage) + "\n")
+        }
+        if (type.hullBust != 0) {
+            sb.append(tr["double_damage"] + "\n")
+        }
+
+        sb.append("\n")
+        sb.append(tr["hotkey"] + "\n") // TODO insert the hotkey name
+        sb.append(tr["rearrange"])
+
+        return WeaponButtonTooltip(ship.sys, sb.toString())
+    }
+
     open fun bindToWeaponsSystem(weapons: Weapons) {
     }
 
@@ -192,6 +316,11 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
 
         val expectedSlide = if (isPowered) 1f else 0f
         slide = SaveUtil.getOptionalTagFloat(elem, "slideAnimation") ?: expectedSlide
+    }
+
+    class WeaponButtonTooltip(game: InGameState, private val text: String) : DelayedTooltip(game) {
+        override fun getText(): String = text
+        override val customMaxWidth: Int get() = 300
     }
 }
 

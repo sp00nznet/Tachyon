@@ -694,6 +694,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                     override val hasChargeBar: Boolean get() = true
                     override val isBeingHacked: Boolean get() = ship.weapons!!.isHackActive
                     override val droneCooldownProgress: Float? get() = null
+                    override val tooltip: ITooltipProvider? get() = weapon?.weaponBarTooltip
 
                     override fun click(button: Int) {
                         when (button) {
@@ -805,6 +806,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                     override val isBeingHacked: Boolean get() = drones.isHackActive && info?.instance != null
                     override val droneCooldownProgress: Float?
                         get() = info?.cooldown?.let { it / AbstractDrone.DRONE_DESTROYED_COOLDOWN }
+                    override val tooltip: ITooltipProvider? get() = null // TODO
 
                     override fun click(button: Int) {
                         val wasPowered = info?.instance?.isPowered ?: false
@@ -1926,6 +1928,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         abstract val hasChargeBar: Boolean
         abstract val isBeingHacked: Boolean
         abstract val droneCooldownProgress: Float?
+        abstract val tooltip: ITooltipProvider?
 
         override val disabled: Boolean get() = empty
 
@@ -1952,6 +1955,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         private val weaponNumberString = (slotNumber + 1).toString()
 
         override fun draw(g: Graphics) {
+            if (hovered) {
+                g.tooltip = tooltip
+            }
+
             // Draw the drone cooldown progress, if applicable
             val cooldownProgress = droneCooldownProgress
             if (cooldownProgress != null) {
