@@ -900,9 +900,15 @@ public class InGameState extends MainGame.GameState {
     private void setEnemy(Ship enemy) {
         this.enemy = enemy;
 
+        // player=null when we're starting a new game, in which case enemy=null too.
+        if (player != null) {
+            player.enemyShipUpdated();
+        }
+
         if (enemy != null) {
-            enemyAI = new ShipAI(enemy, player);
+            enemyAI = new ShipAI(enemy, Objects.requireNonNull(player));
             hostileShipUI = new HostileShipUI(this, enemy);
+            enemy.enemyShipUpdated();
         } else {
             enemyAI = null;
             hostileShipUI = null;
@@ -1781,10 +1787,11 @@ public class InGameState extends MainGame.GameState {
 
         this.enemyIsHostile = enemyIsHostile;
 
-        // Get rid of any remaining drones on the player's ship
+        if (player != null)
+            player.enemyShipUpdated();
+
         if (enemy != null) {
             enemy.enemyShipUpdated();
-            player.enemyShipUpdated();
 
             // Turn the enemy weapons off - this is only a visual thing at
             // this point, since the AI isn't being updated to fire them.
