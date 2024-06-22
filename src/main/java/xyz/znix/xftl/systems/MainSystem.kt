@@ -7,6 +7,7 @@ import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.rendering.Graphics
+import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
@@ -69,6 +70,8 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
      */
     open val insertButtonSpace: Boolean get() = false
 
+    private val powerBarGlow: Image by onInit { it.getImg("img/icons/bar_backgroundglow.png") }
+
     override val effectiveIonPowerLimit: Int?
         get() {
             val limit = ionPowerLimit ?: return null
@@ -82,7 +85,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
     }
 
 
-    override fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int): Int {
+    override fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int, hoverGlow: Boolean): Int {
         // The top of the bottom bar
         val baseY = yOfBottom - 6
 
@@ -112,6 +115,16 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
             nextLevel++
         }
 
+        fun drawGlow() {
+            if (!hoverGlow) {
+                return
+            }
+
+            // Vanilla draws this image twice to make the glow stronger
+            powerBarGlow.drawAlignedCentred(x + 16 / 2, nextBarY + 6 / 2)
+            powerBarGlow.drawAlignedCentred(x + 16 / 2, nextBarY + 6 / 2)
+        }
+
         // Draw the power sources in priority order - the highest-priority
         // sources go at the bottom, lower priorities go higher up.
         for (type in EnergySource.TYPES) {
@@ -120,6 +133,8 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
                 continue
 
             for (i in 0 until amount) {
+                drawGlow()
+
                 // Use the generic power bar visuals
                 type.drawSystemPowerBar(g, this, x, nextBarY, 16, 6)
 
@@ -148,6 +163,7 @@ abstract class MainSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint
 
                 else -> {
                     // System depowered
+                    drawGlow()
                     g.colour = Constants.SYS_ENERGY_DEPOWERED
                     g.drawRect(x, y, 16 - 1, 6 - 1)
                 }

@@ -339,10 +339,20 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      * [drawPower] is false for enemy ships without top-level sensors,
      * otherwise it's true.
      *
+     * [hoverGlow] is set when the player is hovering over one of their
+     * main systems, and the system icon should be highlighted with a glow.
+     *
      * [x] and [y] specify the top-left corner of the box that contains
      * the system icon, NOT including the 19-pixel glow around the icon.
      */
-    open fun drawIconAndPower(game: InGameState, g: Graphics, isPlayer: Boolean, drawPower: Boolean, x: Int, y: Int) {
+    open fun drawIconAndPower(
+        game: InGameState,
+        g: Graphics,
+        isPlayer: Boolean,
+        drawPower: Boolean,
+        hoverGlow: Boolean,
+        x: Int, y: Int
+    ) {
         // Account for the 19px of padding
         val iconX = x - 19
         val iconY = y - 19
@@ -355,7 +365,17 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
         if (!isIonised) {
             // TODO flash blue when hacking/mind control/cloaking/backup battery is active
-            game.getImg("img/icons/s_${codename}_${iconColourName}1.png").draw(iconX, iconY)
+            val icon = game.getImg("img/icons/s_${codename}_${iconColourName}1.png")
+
+            // Vanilla draws the icon three times when it's hovered, so the small amount of glow
+            // around the image becomes a lot stronger.
+            if (hoverGlow) {
+                icon.draw(iconX, iconY)
+                icon.draw(iconX, iconY)
+                icon.draw(iconX, iconY)
+            } else {
+                icon.draw(iconX, iconY)
+            }
         } else {
             // Levels are rounded up, so <5s shows 1, <10s shows 2, etc.
             val levels = min(9, ceil(ionTimer / TIME_PER_ION).toInt())
@@ -400,7 +420,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
 
         // Draw the power bars, so that systems can override this relatively easily.
         val bottomBarBaseY = y - 11 + 6
-        val topBarY = drawPowerBars(g, barX, bottomBarBaseY)
+        val topBarY = drawPowerBars(g, barX, bottomBarBaseY, hoverGlow)
 
         // If a status icon (ion or hacking) is drawn, this is the Y of it's base.
         var statusIconY = topBarY - 3
@@ -524,7 +544,7 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
      *
      * @param yOfBottom The Y of the bottom of the lowest bar in the stack.
      */
-    protected abstract fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int): Int
+    protected abstract fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int, hoverGlow: Boolean): Int
 
     /**
      * Create any system-specific buttons that go next to the power button in the main UI.

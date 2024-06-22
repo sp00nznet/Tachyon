@@ -24,7 +24,7 @@ abstract class SubSystem(blueprint: SystemBlueprint) : AbstractSystem(blueprint)
         check(blueprint.info!!.isSubSystem)
     }
 
-    override fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int): Int {
+    override fun drawPowerBars(g: Graphics, x: Int, yOfBottom: Int, hoverGlow: Boolean): Int {
         // The top of the bottom bar
         val baseY = yOfBottom - 6
 

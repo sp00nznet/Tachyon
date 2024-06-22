@@ -149,10 +149,11 @@ class Clonebay(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         g: Graphics,
         isPlayer: Boolean,
         drawPower: Boolean,
+        hoverGlow: Boolean,
         x: Int,
         y: Int
     ) {
-        super.drawIconAndPower(game, g, isPlayer, drawPower, x, y)
+        super.drawIconAndPower(game, g, isPlayer, drawPower, hoverGlow, x, y)
 
         if (!isPlayer)
             return

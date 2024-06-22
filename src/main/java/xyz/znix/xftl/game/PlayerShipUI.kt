@@ -2110,7 +2110,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         private val tooltip = system.createTooltip()
 
         override fun draw(g: Graphics) {
-            system.drawIconAndPower(game, g, true, true, pos.x, pos.y)
+            system.drawIconAndPower(game, g, true, true, hovered, pos.x, pos.y)
 
             if (rawHovered) {
                 g.tooltip = tooltip
