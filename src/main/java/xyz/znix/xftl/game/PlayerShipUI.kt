@@ -1957,6 +1957,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         override fun draw(g: Graphics) {
             if (hovered) {
                 g.tooltip = tooltip
+
+                // Draw the glow behind everything else
+                game.getImg("img/bar_weapon_minibox_glow.png").draw(pos.x - 18, pos.y - 10)
             }
 
             // Draw the drone cooldown progress, if applicable
