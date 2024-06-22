@@ -25,7 +25,7 @@ the top animates upwards.
 
 
 Sabotaging can be found in CrewMember::UpdateRepair, and it does
-a constant 0.5 damage per time unit (16 damage per second), regardless
+a constant 0.5 damage per time unit (8 damage per second), regardless
 of the shooting animation.
 
 
