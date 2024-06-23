@@ -1061,7 +1061,13 @@ abstract class AbstractCrew(
             }
 
             Action.FIRE_FIGHTING -> {
-                val firePos = room.slotToPoint(currentFireSlot)
+                // Note that currentFireSlot can be zero while we're deserialising
+                // It'll later be changed and updateAnimation called again, but in
+                // the meantime we mustn't crash.
+                val firePos = when {
+                    currentFireSlot == -1 -> ConstPoint.ZERO
+                    else -> room.slotToPoint(currentFireSlot)
+                }
 
                 val direction: Direction = if (firePos posEq roomPosition!!) {
                     // If it's in the same cell as us, point down.
