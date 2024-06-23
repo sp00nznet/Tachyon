@@ -84,8 +84,22 @@ interface Input {
         const val KEY_ESCAPE: Int = GLFW.GLFW_KEY_ESCAPE
         const val KEY_SPACE: Int = GLFW.GLFW_KEY_SPACE
         const val KEY_TAB: Int = GLFW.GLFW_KEY_TAB
+
+        const val KEY_LBRACKET: Int = GLFW.GLFW_KEY_LEFT_BRACKET
+        const val KEY_RBRACKET: Int = GLFW.GLFW_KEY_RIGHT_BRACKET
+        const val KEY_HASH: Int = GLFW.GLFW_KEY_BACKSLASH // UK (#) vs US (\) layouts differ
+        const val KEY_SEMICOLON: Int = GLFW.GLFW_KEY_SEMICOLON
+        const val KEY_APOSTROPHE: Int = GLFW.GLFW_KEY_APOSTROPHE
+        const val KEY_COMMA: Int = GLFW.GLFW_KEY_COMMA
         const val KEY_FULL_STOP: Int = GLFW.GLFW_KEY_PERIOD
         const val KEY_STROKE: Int = GLFW.GLFW_KEY_SLASH
+
+        // ISO UK layout "|\" key
+        // This key is mapped to GLFW_KEY_WORLD_1 on Mac, GLFW_KEY_WORLD_2
+        // on Windows, and to either on Linux depending on whether you use X11 or Wayland.
+        // See https://github.com/glfw/glfw/issues/2481
+        // We'll solve this by re-mapping everything to WORLD_1 as it comes in from GLFW.
+        const val KEY_BAR: Int = GLFW.GLFW_KEY_WORLD_1
 
         const val KEY_LSHIFT: Int = GLFW.GLFW_KEY_LEFT_SHIFT
         const val KEY_RSHIFT: Int = GLFW.GLFW_KEY_RIGHT_SHIFT

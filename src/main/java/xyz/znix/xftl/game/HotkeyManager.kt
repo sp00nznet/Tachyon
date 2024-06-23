@@ -135,8 +135,6 @@ class HotkeyButton(val id: String, val keyID: Int, val text: GameText) {
             HotkeyButton("escape", Input.KEY_ESCAPE, GameText.localised("keycap_escape")),
             HotkeyButton("space", Input.KEY_SPACE, GameText.localised("keycap_space")),
             HotkeyButton("tab", Input.KEY_TAB, GameText.localised("keycap_tab")),
-            HotkeyButton("full_stop", Input.KEY_FULL_STOP, GameText.literal(".")),
-            HotkeyButton("stroke", Input.KEY_STROKE, GameText.literal("/")),
             HotkeyButton("lshift", Input.KEY_LSHIFT, GameText.localised("keycap_leftshift")),
             HotkeyButton("rshift", Input.KEY_RSHIFT, GameText.localised("keycap_rightshift")),
             HotkeyButton("lctrl", Input.KEY_LCTRL, GameText.localised("keycap_leftcontrol")),
@@ -154,6 +152,18 @@ class HotkeyButton(val id: String, val keyID: Int, val text: GameText) {
             HotkeyButton("pg_dn", Input.KEY_PG_DN, GameText.localised("keycap_pagedown")),
             HotkeyButton("backtick", Input.KEY_GRAVE, GameText.literal("`")),
             HotkeyButton("menu", Input.KEY_MENU, GameText.localised("keycap_menu")),
+
+            // Unfortunately these don't show the right keys on eg the German QWERTZ layout,
+            // but there's not really a good solution for that.
+            HotkeyButton("lbracket", Input.KEY_LBRACKET, GameText.literal("[")),
+            HotkeyButton("rbracket", Input.KEY_RBRACKET, GameText.literal("]")),
+            HotkeyButton("hash", Input.KEY_HASH, GameText.literal("# or \\")),
+            HotkeyButton("semicolon", Input.KEY_SEMICOLON, GameText.literal(";")),
+            HotkeyButton("apostrophe", Input.KEY_APOSTROPHE, GameText.literal("'")),
+            HotkeyButton("comma", Input.KEY_COMMA, GameText.literal(",")),
+            HotkeyButton("full_stop", Input.KEY_FULL_STOP, GameText.literal(".")),
+            HotkeyButton("stroke", Input.KEY_STROKE, GameText.literal("/")),
+            HotkeyButton("bar", Input.KEY_BAR, GameText.literal("|")),
 
             HotkeyButton("a", Input.KEY_A, GameText.literal("a")),
             HotkeyButton("b", Input.KEY_B, GameText.literal("b")),

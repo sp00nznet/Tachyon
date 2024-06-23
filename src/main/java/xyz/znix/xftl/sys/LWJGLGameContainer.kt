@@ -329,7 +329,10 @@ private class LWJGLInput(val window: Long) : Input {
         }
     }
 
-    private fun keyCallback(key: Int, scancode: Int, action: Int, mods: Int) {
+    private fun keyCallback(rawKey: Int, scancode: Int, action: Int, mods: Int) {
+        // Convert between the different codes used by the "|" UK/ISO key on different platforms
+        val key = remapKey(rawKey)
+
         // Ignore unsupported keys
         if (key == GLFW_KEY_UNKNOWN) {
             return
@@ -418,7 +421,7 @@ private class LWJGLInput(val window: Long) : Input {
     }
 
     override fun isKeyDown(key: Int): Boolean {
-        return glfwGetKey(window, key) == GLFW_PRESS
+        return glfwGetKey(window, remapKey(key)) == GLFW_PRESS
     }
 
     override fun addListener(listener: InputListener) {
@@ -435,6 +438,15 @@ private class LWJGLInput(val window: Long) : Input {
         for (i in pendingKeyPresses.indices) {
             pendingKeyPresses[i] = false
         }
+    }
+
+    private fun remapKey(original: Int): Int {
+        // See the documentation for KEY_BAR.
+        if (original == GLFW_KEY_WORLD_2) {
+            return Input.KEY_BAR
+        }
+
+        return original
     }
 
     companion object {
