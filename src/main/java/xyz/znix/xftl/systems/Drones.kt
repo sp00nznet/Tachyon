@@ -10,6 +10,7 @@ import xyz.znix.xftl.savegame.RefLoader
 import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.utils.WeaponPowerManager
 import xyz.znix.xftl.weapons.DroneBlueprint
+import kotlin.math.max
 
 class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override val sortingType: SortingType get() = SortingType.DRONES
@@ -181,8 +182,15 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
             val type = SaveUtil.getAttr(droneElem, "type")
             val blueprint = ship.sys.blueprintManager[type] as DroneBlueprint
 
-            val firstSlot = drones.indexOf(null)
-            require(firstSlot != -1) { "More serialised drones than drone slots!" }
+            // If there aren't enough slots, make a new one
+            // This is required for the flagship at least, and any modded ships
+            // which have more drones than drone slots.
+            // Note that loadDefaultContents does the same thing, adding slots if required.
+            var firstSlot = drones.indexOf(null)
+            if (firstSlot == -1) {
+                firstSlot = drones.size
+                drones.add(null)
+            }
             drones[firstSlot] = DroneInfo(blueprint, null)
         }
     }
@@ -196,18 +204,22 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     }
 
     private inner class DronePowerAccess : WeaponPowerManager.ItemAccess {
-        override val count: Int get() = drones.size
+        // The flagship has more drones than slots, so slots are added either
+        // during deserialisation or in loadDefaultContents, and it's critical that this
+        // field doesn't change. Thus we lie and say there's more drones than
+        // there actually are, so it's OK to add them later.
+        override val count: Int = max(drones.size, 8)
 
         override fun hasItem(slot: Int): Boolean {
-            return drones[slot] != null
+            return drones.getOrNull(slot) != null
         }
 
         override fun getItemPowerDraw(slot: Int): Int {
-            return drones[slot]?.type?.power ?: 0
+            return drones.getOrNull(slot)?.type?.power ?: 0
         }
 
         override fun isItemPowered(slot: Int): Boolean {
-            return drones[slot]?.instance?.isPowered ?: false
+            return drones.getOrNull(slot)?.instance?.isPowered ?: false
         }
 
         override fun setItemPowered(slot: Int, powered: Boolean) {
