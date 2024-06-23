@@ -3,7 +3,8 @@ package xyz.znix.xftl.sector
 import org.jdom2.Element
 import xyz.znix.xftl.BlueprintManager
 import xyz.znix.xftl.Datafile
-import xyz.znix.xftl.game.Difficulty
+import xyz.znix.xftl.game.FlagshipBoss
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.InGameState.GameContent
 import xyz.znix.xftl.mapChildrenText
 import xyz.znix.xftl.requireAttributeValue
@@ -221,7 +222,7 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         sectorTypes[name] = sector
     }
 
-    fun generateSector(sectorInfo: SectorInfo, difficulty: Difficulty): Sector {
+    fun generateSector(sectorInfo: SectorInfo, game: InGameState): Sector {
         val eventPool = ArrayList<Event>()
         for (ev in sectorInfo.type.events) {
             val count = ev.count.random()
@@ -234,7 +235,7 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
         var attemptCount = 0
         var sector: Sector
         while (true) {
-            sector = Sector(sectorInfo, eventPool, specialEvents, difficulty)
+            sector = Sector(sectorInfo, eventPool, specialEvents, game.difficulty)
 
             val path = sector.findShortestPath(sector.startBeacon, sector.finishBeacon)
 
@@ -273,13 +274,9 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
                 if (path.size !in 3..5 && attemptCount < 10)
                     continue
 
-                sector.flagshipBeacon = flagshipBeacon
+                sector.bosses.add(FlagshipBoss(sector, game, flagshipBeacon))
                 break
             }
-
-            // This is required so that right from the start, you can see what beacon
-            // the flagship is jumping to next.
-            sector.updateFlagshipNextBeacon()
         }
 
         return sector

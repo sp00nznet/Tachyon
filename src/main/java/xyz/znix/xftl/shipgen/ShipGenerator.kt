@@ -37,7 +37,7 @@ class ShipGenerator(val df: Datafile, val bp: BlueprintManager) {
         val shipBlueprint = (spec.autoBlueprint.resolve(rand) as LazyShipBlueprint).real
         val elem = shipBlueprint.loadElem()
 
-        val ship = Ship(shipBlueprint, sys, null, spec)
+        val ship = Ship(shipBlueprint, sys, null, spec, null)
         ship.loadDefaultContents()
 
         ship.escapeHealth = spec.escapeHealth?.pick(rand) ?: 0

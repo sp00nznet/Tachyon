@@ -17,7 +17,6 @@ import xyz.znix.xftl.devutil.DebugFlagManager;
 import xyz.znix.xftl.drones.AbstractExternalDrone;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.layout.Room;
-import xyz.znix.xftl.math.ConstPoint;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
@@ -139,7 +138,7 @@ public class InGameState extends MainGame.GameState {
         // Be sure we do this after creating the player ship, it's used by the enemy AI
         // Note that we don't store the current sector anywhere - it's determined via
         // the current beacon.
-        Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0), difficulty);
+        Sector firstSector = gameMap.generateSector(gameMap.getSectors().get(0).get(0), this);
         setCurrentBeacon(firstSector.getStartBeacon());
 
         // Do this after setting the initial beacon, since the ship reads the current
@@ -313,7 +312,7 @@ public class InGameState extends MainGame.GameState {
 
     private void createNewPlayerShip(String shipName, EditableShip customised) {
         ShipBlueprint blueprint = blueprintManager.getShip(shipName);
-        player = new Ship(blueprint, this, customised, null);
+        player = new Ship(blueprint, this, customised, null, null);
         player.loadDefaultContents();
 
         for (ShipBlueprint.InitialCrewSpec spec : blueprint.getInitialCrew()) {
@@ -535,7 +534,7 @@ public class InGameState extends MainGame.GameState {
         // there's also an enemy ship.
         if (enemy == null) {
             playerShipOffset.setX(350);
-        } else if (enemy.isFlagship()) {
+        } else if (enemy.isUsingBossUI()) {
             playerShipOffset.setX(150);
         } else {
             playerShipOffset.setX(200);
@@ -641,8 +640,8 @@ public class InGameState extends MainGame.GameState {
                         showEventDialogue(event.resolve(), Random.Default.nextInt());
                 }
 
-                if (enemy.isFlagship()) {
-                    onFlagshipKilled();
+                if (enemy.getBoss() != null) {
+                    enemy.getBoss().bossShipKilled(enemy);
                 }
 
                 setEnemy(null);
@@ -682,7 +681,7 @@ public class InGameState extends MainGame.GameState {
                     IEvent event = enemy.getSpec().getDeadCrew();
                     if (event != null)
                         showEventDialogue(event.resolve(), Random.Default.nextInt());
-                } else if (enemy.isFlagship()) {
+                } else if (enemy.getBoss() != null) {
                     // TODO turn the enemy into an autoscout
                     // Event event = eventManager.get("BOSS_AUTOMATED").resolve();
                     // showEventDialogue(event);
@@ -771,17 +770,22 @@ public class InGameState extends MainGame.GameState {
 
         // If the flagship is here, spawn it in. Doing this last overwrites
         // the rebel elite that's already been spawned.
-        if (currentBeacon == currentBeacon.getSector().getFlagshipBeacon()) {
-            spawnFlagship();
-        }
+        trySpawnBoss();
 
         currentBeacon.setVisited(true);
 
         // Note: the new ship is loaded by loadShipEvent, which is called by the event dialogue window.
     }
 
-    private void spawnFlagship() {
-        int stage = currentBeacon.getSector().getFlagshipStage();
+    private void trySpawnBoss() {
+        BossManager boss = currentBeacon.getSector().getBosses().stream()
+                .filter(thisBoss -> thisBoss.getBeacon() == currentBeacon)
+                .findFirst().orElse(null);
+
+        // No boss at this beacon?
+        if (boss == null) {
+            return;
+        }
 
         // If there's a ship at the current beacon, get rid of it. This avoids
         // it sticking around after the flagship leaves, and saves space
@@ -790,75 +794,8 @@ public class InGameState extends MainGame.GameState {
         // generated whenever the player jumps there.
         currentBeacon.setShip(null);
 
-        // The ship name is in the format of BOSS_1_NORMAL_DLC
-        String shipName = String.format("BOSS_%d_%s", stage, difficulty);
-        if (content.enableAdvancedEdition) {
-            shipName += "_DLC";
-        }
-
-        ShipBlueprint blueprint = blueprintManager.getShip(shipName);
-        Ship flagship = new Ship(blueprint, this, null, null);
-        flagship.loadDefaultContents();
-
-        // TODO handle crew being killed across fights
-        for (int i = 0; i < 11; i++) {
-            CrewBlueprint race = (CrewBlueprint) blueprintManager.get("human");
-            LivingCrewInfo info = LivingCrewInfo.generateRandom(race, this);
-            LivingCrew crew = flagship.addCrewMember(info, true, false);
-
-            // Put some crew in the artillery rooms
-            for (Artillery artillery : flagship.getArtillery()) {
-                Room room = Objects.requireNonNull(artillery.getRoom());
-
-                boolean anyInRoom = flagship.getCrew().stream().anyMatch(c -> c.getRoom() == room);
-                if (anyInRoom)
-                    continue;
-
-                crew.jumpTo(room, ConstPoint.ZERO);
-            }
-        }
-
-        // Copied from ShipGenerator, required for stage 1
-        if (flagship.getDronesCount() == 0 && flagship.getHacking() != null) {
-            flagship.setDronesCount(5);
-        }
-
-        setEnemy(flagship);
+        setEnemy(boss.createShip());
         setEnemyIsHostile(true);
-
-        Event event = eventManager.get("BOSS_TEXT_" + stage).resolve();
-        showEventDialogue(event, Random.Default.nextInt());
-    }
-
-    private void onFlagshipKilled() {
-        Sector sector = currentBeacon.getSector();
-        sector.updateFlagshipNextBeacon();
-
-        // If we're not at the base, continue on our path there.
-        // We have to set the is-jumping flag, otherwise the flagship
-        // could wait at the same beacon as the player.
-        if (sector.getFlagshipNextBeacon() != null) {
-            sector.setFlagshipJumping(true);
-        } else {
-            // The flagship is at the base, force it to jump away.
-            List<Beacon> adjacent = currentBeacon.getNeighbours();
-            Beacon next = adjacent.get(Random.Default.nextInt(adjacent.size()));
-
-            sector.setFlagshipRunningAway(true);
-            sector.setFlagshipJumping(true);
-            sector.setFlagshipNextBeacon(next);
-        }
-
-        int stageKilled = sector.getFlagshipStage();
-        if (stageKilled == 3) {
-            shipUI.showGameOverScreen(GameOverWindow.Outcome.WIN);
-        } else {
-            sector.setFlagshipStage(stageKilled + 1);
-
-            // The event when you defeat a stage
-            Event event = eventManager.get("BOSS_ESCAPED").resolve();
-            showEventDialogue(event, Random.Default.nextInt());
-        }
     }
 
     /**
@@ -993,12 +930,18 @@ public class InGameState extends MainGame.GameState {
         for (Beacon beacon : sector.getBeacons()) {
             refs.register(beacon.getShip(), "ship");
         }
-        if (enemy != null && enemy.isFlagship()) {
-            refs.register(enemy, "flagship");
+        if (enemy != null && enemy.getBoss() != null) {
+            refs.register(enemy, "bossShip");
         }
         boolean saveDefeatedEnemy = enemy != null && !enemyIsHostile && enemy.hasCrewOwnedByShip(player);
         if (saveDefeatedEnemy) {
             refs.register(enemy, "defeatedEnemy");
+        }
+
+        // Add the ID for the boss managers. We have to do this now, so the IDs
+        // are available when we're writing the boss ship if there is one.
+        for (BossManager boss : sector.getBosses()) {
+            refs.register(boss, "boss");
         }
 
         // If the player ship has a custom layout, save that.
@@ -1014,8 +957,8 @@ public class InGameState extends MainGame.GameState {
         root.addContent(playerShip);
 
         // Serialise the flagship, as it's not stored at a beacon like normal ships.
-        if (enemy != null && enemy.isFlagship()) {
-            Element flagshipElem = new Element("flagship");
+        if (enemy != null && enemy.getBoss() != null) {
+            Element flagshipElem = new Element("bossShip");
             enemy.saveToXML(flagshipElem, refs);
             root.addContent(flagshipElem);
         }
@@ -1081,7 +1024,7 @@ public class InGameState extends MainGame.GameState {
         player = deserialiseSingleShip(playerShip, refs, customised);
 
         // Load the flagship, if we're fighting it.
-        Element flagshipElem = root.getChild("flagship");
+        Element flagshipElem = root.getChild("bossShip");
         Ship overrideCurrentBeacon = null;
         if (flagshipElem != null) {
             overrideCurrentBeacon = deserialiseSingleShip(flagshipElem, refs, null);
@@ -1125,6 +1068,7 @@ public class InGameState extends MainGame.GameState {
 
         // We can finally load out our current beacon.
         currentBeacon = SaveUtil.INSTANCE.getRefImmediate(root, "currentBeacon", refs, Beacon.class);
+        Objects.requireNonNull(currentBeacon);
 
         // Load in the previous enemy
         if (overrideCurrentBeacon != null) {
@@ -1159,7 +1103,8 @@ public class InGameState extends MainGame.GameState {
         ShipBlueprint blueprint = blueprintManager.getShip(shipId);
 
         // And use that to build and deserialise the ship
-        Ship ship = new Ship(blueprint, this, customised, spec);
+        // Note we pass in null as the boss - that'll be updated if this turns out to be a boss.
+        Ship ship = new Ship(blueprint, this, customised, spec, null);
         ship.loadFromXml(shipElement, refs);
 
         return ship;
@@ -1648,22 +1593,8 @@ public class InGameState extends MainGame.GameState {
         // TODO implement fleet advance, capturing two beacons
 
         // Make the flagship jump
-
-        if (!sector.getFlagshipJumping()) {
-            // Jump every second turn, this turn wasn't a jump.
-            // (except if the flagship doesn't want to jump, when
-            //  it's at the base - this is when the next beacon is null.)
-            sector.updateFlagshipNextBeacon();
-            sector.setFlagshipJumping(sector.getFlagshipNextBeacon() != null);
-        } else {
-            sector.setFlagshipBeacon(sector.getFlagshipNextBeacon());
-            sector.updateFlagshipNextBeacon();
-
-            // Don't jump again next turn
-            sector.setFlagshipJumping(false);
-
-            // If we were running away, we're allowed to go back to the base again.
-            sector.setFlagshipRunningAway(false);
+        for (BossManager boss : sector.getBosses()) {
+            boss.advanceFleet();
         }
     }
 

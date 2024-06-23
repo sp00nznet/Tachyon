@@ -12,7 +12,10 @@ import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Sector
 import xyz.znix.xftl.sys.Input
-import kotlin.math.*
+import kotlin.math.atan2
+import kotlin.math.max
+import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.random.Random
 
 // Note that the actual window appears at 340, if we want to be resizable we'll have to fix
@@ -51,7 +54,6 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
     private val playerShip = game.getImg("img/map/map_icon_ship.png")
     private val playerShipNoFuel = game.getImg("img/map/map_icon_ship_fuel.png")
-    private val flagshipIcon = game.getImg("img/map/map_icon_boss.png")
 
     private val noFuelImage = game.getImg("img/map/map_fuel_text_nofuel.png")
     private val waitDistressFrame = game.getImg("img/map/side_wait_distress.png")
@@ -91,7 +93,6 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     var hovered: Beacon? = null
 
     private var playerRotation: Float = (0f..10f).random(VisualRandom)
-    private var flagshipRotation: Float = (0f..10f).random(VisualRandom)
 
     private val outOfFuel: Boolean get() = game.player.fuelCount == 0
 
@@ -151,38 +152,24 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         drawBeaconLinesTo(g, game.currentBeacon, Constants.BEACON_LINE_PLAYER) { true }
 
         // Draw the line showing where the flagship will next jump
-        if (sector.flagshipNextBeacon != null) {
-            if (!sector.flagshipJumping) {
+        for (boss in sector.bosses) {
+            val currentBeacon = boss.beacon ?: continue
+            val nextBeacon = boss.nextBeacon ?: continue
+
+            if (!boss.jumping) {
                 // Draw a dotted line if the flagship isn't jumping this turn
-                drawBeaconLine(g, sector.flagshipBeacon!!, sector.flagshipNextBeacon!!, Constants.BEACON_LINE_FLAGSHIP)
+                drawBeaconLine(
+                    g,
+                    currentBeacon,
+                    nextBeacon,
+                    Constants.BEACON_LINE_FLAGSHIP
+                )
             } else {
                 // Draw a wide, continuous line if the flagship is jumping this turn.
-                val a = mapBase + sector.flagshipBeacon!!.pos
-                val b = mapBase + sector.flagshipNextBeacon!!.pos
+                val a = mapBase + currentBeacon.pos
+                val b = mapBase + nextBeacon.pos
 
-                val width = 10f
-                val angle = atan2(a.y.f - b.y, a.x.f - b.x)
-                val tangentX = cos(angle + PIf / 2f) * width / 2
-                val tangentY = sin(angle + PIf / 2f) * width / 2
-
-                g.drawCustomQuads { renderer ->
-                    renderer.pushVert(a.x + tangentX, a.y + tangentY, Constants.BEACON_LINE_FLAGSHIP)
-                    renderer.pushVert(a.x - tangentX, a.y - tangentY, Constants.BEACON_LINE_FLAGSHIP)
-                    renderer.pushVert(b.x - tangentX, b.y - tangentY, Constants.BEACON_LINE_FLAGSHIP)
-                    renderer.pushVert(b.x + tangentX, b.y + tangentY, Constants.BEACON_LINE_FLAGSHIP)
-                }
-
-                // Draw the animated flagship on top of it.
-                // Note these numbers are approximate.
-                val period = 1_500_000_000
-                val progress: Float = (System.nanoTime() % period).toFloat() / period
-                val movement = 20f + progress * 20f
-                val alpha = min(1f, 2f - progress * 2f)
-
-                g.pushTransform()
-                g.rotate(a.x.f, a.y.f, Math.toDegrees(angle.toDouble()).toFloat() - 90f)
-                flagshipIcon.draw(a.x - 32f, a.y - 32f - movement, Colour(1f, 1f, 1f, alpha))
-                g.popTransform()
+                boss.drawJumpArc(g, a, b)
             }
         }
 
@@ -299,14 +286,11 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             }
 
             // Draw the flagship rotating around the beacon.
-            if (beacon == sector.flagshipBeacon && !sector.flagshipJumping) {
-                flagshipRotation += game.renderingDeltaTime * rotationSpeed
+            for (boss in sector.bosses) {
+                if (boss.beacon != beacon || boss.jumping)
+                    continue
 
-                // These offsets are approximate.
-                g.pushTransform()
-                g.rotate(centrePos.x.f, centrePos.y.f, -flagshipRotation)
-                flagshipIcon.draw(centrePos.x - 8, centrePos.y - 32)
-                g.popTransform()
+                boss.drawMapIcon(g, centrePos)
             }
         }
 

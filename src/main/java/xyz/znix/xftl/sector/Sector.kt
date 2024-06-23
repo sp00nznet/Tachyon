@@ -1,6 +1,7 @@
 package xyz.znix.xftl.sector
 
 import org.jdom2.Element
+import xyz.znix.xftl.game.BossManager
 import xyz.znix.xftl.game.Difficulty
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
@@ -61,30 +62,12 @@ class Sector {
     var mapRevealed: Boolean = false
 
     /**
-     * If this is the last stand, this is the beacon the flagship is currently at.
+     * The boss ships present in this sector.
+     *
+     * Without mods this is either empty or contains the flagship, but mods can
+     * theoretically add multiple bosses.
      */
-    var flagshipBeacon: Beacon? = null
-
-    /**
-     * The beacon the flagship will be at next time it jumps. This can be set to
-     * null if it doesn't plan on jumping, such as when it's at the fed base.
-     */
-    var flagshipNextBeacon: Beacon? = null
-
-    /**
-     * True if the flagship will move on the next jump.
-     */
-    var flagshipJumping: Boolean = false
-
-    /**
-     * True if the flagship is running away from the base, after being killed there.
-     */
-    var flagshipRunningAway: Boolean = false
-
-    /**
-     * The one-indexed flagship stage that the player will next fight.
-     */
-    var flagshipStage: Int = 1
+    val bosses = ArrayList<BossManager>()
 
     // Note there's another constructor for deserialising a sector
     // from XML down at the bottom of the class.
@@ -379,31 +362,6 @@ class Sector {
         return path
     }
 
-    fun updateFlagshipNextBeacon() {
-        // If the flagship is running away, don't touch its next beacon.
-        // That'll have been set when it was marked as running away.
-        if (flagshipRunningAway) {
-            return
-        }
-
-        // We'll change this later if the flagship wants to jump.
-        flagshipNextBeacon = null
-
-        val current = flagshipBeacon ?: run {
-            return
-        }
-
-        // If the flagship is at the rebel base, it'll stay there.
-        if (current == finishBeacon) {
-            return
-        }
-
-        val path = findShortestPath(current, finishBeacon)
-        require(path != null) { "Flagship has no path to the federation base!" }
-
-        flagshipNextBeacon = path.first()
-    }
-
     fun saveToXML(elem: Element, globalRefs: ObjectRefs): ObjectRefs {
         // External stuff shouldn't be able to reference beacons
         val refs = ObjectRefs(globalRefs)
@@ -422,12 +380,15 @@ class Sector {
         SaveUtil.addAttrRef(elem, "startBeacon", refs, startBeacon)
         SaveUtil.addAttrRef(elem, "finishBeacon", refs, finishBeacon)
 
-        if (isLastStand) {
-            SaveUtil.addAttrRef(elem, "flagshipBeacon", refs, flagshipBeacon)
-            SaveUtil.addAttrRef(elem, "flagshipNext", refs, flagshipNextBeacon)
-            SaveUtil.addAttrBool(elem, "flagshipJumping", flagshipJumping)
-            SaveUtil.addAttrBool(elem, "flagshipRunningAway", flagshipRunningAway)
-            SaveUtil.addAttrInt(elem, "flagshipStage", flagshipStage)
+        for (boss in bosses) {
+            val bossElem = Element("boss")
+            SaveUtil.addAttr(bossElem, "type", boss.serialisationType)
+            // Note we don't register the boss with ObjectRefs - that's done by InGameState,
+            // since it needs the object ID if it's saving the boss ship layout before
+            // this sector is serialised.
+            SaveUtil.addObjectId(bossElem, globalRefs, boss)
+            boss.saveToXML(bossElem, refs)
+            elem.addContent(bossElem)
         }
 
         // Serialise all the beacons
@@ -529,12 +490,12 @@ class Sector {
         startBeacon = SaveUtil.getAttrRefImmediate(elem, "startBeacon", beaconRefs, Beacon::class.java)!!
         finishBeacon = SaveUtil.getAttrRefImmediate(elem, "finishBeacon", beaconRefs, Beacon::class.java)!!
 
-        if (isLastStand) {
-            SaveUtil.getAttrRef(elem, "flagshipBeacon", refs, Beacon::class.java) { flagshipBeacon = it }
-            SaveUtil.getAttrRef(elem, "flagshipNext", refs, Beacon::class.java) { flagshipNextBeacon = it }
-            flagshipJumping = SaveUtil.getAttrBool(elem, "flagshipJumping")
-            flagshipRunningAway = SaveUtil.getAttrBool(elem, "flagshipRunningAway")
-            flagshipStage = SaveUtil.getAttrInt(elem, "flagshipStage")
+        for (bossElem in elem.getChildren("boss")) {
+            val type = SaveUtil.getAttr(bossElem, "type")
+            val boss = BossManager.createBySerialisationType(type, this, game)
+            SaveUtil.registerObjectId(bossElem, refs, boss)
+            boss.loadFromXML(bossElem, refs)
+            bosses.add(boss)
         }
     }
 

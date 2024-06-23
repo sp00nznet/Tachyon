@@ -1650,7 +1650,7 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (sectorInfo == null)
                 return@SectorMapWindow
 
-            val sector = game.gameMap.generateSector(sectorInfo, game.difficulty)
+            val sector = game.gameMap.generateSector(sectorInfo, game)
             game.currentBeacon = sector.startBeacon
 
             // In case we were at a store

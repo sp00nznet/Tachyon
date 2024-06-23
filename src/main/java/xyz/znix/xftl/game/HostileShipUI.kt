@@ -33,11 +33,11 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
     private val maskBoss = game.getImg("img/combatUI/box_hostiles_boss_mask.png")
 
     fun render(gc: GameContainer, g: Graphics, hoveredRoom: Room?, interiorVisible: Boolean, isHostile: Boolean) {
-        val box = when (enemy.isFlagship) {
+        val box = when (enemy.isUsingBossUI) {
             true -> boxBoss
             false -> boxNormal
         }
-        val mask = when (enemy.isFlagship) {
+        val mask = when (enemy.isUsingBossUI) {
             true -> maskBoss
             false -> maskNormal
         }
@@ -59,7 +59,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         val rightGlow: Int
         val topGlow: Int
         val bottomGlow: Int
-        if (enemy.isFlagship) {
+        if (enemy.isUsingBossUI) {
             leftGlow = 4
             rightGlow = 4
             topGlow = 4
@@ -107,7 +107,7 @@ class HostileShipUI(private val game: InGameState, private val enemy: Ship) {
         val textX = boxX + 2
 
         // Draw the title
-        val titleX = textX + when (enemy.isFlagship) {
+        val titleX = textX + when (enemy.isUsingBossUI) {
             true -> 7
             else -> 1
         }

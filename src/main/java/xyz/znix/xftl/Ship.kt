@@ -49,7 +49,9 @@ class Ship(
      */
     val customised: EditableShip?,
 
-    val spec: EnemyShipSpec?
+    val spec: EnemyShipSpec?,
+
+    boss: BossManager?,
 ) :
     ISerialReferencable {
 
@@ -57,10 +59,16 @@ class Ship(
     val name: String get() = type.name
     val maxHealth: Int get() = type.maxHealth
     val isPlayerShip: Boolean get() = type.isPlayerShip
-    val isFlagship: Boolean get() = type.isFlagship
+    val isUsingBossUI: Boolean get() = boss?.useBossShipUI ?: false
     val isAutoScout: Boolean get() = type.isAutoScout
     val weaponSlots: Int? get() = customised?.weaponSlots ?: type.weaponSlots
     val droneSlots: Int? get() = customised?.droneSlots ?: type.droneSlots
+
+    /**
+     * If this ship is a boss, this points to its manager. Null otherwise.
+     */
+    var boss: BossManager? = boss
+        private set // Mutable only for deserialisation
 
     val rooms: List<Room>
     val doors: List<Door>
@@ -1510,7 +1518,7 @@ class Ship(
             return true
         }
 
-        return true
+        return false
     }
 
     /**
@@ -1711,6 +1719,8 @@ class Ship(
         SaveUtil.addTagInt(elem, "maxSuperShield", maxSuperShield, 5)
         SaveUtil.addTagInt(elem, "superShield", superShield, 0)
 
+        SaveUtil.addAttrRef(elem, "bossManager", refs, boss)
+
         val crewListElem = Element("crew")
         for (crew in this.crew) {
             // We save drones separately
@@ -1876,6 +1886,8 @@ class Ship(
 
         // This must be set after maxSuperShield to avoid it being wrongly clamped
         superShield = SaveUtil.getOptionalTagInt(rootElem, "superShield") ?: 0
+
+        SaveUtil.getAttrRef(rootElem, "bossManager", refs, BossManager::class.java) { boss = it }
 
         // Load the systems
         for (elem in rootElem.getChild("systems").getChildren("system")) {

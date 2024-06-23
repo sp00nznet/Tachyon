@@ -104,9 +104,8 @@ class Beacon(
         set(value) {
             field = value
 
-            // The flagship isn't saved at a beacon, as if you jump away it's fully repaired.
-            // TODO handle the under-construction flagship, it's isFlagship value is true
-            require(value?.isFlagship != true) { "Cannot save the flagship at a beacon!" }
+            // Bosses aren't saved at a beacon, since if you jump away and back again they're re-created.
+            require(value?.boss == null) { "Cannot save the flagship at a beacon!" }
         }
 
     /**
