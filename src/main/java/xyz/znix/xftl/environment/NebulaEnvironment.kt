@@ -6,7 +6,6 @@ import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.ReactorEnergySource
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
-import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sys.GameContainer

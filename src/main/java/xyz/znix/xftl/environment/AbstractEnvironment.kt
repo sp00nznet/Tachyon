@@ -79,18 +79,19 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
             }
         }
     }
+
     open fun pauseShade(game: InGameState): Colour {
-        var s = game.player // s for ship
-        var paused = game.isPaused()
-        var shade = if (paused) (1.0f - s.health.toFloat() / s.maxHealth.toFloat()) * 0.4f + 0.4f else 1.0f
+        val s = game.player // s for ship
+        val paused = game.isPaused
+        val shade = if (paused) (1.0f - s.health.toFloat() / s.maxHealth.toFloat()) * 0.4f + 0.4f else 1.0f
 
         return Colour(shade, shade, shade)
     }
 
     open fun renderBackground(gc: GameContainer, g: Graphics) {
-        // Here the background scenery is rendered with a 
+        // Here the background scenery is rendered with a
         // pause-darkness that depends on the hull health.
-        var ps = pauseShade(game)
+        val ps = pauseShade(game)
         backgroundImage?.getImg(game)?.draw(0f, 0f, ps)
         planetImage?.getImg(game)?.draw(0f, 0f, ps)
 
@@ -109,7 +110,7 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
 
         // TODO: Get the big fleet ships working (those are unaffected by the pause darkness)
         // Mods like Multiverse use quite a lot of them with hyperspace,
-        // so this will sooner or later need attention. Example image here: 
+        // so this will sooner or later need attention. Example image here:
         // https://cdn.discordapp.com/attachments/859493631215534110/1256333357986480220/Bildschirmfoto_2024-06-28_um_21.40.07.png
     }
 

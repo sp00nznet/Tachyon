@@ -51,7 +51,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
 
     override fun renderBackground(gc: GameContainer, g: Graphics) {
         val ps = pauseShade(game)
-        
+
         // This draws the normal background with all its adjustments
         realBackground.draw(0f, 0f, ps)
 
