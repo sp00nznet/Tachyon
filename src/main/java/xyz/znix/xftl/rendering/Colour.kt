@@ -11,6 +11,15 @@ class Colour(var r: Float, var g: Float, var b: Float, var a: Float) {
 
     @Suppress("unused")
     companion object {
+        fun lerp(colour1: Colour, colour2: Colour, fraction: Float): Colour {
+            return Colour(
+                r = colour1.r.toFloat() * (1 - fraction) + colour2.r.toFloat() * fraction,
+                g = colour1.g.toFloat() * (1 - fraction) + colour2.g.toFloat() * fraction,
+                b = colour1.b.toFloat() * (1 - fraction) + colour2.b.toFloat() * fraction,
+                a = colour1.a.toFloat() * (1 - fraction) + colour2.a.toFloat() * fraction
+            )
+        }
+
         @JvmField
         val transparent = Colour(0.0f, 0.0f, 0.0f, 0.0f)
 

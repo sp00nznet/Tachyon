@@ -187,12 +187,16 @@ object Buttons {
 
         private val font = game.getFont("HL2", 2f)
         private val labelFont = game.getFont("HL1", 1f)
+        private val jumpStatusFont = game.getFont("HL2", 1f)
 
         private val outOfFuel: Boolean get() = ship.fuelCount == 0 && game.getEnemyOf(ship) != null
         override val disabled: Boolean get() = !ship.isFtlReady || !ship.canChargeFTL || outOfFuel
 
         // The progress of the slide-in/slide-out jump unavailable pullout.
         private var pulloutPos: Float = 0f
+
+        // Color fading timer for charge/ready text.
+        private var fadeTime: Float = 0f
 
         private var firstUpdate = true
 
@@ -276,9 +280,31 @@ object Buttons {
                 Constants.SECTOR_CUTOUT_TEXT
             )
 
+            // Draw the jump status text below the 'FTL Drive' button
+            if (canCharge || ship.isFtlReady) {
+                val statusText = if (ship.isFtlReady) game.translator["ftl_ready"] else game.translator["ftl_charging"]
+                val statusTextColor = Colour.lerp(Constants.SECTOR_CUTOUT_TEXT, Constants.JUMP_READY, fadingCycle(1.5f, 0f, 1f))
+                jumpStatusFont.drawStringCentred(
+                    pos.x.toFloat(), pos.y + 51f, 84f,
+                    statusText,
+                    statusTextColor
+                )
+            }
+            fadeTime += game.renderingDeltaTime
+
             if (hovered) {
                 g.tooltip = tooltip
             }
+        }
+
+        private fun fadingCycle(period: Float, min: Float, max: Float): Float {
+            val progress = fadeTime.rem(period) / period
+            val changing = when {
+                progress < 0.5f -> progress * 2
+                else -> 2 - progress * 2
+            }
+
+            return min + changing * (max - min)
         }
 
         override fun click(button: Int) {

@@ -22,3 +22,6 @@ hs_err_pid*
 # Ignore the user's debug savefiles (TODO move this to the regular saves dir)
 /debug-saves
 /fixme-wormhole-saves
+
+# Ignore .DS_Store files in MacOs filesystems
+.DS_Store
