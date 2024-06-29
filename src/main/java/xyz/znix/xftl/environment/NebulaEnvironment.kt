@@ -60,7 +60,8 @@ class NebulaEnvironment(game: InGameState, beacon: Beacon, val ionStorm: Boolean
                 else -> normalImage
             }
 
-            val filter = Colour(1f, 1f, 1f, cloud.alpha)
+            val filter = pauseShade(game)
+            filter.a = cloud.alpha
             cloudImage.draw(-cloudImage.width / 2, -cloudImage.height / 2, filter)
 
             // Draw the lightning image on top

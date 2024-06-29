@@ -38,6 +38,7 @@ class Colour(var r: Float, var g: Float, var b: Float, var a: Float) {
         @JvmField
         val green: Colour = Colour(0f, 1f, 0f, 1f)
 
+
         @JvmField
         val black: Colour = Colour(0f, 0f, 0f, 1f)
 

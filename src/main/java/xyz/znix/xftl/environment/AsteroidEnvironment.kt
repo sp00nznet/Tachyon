@@ -54,7 +54,10 @@ class AsteroidEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironme
     }
 
     override fun renderBackground(gc: GameContainer, g: Graphics) {
-        realBackground.draw()
+        val ps = pauseShade(game)
+
+        // This draws the normal background with all its adjustments
+        realBackground.draw(0f, 0f, ps)
 
         // Rough speeds measured from FTL
         // back img = ~13sec to traverse weapons bar (~400px)
@@ -65,9 +68,9 @@ class AsteroidEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironme
         // back img = ~13sec to traverse weapons bar (~400px)
         // middle img = ~10sec
         // foreground img = ~8sec
-        renderAsteroid(gc, layer1, 400f / 13)
-        renderAsteroid(gc, layer2, 400f / 10)
-        renderAsteroid(gc, layer3, 400f / 8)
+        renderAsteroid(gc, layer1, 400f / 13, ps)
+        renderAsteroid(gc, layer2, 400f / 10, ps)
+        renderAsteroid(gc, layer3, 400f / 8, ps)
 
         if (game.debugFlags.showSunTimer.set) {
             game.getFont("HL2", 2f).drawString(
@@ -140,11 +143,11 @@ class AsteroidEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironme
         ship.projectiles.add(asteroid)
     }
 
-    private fun renderAsteroid(gc: GameContainer, img: Image, speed: Float) {
+    private fun renderAsteroid(gc: GameContainer, img: Image, speed: Float, colour: Colour) {
         val offset = (asteroidAnimationTimer * speed).toInt() % img.width
         for (x in -offset until gc.width step img.width) {
             for (y in 0 until gc.height step img.height) {
-                img.draw(x, y)
+                img.draw(x, y, colour)
             }
         }
     }

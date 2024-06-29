@@ -4,6 +4,7 @@ import org.jdom2.Element
 import xyz.znix.xftl.Ship
 import xyz.znix.xftl.game.EnergySource
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
 import xyz.znix.xftl.sector.Beacon
@@ -78,11 +79,20 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
             }
         }
     }
+    open fun pauseShade(game: InGameState): Colour {
+        var s = game.player // s for ship
+        var paused = game.isPaused()
+        var shade = if (paused) (1.0f - s.health.toFloat() / s.maxHealth.toFloat()) * 0.4f + 0.4f else 1.0f
+
+        return Colour(shade, shade, shade)
+    }
 
     open fun renderBackground(gc: GameContainer, g: Graphics) {
-        // Simple background and planet
-        backgroundImage?.getImg(game)?.draw()
-        planetImage?.getImg(game)?.draw()
+        // Here the background scenery is rendered with a 
+        // pause-darkness that depends on the hull health.
+        var ps = pauseShade(game)
+        backgroundImage?.getImg(game)?.draw(0f, 0f, ps)
+        planetImage?.getImg(game)?.draw(0f, 0f, ps)
 
         // Background rebel/federation ships live on a 3x3 grid
         // We can't pick a random position within that grid when we populate
@@ -94,8 +104,13 @@ abstract class AbstractEnvironment(val game: InGameState, val beacon: Beacon) {
             val x = ((ship.gridX + ship.offsetX) * bgShipColumnWidth).roundToInt()
             val y = ((ship.gridY + ship.offsetY) * bgShipRowHeight).roundToInt()
 
-            ship.image.drawAlignedCentred(x, y)
+            ship.image.drawAlignedCentred(x, y, ps)
         }
+
+        // TODO: Get the big fleet ships working (those are unaffected by the pause darkness)
+        // Mods like Multiverse use quite a lot of them with hyperspace,
+        // so this will sooner or later need attention. Example image here: 
+        // https://cdn.discordapp.com/attachments/859493631215534110/1256333357986480220/Bildschirmfoto_2024-06-28_um_21.40.07.png
     }
 
     /**

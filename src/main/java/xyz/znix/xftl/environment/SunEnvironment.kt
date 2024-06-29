@@ -44,7 +44,10 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
     }
 
     override fun renderBackground(gc: GameContainer, g: Graphics) {
-        realBackground.draw()
+        val ps = pauseShade(game)
+
+        // This draws the normal background with all its adjustments
+        realBackground.draw(0f, 0f, ps)
 
         val backGlow = alphaCycle(7f, 0.1f, 1f)
         val frontGlow = alphaCycle(10f, 0.05f, 0.4f)
@@ -53,7 +56,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         glowImage.draw(
             0f, 0f,
             1000f, 1000f,
-            Colour(1f, 1f, 1f, backGlow)
+            Colour(ps.r, ps.g, ps.b, backGlow)
         )
 
         g.pushTransform()
@@ -61,7 +64,7 @@ class SunEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment(ga
         g.rotate(sunImage.width / 2f, sunImage.height / 2f, 132f)
         sunImage.draw(
             0f, 0f,
-            Colour(1f, 1f, 1f, sunOpacity)
+            Colour(ps.r, ps.g, ps.b, sunOpacity)
         )
         g.popTransform()
 

@@ -50,7 +50,10 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
     }
 
     override fun renderBackground(gc: GameContainer, g: Graphics) {
-        realBackground.draw()
+        val ps = pauseShade(game)
+        
+        // This draws the normal background with all its adjustments
+        realBackground.draw(0f, 0f, ps)
 
         val whiteAlpha = alphaCycle(7f, 0.1f, 1f)
 
@@ -58,7 +61,7 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
         val centreY = 203
 
         val waveAlpha = pulseTimer?.let { 1 - it }
-        val waveFilter = waveAlpha?.let { Colour(1f, 1f, 1f, it) }
+        val waveFilter = waveAlpha?.let { Colour(ps.r, ps.g, ps.b, it) }
         val waveScale = (pulseTimer ?: 0f) * 3
 
         if (waveFilter != null) {
@@ -70,8 +73,8 @@ class PulsarEnvironment(game: InGameState, beacon: Beacon) : AbstractEnvironment
             )
         }
 
-        sunBlack.drawAlignedCentred(centreX, centreY)
-        val filter = Colour(1f, 1f, 1f, whiteAlpha)
+        sunBlack.drawAlignedCentred(centreX, centreY, ps)
+        val filter = Colour(ps.r, ps.g, ps.b, whiteAlpha)
         sunWhite.drawAlignedCentred(centreX, centreY, filter)
 
         if (waveFilter != null) {
