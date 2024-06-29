@@ -224,7 +224,7 @@ object Buttons {
             pulloutPos = (pulloutPos + delta).coerceIn(0f..1f)
 
             // Draw the pullout under the main button
-            if (pulloutPos != 0f) {
+            fun drawPullout() {
                 val offset = (35 * (1 - pulloutPos)).roundToInt()
                 val pulloutY = pos.y + 41 - offset
                 game.getImg("img/buttons/FTL/FTL_pullout.png").draw(pos.x + 11 - 7, pulloutY - 7)
@@ -242,6 +242,20 @@ object Buttons {
 
                 game.getImg(pilotPath).draw(pos.x + 18, pulloutY + 10)
                 game.getImg(enginesPath).draw(pos.x + 45, pulloutY + 10)
+            }
+
+            // Use a stencil to prevent the pullout from being visible while it's animating,
+            // since the button frame image is transparent.
+            if (pulloutPos == 1f) {
+                drawPullout()
+            } else if (pulloutPos != 0f) {
+                Utils.drawStenciled(Utils.StencilMode.BLOCKING, {
+                    // There's a 6px gap between the bottom of the button and the white outline around it,
+                    // and pos refers to the corner of the image not the button.
+                    g.fillRect(pos.x, pos.y, size.x + 6 * 2, size.y + 6 * 2)
+                }) {
+                    drawPullout()
+                }
             }
 
             game.getImg("img/buttons/FTL/FTL_base.png").draw(pos.x - 7, pos.y - 7)
@@ -283,7 +297,8 @@ object Buttons {
             // Draw the jump status text below the 'FTL Drive' button
             if (canCharge || ship.isFtlReady) {
                 val statusText = if (ship.isFtlReady) game.translator["ftl_ready"] else game.translator["ftl_charging"]
-                val statusTextColor = Colour.lerp(Constants.SECTOR_CUTOUT_TEXT, Constants.JUMP_READY, fadingCycle(1.5f, 0f, 1f))
+                val statusTextColor =
+                    Colour.lerp(Constants.SECTOR_CUTOUT_TEXT, Constants.JUMP_READY, fadingCycle(1.5f, 0f, 1f))
                 jumpStatusFont.drawStringCentred(
                     pos.x.toFloat(), pos.y + 51f, 84f,
                     statusText,
