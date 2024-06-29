@@ -416,7 +416,7 @@ data class Room(val ship: Ship, val id: Int, val x: Int, val y: Int, val width: 
         val bottomCentreY = offsetY + pixelHeight
 
         val imgX = bottomCentreX - baseImg.width / 2
-        val imgY = bottomCentreY - baseImg.height
+        val imgY = bottomCentreY - baseImg.height - 2
 
         baseImg.draw(imgX, imgY)
 
