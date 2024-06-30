@@ -2,9 +2,11 @@ package xyz.znix.xftl.game
 
 import org.jdom2.Element
 import xyz.znix.xftl.*
-import xyz.znix.xftl.crew.AbstractCrew
 import xyz.znix.xftl.crew.CrewBlueprint
+import xyz.znix.xftl.crew.CrewHuman
+import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.crew.LivingCrewInfo.Companion.generateRandom
+import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.rendering.Colour
@@ -15,7 +17,6 @@ import xyz.znix.xftl.savegame.SaveUtil
 import xyz.znix.xftl.sector.Beacon
 import xyz.znix.xftl.sector.Event
 import xyz.znix.xftl.sector.Sector
-import java.util.*
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
@@ -41,6 +42,30 @@ class FlagshipBoss private constructor(val sector: Sector, val game: InGameState
     private var mapIconRotation: Float = (0f..10f).random(VisualRandom)
     private val flagshipIcon = game.getImg("img/map/map_icon_boss.png")
 
+    // These track which crewmembers have been killed
+    // They're only updated when you beat a flagship stage
+    private var missilesCrew: LivingCrewInfo?
+    private var lasersCrew: LivingCrewInfo?
+    private var ionCrew: LivingCrewInfo?
+    private var beamCrew: LivingCrewInfo?
+    private val mainShipCrew = ArrayList<LivingCrewInfo>()
+
+    init {
+        // Generate the starting crew
+        val human = game.blueprintManager["human"] as CrewBlueprint
+
+        missilesCrew = generateRandom(human, game)
+        lasersCrew = generateRandom(human, game)
+        ionCrew = generateRandom(human, game)
+        beamCrew = generateRandom(human, game)
+
+        // 11 crew in total, generate the non-weapon-room crew by subtracting
+        // out the number we're handling with the artillery rooms
+        for (i in 1..11 - 4) {
+            mainShipCrew += generateRandom(human, game)
+        }
+    }
+
     constructor(sector: Sector, game: InGameState, start: Beacon) : this(sector, game) {
         realBeacon = start
 
@@ -58,20 +83,15 @@ class FlagshipBoss private constructor(val sector: Sector, val game: InGameState
         val flagship = Ship(blueprint, game, null, null, this)
         flagship.loadDefaultContents()
 
-        // TODO handle crew being killed across fights
-        for (i in 0..10) {
-            val info = generateRandom(game.blueprintManager["human"] as CrewBlueprint, game)
-            val crew = flagship.addCrewMember(info, true, false)
+        // Spawn in the crew to the weapon rooms, assuming they're still alive
+        // and the rooms still exist.
+        addArtilleryCrew(flagship, MISSILE_WEAPON_NAME, missilesCrew)
+        addArtilleryCrew(flagship, LASER_WEAPON_NAME, lasersCrew)
+        addArtilleryCrew(flagship, BEAM_WEAPON_NAME, beamCrew)
+        addArtilleryCrew(flagship, ION_WEAPON_NAME, ionCrew)
 
-            // Put some crew in the artillery rooms
-            for (artillery in flagship.artillery) {
-                val room = Objects.requireNonNull(artillery.room)
-
-                val anyInRoom = flagship.crew.stream().anyMatch { c: AbstractCrew -> c.room === room }
-                if (anyInRoom) continue
-
-                crew.jumpTo(room!!, ConstPoint.ZERO)
-            }
+        for (info in mainShipCrew) {
+            flagship.addCrewMember(info, true)
         }
 
         // Copied from ShipGenerator, required for stage 1
@@ -166,6 +186,28 @@ class FlagshipBoss private constructor(val sector: Sector, val game: InGameState
             val event: Event = game.eventManager["BOSS_ESCAPED"].resolve()
             game.shipUI.showEventDialogue(event, nextInt())
         }
+
+        // Update the remaining living crew
+        missilesCrew = getArtilleryCrewInfo(enemy, MISSILE_WEAPON_NAME)
+        lasersCrew = getArtilleryCrewInfo(enemy, LASER_WEAPON_NAME)
+        beamCrew = getArtilleryCrewInfo(enemy, BEAM_WEAPON_NAME)
+        ionCrew = getArtilleryCrewInfo(enemy, ION_WEAPON_NAME)
+
+        mainShipCrew.clear()
+        for (crew in enemy.crew) {
+            if (crew !is CrewHuman)
+                continue
+            if (crew.ownerShip != enemy)
+                continue
+
+            mainShipCrew.add(crew.info)
+        }
+
+        // Don't include the artillery crew in the main crew list, or they'll be duplicated
+        missilesCrew?.let { mainShipCrew.remove(it) }
+        lasersCrew?.let { mainShipCrew.remove(it) }
+        ionCrew?.let { mainShipCrew.remove(it) }
+        beamCrew?.let { mainShipCrew.remove(it) }
     }
 
     private fun updateNextBeacon() {
@@ -187,12 +229,53 @@ class FlagshipBoss private constructor(val sector: Sector, val game: InGameState
         nextBeacon = path.first()
     }
 
+    private fun getArtilleryRoom(ship: Ship, weaponName: String): Room? {
+        return ship.artillery.firstOrNull { it.configuration.spec.weapon == weaponName }?.room
+    }
+
+    private fun addArtilleryCrew(ship: Ship, weaponName: String, info: LivingCrewInfo?) {
+        if (info == null)
+            return
+        val room = getArtilleryRoom(ship, weaponName) ?: return
+
+        val crew = ship.addCrewMember(info, true)
+        crew.jumpTo(room, ConstPoint.ZERO)
+    }
+
+    private fun getArtilleryCrewInfo(ship: Ship, weaponName: String): LivingCrewInfo? {
+        val room = getArtilleryRoom(ship, weaponName) ?: return null
+        val crew = room.crew.filterIsInstance<CrewHuman>().filter { it.ownerShip == ship }
+        return crew.firstOrNull()?.info
+    }
+
     override fun saveToXML(elem: Element, refs: ObjectRefs) {
         SaveUtil.addAttrRef(elem, "beacon", refs, beacon)
         SaveUtil.addAttrRef(elem, "next", refs, nextBeacon)
         SaveUtil.addAttrBool(elem, "jumping", jumping)
         SaveUtil.addAttrBool(elem, "runningAway", runningAway)
         SaveUtil.addAttrInt(elem, "stage", stage)
+
+        fun saveCrew(info: LivingCrewInfo?, name: String) {
+            if (info == null)
+                return
+
+            val crewElem = Element(name)
+            elem.addContent(crewElem)
+
+            info.saveToXML(crewElem, false)
+        }
+
+        saveCrew(missilesCrew, "missileCrewInfo")
+        saveCrew(lasersCrew, "laserCrewInfo")
+        saveCrew(beamCrew, "beamCrewInfo")
+        saveCrew(ionCrew, "ionCrewInfo")
+
+        for (crew in mainShipCrew) {
+            val crewElem = Element("mainCrew")
+            elem.addContent(crewElem)
+
+            crew.saveToXML(crewElem, false)
+        }
     }
 
     override fun loadFromXML(elem: Element, refs: RefLoader) {
@@ -201,6 +284,23 @@ class FlagshipBoss private constructor(val sector: Sector, val game: InGameState
         jumping = SaveUtil.getAttrBool(elem, "jumping")
         runningAway = SaveUtil.getAttrBool(elem, "runningAway")
         stage = SaveUtil.getAttrInt(elem, "stage")
+
+        val human = game.blueprintManager["human"] as CrewBlueprint
+
+        fun loadCrew(name: String): LivingCrewInfo? {
+            val crewElem = elem.getChild(name) ?: return null
+            return LivingCrewInfo.loadFromXMLWithRace(crewElem, human, game)
+        }
+
+        missilesCrew = loadCrew("missileCrewInfo")
+        lasersCrew = loadCrew("laserCrewInfo")
+        beamCrew = loadCrew("beamCrewInfo")
+        ionCrew = loadCrew("ionCrewInfo")
+
+        mainShipCrew.clear()
+        for (crewElem in elem.getChildren("mainCrew")) {
+            mainShipCrew += LivingCrewInfo.loadFromXMLWithRace(crewElem, human, game)
+        }
     }
 
     companion object {
@@ -211,5 +311,10 @@ class FlagshipBoss private constructor(val sector: Sector, val game: InGameState
         fun createForDeserialisation(sector: Sector, game: InGameState): FlagshipBoss {
             return FlagshipBoss(sector, game)
         }
+
+        private const val LASER_WEAPON_NAME = "ARTILLERY_BOSS_1"
+        private const val MISSILE_WEAPON_NAME = "ARTILLERY_BOSS_2"
+        private const val BEAM_WEAPON_NAME = "ARTILLERY_BOSS_3"
+        private const val ION_WEAPON_NAME = "ARTILLERY_BOSS_4"
     }
 }
