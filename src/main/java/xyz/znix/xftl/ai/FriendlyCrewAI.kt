@@ -51,6 +51,12 @@ class FriendlyCrewAI(private val ship: Ship) {
             if (crew.playerControllable)
                 continue
 
+            // Ignore crew in the flagship's artillery rooms
+            // We assume that any crew can path to any room, and these crew
+            // violate that assumption, which can lead to tasks getting locked up.
+            if (isRoomDisabled(crew.room))
+                continue
+
             aiCrew += crew
         }
 
@@ -149,9 +155,6 @@ class FriendlyCrewAI(private val ship: Ship) {
         // At the same time, this removes any missing crew from
         // the assignments map.
         for (crew in aiCrew) {
-            if (isRoomDisabled(crew.room))
-                continue
-
             var task = assignments[crew] ?: continue
 
             // Tasks can automatically reassign their crew, usually back to
