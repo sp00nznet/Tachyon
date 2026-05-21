@@ -15,6 +15,7 @@ import org.newdawn.slick.InputListener
 import org.newdawn.slick.KeyListener
 import org.newdawn.slick.MouseListener
 import org.newdawn.slick.opengl.ImageDataFactory
+import xyz.znix.xftl.devmenu.DevMenu
 import xyz.znix.xftl.math.Point
 import xyz.znix.xftl.rendering.Cursor
 import xyz.znix.xftl.rendering.Graphics
@@ -25,10 +26,34 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
     private lateinit var lwjglInput: LWJGLInput
     override val input: Input get() = lwjglInput
 
+    /**
+     * The game's logical resolution. This stays fixed; the OpenGL viewport
+     * stretches it to fill the (possibly differently-sized) window, so the
+     * window can be resized without the game's UI layout changing.
+     */
     override var width: Int = 400
         private set
     override var height: Int = 400
         private set
+
+    /** The actual size of the OS window, in pixels. */
+    var windowWidth: Int = 400
+        private set
+    var windowHeight: Int = 400
+        private set
+
+    override var inputOverlay: InputOverlay? = null
+
+    var fullscreen: Boolean = false
+        private set
+    var vSyncEnabled: Boolean = true
+        private set
+
+    // The window's position and size before going fullscreen, so it can be restored.
+    private var windowedX: Int = 0
+    private var windowedY: Int = 0
+    private var windowedWidth: Int = 1280
+    private var windowedHeight: Int = 720
 
     private lateinit var g: Graphics
 
@@ -94,7 +119,7 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE)
 
         // Create the window
-        window = glfwCreateWindow(width, height, game.title, NULL, NULL)
+        window = glfwCreateWindow(windowWidth, windowHeight, game.title, NULL, NULL)
         if (window == NULL)
             throw RuntimeException("Failed to create the GLFW window")
 
@@ -127,7 +152,7 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         // Make the window visible
         glfwShowWindow(window)
 
-        lwjglInput = LWJGLInput(window)
+        lwjglInput = LWJGLInput(window, this)
         g = Graphics()
         g.markCurrentImageTransformSource()
 
@@ -175,7 +200,7 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glViewport(0, 0, width, height)
+        glViewport(0, 0, windowWidth, windowHeight)
 
         // Set up debug output
         glEnable(KHRDebug.GL_DEBUG_OUTPUT)
@@ -265,12 +290,115 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
     }
 
     fun setDisplayMode(width: Int, height: Int, fullScreen: Boolean) {
+        // The logical resolution is fixed for the lifetime of the game.
         this.width = width
         this.height = height
+
+        // The window is the game area plus the menu bar stacked on top, so the
+        // menu doesn't cover any of the game.
+        val initialHeight = height + DevMenu.BAR_HEIGHT
+        this.windowWidth = width
+        this.windowHeight = initialHeight
+        this.windowedWidth = width
+        this.windowedHeight = initialHeight
+    }
+
+    /**
+     * The height, in window pixels, of the game area (the window below the bar).
+     */
+    private val gameViewportHeight: Int
+        get() = windowHeight * height / (height + DevMenu.BAR_HEIGHT)
+
+    override fun setGameViewport() {
+        val h = gameViewportHeight
+        // The game occupies the lower part of the window; the bar sits above it.
+        glViewport(0, 0, windowWidth, h)
+    }
+
+    override fun setMenuViewport() {
+        glViewport(0, 0, windowWidth, windowHeight)
+    }
+
+    /**
+     * Resize the OS window. The game keeps rendering at its logical resolution;
+     * the OpenGL viewport stretches that to fill the new window size.
+     */
+    fun setWindowSize(newWidth: Int, newHeight: Int) {
+        if (fullscreen) {
+            // Drop out of fullscreen first, then apply the requested size.
+            setFullscreen(false)
+        }
+
+        windowWidth = newWidth
+        windowHeight = newHeight
+        windowedWidth = newWidth
+        windowedHeight = newHeight
+
+        glfwSetWindowSize(window, newWidth, newHeight)
+        glViewport(0, 0, newWidth, newHeight)
+
+        // Re-centre the window on the primary monitor.
+        val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor())
+        if (vidmode != null) {
+            glfwSetWindowPos(
+                window,
+                (vidmode.width() - newWidth) / 2,
+                (vidmode.height() - newHeight) / 2
+            )
+        }
+    }
+
+    /**
+     * Switch between borderless-fullscreen and windowed mode.
+     */
+    fun setFullscreen(enabled: Boolean) {
+        if (enabled == fullscreen)
+            return
+
+        if (enabled) {
+            // Remember the current windowed placement so it can be restored.
+            stackPush().use { stack ->
+                val px = stack.mallocInt(1)
+                val py = stack.mallocInt(1)
+                glfwGetWindowPos(window, px, py)
+                windowedX = px[0]
+                windowedY = py[0]
+            }
+
+            val monitor = glfwGetPrimaryMonitor()
+            val vidmode = glfwGetVideoMode(monitor) ?: return
+
+            glfwSetWindowMonitor(
+                window, monitor,
+                0, 0, vidmode.width(), vidmode.height(), vidmode.refreshRate()
+            )
+
+            windowWidth = vidmode.width()
+            windowHeight = vidmode.height()
+        } else {
+            glfwSetWindowMonitor(
+                window, NULL,
+                windowedX, windowedY, windowedWidth, windowedHeight, 0
+            )
+
+            windowWidth = windowedWidth
+            windowHeight = windowedHeight
+        }
+
+        fullscreen = enabled
+        glViewport(0, 0, windowWidth, windowHeight)
+
+        // glfwSetWindowMonitor doesn't preserve the v-sync setting on all drivers.
+        glfwSwapInterval(if (vSyncEnabled) 1 else 0)
+    }
+
+    fun setVSyncEnabled(enabled: Boolean) {
+        vSyncEnabled = enabled
+        glfwSwapInterval(if (enabled) 1 else 0)
     }
 }
 
-private class LWJGLInput(val window: Long) : Input {
+private class LWJGLInput(val window: Long, private val container: LWJGLGameContainer) : Input {
     override var mouseX: Int = 0
         private set
     override var mouseY: Int = 0
@@ -279,6 +407,15 @@ private class LWJGLInput(val window: Long) : Input {
     private val mouseClickPos = Point(0, 0)
 
     private var scrollLeftover: Double = 0.0
+
+    // The cursor position in the dev menu's coordinate space, which spans the
+    // whole window. The game's mouseX/mouseY are this, shifted up by the bar.
+    private var menuMouseX: Int = 0
+    private var menuMouseY: Int = 0
+
+    // Tracks which mouse buttons were pressed while the input overlay had
+    // captured the cursor, so the matching releases are also routed to it.
+    private val overlayHoldingButton = BooleanArray(8)
 
     // Note that GLFW_KEY_LAST is the maximum possible ID, not one past it.
     private val pendingKeyPresses = BooleanArray(GLFW_KEY_LAST + 1)
@@ -312,11 +449,24 @@ private class LWJGLInput(val window: Long) : Input {
             val x = stack.mallocDouble(1)
             val y = stack.mallocDouble(1)
             glfwGetCursorPos(window, x, y)
-            mouseX = x[0].toInt()
-            mouseY = y[0].toInt()
+
+            // The cursor is in window pixels. Scale it into the dev menu's
+            // coordinate space (the whole window), then shift it up by the
+            // menu bar to get the game's coordinate space.
+            val canvasHeight = container.height + DevMenu.BAR_HEIGHT
+            menuMouseX = (x[0] * container.width / container.windowWidth).toInt()
+            menuMouseY = (y[0] * canvasHeight / container.windowHeight).toInt()
+            mouseX = menuMouseX
+            mouseY = menuMouseY - DevMenu.BAR_HEIGHT
         }
 
         if (lastX == mouseX && lastY == mouseY)
+            return
+
+        // Don't deliver hover/drag events to the game state while the overlay
+        // (the dev menu) is covering the cursor.
+        val overlay = container.inputOverlay
+        if (overlay != null && (overlayHoldingButton.any { it } || overlay.isCapturingMouse(menuMouseX, menuMouseY)))
             return
 
         val dragging = isMouseButtonDown(Input.MOUSE_LEFT_BUTTON) || isMouseButtonDown(Input.MOUSE_RIGHT_BUTTON)
@@ -360,6 +510,21 @@ private class LWJGLInput(val window: Long) : Input {
     }
 
     private fun mouseButtonCallback(button: Int, action: Int, mods: Int) {
+        // Give the input overlay (the dev menu) first chance at the event.
+        val overlay = container.inputOverlay
+        if (overlay != null && button in overlayHoldingButton.indices) {
+            if (action == GLFW_PRESS) {
+                if (overlay.overlayMousePressed(button, menuMouseX, menuMouseY)) {
+                    overlayHoldingButton[button] = true
+                    return
+                }
+            } else if (action == GLFW_RELEASE && overlayHoldingButton[button]) {
+                overlayHoldingButton[button] = false
+                overlay.overlayMouseReleased(button, menuMouseX, menuMouseY)
+                return
+            }
+        }
+
         iterateAllowingMutation(mouseListeners) { listener ->
             when (action) {
                 GLFW_PRESS -> listener.mousePressed(button, mouseX, mouseY)
@@ -390,6 +555,9 @@ private class LWJGLInput(val window: Long) : Input {
         // Store any integer round-off away, to be added onto the next scroll.
         scrollLeftover = input - change / SCROLL_SCALE
 
+        if (container.inputOverlay?.overlayMouseWheel(change) == true)
+            return
+
         iterateAllowingMutation(mouseListeners) { listener ->
             listener.mouseWheelMoved(change)
         }
@@ -411,6 +579,15 @@ private class LWJGLInput(val window: Long) : Input {
     }
 
     override fun isMouseButtonDown(button: Int): Boolean {
+        // Hide button presses from the game while the overlay holds the cursor,
+        // so clicks on the dev menu don't also fall through to the game state.
+        val overlay = container.inputOverlay
+        if (overlay != null && button in overlayHoldingButton.indices &&
+            (overlayHoldingButton[button] || overlay.isCapturingMouse(menuMouseX, menuMouseY))
+        ) {
+            return false
+        }
+
         return glfwGetMouseButton(window, button) == GLFW_PRESS
     }
 

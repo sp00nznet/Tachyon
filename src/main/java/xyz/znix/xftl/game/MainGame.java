@@ -11,6 +11,7 @@ import org.newdawn.slick.SlickException;
 import org.newdawn.slick.util.InputAdapter;
 import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.VanillaDatafile;
+import xyz.znix.xftl.devmenu.DevMenu;
 import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
@@ -47,6 +48,9 @@ public class MainGame implements Game {
 
     private Cursor currentCursor;
 
+    /** The always-on developer menu overlay. */
+    private DevMenu devMenu;
+
     public MainGame(CommandLineArgs args) {
         this.commandLineArgs = args;
     }
@@ -56,6 +60,11 @@ public class MainGame implements Game {
         gameContainer = gc;
 
         profile = loadProfile();
+
+        // Create the developer menu and register it as the input overlay, so
+        // it's available on every screen (including the datafile selector).
+        devMenu = new DevMenu(this);
+        gc.setInputOverlay(devMenu);
 
         // If we don't have a valid ftl.dat file to use, open the selection screen
         if (!loadDatafile()) {
@@ -131,6 +140,8 @@ public class MainGame implements Game {
     public void update(@NotNull GameContainer gc, float dt) throws SlickException {
         currentState.update(gc, dt);
 
+        devMenu.update(gc, dt);
+
         // If the profile needs saving, do that now. This means that if there's
         // a bunch of changes in the same update, we won't save multiple times.
         if (profile.getDirty()) {
@@ -140,6 +151,9 @@ public class MainGame implements Game {
 
     @Override
     public void render(@NotNull GameContainer gc, Graphics g) throws SlickException {
+        // Pass 1: the game, drawn into the window area below the menu bar.
+        gc.setGameViewport();
+
         // When we use shaders, we have to transform from pixels to NDC
         // If this is set wrong, all the text etc will be transformed wrong.
         ShaderProgramme.getSHADER_SCREEN_SIZE().set(gameContainer.getWidth(), gameContainer.getHeight());
@@ -153,6 +167,13 @@ public class MainGame implements Game {
         // Check there aren't any mismatched pushTransform/popTransform calls.
         g.checkNoPushedTransforms();
 
+        // Pass 2: the developer menu, drawn over the whole window so its bar
+        // sits above the game and its dropdowns can extend down over it.
+        gc.setMenuViewport();
+        ShaderProgramme.getSHADER_SCREEN_SIZE().set(gameContainer.getWidth(), DevMenu.CANVAS_HEIGHT);
+        g.loadIdentityMatrix();
+        devMenu.render(gc, g);
+
         // Update the mouse cursor, if required.
         Cursor newCursor = currentState.getCurrentCursor();
         if (newCursor != currentCursor) {
@@ -163,7 +184,7 @@ public class MainGame implements Game {
 
     @Override
     public String getTitle() {
-        return "Project Wormhole";
+        return "Tachyon";
     }
 
     public SaveProfile getProfile() {
