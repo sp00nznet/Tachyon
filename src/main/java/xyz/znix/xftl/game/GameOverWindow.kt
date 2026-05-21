@@ -92,7 +92,9 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
     }
 
     private fun statsClicked() {
-        TODO("Not yet implemented")
+        // The end-of-game stats screen isn't implemented yet. Do nothing
+        // rather than crashing the game with a TODO() - NotImplementedError
+        // is an Error, so the game loop's exception handler wouldn't catch it.
     }
 
     private fun quitClicked() {
