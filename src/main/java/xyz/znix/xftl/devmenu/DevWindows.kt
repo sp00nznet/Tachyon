@@ -1,8 +1,16 @@
 package xyz.znix.xftl.devmenu
 
 import org.lwjgl.glfw.GLFW
+import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
+import xyz.znix.xftl.crew.LivingCrewInfo
+import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Colour
+import xyz.znix.xftl.systems.SystemBlueprint
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import java.nio.file.Path
 
 /**
@@ -277,5 +285,154 @@ class LoadGameWindow : DevWindow("Load Game", 420) {
         if (saves.size > rowsShown) {
             ui.text(cx, ry + 4, 14, "Scroll for more - ${saves.size} saves", DevUI.TEXT_DIM)
         }
+    }
+}
+
+/**
+ * Grants crew, weapons, drones, systems and augments straight to the player
+ * ship - a stand-in for finding a store. The grant logic mirrors the debug
+ * console's crew/weapon/drone/aug/system commands.
+ */
+class OutfitterWindow : DevWindow("Outfitter", 380) {
+    private enum class Tab(val label: String) {
+        CREW("Crew"), WEAPONS("Weapons"), DRONES("Drones"),
+        SYSTEMS("Systems"), AUGMENTS("Augments")
+    }
+
+    private class Entry(val label: String, val grant: () -> Unit)
+
+    private var tab = Tab.CREW
+    private var scroll = 0
+    private val rowsShown = 12
+
+    private var cache: List<Entry>? = null
+    private var cacheTab: Tab? = null
+
+    override val contentHeight = 22 + 6 + rowsShown * 20 + 22
+
+    override fun onShown() {
+        cache = null
+        scroll = 0
+    }
+
+    override fun onScroll(change: Int) {
+        // 'change' is positive when scrolling up.
+        scroll -= change / 40
+    }
+
+    /** A readable name for a blueprint, falling back to its id if untranslated. */
+    private fun displayName(game: InGameState, bp: Blueprint): String {
+        val title = bp.translateTitle(game)
+        return if (title.startsWith("MISSING")) bp.name else title
+    }
+
+    private fun systemName(system: SystemBlueprint): String =
+        system.type.replaceFirstChar { it.uppercaseChar() }
+
+    /** An entry that drops a blueprint into the ship's cargo hold. */
+    private fun cargoEntry(game: InGameState, bp: Blueprint): Entry {
+        val name = displayName(game, bp)
+        return Entry(name) {
+            if (game.player.addBlueprint(bp, false))
+                menu.setStatus("Added $name")
+            else
+                menu.setStatus("No free cargo space")
+        }
+    }
+
+    private fun buildEntries(game: InGameState): List<Entry> {
+        val ship = game.player
+        val all = game.blueprintManager.blueprints.values
+        return when (tab) {
+            Tab.CREW -> all.filterIsInstance<CrewBlueprint>()
+                .map { bp ->
+                    Entry(displayName(game, bp)) {
+                        ship.addCrewMember(LivingCrewInfo.generateRandom(bp, game), false)
+                        menu.setStatus("Added crew: ${displayName(game, bp)}")
+                    }
+                }
+                .sortedBy { it.label }
+
+            Tab.WEAPONS -> all.filterIsInstance<AbstractWeaponBlueprint>()
+                .map { cargoEntry(game, it) }.sortedBy { it.label }
+
+            Tab.DRONES -> all.filterIsInstance<DroneBlueprint>()
+                .map { cargoEntry(game, it) }.sortedBy { it.label }
+
+            Tab.AUGMENTS -> all.filterIsInstance<AugmentBlueprint>()
+                .map { cargoEntry(game, it) }.sortedBy { it.label }
+
+            // Systems can only go in the slots the ship was designed with.
+            Tab.SYSTEMS -> ship.systemSlots.filter { !it.isInstalled }
+                .map { slot ->
+                    Entry(systemName(slot.system)) {
+                        slot.room.setSystem(slot)
+                        menu.setStatus("Installed ${systemName(slot.system)}")
+                    }
+                }
+                .sortedBy { it.label }
+        }
+    }
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        val game = menu.currentInGame()
+        if (game == null) {
+            ui.text(cx, cy, 18, "Start a game to outfit your ship.", DevUI.TEXT_DIM)
+            return
+        }
+
+        // Category tabs
+        val tabW = (width - 24) / Tab.entries.size
+        for ((i, t) in Tab.entries.withIndex()) {
+            val tx = cx + i * tabW
+            ui.fill(tx, cy, tabW - 2, 22, if (t == tab) DevUI.ACCENT else DevUI.CONTROL_BG)
+            ui.outline(tx, cy, tabW - 2, 22, DevUI.BORDER)
+            val tw = ui.textWidth(t.label)
+            ui.text(tx + (tabW - 2 - tw) / 2, cy, 22, t.label, DevUI.TEXT)
+            if (ui.pressedIn(tx, cy, tabW - 2, 22)) {
+                ui.consumePress()
+                if (tab != t) {
+                    tab = t
+                    scroll = 0
+                    cache = null
+                }
+            }
+        }
+
+        // (Re)build the entry list for the current tab.
+        if (cache == null || cacheTab != tab) {
+            cache = buildEntries(game)
+            cacheTab = tab
+        }
+        val entries = cache!!
+
+        val listY = cy + 28
+        val rowW = width - 24
+
+        if (entries.isEmpty()) {
+            ui.text(cx, listY, 18, "Nothing available here.", DevUI.TEXT_DIM)
+            return
+        }
+
+        val maxScroll = (entries.size - rowsShown).coerceAtLeast(0)
+        scroll = scroll.coerceIn(0, maxScroll)
+
+        for (i in scroll until minOf(entries.size, scroll + rowsShown)) {
+            val entry = entries[i]
+            val ry = listY + (i - scroll) * 20
+            val hot = ui.hovered(cx, ry, rowW, 19)
+            ui.fill(cx, ry, rowW, 19, if (hot) DevUI.HOVER_BG else DevUI.CONTROL_BG)
+            ui.outline(cx, ry, rowW, 19, DevUI.BORDER)
+            ui.text(cx + 8, ry, 19, entry.label, DevUI.TEXT)
+            if (ui.pressedIn(cx, ry, rowW, 19)) {
+                ui.consumePress()
+                entry.grant()
+                // Installing a system changes what's still available.
+                cache = null
+            }
+        }
+
+        val footY = listY + rowsShown * 20 + 2
+        ui.text(cx, footY, 14, "${entries.size} available", DevUI.TEXT_DIM)
     }
 }
