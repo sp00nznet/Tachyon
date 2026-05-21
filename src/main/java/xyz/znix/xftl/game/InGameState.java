@@ -88,6 +88,9 @@ public class InGameState extends MainGame.GameState {
     // the current one.
     private final ArrayList<GameMap.SectorInfo> visitedSectors = new ArrayList<>();
 
+    // Per-run statistics, shown on the game-over score screen.
+    private final GameStats stats = new GameStats();
+
     private DebugConsole debugConsole;
     private boolean debugConsoleVisible;
 
@@ -631,6 +634,11 @@ public class InGameState extends MainGame.GameState {
             }
 
             if (enemy.isGone()) {
+                // Count destroyed hostile ships for the score screen.
+                if (enemyIsHostile) {
+                    stats.recordShipDestroyed();
+                }
+
                 // Be sure to check if the enemy is still hostile, if we've
                 // already killed their crew we can't get a second lot of
                 // rewards if they later blow up.
@@ -726,6 +734,13 @@ public class InGameState extends MainGame.GameState {
         GameMap.SectorInfo sectorInfo = currentBeacon.getSector().getInfo();
         if (!visitedSectors.contains(sectorInfo)) {
             visitedSectors.add(sectorInfo);
+        }
+
+        // Count beacons explored for the score screen. The first beacon is set
+        // up before the player exists, so it isn't counted; loading a save sets
+        // currentBeacon directly without going through here.
+        if (player != null) {
+            stats.recordBeaconExplored();
         }
 
         setEnemyIsHostile(true);
@@ -997,6 +1012,9 @@ public class InGameState extends MainGame.GameState {
         }
         root.addContent(visitedSectorsXML);
 
+        // Save the per-run statistics, used by the score screen.
+        root.addContent(stats.saveToXML());
+
         // If the player saves while they're currently in the event UI, save that.
         Element shipUiXML = new Element("shipUI");
         shipUI.saveToXML(shipUiXML, refs);
@@ -1065,6 +1083,9 @@ public class InGameState extends MainGame.GameState {
             GameMap.SectorInfo visited = mapRefLoader.resolve(GameMap.SectorInfo.class, ref);
             visitedSectors.add(visited);
         }
+
+        // Load the per-run statistics for the score screen.
+        stats.loadFromXML(root.getChild("gameStats"));
 
         // We can finally load out our current beacon.
         currentBeacon = SaveUtil.INSTANCE.getRefImmediate(root, "currentBeacon", refs, Beacon.class);
@@ -1336,6 +1357,16 @@ public class InGameState extends MainGame.GameState {
 
     public DebugFlagManager getDebugFlags() {
         return debugFlags;
+    }
+
+    /** Per-run statistics, shown on the game-over score screen. */
+    public GameStats getStats() {
+        return stats;
+    }
+
+    /** The number of sectors the player has travelled through. */
+    public int getSectorsVisited() {
+        return visitedSectors.size();
     }
 
     public DebugConsole getDebugConsole() {

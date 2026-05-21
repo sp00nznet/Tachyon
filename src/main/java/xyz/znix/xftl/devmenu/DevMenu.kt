@@ -1,6 +1,7 @@
 package xyz.znix.xftl.devmenu
 
 import xyz.znix.xftl.SILFontLoader
+import xyz.znix.xftl.game.GameOverWindow
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.game.MainGame
 import xyz.znix.xftl.rendering.Graphics
@@ -351,6 +352,12 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
             setStatus("Enemy ship destroyed")
         }
         items += DropItem.separator()
+        items += DropItem.action("End Run - Victory", enabled = inGame) {
+            game!!.shipUI.showGameOverScreen(GameOverWindow.Outcome.WIN)
+        }
+        items += DropItem.action("End Run - Defeat", enabled = inGame) {
+            game!!.shipUI.showGameOverScreen(GameOverWindow.Outcome.LOOSE_HULL)
+        }
         items += DropItem.action("Game Inspector...") { inspectorWindow.open = true }
         return items
     }

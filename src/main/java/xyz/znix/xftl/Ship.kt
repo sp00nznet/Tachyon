@@ -170,6 +170,13 @@ class Ship(
 
     // How much scrap the player has
     var scrap: Int = if (sys.difficulty == Difficulty.EASY) 30 else 10
+        set(value) {
+            // Track total scrap collected for the end-of-game score. Only
+            // count increases (gains), and only for the player's ship.
+            if (isPlayerShip && value > field)
+                sys.stats.scrapCollected += value - field
+            field = value
+        }
 
     // How far through charging the FTL drive, 1=fully charged.
     // These only apply to the player, enemies use a fixed timer.
@@ -1104,7 +1111,8 @@ class Ship(
         showDamageText(target, hullDamage, damage.effectiveSysDamage, damage.ionDamage, textPos)
         crewWeaponDamage(target, damage.effectiveCrewDamage.f, damage)
 
-        if (sys.debugFlags.noDmg.set)
+        // The No Damage cheat only protects the player's ship.
+        if (sys.debugFlags.noDmg.set && isPlayerShip)
             return
 
         health -= hullDamage

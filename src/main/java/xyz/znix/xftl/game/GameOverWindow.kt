@@ -18,6 +18,12 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
 
     private val wrappedMessage: List<String>
 
+    /** The run's final score. */
+    private val score: Int = game.stats.computeScore(game.sectorsVisited, outcome == Outcome.WIN)
+
+    /** When true, show the stats breakdown instead of the flavour message. */
+    private var showingStats = false
+
     private val widgetTree: WidgetContainer = game.uiLoader.load("gameover").mainWidget
 
     override val size: IPoint = widgetTree.root.size
@@ -66,19 +72,35 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
 
         val centreX = position.x + size.x / 2
 
-        // Draw and wrap the main message
-
-        // Drawing wrapped text is duplicated with the dialogue window,
-        // but it's probably not a big problem as I can't see where else
-        // this would be required.
         // Note that 0,0 includes the glow margin, so add 7px for it
-        var textY = 92 + 7
-        for (line in wrappedMessage) {
-            bodyFont.drawStringCentred(centreX.f, position.y + textY.f, 0f, line, Colour.white)
-            textY += 34
+        if (showingStats) {
+            // Draw the end-of-run statistics breakdown
+            val stats = game.stats
+            val statLines = listOf(
+                "SHIPS DESTROYED:  ${stats.shipsDestroyed}",
+                "SCRAP COLLECTED:  ${stats.scrapCollected}",
+                "BEACONS EXPLORED:  ${stats.beaconsExplored}",
+                "SECTORS TRAVELED:  ${game.sectorsVisited}",
+                "CREW REMAINING:  ${game.playerCrew.size}",
+            )
+            var statY = 92 + 7
+            for (line in statLines) {
+                bodyFont.drawStringCentred(centreX.f, position.y + statY.f, 0f, line, Colour.white)
+                statY += 22
+            }
+        } else {
+            // Draw and wrap the main message.
+            // Drawing wrapped text is duplicated with the dialogue window,
+            // but it's probably not a big problem as I can't see where else
+            // this would be required.
+            var textY = 92 + 7
+            for (line in wrappedMessage) {
+                bodyFont.drawStringCentred(centreX.f, position.y + textY.f, 0f, line, Colour.white)
+                textY += 34
+            }
         }
 
-        val scoreText = "SCORE: 123"
+        val scoreText = "SCORE: $score"
         scoreFont.drawStringCentred(centreX.f, position.y + 208f, 0f, scoreText, Colour.white)
     }
 
@@ -92,9 +114,8 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
     }
 
     private fun statsClicked() {
-        // The end-of-game stats screen isn't implemented yet. Do nothing
-        // rather than crashing the game with a TODO() - NotImplementedError
-        // is an Error, so the game loop's exception handler wouldn't catch it.
+        // Toggle between the flavour message and the run's stats breakdown.
+        showingStats = !showingStats
     }
 
     private fun quitClicked() {
