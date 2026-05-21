@@ -122,7 +122,11 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             3, font, 27, showSectorMap
         )
 
-        if (game.currentBeacon.isExit && outOfFuel)
+        // The Next Sector button must be available whenever the player is at
+        // the exit beacon - it's the only way to advance to the next sector.
+        // (Upstream commit 9037aed gated this behind 'outOfFuel' by mistake,
+        // which leaves a player who still has fuel unable to progress.)
+        if (game.currentBeacon.isExit)
             buttons += nextSectorButton
 
         // Hacky, the rendering code is also what populates the buttons
