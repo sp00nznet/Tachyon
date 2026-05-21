@@ -16,8 +16,10 @@ FTL's own engine is closed-source. Project Wormhole (upstream) re-builds that en
 from scratch in Kotlin, driving it with the data files shipped in the retail game. The
 goal is a faithful, moddable, cross-platform reimplementation.
 
-This repository is a fork kept for personal experimentation. Upstream credit goes
-entirely to **Campbell Suter (ZNix)** and contributors — see [Attribution](#attribution).
+This repository is a fork. The engine itself is upstream's work; what Tachyon adds
+on top is a **[developer menu](#developer-menu)** — an in-game menu bar for saving,
+loading, graphics/audio settings, cheats and live game inspection. Upstream credit
+goes entirely to **Campbell Suter (ZNix)** and contributors — see [Attribution](#attribution).
 
 ## Status — assessed 2026-05-19
 
@@ -36,9 +38,36 @@ ship-editor screen, and renders FTL's original sprites correctly.
 | Endgame | ✅ Rebel flagship / boss logic |
 | Save / load | ✅ Save game + debug saves |
 | Modding | ✅ Slipstream mod manager bundled as a library |
+| Developer menu | ✅ Tachyon's own addition — see below |
 | Rough edges | ⚠️ macOS save-path is a stub; some augments load without gameplay logic; no tagged releases |
 
 Scale: ~50,700 lines of Kotlin across ~200 files. Last upstream commit: 2024-06-30.
+
+## Developer menu
+
+Tachyon adds an always-visible menu bar across the top of the window, drawn with the
+engine's own renderer (no extra dependencies). The game is rendered below the bar, so
+the menu never covers it.
+
+| Menu | Contents |
+|------|----------|
+| **File** | New Game, Save Game, Load Game (save browser), Quit |
+| **Graphics** | V-Sync toggle, FPS counter, window-size presets (720p/900p/1080p), borderless fullscreen |
+| **Audio** | Sound-effect and music volume sliders |
+| **Debug** | Cheat toggles — Ship Invincible, Crew Invincible, Infinite Missiles, Infinite Drones, Fast Weapon Charge, No Enemy Weapons, Jump Anywhere, Reveal Map. One-shot actions — Repair Ship, Max Resources, Upgrade All Systems, Heal All Crew, Destroy Enemy. Plus the **Game Inspector** |
+| **About** | Credits, license and repository links |
+
+The **Game Inspector** is a live view of the player ship — hull, scrap, fuel, missiles,
+drone parts and per-crew health — with steppers to edit each value on the fly. It's the
+practical equivalent of a memory searcher, but it works directly on the engine's own
+game objects.
+
+Cheat toggles bind to the engine's existing `DebugFlagManager`; the actions and the
+inspector mirror the debug console's commands. Saves are written in the debug console's
+XML format, so dev-menu saves and console saves are interchangeable.
+
+Implementation lives in [`src/main/java/xyz/znix/xftl/devmenu/`](src/main/java/xyz/znix/xftl/devmenu/)
+(`DevUI` — a small immediate-mode toolkit, `DevMenu` — the bar, `DevWindows`, `DevActions`).
 
 ## Requirements
 
@@ -112,6 +141,7 @@ src/main/java/xyz/znix/xftl/
   modding/                Slipstream integration
   savegame/               Save/load
   sys/                    Platform glue, FTL install detection
+  devmenu/                Developer menu (Tachyon's addition)
 doc/                      Reverse-engineering notes on FTL mechanics
 ```
 
