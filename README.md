@@ -54,7 +54,7 @@ the menu never covers it.
 | **File** | New Game, Save Game, Load Game (save browser), Quit |
 | **Graphics** | V-Sync toggle, FPS counter, window-size presets (720p/900p/1080p), borderless fullscreen |
 | **Audio** | Sound-effect and music volume sliders |
-| **Debug** | Cheat toggles — Ship Invincible, Crew Invincible, Infinite Missiles, Infinite Drones, Fast Weapon Charge, No Enemy Weapons, Jump Anywhere, Reveal Map. One-shot actions — Repair Ship, Max Resources, Upgrade All Systems, Heal All Crew, Destroy Enemy. Plus the **Game Inspector** |
+| **Debug** | Cheat toggles — Ship Invincible, Crew Invincible, Infinite Missiles, Infinite Drones, Fast Weapon Charge, No Enemy Weapons, Jump Anywhere, Reveal Map. One-shot actions — Repair Ship, Max Resources, Upgrade All Systems, Heal All Crew, Destroy Enemy, End Run (Victory/Defeat). Plus the **Game Inspector** |
 | **About** | Credits, license and repository links |
 
 The **Game Inspector** is a live view of the player ship — hull, scrap, fuel, missiles,
@@ -65,6 +65,14 @@ game objects.
 Cheat toggles bind to the engine's existing `DebugFlagManager`; the actions and the
 inspector mirror the debug console's commands. Saves are written in the debug console's
 XML format, so dev-menu saves and console saves are interchangeable.
+
+## End-of-run score screen
+
+Tachyon implements the game-over **score screen**, which upstream left as a placeholder.
+A per-run `GameStats` tracks scrap collected, ships destroyed and beacons explored (saved
+with the game); the Game Over window shows a real score and a **Stats** button that
+toggles a full breakdown. Score is `scrap + ships×15 + beacons×4 + sectors×25`, doubled
+on a win.
 
 Implementation lives in [`src/main/java/xyz/znix/xftl/devmenu/`](src/main/java/xyz/znix/xftl/devmenu/)
 (`DevUI` — a small immediate-mode toolkit, `DevMenu` — the bar, `DevWindows`, `DevActions`).
