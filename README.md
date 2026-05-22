@@ -51,24 +51,33 @@ the menu never covers it.
 
 | Menu | Contents |
 |------|----------|
-| **File** | New Game, Save Game, Load Game (save browser), Quit |
+| **File** | New Game, Save Game, Saved Games (save manager), Mods, Quit |
 | **Graphics** | V-Sync toggle, FPS counter, window-size presets (720p up to 4K) plus Fill Screen, borderless fullscreen |
 | **Audio** | Sound-effect and music volume sliders |
-| **Debug** | Cheat toggles — Ship Invincible, Crew Invincible, Infinite Missiles, Infinite Drones, Fast Weapon Charge, No Enemy Weapons, Jump Anywhere, Reveal Map. One-shot actions — Repair Ship, Max Resources, Upgrade All Systems, Heal All Crew, Destroy Enemy, End Run (Victory/Defeat). Plus the **Game Inspector** and the **Outfitter** |
+| **Debug** | Opens the Cheats, Outfitter, Game Inspector, Tuning, Spawn Enemy Ship and Load Event windows, plus End Run (Victory/Defeat) |
 | **About** | Credits, license and repository links |
 
-The **Game Inspector** is a live view of the player ship — hull, scrap, fuel, missiles,
-drone parts and per-crew health — with steppers to edit each value on the fly. It's the
-practical equivalent of a memory searcher, but it works directly on the engine's own
-game objects.
+The windows the dev menu opens:
 
-The **Outfitter** is a tabbed picker that drops items straight onto the player ship,
-so you never have to find a store: crew of any race, weapons, drones and augments into
-the cargo hold, and systems into the ship's spare slots.
+- **Cheats** — a You/Enemy grid for Ship Invincible, Crew Invincible, Fast Weapons,
+  Infinite Missiles and Infinite Drones (each side toggles independently), plus Reveal
+  Map / Jump Anywhere / No Enemy Weapons and one-shot actions (repair, heal, max
+  resources, upgrade systems, max crew skills, destroy enemy).
+- **Game Inspector** — a live view of the player ship (hull, scrap, fuel, missiles,
+  drone parts, per-crew health) with steppers to edit each value on the fly.
+- **Outfitter** — a tabbed picker that drops crew, weapons, drones, augments and
+  systems straight onto the ship, so you never have to find a store.
+- **Tuning** — a Game Speed slider, plus world-generation sliders (nebula-sector
+  frequency, beacon density, hazard-beacon chance, extra-store chance) that take
+  effect on newly generated sectors.
+- **Spawn Enemy Ship** / **Load Event** — pick any enemy ship or any event and
+  apply it at the current beacon.
+- **Saved Games** — a multi-slot save manager (save, load, delete).
+- **Mods** — enable, disable and reorder Slipstream mods, written to `order.txt`.
 
-Cheat toggles bind to the engine's existing `DebugFlagManager`; the actions and the
-inspector mirror the debug console's commands. Saves are written in the debug console's
-XML format, so dev-menu saves and console saves are interchangeable.
+Cheat toggles bind to the engine's existing `DebugFlagManager`; the actions and pickers
+mirror the debug console's commands. Saves are written in the debug console's XML
+format, so dev-menu saves and console saves are interchangeable.
 
 ## End-of-run score screen
 
