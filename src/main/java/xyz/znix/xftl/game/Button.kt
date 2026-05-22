@@ -195,8 +195,10 @@ object Buttons {
         // The progress of the slide-in/slide-out jump unavailable pullout.
         private var pulloutPos: Float = 0f
 
-        // Color fading timer for charge/ready text.
-        private var fadeTime: Float = 0f
+        // Color fading timer for charge/ready text. Driven from a global clock
+        // so the pulse stays smooth across snapshot rebuilds on a co-op client.
+        private val fadeTime: Float
+            get() = (System.nanoTime() % 10_000_000_000L) / 1_000_000_000f
 
         private var firstUpdate = true
 
@@ -305,7 +307,6 @@ object Buttons {
                     statusTextColor
                 )
             }
-            fadeTime += game.renderingDeltaTime
 
             if (hovered) {
                 g.tooltip = tooltip

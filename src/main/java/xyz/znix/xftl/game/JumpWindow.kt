@@ -67,8 +67,6 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
 
     private val sector = game.currentBeacon.sector
 
-    private val flashTimerBase = System.nanoTime()
-
     // The set of all the beacons we've visited a neighbour of - this
     // is used to figure out which beacons to display information about.
     private val neighbourVisSet = sector.beacons.filter { it.visited }.flatMap { it.neighbours }.toSet()
@@ -88,12 +86,19 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
      */
     var fuelDistressOn = false
 
-    private var fuelDistressFlashTimer: Float = 0f
-    private val fuelDistressFlashOn: Boolean get() = fuelDistressOn && fuelDistressFlashTimer < 0.5f
+    // Driven from a global clock so the flash stays smooth even when the
+    // co-op client rebuilds this window from every snapshot.
+    private val fuelDistressFlashOn: Boolean
+        get() = fuelDistressOn && (System.nanoTime() % 1_000_000_000L < 500_000_000L)
 
     var hovered: Beacon? = null
 
-    private var playerRotation: Float = (0f..10f).random(VisualRandom)
+    // Driven from a global clock so the icon spins smoothly across snapshot rebuilds.
+    private val playerRotation: Float
+        get() {
+            val rotationSpeed = TWO_PI / 20f // Go around every 20 seconds
+            return (System.nanoTime() % 20_000_000_000L) / 1_000_000_000f * rotationSpeed
+        }
 
     private val outOfFuel: Boolean get() = game.player.fuelCount == 0
 
@@ -215,7 +220,8 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             // will be overtaken after this jump.
             val willBeOvertaken = beacon.pos.distToSq(nextFleetPos) < Sector.DANGER_ZONE_RADIUS_SQUARED
             if (willBeOvertaken && beacon.state != Beacon.State.OVERTAKEN) {
-                val baseTimer = (System.nanoTime() - flashTimerBase) / 1000000000f
+                // Use a global clock so the flash stays smooth across snapshot rebuilds.
+                val baseTimer = (System.nanoTime() % 2_000_000_000L) / 1_000_000_000f
                 val flashTimer = (baseTimer + beacon.overtakeFlashAnimationOffset).rem(2)
 
                 val opacity = if (flashTimer < 1f) flashTimer else 2f - flashTimer
@@ -271,21 +277,17 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
             }
 
             // Draw the player ship rotating around the beacon.
-            val rotationSpeed = TWO_PI / 20f // Go around every 20 seconds
             if (beacon == game.currentBeacon) {
                 val icon = when (fuelDistressFlashOn) {
                     true -> playerShipNoFuel
                     false -> playerShip
                 }
 
-                // The player's ship doesn't rotate when they're out of fuel
-                if (!outOfFuel) {
-                    playerRotation += game.renderingDeltaTime * rotationSpeed
-                }
-
                 // These offsets are approximate
                 g.pushTransform()
-                g.rotate(centrePos.x.f, centrePos.y.f, -playerRotation)
+                // Out-of-fuel ships don't spin.
+                if (!outOfFuel)
+                    g.rotate(centrePos.x.f, centrePos.y.f, -playerRotation)
                 icon.draw(centrePos.x - 8, centrePos.y - 32)
                 g.popTransform()
             }
@@ -518,14 +520,10 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
                 fuelDistressFlashLight.draw(rightX - 2 - 33, frameY + 45 - 23)
             }
 
+            // The distress-light flash itself is driven by the global clock
+            // via [fuelDistressFlashOn], so nothing accumulates here.
             if (fuelDistressOn) {
-                fuelDistressFlashTimer = (fuelDistressFlashTimer + game.renderingDeltaTime).mod(1f)
-
-                // This sound is special-cased
                 (game.sounds as? RealSoundManager)?.playingFuelDistressSound = true
-            } else {
-                // Reset, so it immediately lights up when turned back on
-                fuelDistressFlashTimer = 0f
             }
         } else {
             // Wait button

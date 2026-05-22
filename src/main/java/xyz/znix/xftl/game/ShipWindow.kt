@@ -62,7 +62,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
 
     // If non-null, this is the crewmember whose name we're changing
     private var renamingCrew: LivingCrew? = null
-    private var cursorFlashTimer = 0f
 
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
@@ -619,13 +618,9 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                     val nameX = boxX + (width - nameWidth) / 2
                     crewMessageFont.drawString(nameX.f, pos.y + 61f, name, Colour.white)
 
-                    // Draw the cursor
-                    cursorFlashTimer += game.renderingDeltaTime
-                    val period = 0.5f
-                    if (cursorFlashTimer > period)
-                        cursorFlashTimer -= period
-
-                    if (cursorFlashTimer < period / 2f) {
+                    // Draw the text-input cursor, blinking by a global clock so it
+                    // doesn't restart on a co-op client's snapshot rebuild.
+                    if (System.nanoTime() % 500_000_000L < 250_000_000L) {
                         g.colour = Colour.yellow
                         g.fillRect(nameX + nameWidth - 2, boxY + 8, 2, 13)
                     }
