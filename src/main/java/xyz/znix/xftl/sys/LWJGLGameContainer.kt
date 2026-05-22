@@ -17,6 +17,7 @@ import org.newdawn.slick.MouseListener
 import org.newdawn.slick.opengl.ImageDataFactory
 import xyz.znix.xftl.devmenu.DevMenu
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.net.Multiplayer
 import xyz.znix.xftl.rendering.Cursor
 import xyz.znix.xftl.rendering.Graphics
 import java.io.BufferedInputStream
@@ -285,8 +286,10 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
                 ex.printStackTrace()
             }
 
-            // Only render if the user can see the result
-            if (!isFocused) {
+            // Normally we skip rendering while unfocused to save power. During
+            // a co-op session we keep rendering anyway, so the other player's
+            // window stays live on a shared screen (or when testing locally).
+            if (!isFocused && !Multiplayer.isConnected) {
                 // Internally run at ~20 updates/sec when unfocused to save CPU.
                 glfwWaitEventsTimeout(1.0 / 20)
                 continue

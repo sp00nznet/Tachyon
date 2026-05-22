@@ -91,14 +91,20 @@ network. It is being built as a vertical slice; the current state:
   shows the host's address.
 - **State streaming** — the host runs the only real simulation and serialises its
   game about five times a second; the client rebuilds and renders each snapshot
-  instead of simulating, so it always shows the host's authoritative state.
+  instead of simulating, so it always shows the host's authoritative state. The
+  snapshot is gzip-compressed on the wire (an XML game state compresses heavily),
+  keeping the stream light enough for internet play.
 - **Commands** — player input is funnelled into `Command` objects rather than
   mutating the game directly. On the host (and in single-player) a command is applied
   at once; on the client it is sent to the host, which applies it and streams the
-  result back. Doors, crew movement, system power, weapon arming and weapon
-  room-targeting all go through this path, so a client can fly the shared ship.
-  The client keeps its own crew selection and resource counters across snapshots.
-  (Still local-only: beam-weapon aiming.)
+  result back. Doors, crew movement, system power, weapon arming and both
+  room- and beam-weapon targeting go through this path, so a client can fully fly
+  the shared ship. The client keeps its own crew selection and resource counters
+  across snapshots.
+- **Shared cursor** — each player's mouse position is sent to the other and drawn
+  as a small amber crosshair, so co-op players can point things out to each other.
+- While a co-op session is connected the game keeps rendering even when its window
+  is not focused, so both players' windows stay live on a shared screen.
 
 The netcode is in [`src/main/java/xyz/znix/xftl/net/`](src/main/java/xyz/znix/xftl/net/)
 — `Multiplayer.kt` (connection, streaming, message protocol) and `Command.kt` (the

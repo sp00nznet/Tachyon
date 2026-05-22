@@ -1,6 +1,9 @@
 package xyz.znix.xftl.net
 
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.systems.SelectedTarget
+import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.nio.ByteBuffer
 
@@ -133,12 +136,49 @@ sealed class Command {
                 .array()
     }
 
+    /**
+     * Aim the beam weapon at hardpoint [hardpointIndex] as a swipe starting
+     * at ([startX], [startY]) in the target ship's space, at [angle] radians.
+     */
+    data class TargetBeam(
+        val hardpointIndex: Int,
+        val targetEnemy: Boolean,
+        val startX: Int,
+        val startY: Int,
+        val angle: Float,
+    ) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val weapons = ship.weapons ?: return
+            val weapon = ship.hardpoints.getOrNull(hardpointIndex)?.weapon
+            if (weapon !is BeamBlueprint.BeamInstance) return
+            val targetShip = (if (targetEnemy) game.enemy else ship) ?: return
+            val beam = SelectedTarget.BeamAim(
+                weapon, hardpointIndex, targetShip, ConstPoint(startX, startY)
+            )
+            beam.angle = angle
+            beam.updateHitRooms()
+            weapons.selectedTargets.targetBeam(hardpointIndex, beam)
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(24)
+                .putInt(TYPE_TARGET_BEAM)
+                .putInt(hardpointIndex)
+                .putInt(if (targetEnemy) 1 else 0)
+                .putInt(startX)
+                .putInt(startY)
+                .putFloat(angle)
+                .array()
+    }
+
     companion object {
         private const val TYPE_TOGGLE_DOOR = 0
         private const val TYPE_MOVE_CREW = 1
         private const val TYPE_SET_SYSTEM_POWER = 2
         private const val TYPE_SET_WEAPON_ARMED = 3
         private const val TYPE_TARGET_WEAPON = 4
+        private const val TYPE_TARGET_BEAM = 5
 
         // A sane upper bound on how many crew one command can move.
         private const val MAX_CREW = 1000
@@ -164,6 +204,9 @@ sealed class Command {
                     TYPE_SET_WEAPON_ARMED -> SetWeaponArmed(buf.int, buf.int != 0)
 
                     TYPE_TARGET_WEAPON -> TargetWeapon(buf.int, buf.int != 0, buf.int)
+
+                    TYPE_TARGET_BEAM ->
+                        TargetBeam(buf.int, buf.int != 0, buf.int, buf.int, buf.float)
 
                     else -> {
                         System.err.println("Co-op: ignoring unknown command type $type")

@@ -509,8 +509,20 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         val beam = beamTargeting ?: error("Called targetBeamWeapon without beam")
         beamTargeting = null
 
+        // Route the aimed beam through a co-op command. The drag-to-aim itself
+        // stays local (it's just a preview); only the committed swipe is sent.
         val weaponIndex = ship.hardpoints.indexOfFirst { it.weapon == beam.weapon }
-        ship.weapons!!.selectedTargets.targetBeam(weaponIndex, beam)
+        if (weaponIndex == -1)
+            return
+
+        game.submitCommand(
+            Command.TargetBeam(
+                weaponIndex,
+                beam.targetShip != ship,
+                beam.startShipPoint.x, beam.startShipPoint.y,
+                beam.angle
+            )
+        )
     }
 
     // Dispatch actions from the UI - this is only called when the game is not paused, so dispatch

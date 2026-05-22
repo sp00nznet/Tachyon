@@ -17,6 +17,7 @@ import xyz.znix.xftl.net.Command;
 import xyz.znix.xftl.net.Multiplayer;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
+import xyz.znix.xftl.rendering.Colour;
 import xyz.znix.xftl.rendering.Cursor;
 import xyz.znix.xftl.rendering.Graphics;
 import xyz.znix.xftl.rendering.ShaderProgramme;
@@ -36,6 +37,8 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class MainGame implements Game {
     private VanillaDatafile vanillaDatafile;
@@ -66,6 +69,9 @@ public class MainGame implements Game {
     // so the co-op command round-trip can be verified without clicking.
     private float mpTestTimer;
     private int mpTestCounter;
+
+    // Log the snapshot size once, to keep an eye on co-op bandwidth.
+    private boolean snapshotSizeLogged;
 
     public MainGame(CommandLineArgs args) {
         this.commandLineArgs = args;
@@ -236,6 +242,18 @@ public class MainGame implements Game {
                 sendHostSnapshot();
             }
         }
+
+        // Co-op: share this player's cursor with the peer, as a fraction of
+        // the window so it maps across differently sized windows.
+        if (Multiplayer.INSTANCE.isConnected()) {
+            int w = gc.getWidth();
+            int h = gc.getHeight();
+            if (w > 0 && h > 0) {
+                Multiplayer.INSTANCE.sendCursor(
+                        gc.getInput().getMouseX() / (float) w,
+                        gc.getInput().getMouseY() / (float) h);
+            }
+        }
     }
 
     /** Host: serialise the current game and stream it to the client. */
@@ -244,8 +262,16 @@ public class MainGame implements Game {
             return;
         try {
             Document doc = ((InGameState) currentState).saveGameState();
+            // The snapshot is XML, which compresses heavily - gzip it so the
+            // stream stays light enough for internet play.
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            new XMLOutputter(Format.getRawFormat()).output(doc, bytes);
+            try (GZIPOutputStream gzip = new GZIPOutputStream(bytes)) {
+                new XMLOutputter(Format.getRawFormat()).output(doc, gzip);
+            }
+            if (!snapshotSizeLogged) {
+                snapshotSizeLogged = true;
+                System.out.println("Co-op: snapshot " + bytes.size() + " bytes (gzipped)");
+            }
             Multiplayer.INSTANCE.sendSnapshot(bytes.toByteArray());
         } catch (Exception ex) {
             System.err.println("Failed to serialise a multiplayer snapshot");
@@ -271,7 +297,8 @@ public class MainGame implements Game {
         try {
             SAXBuilder builder = new SAXBuilder();
             builder.setExpandEntities(false);
-            Document doc = builder.build(new ByteArrayInputStream(data));
+            Document doc = builder.build(
+                    new GZIPInputStream(new ByteArrayInputStream(data)));
             loadSavedGame(doc);
             if (currentState instanceof InGameState) {
                 InGameState newState = (InGameState) currentState;
@@ -304,6 +331,18 @@ public class MainGame implements Game {
 
         currentState.render(gc, g);
 
+        // Co-op: draw the connected player's cursor over the shared game,
+        // while it is within their window.
+        if (Multiplayer.INSTANCE.isConnected() && Multiplayer.INSTANCE.getHasRemoteCursor()) {
+            float rx = Multiplayer.INSTANCE.getRemoteCursorX();
+            float ry = Multiplayer.INSTANCE.getRemoteCursorY();
+            if (rx >= 0f && rx <= 1f && ry >= 0f && ry <= 1f) {
+                g.loadIdentityMatrix();
+                drawRemoteCursor(g, rx * gameContainer.getWidth(),
+                        ry * gameContainer.getHeight());
+            }
+        }
+
         // Check there aren't any mismatched pushTransform/popTransform calls.
         g.checkNoPushedTransforms();
 
@@ -320,6 +359,21 @@ public class MainGame implements Game {
             gc.setCursor(newCursor);
             currentCursor = newCursor;
         }
+    }
+
+    /** Draw the co-op partner's mouse cursor as a small amber crosshair. */
+    private void drawRemoteCursor(Graphics g, float fx, float fy) {
+        int x = Math.round(fx);
+        int y = Math.round(fy);
+        g.setColour(new Colour(1f, 0.75f, 0.2f, 0.9f));
+
+        int reach = 10;
+        int gap = 3;
+        g.drawLine(x - reach, y, x - gap, y);
+        g.drawLine(x + gap, y, x + reach, y);
+        g.drawLine(x, y - reach, x, y - gap);
+        g.drawLine(x, y + gap, x, y + reach);
+        g.fillRect(x - 1, y - 1, 2, 2);
     }
 
     @Override

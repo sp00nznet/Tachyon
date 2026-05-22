@@ -8,6 +8,7 @@ import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit
  */
 object Multiplayer {
     /** Bumped whenever the wire protocol changes incompatibly. */
-    const val PROTOCOL_VERSION = 3
+    const val PROTOCOL_VERSION = 4
 
     const val DEFAULT_PORT = 7777
 
@@ -35,6 +36,7 @@ object Multiplayer {
     private const val MSG_PING = 0
     private const val MSG_SNAPSHOT = 1
     private const val MSG_COMMAND = 2
+    private const val MSG_CURSOR = 3
 
     // Reject absurd message sizes rather than allocating a huge buffer.
     private const val MAX_MESSAGE = 64 * 1024 * 1024
@@ -64,6 +66,23 @@ object Multiplayer {
     /** Increments each time a new snapshot arrives, so consumers can detect one. */
     @Volatile
     var snapshotVersion: Int = 0
+        private set
+
+    /**
+     * The other player's mouse cursor, as a fraction (0..1) of their window,
+     * so co-op players can see where each other is pointing. Only meaningful
+     * once [hasRemoteCursor] is true.
+     */
+    @Volatile
+    var remoteCursorX: Float = 0f
+        private set
+
+    @Volatile
+    var remoteCursorY: Float = 0f
+        private set
+
+    @Volatile
+    var hasRemoteCursor: Boolean = false
         private set
 
     private var serverSocket: ServerSocket? = null
@@ -109,6 +128,7 @@ object Multiplayer {
         state = State.IDLE
         status = "Not connected"
         latestSnapshot = null
+        hasRemoteCursor = false
         outQueue.clear()
         incomingCommands.clear()
         try {
@@ -137,6 +157,19 @@ object Multiplayer {
         if (state != State.CONNECTED)
             return
         outQueue.offer(MSG_COMMAND to data)
+    }
+
+    /**
+     * Send this player's cursor position to the peer, as a fraction (0..1) of
+     * the window so it maps correctly even if the windows differ in size.
+     */
+    fun sendCursor(fractionX: Float, fractionY: Float) {
+        if (state != State.CONNECTED)
+            return
+        val data = ByteBuffer.allocate(8).putFloat(fractionX).putFloat(fractionY).array()
+        // Only the latest cursor position matters - drop any still queued.
+        outQueue.removeIf { it.first == MSG_CURSOR }
+        outQueue.offer(MSG_CURSOR to data)
     }
 
     /** Host: take the next command a client sent, or null if none are pending. */
@@ -180,6 +213,7 @@ object Multiplayer {
             throw Exception("version mismatch (theirs $theirVersion, ours $PROTOCOL_VERSION)")
 
         latestSnapshot = null
+        hasRemoteCursor = false
         outQueue.clear()
         incomingCommands.clear()
         state = State.CONNECTED
@@ -234,6 +268,11 @@ object Multiplayer {
                 snapshotVersion++
             } else if (type == MSG_COMMAND) {
                 incomingCommands.offer(data)
+            } else if (type == MSG_CURSOR && data.size >= 8) {
+                val buf = ByteBuffer.wrap(data)
+                remoteCursorX = buf.float
+                remoteCursorY = buf.float
+                hasRemoteCursor = true
             }
         }
     }
