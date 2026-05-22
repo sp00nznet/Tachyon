@@ -177,22 +177,30 @@ public class MainGame implements Game {
         // clicks into commands - without running the simulation.
         currentState.update(gc, dt);
 
-        // Test harness: drive the client to fire commands, alternating
-        // between a door toggle and a crew move.
+        // Test harness: drive the client to fire each kind of command in turn.
         if (spectating && commandLineArgs.mpTest && currentState instanceof InGameState) {
             mpTestTimer += dt;
             if (mpTestTimer >= 2f) {
                 mpTestTimer = 0f;
                 InGameState state = (InGameState) currentState;
-                if (mpTestCounter % 2 == 0) {
-                    state.submitCommand(new Command.ToggleDoor(mpTestCounter));
-                } else {
-                    var player = state.getPlayer();
-                    if (player != null && !player.getCrew().isEmpty()
-                            && !player.getRooms().isEmpty()) {
-                        int roomId = player.getRooms()
-                                .get((mpTestCounter / 2) % player.getRooms().size()).getId();
-                        state.submitCommand(new Command.MoveCrew(java.util.List.of(0), roomId));
+                var player = state.getPlayer();
+                switch (mpTestCounter % 4) {
+                    case 0 -> state.submitCommand(new Command.ToggleDoor(mpTestCounter));
+                    case 1 -> {
+                        if (player != null && !player.getCrew().isEmpty()
+                                && !player.getRooms().isEmpty()) {
+                            int roomId = player.getRooms()
+                                    .get((mpTestCounter / 4) % player.getRooms().size()).getId();
+                            state.submitCommand(new Command.MoveCrew(java.util.List.of(0), roomId));
+                        }
+                    }
+                    case 2 -> {
+                        if (player != null && !player.getMainSystems().isEmpty())
+                            state.submitCommand(new Command.SetSystemPower(0, mpTestCounter % 8 == 2));
+                    }
+                    case 3 -> {
+                        if (player != null && !player.getHardpoints().isEmpty())
+                            state.submitCommand(new Command.SetWeaponArmed(0, mpTestCounter % 8 == 3));
                     }
                 }
                 mpTestCounter++;
@@ -269,7 +277,10 @@ public class MainGame implements Game {
                 InGameState newState = (InGameState) currentState;
                 // The client renders this snapshot; it must not simulate it.
                 newState.setSimulate(false);
-                if (previousUI != null && newState.getShipUI() != null)
+                // Carry the local UI state (selection, resource counters)
+                // onto the rebuilt UI. previousUI is null on the first
+                // snapshot, which carryOverFrom handles.
+                if (newState.getShipUI() != null)
                     newState.getShipUI().carryOverFrom(previousUI);
             }
         } catch (Exception ex) {

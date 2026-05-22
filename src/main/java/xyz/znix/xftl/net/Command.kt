@@ -1,6 +1,7 @@
 package xyz.znix.xftl.net
 
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.nio.ByteBuffer
 
 /**
@@ -65,9 +66,79 @@ sealed class Command {
         }
     }
 
+    /**
+     * Step the reactor power of the player ship's main system at
+     * [systemIndex] up (if [increase]) or down by one bar.
+     */
+    data class SetSystemPower(val systemIndex: Int, val increase: Boolean) : Command() {
+        override fun apply(game: InGameState) {
+            val system = game.player.mainSystems.getOrNull(systemIndex) ?: return
+            if (increase) {
+                system.increasePower()
+            } else {
+                system.decreasePower()
+            }
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(12)
+                .putInt(TYPE_SET_SYSTEM_POWER)
+                .putInt(systemIndex)
+                .putInt(if (increase) 1 else 0)
+                .array()
+    }
+
+    /** Arm or disarm the weapon at hardpoint [hardpointIndex]. */
+    data class SetWeaponArmed(val hardpointIndex: Int, val armed: Boolean) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val weapon = ship.hardpoints.getOrNull(hardpointIndex)?.weapon ?: return
+            ship.weapons?.setWeaponPower(weapon, armed)
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(12)
+                .putInt(TYPE_SET_WEAPON_ARMED)
+                .putInt(hardpointIndex)
+                .putInt(if (armed) 1 else 0)
+                .array()
+    }
+
+    /**
+     * Aim the room-targeting weapon at hardpoint [hardpointIndex] at the room
+     * with id [roomId], on the enemy ship if [targetEnemy] is set, otherwise
+     * on the player's own ship.
+     */
+    data class TargetWeapon(
+        val hardpointIndex: Int,
+        val targetEnemy: Boolean,
+        val roomId: Int,
+    ) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val weapons = ship.weapons ?: return
+            val weapon = ship.hardpoints.getOrNull(hardpointIndex)?.weapon ?: return
+            if (weapon !is IRoomTargetingWeapon) return
+            val targetShip = if (targetEnemy) game.enemy else ship
+            val room = targetShip?.rooms?.firstOrNull { it.id == roomId } ?: return
+            weapons.selectedTargets.targetRoom(hardpointIndex, room)
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(16)
+                .putInt(TYPE_TARGET_WEAPON)
+                .putInt(hardpointIndex)
+                .putInt(if (targetEnemy) 1 else 0)
+                .putInt(roomId)
+                .array()
+    }
+
     companion object {
         private const val TYPE_TOGGLE_DOOR = 0
         private const val TYPE_MOVE_CREW = 1
+        private const val TYPE_SET_SYSTEM_POWER = 2
+        private const val TYPE_SET_WEAPON_ARMED = 3
+        private const val TYPE_TARGET_WEAPON = 4
 
         // A sane upper bound on how many crew one command can move.
         private const val MAX_CREW = 1000
@@ -87,6 +158,12 @@ sealed class Command {
                         if (count < 0 || count > MAX_CREW) return null
                         MoveCrew(MutableList(count) { buf.int }, roomId)
                     }
+
+                    TYPE_SET_SYSTEM_POWER -> SetSystemPower(buf.int, buf.int != 0)
+
+                    TYPE_SET_WEAPON_ARMED -> SetWeaponArmed(buf.int, buf.int != 0)
+
+                    TYPE_TARGET_WEAPON -> TargetWeapon(buf.int, buf.int != 0, buf.int)
 
                     else -> {
                         System.err.println("Co-op: ignoring unknown command type $type")

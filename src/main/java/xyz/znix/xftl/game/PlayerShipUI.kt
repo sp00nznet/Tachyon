@@ -409,14 +409,18 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
         if (shiftPressed) {
             // Holding shift turns a weapon off
-            if (weapon.isPowered && weapons.setWeaponPower(weapon, false)) {
+            if (weapon.isPowered) {
+                game.submitCommand(Command.SetWeaponArmed(id, false))
                 powerDownSound.play()
             }
             return
         }
 
         if (!weapon.isPowered) {
-            if (weapons.setWeaponPower(weapon, true)) {
+            game.submitCommand(Command.SetWeaponArmed(id, true))
+            // On the host the command applied synchronously; on a client
+            // assume it will succeed and play the power-up sound optimistically.
+            if (!game.isSimulated || weapon.isPowered) {
                 powerUpSound.play()
             } else {
                 powerUpFailSound.play()
@@ -439,7 +443,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             }
 
             if (weapon is IRoomTargetingWeapon) {
-                weapons.selectedTargets.targetRoom(id, room)
+                // Route the targeting through a co-op command; the room is
+                // identified by ship side and id, which both ends share.
+                game.submitCommand(Command.TargetWeapon(id, room.ship != ship, room.id))
             } else if (weapon is BeamBlueprint.BeamInstance) {
                 val mousePos = ConstPoint(gc.input.mouseX, gc.input.mouseY)
                 val shipPos = mousePos - game.enemyPosition
@@ -459,20 +465,26 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     private fun changeSystemPower(sys: MainSystem, increasePower: Boolean) {
+        // The power change goes through a co-op command, identifying the
+        // system by its index in the shared, deterministically ordered list.
+        val index = ship.mainSystems.indexOf(sys)
+        if (index == -1)
+            return
+
         val prevPower = sys.powerSelected
+        game.submitCommand(Command.SetSystemPower(index, increasePower))
 
-        if (increasePower) {
-            sys.increasePower()
+        if (game.isSimulated) {
+            // Host / single-player: the command applied right away, so the
+            // power may have changed - pick the sound from the real result.
+            when {
+                sys.powerSelected > prevPower -> powerUpSound.play()
+                sys.powerSelected < prevPower -> powerDownSound.play()
+                increasePower -> powerUpFailSound.play()
+            }
         } else {
-            sys.decreasePower()
-        }
-
-        if (sys.powerSelected > prevPower) {
-            powerUpSound.play()
-        } else if (sys.powerSelected < prevPower) {
-            powerDownSound.play()
-        } else if (increasePower) {
-            powerUpFailSound.play()
+            // Client: the change happens on the host; play a sound to match.
+            if (increasePower) powerUpSound.play() else powerDownSound.play()
         }
     }
 
@@ -1819,7 +1831,15 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
      * so without this the local player's selection would be lost five times a
      * second. It is also used by the continuous save/restore debug flag.
      */
-    fun carryOverFrom(prev: PlayerShipUI) {
+    fun carryOverFrom(prev: PlayerShipUI?) {
+        if (prev == null) {
+            // First snapshot after joining: there's nothing to carry, but
+            // match the counters to the current resources so they don't
+            // animate a spurious "+N" delta on the first frame.
+            syncResourceCounters(ship.scrap, ship.fuelCount, ship.missilesCount, ship.dronesCount)
+            return
+        }
+
         crewSelectionRectangle = prev.crewSelectionRectangle
 
         // Match crew by their index in the ship's crew list, since the crew
@@ -1833,6 +1853,22 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
 
             ship.crew.getOrNull(index)?.let { selectedCrew += it }
         }
+
+        // Carry the resource counters across. Without this the client flashes
+        // a "+N scrap" delta every time the game is rebuilt from a snapshot,
+        // since a fresh UI's counters would start from zero.
+        syncResourceCounters(
+            prev.lastResources.scrap, prev.lastResources.fuel,
+            prev.lastResources.missiles, prev.lastResources.droneParts
+        )
+    }
+
+    /** Set the resource delta counters, so no "+N" is shown until a real change. */
+    private fun syncResourceCounters(scrap: Int, fuel: Int, missiles: Int, droneParts: Int) {
+        lastResources.scrap = scrap
+        lastResources.fuel = fuel
+        lastResources.missiles = missiles
+        lastResources.droneParts = droneParts
     }
 
     fun debugContinuousSaveRestore(prev: PlayerShipUI) {

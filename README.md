@@ -95,9 +95,10 @@ network. It is being built as a vertical slice; the current state:
 - **Commands** — player input is funnelled into `Command` objects rather than
   mutating the game directly. On the host (and in single-player) a command is applied
   at once; on the client it is sent to the host, which applies it and streams the
-  result back. Opening doors and moving crew are wired through this path; the client
-  keeps its own crew selection across snapshots. The remaining actions (system power,
-  weapons) are being moved onto it action by action.
+  result back. Doors, crew movement, system power, weapon arming and weapon
+  room-targeting all go through this path, so a client can fly the shared ship.
+  The client keeps its own crew selection and resource counters across snapshots.
+  (Still local-only: beam-weapon aiming.)
 
 The netcode is in [`src/main/java/xyz/znix/xftl/net/`](src/main/java/xyz/znix/xftl/net/)
 — `Multiplayer.kt` (connection, streaming, message protocol) and `Command.kt` (the
