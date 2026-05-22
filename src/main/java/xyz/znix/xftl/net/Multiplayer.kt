@@ -8,6 +8,8 @@ import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
@@ -24,7 +26,7 @@ import java.util.concurrent.TimeUnit
  */
 object Multiplayer {
     /** Bumped whenever the wire protocol changes incompatibly. */
-    const val PROTOCOL_VERSION = 2
+    const val PROTOCOL_VERSION = 3
 
     const val DEFAULT_PORT = 7777
 
@@ -33,6 +35,10 @@ object Multiplayer {
     // Message types.
     private const val MSG_PING = 0
     private const val MSG_SNAPSHOT = 1
+    private const val MSG_COMMAND = 2
+
+    /** Co-op command type: toggle a door. The argument is the door index. */
+    const val CMD_TOGGLE_DOOR = 0
 
     // Reject absurd message sizes rather than allocating a huge buffer.
     private const val MAX_MESSAGE = 64 * 1024 * 1024
@@ -67,6 +73,9 @@ object Multiplayer {
     private var serverSocket: ServerSocket? = null
     private var socket: Socket? = null
     private val outQueue = LinkedBlockingQueue<Pair<Int, ByteArray>>()
+
+    /** Commands received from the client, waiting for the host to apply them. */
+    private val incomingCommands = ConcurrentLinkedQueue<ByteArray>()
 
     /** Start hosting, and wait for a player to join. */
     fun host() {
@@ -105,6 +114,7 @@ object Multiplayer {
         status = "Not connected"
         latestSnapshot = null
         outQueue.clear()
+        incomingCommands.clear()
         try {
             serverSocket?.close()
         } catch (_: Exception) {
@@ -125,6 +135,24 @@ object Multiplayer {
         outQueue.removeIf { it.first == MSG_SNAPSHOT }
         outQueue.offer(MSG_SNAPSHOT to data)
     }
+
+    /** Queue a co-op command to send to the host (client -> host). */
+    private fun sendCommand(data: ByteArray) {
+        if (state != State.CONNECTED)
+            return
+        outQueue.offer(MSG_COMMAND to data)
+    }
+
+    /** Client -> host: ask the host to toggle the door at [index]. */
+    fun sendDoorToggle(index: Int) {
+        val buf = ByteBuffer.allocate(8)
+        buf.putInt(CMD_TOGGLE_DOOR)
+        buf.putInt(index)
+        sendCommand(buf.array())
+    }
+
+    /** Host: take the next command a client sent, or null if none are pending. */
+    fun pollCommand(): ByteArray? = incomingCommands.poll()
 
     private fun startThread(body: () -> Unit) {
         val thread = Thread {
@@ -165,6 +193,7 @@ object Multiplayer {
 
         latestSnapshot = null
         outQueue.clear()
+        incomingCommands.clear()
         state = State.CONNECTED
         status = if (hostSide) "Connected - a player joined your game" else "Connected to the host"
 
@@ -215,6 +244,8 @@ object Multiplayer {
             if (type == MSG_SNAPSHOT) {
                 latestSnapshot = data
                 snapshotVersion++
+            } else if (type == MSG_COMMAND) {
+                incomingCommands.offer(data)
             }
         }
     }

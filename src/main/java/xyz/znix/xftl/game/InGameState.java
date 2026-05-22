@@ -16,7 +16,9 @@ import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.devutil.DebugFlagManager;
 import xyz.znix.xftl.drones.AbstractExternalDrone;
 import xyz.znix.xftl.hangar.EditableShip;
+import xyz.znix.xftl.layout.Door;
 import xyz.znix.xftl.layout.Room;
+import xyz.znix.xftl.net.Multiplayer;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
 import xyz.znix.xftl.math.RoomPoint;
@@ -959,6 +961,27 @@ public class InGameState extends MainGame.GameState {
         } else {
             delayedQuests.add(questEvent);
             return QuestAddResult.NEXT_SECTOR;
+        }
+    }
+
+    /**
+     * Apply a co-op command sent by the connected client (host side).
+     * <p>
+     * The client never simulates the game itself; it sends commands like this
+     * one, and the host applies them to its authoritative state. The change
+     * then reaches the client through the next streamed snapshot.
+     */
+    public void applyCoopCommand(int type, int arg) {
+        if (type == Multiplayer.CMD_TOGGLE_DOOR) {
+            List<Door> doors = player.getDoors();
+            if (doors.isEmpty())
+                return;
+            // The client picks doors by a rolling counter; wrap it into range.
+            int index = ((arg % doors.size()) + doors.size()) % doors.size();
+            Door door = doors.get(index);
+            door.setOpen(!door.getOpen());
+            System.out.println("Co-op: client toggled door " + index
+                    + " -> open=" + door.getOpen());
         }
     }
 

@@ -30,6 +30,7 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -60,6 +61,11 @@ public class MainGame implements Game {
     private float snapshotTimer;
     private int lastAppliedSnapshot;
     private boolean wasSpectating;
+
+    // --mp-test: drives the client to fire a door-toggle command periodically,
+    // so the co-op command round-trip can be verified without clicking.
+    private float mpTestTimer;
+    private int mpTestCounter;
 
     public MainGame(CommandLineArgs args) {
         this.commandLineArgs = args;
@@ -160,6 +166,15 @@ public class MainGame implements Game {
         if (spectating) {
             // Client: display the host's streamed game, don't simulate locally.
             applyHostSnapshot();
+
+            // Test harness: periodically fire a door-toggle command at the host.
+            if (commandLineArgs.mpTest) {
+                mpTestTimer += dt;
+                if (mpTestTimer >= 2f) {
+                    mpTestTimer = 0f;
+                    Multiplayer.INSTANCE.sendDoorToggle(mpTestCounter++);
+                }
+            }
         } else {
             if (wasSpectating) {
                 // We were spectating and the connection ended - leave that game.
@@ -168,6 +183,18 @@ public class MainGame implements Game {
             currentState.update(gc, dt);
         }
         wasSpectating = spectating;
+
+        // Host: apply any co-op commands the connected client has sent.
+        if (Multiplayer.INSTANCE.isConnected() && Multiplayer.INSTANCE.getHosting()
+                && currentState instanceof InGameState) {
+            byte[] cmd;
+            while ((cmd = Multiplayer.INSTANCE.pollCommand()) != null) {
+                if (cmd.length >= 8) {
+                    ByteBuffer buf = ByteBuffer.wrap(cmd);
+                    ((InGameState) currentState).applyCoopCommand(buf.getInt(), buf.getInt());
+                }
+            }
+        }
 
         devMenu.update(gc, dt);
 
@@ -473,5 +500,8 @@ public class MainGame implements Game {
 
         // Join a multiplayer game at this address immediately.
         public String mpJoin;
+
+        // Co-op test harness: auto-fire door-toggle commands while spectating.
+        public boolean mpTest;
     }
 }

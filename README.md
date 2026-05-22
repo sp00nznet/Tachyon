@@ -55,6 +55,7 @@ the menu never covers it.
 | **Graphics** | V-Sync toggle, FPS counter, window-size presets (720p up to 4K) plus Fill Screen, borderless fullscreen |
 | **Audio** | Sound-effect and music volume sliders |
 | **Debug** | Opens the Cheats, Outfitter, Game Inspector, Tuning, Spawn Enemy Ship and Load Event windows, plus End Run (Victory/Defeat) |
+| **Multiplayer** | Host or join a co-op session — see [Co-op multiplayer](#co-op-multiplayer) below |
 | **About** | Credits, license and repository links |
 
 The windows the dev menu opens:
@@ -78,6 +79,25 @@ The windows the dev menu opens:
 Cheat toggles bind to the engine's existing `DebugFlagManager`; the actions and pickers
 mirror the debug console's commands. Saves are written in the debug console's XML
 format, so dev-menu saves and console saves are interchangeable.
+
+## Co-op multiplayer
+
+Tachyon adds **host-authoritative co-op** — two players sharing one ship over the
+network. It is being built as a vertical slice; the current state:
+
+- **Connection** — one player hosts, the other joins by IP address. The handshake
+  exchanges a magic string and protocol version over a single TCP connection. For
+  internet play the host forwards TCP port `7777`; on a LAN the **Multiplayer** menu
+  shows the host's address.
+- **State streaming** — the host runs the only real simulation and serialises its
+  game about five times a second; the client rebuilds and renders each snapshot
+  instead of simulating, so it always shows the host's authoritative state.
+- **Commands** — the client sends commands back for the host to apply (currently a
+  door toggle, via the **Toggle a Door** test button); the result reaches the client
+  in the next snapshot. Wiring up the full set of player commands is the next step.
+
+The netcode is in [`src/main/java/xyz/znix/xftl/net/Multiplayer.kt`](src/main/java/xyz/znix/xftl/net/Multiplayer.kt)
+and adds no new dependencies — just Java sockets and a length-prefixed message protocol.
 
 ## End-of-run score screen
 
@@ -141,6 +161,9 @@ in the save directory:
 |------|--------|
 | `--new-game <SHIP_ID>` | Jump straight into a new game with the given ship blueprint |
 | `--load-debug-save <name>` | Load a debug save from the debug-saves directory |
+| `--mp-host` | Start hosting a co-op session on launch |
+| `--mp-join <address>` | Join a co-op session at the given address on launch |
+| `--mp-test` | While spectating, periodically fire a door-toggle command (co-op test harness) |
 
 ## Project layout
 

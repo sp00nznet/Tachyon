@@ -20,6 +20,8 @@ public class App {
                 cla.mpHost = true;
             } else if (arg.equals("--mp-join")) {
                 cla.mpJoin = args[++i];
+            } else if (arg.equals("--mp-test")) {
+                cla.mpTest = true;
             } else {
                 System.err.printf("Unknown command-line argument '%s'%n", arg);
                 System.exit(1);

@@ -881,11 +881,15 @@ class AutomationWindow : DevWindow("Automation", 330) {
 }
 
 /**
- * Co-operative multiplayer - host or join a game. This is the Step 1
- * handshake; game-state sync and shared control build on top.
+ * Co-operative multiplayer - host or join a game. The host runs the
+ * authoritative simulation and streams it to the client, which can send
+ * commands (currently door toggles) back for the host to apply.
  */
 class MultiplayerWindow : DevWindow("Multiplayer", 390) {
     override val contentHeight = 168
+
+    // Rolling index so each test door-toggle hits a different door.
+    private var doorCmdCounter = 0
 
     override fun content(ui: DevUI, cx: Int, cy: Int) {
         ui.text(cx, cy, 18, "Status:  ${Multiplayer.status}", DevUI.TEXT)
@@ -929,11 +933,23 @@ class MultiplayerWindow : DevWindow("Multiplayer", 390) {
                 ry += 26
                 if (ui.button(cx, ry, 150, 24, "Disconnect"))
                     Multiplayer.disconnect()
+                if (!Multiplayer.hosting) {
+                    if (ui.button(cx + 160, ry, 200, 24, "Toggle a Door - test")) {
+                        Multiplayer.sendDoorToggle(doorCmdCounter++)
+                        menu.setStatus("Sent a door-toggle command to the host")
+                    }
+                }
             }
         }
 
-        ui.text(cx, cy + contentHeight - 38, 13,
-            "Handshake only so far - game sync is the next step.", DevUI.TEXT_DIM)
+        val hint = when {
+            Multiplayer.state == Multiplayer.State.CONNECTED && !Multiplayer.hosting ->
+                "You see the host's game. The test button toggles doors on it."
+            Multiplayer.state == Multiplayer.State.CONNECTED ->
+                "Your game is streamed to the client about five times a second."
+            else -> "The host runs the game and streams it to the client."
+        }
+        ui.text(cx, cy + contentHeight - 38, 13, hint, DevUI.TEXT_DIM)
         ui.text(cx, cy + contentHeight - 22, 13,
             "Internet play: the host must forward TCP port ${Multiplayer.DEFAULT_PORT}.", DevUI.TEXT_DIM)
     }
