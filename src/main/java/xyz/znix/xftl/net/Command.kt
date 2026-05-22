@@ -3,6 +3,7 @@ package xyz.znix.xftl.net
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.systems.SelectedTarget
+import xyz.znix.xftl.systems.SubSystem
 import xyz.znix.xftl.weapons.BeamBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.nio.ByteBuffer
@@ -172,6 +173,78 @@ sealed class Command {
                 .array()
     }
 
+    /** Toggle the game-paused flag - either player can pause or unpause. */
+    object TogglePause : Command() {
+        override fun apply(game: InGameState) {
+            game.togglePaused()
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(4).putInt(TYPE_TOGGLE_PAUSE).array()
+    }
+
+    /**
+     * Jump to the next sector at grid position ([column], [row]) on the
+     * galaxy map. The host generates the new sector and warps in.
+     */
+    data class JumpToSector(val column: Int, val row: Int) : Command() {
+        override fun apply(game: InGameState) {
+            val sectorCol = game.gameMap.sectors.getOrNull(column) ?: return
+            val info = sectorCol.getOrNull(row) ?: return
+            // Only one of the reachable next sectors is valid.
+            if (!game.currentBeacon.sector.info.nextSectors.contains(info)) return
+            val newSector = game.gameMap.generateSector(info, game)
+            game.currentBeacon = newSector.startBeacon
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(12).putInt(TYPE_JUMP_TO_SECTOR)
+                .putInt(column).putInt(row).array()
+    }
+
+    /**
+     * Spend scrap to upgrade the player ship's main system or subsystem at
+     * [systemIndex] (in [Ship.mainSystems] or the sorted subsystem list).
+     */
+    data class UpgradeSystem(val systemIndex: Int, val isSubsystem: Boolean) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val system = if (isSubsystem) {
+                ship.rooms.mapNotNull { it.system as? SubSystem }
+                    .sortedBy { it.sortingType }.getOrNull(systemIndex)
+            } else {
+                ship.mainSystems.getOrNull(systemIndex)
+            } ?: return
+
+            if (system.energyLevels >= system.blueprint.maxPower) return
+            val price = system.blueprint.upgradeCost[system.energyLevels - 1]
+            if (ship.scrap < price) return
+
+            ship.scrap -= price
+            system.energyLevels++
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(12).putInt(TYPE_UPGRADE_SYSTEM)
+                .putInt(systemIndex).putInt(if (isSubsystem) 1 else 0).array()
+    }
+
+    /** Spend scrap to buy one more bar of reactor power. */
+    object UpgradeReactor : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            if (ship.purchasedReactorPower >= ship.maxReactorPower) return
+            val price = if (ship.purchasedReactorPower < 5) 30
+                        else (ship.purchasedReactorPower / 5) * 5 + 15
+            if (ship.scrap < price) return
+            ship.scrap -= price
+            ship.purchasedReactorPower++
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(4).putInt(TYPE_UPGRADE_REACTOR).array()
+    }
+
     /** Jump the ship to the beacon at [beaconIndex] within the current sector. */
     data class JumpToBeacon(val beaconIndex: Int) : Command() {
         override fun apply(game: InGameState) {
@@ -216,6 +289,10 @@ sealed class Command {
         private const val TYPE_TARGET_BEAM = 5
         private const val TYPE_SELECT_DIALOGUE = 6
         private const val TYPE_JUMP_TO_BEACON = 7
+        private const val TYPE_TOGGLE_PAUSE = 8
+        private const val TYPE_JUMP_TO_SECTOR = 9
+        private const val TYPE_UPGRADE_SYSTEM = 10
+        private const val TYPE_UPGRADE_REACTOR = 11
 
         // A sane upper bound on how many crew one command can move.
         private const val MAX_CREW = 1000
@@ -248,6 +325,14 @@ sealed class Command {
                     TYPE_SELECT_DIALOGUE -> SelectDialogueOption(buf.int)
 
                     TYPE_JUMP_TO_BEACON -> JumpToBeacon(buf.int)
+
+                    TYPE_TOGGLE_PAUSE -> TogglePause
+
+                    TYPE_JUMP_TO_SECTOR -> JumpToSector(buf.int, buf.int)
+
+                    TYPE_UPGRADE_SYSTEM -> UpgradeSystem(buf.int, buf.int != 0)
+
+                    TYPE_UPGRADE_REACTOR -> UpgradeReactor
 
                     else -> {
                         System.err.println("Co-op: ignoring unknown command type $type")

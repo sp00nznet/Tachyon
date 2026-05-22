@@ -189,6 +189,8 @@ public class InGameState extends MainGame.GameState {
         }
 
         difficulty = Difficulty.valueOf(root.getAttributeValue("difficulty"));
+        // The host's pause state travels in the snapshot, so the client shows it.
+        paused = Boolean.parseBoolean(root.getAttributeValue("paused"));
 
         isCurrentlyLoadingSave = true;
         loadGameState(root);
@@ -527,7 +529,7 @@ public class InGameState extends MainGame.GameState {
 
     private void dispatchHotkey(Hotkey key, Input in) {
         if (key.getId().equals(VanillaHotkeys.PAUSE))
-            paused = !paused;
+            submitCommand(Command.TogglePause.INSTANCE);
 
         boolean shiftPressed = in.isKeyDown(Input.KEY_LSHIFT);
         for (int i = 0; i < VanillaHotkeys.WEAPON_SLOTS.size(); i++) {
@@ -1008,6 +1010,7 @@ public class InGameState extends MainGame.GameState {
         Element root = new Element("xftlSaveGame");
         root.setAttribute("enableAE", Boolean.toString(enableAdvancedEdition));
         root.setAttribute("difficulty", difficulty.name());
+        root.setAttribute("paused", Boolean.toString(paused));
 
         ObjectRefs refs = new ObjectRefs();
         Sector sector = currentBeacon.getSector();
@@ -1334,6 +1337,11 @@ public class InGameState extends MainGame.GameState {
 
     public boolean isPaused() {
         return paused || shipUI.isWindowOpen();
+    }
+
+    /** Flip the explicit-pause flag - the co-op TogglePause command applies this. */
+    public void togglePaused() {
+        paused = !paused;
     }
 
     /**

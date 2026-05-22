@@ -4,6 +4,7 @@ import xyz.znix.xftl.*
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.net.Command
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -389,17 +390,20 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                         game.shipUI.playInsufficientScrapAnimation()
                         return
                     }
-                    ship.scrap -= price
 
-                    ship.purchasedReactorPower++
-
-                    // This is how the user can revert an upgrade
-                    reactorUpgradeUndo += {
-                        ship.scrap += price
-                        ship.purchasedReactorPower--
-                    }
-
+                    // The reactor upgrade goes through a co-op command, which
+                    // runs the actual scrap/power change on the host.
+                    game.submitCommand(Command.UpgradeReactor)
                     upgradeSystemSound.play()
+
+                    // Local undo tracking is host/single-player only - the
+                    // client doesn't keep its own staged-upgrade state.
+                    if (game.isSimulated) {
+                        reactorUpgradeUndo += {
+                            ship.scrap += price
+                            ship.purchasedReactorPower--
+                        }
+                    }
                 }
             }
         }
@@ -479,28 +483,39 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             if (button != Input.MOUSE_LEFT_BUTTON)
                 return
 
-            if (upgradePrice == null)
-                return
+            val price = upgradePrice ?: return
 
-            if (ship.scrap < upgradePrice) {
+            if (ship.scrap < price) {
                 game.shipUI.playInsufficientScrapAnimation()
                 return
             }
-            ship.scrap -= upgradePrice
 
-            system!!.energyLevels++
+            // Find this system's index in the host/client's shared list so
+            // the host applies the upgrade to the matching system.
+            val sys = system!!
+            val isSub = sys is SubSystem
+            val index = if (isSub) {
+                ship.rooms.mapNotNull { it.system as? SubSystem }
+                    .sortedBy { it.sortingType }.indexOf(sys)
+            } else {
+                ship.mainSystems.indexOf(sys)
+            }
+            if (index < 0) return
 
-            val undos = systemUpgradeUndos.getOrPut(system) { ArrayList() }
-            undos += {
-                system.energyLevels--
-                ship.scrap += upgradePrice
+            game.submitCommand(Command.UpgradeSystem(index, isSub))
+            upgradeSystemSound.play()
+
+            // Local undo tracking is host/single-player only.
+            if (game.isSimulated) {
+                val undos = systemUpgradeUndos.getOrPut(sys) { ArrayList() }
+                undos += {
+                    sys.energyLevels--
+                    ship.scrap += price
+                    updateButtons()
+                }
+                // Replace this button to reflect the upgrade.
                 updateButtons()
             }
-
-            // Replace this button to reflect the upgrade
-            updateButtons()
-
-            upgradeSystemSound.play()
         }
     }
 

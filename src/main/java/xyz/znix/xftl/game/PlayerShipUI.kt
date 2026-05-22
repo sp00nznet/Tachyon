@@ -1717,12 +1717,9 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (sectorInfo == null)
                 return@SectorMapWindow
 
-            val sector = game.gameMap.generateSector(sectorInfo, game)
-            game.currentBeacon = sector.startBeacon
-
-            // In case we were at a store
-            // TODO move this into an on-jump handler function
-            updateButtons()
+            // Route the next-sector jump through a co-op command; the host
+            // generates the new sector and warps in for both players.
+            game.submitCommand(Command.JumpToSector(sectorInfo.columnNumber, sectorInfo.columnIndex))
         }
     }
 

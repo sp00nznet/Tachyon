@@ -98,8 +98,9 @@ network. It is being built as a vertical slice; the current state:
   mutating the game directly. On the host (and in single-player) a command is applied
   at once; on the client it is sent to the host, which applies it and streams the
   result back. Doors, crew movement, system power, weapon arming, room- and
-  beam-weapon targeting, event choices and FTL jumps all go through this path, so a
-  client can fully fly the shared ship.
+  beam-weapon targeting, event choices, pause, system and reactor upgrades, beacon
+  jumps and next-sector jumps all go through this path, so a client can fully fly
+  the shared ship.
 - **Client UI state** — the client keeps its own crew selection, resource counters
   and open menus (jump map, ship overview, options) across snapshots, so its
   windows don't vanish when the game is rebuilt from the host's stream.
