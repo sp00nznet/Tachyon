@@ -172,7 +172,7 @@ class AboutWindow : DevWindow("About Tachyon", 440) {
  * A live view of the player ship - the dev menu's equivalent of a memory
  * searcher, but working on the game's own objects rather than raw memory.
  */
-class InspectorWindow : DevWindow("Game Inspector", 320) {
+class InspectorWindow : DevWindow("Ship Stats", 360) {
     override val contentHeight: Int
         get() {
             val game = menu.currentInGame() ?: return 38
@@ -224,7 +224,7 @@ class InspectorWindow : DevWindow("Game Inspector", 320) {
             val hp = "${crew.health.toInt()} / ${crew.maxHealth.toInt()}"
             ui.text(cx, ry, 20, name, DevUI.TEXT)
             ui.text(cx + 150, ry, 20, hp, DevUI.TEXT_DIM)
-            if (ui.button(cx + 210, ry, 86, 20, "Heal")) {
+            if (ui.button(cx + 250, ry, 86, 20, "Heal")) {
                 crew.health = crew.maxHealth
             }
             ry += 24
@@ -935,10 +935,10 @@ class MultiplayerWindow : DevWindow("Multiplayer", 390) {
 
         val hint = when {
             Multiplayer.state == Multiplayer.State.CONNECTED && !Multiplayer.hosting ->
-                "You share the host's ship - your clicks are sent to the host."
+                "You share the host's ship."
             Multiplayer.state == Multiplayer.State.CONNECTED ->
-                "Your game is streamed to the client about five times a second."
-            else -> "The host runs the game and streams it to the client."
+                "Your game is streamed to the connected client."
+            else -> "Host a game, or join one to share a ship."
         }
         ui.text(cx, cy + contentHeight - 38, 13, hint, DevUI.TEXT_DIM)
         ui.text(cx, cy + contentHeight - 22, 13,

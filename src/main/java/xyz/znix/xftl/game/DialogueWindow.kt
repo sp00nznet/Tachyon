@@ -7,6 +7,7 @@ import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.net.Command
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.savegame.ObjectRefs
@@ -728,7 +729,15 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         game.shipUI.showPauseWindow()
     }
 
+    /**
+     * Choose dialogue option [idx]. Routed through a co-op command so the
+     * host resolves the event for both players; [applyOption] does the work.
+     */
     fun selectOption(idx: Int) {
+        game.submitCommand(Command.SelectDialogueOption(idx))
+    }
+
+    fun applyOption(idx: Int) {
         // Pressing continue on a synthetic event closes it
         val syntheticEvent = syntheticEvents.firstOrNull()
         if (syntheticEvent != null) {

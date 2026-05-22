@@ -322,7 +322,7 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
             DropItem.action("Cheats...", enabled = inGame) { cheatsWindow.open = true },
             DropItem.action("Automation...") { automationWindow.open = true },
             DropItem.action("Outfitter...", enabled = inGame) { outfitterWindow.open = true },
-            DropItem.action("Game Inspector...") { inspectorWindow.open = true },
+            DropItem.action("Ship Stats...") { inspectorWindow.open = true },
             DropItem.action("Spawn Enemy Ship...", enabled = inGame) { spawnShipWindow.open = true },
             DropItem.action("Load Event...", enabled = inGame) { eventPickerWindow.open = true },
             DropItem.action("Tuning...") { tuningWindow.open = true },

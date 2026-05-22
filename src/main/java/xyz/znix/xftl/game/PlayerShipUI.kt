@@ -1978,6 +1978,11 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         currentWindow = GameOverWindow(game, outcome)
     }
 
+    /** Host side: resolve a dialogue option a co-op player chose. */
+    fun applyDialogueOption(index: Int) {
+        (currentWindow as? DialogueWindow)?.applyOption(index)
+    }
+
     fun getCurrentCursor(): Cursor {
         // Use the hacking/teleport/mind control cursor
         (game.clickEvent as? RoomClickCursor)?.getCursor()?.let { return it }

@@ -190,24 +190,25 @@ public class MainGame implements Game {
                 mpTestTimer = 0f;
                 InGameState state = (InGameState) currentState;
                 var player = state.getPlayer();
-                switch (mpTestCounter % 4) {
+                switch (mpTestCounter % 5) {
                     case 0 -> state.submitCommand(new Command.ToggleDoor(mpTestCounter));
                     case 1 -> {
                         if (player != null && !player.getCrew().isEmpty()
                                 && !player.getRooms().isEmpty()) {
                             int roomId = player.getRooms()
-                                    .get((mpTestCounter / 4) % player.getRooms().size()).getId();
+                                    .get((mpTestCounter / 5) % player.getRooms().size()).getId();
                             state.submitCommand(new Command.MoveCrew(java.util.List.of(0), roomId));
                         }
                     }
                     case 2 -> {
                         if (player != null && !player.getMainSystems().isEmpty())
-                            state.submitCommand(new Command.SetSystemPower(0, mpTestCounter % 8 == 2));
+                            state.submitCommand(new Command.SetSystemPower(0, mpTestCounter % 10 == 2));
                     }
                     case 3 -> {
                         if (player != null && !player.getHardpoints().isEmpty())
-                            state.submitCommand(new Command.SetWeaponArmed(0, mpTestCounter % 8 == 3));
+                            state.submitCommand(new Command.SetWeaponArmed(0, mpTestCounter % 10 == 3));
                     }
+                    case 4 -> state.submitCommand(new Command.SelectDialogueOption(0));
                 }
                 mpTestCounter++;
             }

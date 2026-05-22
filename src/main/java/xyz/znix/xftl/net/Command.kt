@@ -172,6 +172,16 @@ sealed class Command {
                 .array()
     }
 
+    /** Choose option [optionIndex] in the currently-open event dialogue. */
+    data class SelectDialogueOption(val optionIndex: Int) : Command() {
+        override fun apply(game: InGameState) {
+            game.shipUI?.applyDialogueOption(optionIndex)
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(8).putInt(TYPE_SELECT_DIALOGUE).putInt(optionIndex).array()
+    }
+
     companion object {
         private const val TYPE_TOGGLE_DOOR = 0
         private const val TYPE_MOVE_CREW = 1
@@ -179,6 +189,7 @@ sealed class Command {
         private const val TYPE_SET_WEAPON_ARMED = 3
         private const val TYPE_TARGET_WEAPON = 4
         private const val TYPE_TARGET_BEAM = 5
+        private const val TYPE_SELECT_DIALOGUE = 6
 
         // A sane upper bound on how many crew one command can move.
         private const val MAX_CREW = 1000
@@ -207,6 +218,8 @@ sealed class Command {
 
                     TYPE_TARGET_BEAM ->
                         TargetBeam(buf.int, buf.int != 0, buf.int, buf.int, buf.float)
+
+                    TYPE_SELECT_DIALOGUE -> SelectDialogueOption(buf.int)
 
                     else -> {
                         System.err.println("Co-op: ignoring unknown command type $type")
