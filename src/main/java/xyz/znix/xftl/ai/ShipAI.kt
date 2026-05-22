@@ -21,6 +21,13 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
     private var hadFirstUpdate = !ship.sys.isCurrentlyLoadingSave
 
+    /**
+     * Which parts of the AI run. Enemy ships use both; the player autopilot
+     * sets these from its partial-autopilot toggles.
+     */
+    var doWeapons = true
+    var doSystems = true
+
     fun update(dt: Float) {
         // If the ship is dying, don't do anything.
         if (ship.isDead)
@@ -32,7 +39,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
             // Immediately turn the ship's shields on, so the player can't get a sneaky shot in
             // FIXME do this properly
             val shields = ship.shields
-            if (shields != null) {
+            if (doSystems && shields != null) {
                 for (i in 1..shields.energyLevels) {
                     shields.increasePower()
                     shields.update(10f) // Horrible hack
@@ -40,24 +47,30 @@ class ShipAI(val ship: Ship, val player: Ship) {
             }
         }
 
-        // Power up all the systems
-        for (sys in ship.mainSystems) {
-            for (i in 1..sys.energyLevels) sys.increasePower()
+        if (doSystems) {
+            // Power up all the systems
+            for (sys in ship.mainSystems) {
+                for (i in 1..sys.energyLevels) sys.increasePower()
+            }
         }
 
-        updateWeapons()
-        updateDrones()
+        if (doWeapons) {
+            updateWeapons()
+            updateDrones()
+        }
 
-        // Constantly try to trigger cloaking, it'll be ignored
-        // whenever it's unavailable.
-        ship.cloaking?.activateCloak()
+        if (doSystems) {
+            // Constantly try to trigger cloaking, it'll be ignored
+            // whenever it's unavailable.
+            ship.cloaking?.activateCloak()
 
-        // Same for the backup battery.
-        ship.backupBattery?.startBattery()
+            // Same for the backup battery.
+            ship.backupBattery?.startBattery()
 
-        updateHacking()
+            updateHacking()
 
-        updateMindControl()
+            updateMindControl()
+        }
 
         // Check if we need to escape or surrender. Only ships with a spec
         // (AI enemy ships) do this - the player ship under autopilot can't.

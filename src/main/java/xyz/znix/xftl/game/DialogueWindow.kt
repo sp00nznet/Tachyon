@@ -771,6 +771,25 @@ class DialogueWindow private constructor(val game: InGameState, val playerShip: 
         loadEvent(choice)
     }
 
+    /**
+     * Auto-pick an option, for the dev-menu auto-resolve. Chooses the last
+     * selectable option, which for most events is the safe "continue / leave".
+     */
+    fun autoResolve() {
+        if (syntheticEvents.isNotEmpty()) {
+            selectOption(0)
+            return
+        }
+        if (!::options.isInitialized)
+            return
+        for (idx in options.indices.reversed()) {
+            if (isConditionsSatisfied(options[idx])) {
+                selectOption(idx)
+                return
+            }
+        }
+    }
+
     fun addSyntheticEvent(syntheticEvent: SyntheticEvent) {
         syntheticEvents.add(syntheticEvent)
 

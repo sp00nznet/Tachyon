@@ -65,6 +65,9 @@ public class InGameState extends MainGame.GameState {
     private ShipAI playerAutopilot;
     private Ship playerAutopilotTarget;
 
+    // Countdown before arena mode spawns the next enemy.
+    private float arenaSpawnTimer = 1.5f;
+
     private LootPool lootPool;
 
     private SILFontLoader pauseFont;
@@ -621,11 +624,24 @@ public class InGameState extends MainGame.GameState {
             shipUI.update();
 
         // Autopilot - let the engine's crew AI command the player's crew too.
-        player.getCrewAI().setControlPlayerCrew(xyz.znix.xftl.DevSettings.INSTANCE.getAutopilot());
+        player.getCrewAI().setControlPlayerCrew(xyz.znix.xftl.DevSettings.INSTANCE.autoCrewActive());
 
         player.update(dt);
 
         updatePlayerCrew();
+
+        // Arena mode - keep a fresh enemy spawned for endless AI battles.
+        if (xyz.znix.xftl.DevSettings.INSTANCE.getArenaMode()) {
+            if (enemy != null) {
+                arenaSpawnTimer = 1.5f;
+            } else {
+                arenaSpawnTimer -= dt;
+                if (arenaSpawnTimer <= 0f) {
+                    arenaSpawnTimer = 1.5f;
+                    arenaSpawnEnemy();
+                }
+            }
+        }
 
         if (enemy != null) {
             enemy.update(dt);
@@ -642,11 +658,14 @@ public class InGameState extends MainGame.GameState {
 
             // Autopilot - run the ship AI on the player ship as well, so it
             // fires weapons, hacks, mind-controls and deploys drones.
-            if (xyz.znix.xftl.DevSettings.INSTANCE.getAutopilot() && !enemy.isGone()) {
+            xyz.znix.xftl.DevSettings dev = xyz.znix.xftl.DevSettings.INSTANCE;
+            if ((dev.autoWeaponsActive() || dev.autoSystemsActive()) && !enemy.isGone()) {
                 if (playerAutopilot == null || playerAutopilotTarget != enemy) {
                     playerAutopilot = new ShipAI(player, enemy);
                     playerAutopilotTarget = enemy;
                 }
+                playerAutopilot.setDoWeapons(dev.autoWeaponsActive());
+                playerAutopilot.setDoSystems(dev.autoSystemsActive());
                 playerAutopilot.update(dt);
             }
 
@@ -1766,6 +1785,11 @@ public class InGameState extends MainGame.GameState {
 
         this.enemyIsHostile = enemyIsHostile;
 
+        // Auto-pause when combat starts against a hostile ship.
+        if (enemyIsHostile && enemy != null && xyz.znix.xftl.DevSettings.INSTANCE.getAutoPause()) {
+            paused = true;
+        }
+
         if (player != null)
             player.enemyShipUpdated();
 
@@ -1788,6 +1812,33 @@ public class InGameState extends MainGame.GameState {
         if (shipUI != null) {
             shipUI.showEventDialogue(event, seed);
         }
+
+        // Auto-pause when an event dialogue appears.
+        if (xyz.znix.xftl.DevSettings.INSTANCE.getAutoPause()) {
+            paused = true;
+        }
+    }
+
+    /** Set whether the game is paused (used by the dev-menu auto-pause). */
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
+    /** Repair the player ship and spawn a fresh enemy, for arena mode. */
+    private void arenaSpawnEnemy() {
+        java.util.List<EnemyShipSpec> ships = new java.util.ArrayList<>(eventManager.getShips());
+        if (ships.isEmpty())
+            return;
+
+        // Repair the player ship so the arena can keep going.
+        player.setHealth(player.getMaxHealth());
+        for (var sys : player.getSystems()) {
+            sys.setDamagedEnergyLevels(0);
+        }
+
+        EnemyShipSpec spec = ships.get(Random.Default.nextInt(ships.size()));
+        debugSpawnShip(spec, difficulty, currentBeacon.getSector().getSectorNumber(),
+                Random.Default.nextInt());
     }
 
     public boolean isPlayerCrewFull() {

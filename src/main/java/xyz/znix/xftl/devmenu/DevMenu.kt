@@ -44,8 +44,9 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
     private val spawnShipWindow = SpawnShipWindow()
     private val eventPickerWindow = EventPickerWindow()
     private val modsWindow = ModsWindow()
+    private val automationWindow = AutomationWindow()
     private val windows = listOf(
-        cheatsWindow, inspectorWindow, outfitterWindow, tuningWindow,
+        cheatsWindow, automationWindow, inspectorWindow, outfitterWindow, tuningWindow,
         spawnShipWindow, eventPickerWindow, modsWindow, loadWindow, audioWindow, aboutWindow
     )
 
@@ -316,6 +317,7 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
 
         return listOf(
             DropItem.action("Cheats...", enabled = inGame) { cheatsWindow.open = true },
+            DropItem.action("Automation...") { automationWindow.open = true },
             DropItem.action("Outfitter...", enabled = inGame) { outfitterWindow.open = true },
             DropItem.action("Game Inspector...") { inspectorWindow.open = true },
             DropItem.action("Spawn Enemy Ship...", enabled = inGame) { spawnShipWindow.open = true },

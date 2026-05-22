@@ -504,6 +504,34 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             anim.update(dt)
         }
         resourceDeltaAnimations.removeIf { it.finished }
+
+        // Dev-menu automation.
+        if (DevSettings.autoResolveEvents)
+            (currentWindow as? DialogueWindow)?.autoResolve()
+        if (DevSettings.autoJump && !game.isPaused)
+            autoJump()
+    }
+
+    /** Jump to a neighbouring beacon automatically, for the dev-menu auto-jump. */
+    private fun autoJump() {
+        if (currentWindow != null)
+            return
+        if (game.enemy != null || game.isInDanger)
+            return
+        if (!ship.isFtlReady || !ship.canChargeFTL)
+            return
+        if (ship.fuelCount <= 0)
+            return
+
+        // Prefer an unexplored neighbour, otherwise any neighbour.
+        val target = game.currentBeacon.neighbours.filter { !it.visited }.randomOrNull()
+            ?: game.currentBeacon.neighbours.randomOrNull()
+            ?: return
+
+        ship.fuelCount--
+        game.advanceFleet()
+        game.currentBeacon = target
+        storeAlreadyOpened = false
     }
 
     fun render(gc: GameContainer, g: Graphics) {

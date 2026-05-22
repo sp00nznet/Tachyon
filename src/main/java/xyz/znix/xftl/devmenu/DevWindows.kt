@@ -477,7 +477,7 @@ class OutfitterWindow : DevWindow("Outfitter", 380) {
  * Cheats, with per-side (player / enemy) toggles plus one-shot actions.
  */
 class CheatsWindow : DevWindow("Cheats", 340) {
-    override val contentHeight = 364
+    override val contentHeight = 340
 
     /** A 16px toggle box; returns true on the frame it's clicked. */
     private fun cell(ui: DevUI, x: Int, rowY: Int, checked: Boolean): Boolean {
@@ -524,11 +524,6 @@ class CheatsWindow : DevWindow("Cheats", 340) {
 
         ui.fill(cx, ry + 2, width - 24, 1, DevUI.SEPARATOR)
         ry += 12
-
-        // Autopilot - the engine's AI plays the player ship.
-        if (ui.checkbox(cx, ry, width - 24, 20, "Autopilot - auto-fight combat", DevSettings.autopilot))
-            DevSettings.autopilot = !DevSettings.autopilot
-        ry += 24
 
         // Single toggles that only make sense one way
         val singles = listOf(
@@ -841,5 +836,45 @@ class ModsWindow : DevWindow("Mods", 430) {
             }
         }
         ui.text(cx, footY + 28, 14, "Restart the game to apply mod changes.", DevUI.TEXT_DIM)
+    }
+}
+
+/** Toggles for the combat autopilot and the various automation helpers. */
+class AutomationWindow : DevWindow("Automation", 330) {
+    private class Toggle(val label: String, val get: () -> Boolean, val set: (Boolean) -> Unit)
+
+    override val contentHeight = 20 + 3 * 22 + 14 + 4 * 22 + 8
+
+    private fun row(ui: DevUI, cx: Int, ry: Int, t: Toggle) {
+        if (ui.checkbox(cx, ry, width - 24, 20, t.label, t.get()))
+            t.set(!t.get())
+    }
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        var ry = cy
+        ui.text(cx, ry, 18, "Autopilot - the engine's AI plays for you", DevUI.TEXT_DIM)
+        ry += 20
+
+        for (t in listOf(
+            Toggle("Auto Weapons", { DevSettings.autoWeapons }, { DevSettings.autoWeapons = it }),
+            Toggle("Auto Crew", { DevSettings.autoCrew }, { DevSettings.autoCrew = it }),
+            Toggle("Auto Systems", { DevSettings.autoSystems }, { DevSettings.autoSystems = it }),
+        )) {
+            row(ui, cx, ry, t)
+            ry += 22
+        }
+
+        ui.fill(cx, ry + 2, width - 24, 1, DevUI.SEPARATOR)
+        ry += 14
+
+        for (t in listOf(
+            Toggle("Auto-Pause on combat / events", { DevSettings.autoPause }, { DevSettings.autoPause = it }),
+            Toggle("Auto-Resolve Events", { DevSettings.autoResolveEvents }, { DevSettings.autoResolveEvents = it }),
+            Toggle("Auto-Jump when safe", { DevSettings.autoJump }, { DevSettings.autoJump = it }),
+            Toggle("Arena Mode - endless AI battles", { DevSettings.arenaMode }, { DevSettings.arenaMode = it }),
+        )) {
+            row(ui, cx, ry, t)
+            ry += 22
+        }
     }
 }
