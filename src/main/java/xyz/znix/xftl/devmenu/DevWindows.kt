@@ -664,3 +664,57 @@ class SpawnShipWindow : DevWindow("Spawn Enemy Ship", 380) {
         ui.text(cx, cy + rowsShown * 20 + 4, 14, "${specs.size} ship types", DevUI.TEXT_DIM)
     }
 }
+
+/** Load any event onto the current beacon. */
+class EventPickerWindow : DevWindow("Load Event", 430) {
+    private var names: List<String> = emptyList()
+    private var scroll = 0
+    private val rowsShown = 13
+
+    override val contentHeight = rowsShown * 20 + 24
+
+    override fun onShown() {
+        names = menu.currentInGame()?.eventManager?.eventNames?.sorted() ?: emptyList()
+        scroll = 0
+    }
+
+    override fun onScroll(change: Int) {
+        scroll -= change / 40
+    }
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        val game = menu.currentInGame()
+        if (game == null) {
+            ui.text(cx, cy, 18, "Start a game first.", DevUI.TEXT_DIM)
+            return
+        }
+        if (names.isEmpty())
+            onShown()
+
+        val rowW = width - 24
+        val maxScroll = (names.size - rowsShown).coerceAtLeast(0)
+        scroll = scroll.coerceIn(0, maxScroll)
+
+        for (i in scroll until minOf(names.size, scroll + rowsShown)) {
+            val name = names[i]
+            val ry = cy + (i - scroll) * 20
+            val hot = ui.hovered(cx, ry, rowW, 19)
+            ui.fill(cx, ry, rowW, 19, if (hot) DevUI.HOVER_BG else DevUI.CONTROL_BG)
+            ui.outline(cx, ry, rowW, 19, DevUI.BORDER)
+            ui.text(cx + 8, ry, 19, name, DevUI.TEXT)
+            if (ui.pressedIn(cx, ry, rowW, 19)) {
+                ui.consumePress()
+                try {
+                    DevActions.loadEvent(game, name)
+                    menu.setStatus("Loaded event $name")
+                    open = false
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    menu.setStatus("Failed to load $name - see the log")
+                }
+            }
+        }
+
+        ui.text(cx, cy + rowsShown * 20 + 4, 14, "${names.size} events - scroll for more", DevUI.TEXT_DIM)
+    }
+}

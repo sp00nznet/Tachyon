@@ -53,6 +53,16 @@ object DevActions {
         }
     }
 
+    /** Replace the current beacon's event with the named one and show it. */
+    fun loadEvent(game: InGameState, eventName: String) {
+        val beacon = game.currentBeacon
+        beacon.powerLimitEffects.clear()
+        beacon.event = game.eventManager[eventName].resolve()
+        beacon.clearEnvironment()
+        game.player.updateScriptedPowerLimits()
+        game.shipUI.showEventDialogue(beacon.event, kotlin.random.Random.Default.nextInt())
+    }
+
     /** Set every skill of every player crew member to maximum. */
     fun maxCrewSkills(game: InGameState) {
         for (crew in game.player.crew) {
