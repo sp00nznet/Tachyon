@@ -97,6 +97,53 @@ class DebugFlagManager {
         "Ships (most importantly enemy ships) have infinite drones."
     )
 
+    // Enemy-side versions of the side-able cheats above. The dev menu's
+    // Cheats window toggles the player and enemy versions independently.
+    val noDmgEnemy = DebugFlag(
+        "nodmg-e", "Enemy Invincible", false,
+        "The enemy ship doesn't take damage"
+    )
+
+    val noCrewDamageEnemy = DebugFlag(
+        "nocd-e", "Enemy Crew Invincible", false,
+        "Enemy crew don't take damage"
+    )
+
+    val fastWeaponChargeEnemy = DebugFlag(
+        "fwc-e", "Enemy Fast Weapons", false,
+        "Enemy weapons charge much faster"
+    )
+
+    val infiniteMissilesEnemy = DebugFlag(
+        "infm-e", "Enemy Infinite Missiles", false,
+        "The enemy ship never runs out of missiles"
+    )
+
+    val infiniteDronesEnemy = DebugFlag(
+        "infd-e", "Enemy Infinite Drones", false,
+        "The enemy ship never runs out of drone parts"
+    )
+
+    /** True if the given ship (player or enemy) shouldn't take hull/system damage. */
+    fun isShipInvincible(playerShip: Boolean) =
+        if (playerShip) noDmg.set else noDmgEnemy.set
+
+    /** True if the given side's crew shouldn't take damage. */
+    fun isCrewInvincible(playerOwned: Boolean) =
+        if (playerOwned) noCrewDamage.set else noCrewDamageEnemy.set
+
+    /** True if the given ship's weapons should charge faster. */
+    fun hasFastWeapons(playerShip: Boolean) =
+        if (playerShip) fastWeaponCharge.set else fastWeaponChargeEnemy.set
+
+    /** True if the given ship should never consume missiles. */
+    fun hasInfiniteMissiles(playerShip: Boolean) =
+        if (playerShip) infiniteMissiles.set else infiniteMissilesEnemy.set
+
+    /** True if the given ship should never consume drone parts. */
+    fun hasInfiniteDrones(playerShip: Boolean) =
+        if (playerShip) infiniteDrones.set else infiniteDronesEnemy.set
+
     val all = listOf(
         showProjectileHitboxes,
         showHardpoints,
@@ -116,7 +163,12 @@ class DebugFlagManager {
         anyJump,
         noTeleportLimit,
         infiniteMissiles,
-        infiniteDrones
+        infiniteDrones,
+        noDmgEnemy,
+        noCrewDamageEnemy,
+        fastWeaponChargeEnemy,
+        infiniteMissilesEnemy,
+        infiniteDronesEnemy
     )
 
     class DebugFlag(val shortName: String, val fullName: String, val isVisual: Boolean, val description: String) {

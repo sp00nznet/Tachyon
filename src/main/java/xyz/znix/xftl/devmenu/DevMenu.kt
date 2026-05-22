@@ -39,7 +39,10 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
     private val inspectorWindow = InspectorWindow()
     private val loadWindow = LoadGameWindow()
     private val outfitterWindow = OutfitterWindow()
-    private val windows = listOf(inspectorWindow, outfitterWindow, loadWindow, audioWindow, aboutWindow)
+    private val cheatsWindow = CheatsWindow()
+    private val windows = listOf(
+        cheatsWindow, inspectorWindow, outfitterWindow, loadWindow, audioWindow, aboutWindow
+    )
 
     // ---- menu bar state ----
     private var openMenu: String? = null
@@ -303,69 +306,20 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
 
     private fun debugMenu(): List<DropItem> {
         val game = currentInGame()
-        val flags = game?.debugFlags
         val inGame = game != null
 
-        val items = ArrayList<DropItem>()
-        if (flags != null) {
-            items += DropItem.toggle("Ship Invincible", flags.noDmg.set) { flags.noDmg.set = !flags.noDmg.set }
-            items += DropItem.toggle("Crew Invincible", flags.noCrewDamage.set) {
-                flags.noCrewDamage.set = !flags.noCrewDamage.set
-            }
-            items += DropItem.toggle("Infinite Missiles", flags.infiniteMissiles.set) {
-                flags.infiniteMissiles.set = !flags.infiniteMissiles.set
-            }
-            items += DropItem.toggle("Infinite Drones", flags.infiniteDrones.set) {
-                flags.infiniteDrones.set = !flags.infiniteDrones.set
-            }
-            items += DropItem.toggle("Fast Weapon Charge", flags.fastWeaponCharge.set) {
-                flags.fastWeaponCharge.set = !flags.fastWeaponCharge.set
-            }
-            items += DropItem.toggle("No Enemy Weapons", flags.noEnemyFire.set) {
-                flags.noEnemyFire.set = !flags.noEnemyFire.set
-            }
-            items += DropItem.toggle("Jump Anywhere", flags.anyJump.set) {
-                flags.anyJump.set = !flags.anyJump.set
-            }
-            items += DropItem.toggle("Reveal Map - Full Sensors", flags.showEverything.set) {
-                flags.showEverything.set = !flags.showEverything.set
-            }
-        } else {
-            for (label in DISABLED_FLAG_LABELS)
-                items += DropItem.toggle(label, false, enabled = false) {}
-        }
-
-        items += DropItem.separator()
-        items += DropItem.action("Repair Player Ship", enabled = inGame) {
-            DevActions.repairPlayerShip(game!!)
-            setStatus("Player ship repaired")
-        }
-        items += DropItem.action("Max Resources", enabled = inGame) {
-            DevActions.maxResources(game!!)
-            setStatus("Resources maxed out")
-        }
-        items += DropItem.action("Upgrade All Systems", enabled = inGame) {
-            DevActions.upgradeAllSystems(game!!)
-            setStatus("All systems upgraded")
-        }
-        items += DropItem.action("Heal All Crew", enabled = inGame) {
-            DevActions.healAllCrew(game!!)
-            setStatus("All crew healed")
-        }
-        items += DropItem.action("Destroy Enemy Ship", enabled = inGame && game?.enemy != null) {
-            DevActions.destroyEnemyShip(game!!)
-            setStatus("Enemy ship destroyed")
-        }
-        items += DropItem.separator()
-        items += DropItem.action("End Run - Victory", enabled = inGame) {
-            game!!.shipUI.showGameOverScreen(GameOverWindow.Outcome.WIN)
-        }
-        items += DropItem.action("End Run - Defeat", enabled = inGame) {
-            game!!.shipUI.showGameOverScreen(GameOverWindow.Outcome.LOOSE_HULL)
-        }
-        items += DropItem.action("Outfitter...", enabled = inGame) { outfitterWindow.open = true }
-        items += DropItem.action("Game Inspector...") { inspectorWindow.open = true }
-        return items
+        return listOf(
+            DropItem.action("Cheats...", enabled = inGame) { cheatsWindow.open = true },
+            DropItem.action("Outfitter...", enabled = inGame) { outfitterWindow.open = true },
+            DropItem.action("Game Inspector...") { inspectorWindow.open = true },
+            DropItem.separator(),
+            DropItem.action("End Run - Victory", enabled = inGame) {
+                game!!.shipUI.showGameOverScreen(GameOverWindow.Outcome.WIN)
+            },
+            DropItem.action("End Run - Defeat", enabled = inGame) {
+                game!!.shipUI.showGameOverScreen(GameOverWindow.Outcome.LOOSE_HULL)
+            },
+        )
     }
 
     // ---- InputOverlay ----
@@ -423,12 +377,6 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
 
         /** Total logical canvas height: the game's 720 plus the menu bar. */
         const val CANVAS_HEIGHT = 720 + BAR_HEIGHT
-
-        private val DISABLED_FLAG_LABELS = listOf(
-            "Ship Invincible", "Crew Invincible", "Infinite Missiles",
-            "Infinite Drones", "Fast Weapon Charge", "No Enemy Weapons",
-            "Jump Anywhere", "Reveal Map - Full Sensors"
-        )
     }
 }
 

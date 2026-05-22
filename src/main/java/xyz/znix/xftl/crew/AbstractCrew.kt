@@ -757,9 +757,9 @@ abstract class AbstractCrew(
     protected open val isOwnedByPlayer: Boolean get() = false
 
     open fun dealDamage(damage: AbstractCrewDamage) {
-        // The Crew Invincible cheat only protects the player's own crew,
-        // not enemy crew or boarders.
-        if (game.debugFlags.noCrewDamage.set && isOwnedByPlayer)
+        // The Crew Invincible cheat is toggled per side - the owning ship
+        // decides whether this crew member is protected.
+        if (game.debugFlags.isCrewInvincible(isOwnedByPlayer))
             return
 
         // If we're currently playing the dying animation, nothing can stop it.

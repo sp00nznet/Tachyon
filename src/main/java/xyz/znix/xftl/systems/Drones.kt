@@ -135,7 +135,7 @@ class Drones(blueprint: SystemBlueprint) : MainSystem(blueprint) {
                 }
 
                 // Consume a drone part.
-                if (!ship.sys.debugFlags.infiniteDrones.set) {
+                if (!ship.sys.debugFlags.hasInfiniteDrones(ship.isPlayerShip)) {
                     if (ship.dronesCount <= 0)
                         return
                     ship.dronesCount--

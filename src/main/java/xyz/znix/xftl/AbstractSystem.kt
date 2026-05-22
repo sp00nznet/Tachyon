@@ -303,8 +303,8 @@ abstract class AbstractSystem(val blueprint: SystemBlueprint) {
         // This bar of the system is broken.
         // Don't use ship.damage, as that'd spawn a damage popup number which
         // we don't want unless the system is fully broken.
-        // The No Damage cheat only protects the player's ship.
-        if (!(ship.sys.debugFlags.noDmg.set && ship.isPlayerShip)) {
+        // The invincibility cheat is toggled per side (player / enemy).
+        if (!ship.sys.debugFlags.isShipInvincible(ship.isPlayerShip)) {
             dealDamage(1, 0)
         }
 

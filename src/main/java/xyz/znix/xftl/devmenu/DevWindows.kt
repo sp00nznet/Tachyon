@@ -436,3 +436,111 @@ class OutfitterWindow : DevWindow("Outfitter", 380) {
         ui.text(cx, footY, 14, "${entries.size} available", DevUI.TEXT_DIM)
     }
 }
+
+/**
+ * Cheats, with per-side (player / enemy) toggles plus one-shot actions.
+ */
+class CheatsWindow : DevWindow("Cheats", 340) {
+    override val contentHeight = 340
+
+    /** A 16px toggle box; returns true on the frame it's clicked. */
+    private fun cell(ui: DevUI, x: Int, rowY: Int, checked: Boolean): Boolean {
+        ui.fill(x, rowY + 2, 16, 16, if (checked) DevUI.ACCENT else DevUI.CONTROL_BG)
+        ui.outline(x, rowY + 2, 16, 16, DevUI.BORDER)
+        if (ui.pressedIn(x - 6, rowY, 28, 22)) {
+            ui.consumePress()
+            return true
+        }
+        return false
+    }
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        val game = menu.currentInGame()
+        if (game == null) {
+            ui.text(cx, cy, 18, "Start a game to use cheats.", DevUI.TEXT_DIM)
+            return
+        }
+
+        val f = game.debugFlags
+        val youX = cx + 210
+        val enemyX = cx + 272
+        var ry = cy
+
+        // Column headers
+        ui.text(youX - 6, ry, 18, "You", DevUI.TEXT_DIM)
+        ui.text(enemyX - 10, ry, 18, "Enemy", DevUI.TEXT_DIM)
+        ry += 20
+
+        // Per-side toggles
+        val rows = listOf(
+            Triple("Ship Invincible", f.noDmg, f.noDmgEnemy),
+            Triple("Crew Invincible", f.noCrewDamage, f.noCrewDamageEnemy),
+            Triple("Fast Weapons", f.fastWeaponCharge, f.fastWeaponChargeEnemy),
+            Triple("Infinite Missiles", f.infiniteMissiles, f.infiniteMissilesEnemy),
+            Triple("Infinite Drones", f.infiniteDrones, f.infiniteDronesEnemy),
+        )
+        for ((label, playerFlag, enemyFlag) in rows) {
+            ui.text(cx, ry, 20, label, DevUI.TEXT)
+            if (cell(ui, youX, ry, playerFlag.set)) playerFlag.set = !playerFlag.set
+            if (cell(ui, enemyX, ry, enemyFlag.set)) enemyFlag.set = !enemyFlag.set
+            ry += 24
+        }
+
+        ui.fill(cx, ry + 2, width - 24, 1, DevUI.SEPARATOR)
+        ry += 12
+
+        // Single toggles that only make sense one way
+        val singles = listOf(
+            "Reveal Map" to f.showEverything,
+            "Jump Anywhere" to f.anyJump,
+            "No Enemy Weapons" to f.noEnemyFire,
+        )
+        for ((label, flag) in singles) {
+            if (ui.checkbox(cx, ry, width - 24, 20, label, flag.set))
+                flag.set = !flag.set
+            ry += 22
+        }
+
+        ui.fill(cx, ry + 2, width - 24, 1, DevUI.SEPARATOR)
+        ry += 12
+
+        // One-shot actions
+        val bw = (width - 24 - 8) / 2
+        val hasEnemy = game.enemy != null
+
+        if (ui.button(cx, ry, bw, 22, "Repair Your Ship")) {
+            DevActions.repairPlayerShip(game)
+            menu.setStatus("Your ship repaired")
+        }
+        if (ui.button(cx + bw + 8, ry, bw, 22, "Repair Enemy", hasEnemy)) {
+            DevActions.repairEnemyShip(game)
+            menu.setStatus("Enemy ship repaired")
+        }
+        ry += 26
+
+        if (ui.button(cx, ry, bw, 22, "Heal Your Crew")) {
+            DevActions.healAllCrew(game)
+            menu.setStatus("Your crew healed")
+        }
+        if (ui.button(cx + bw + 8, ry, bw, 22, "Heal Enemy Crew", hasEnemy)) {
+            DevActions.healEnemyCrew(game)
+            menu.setStatus("Enemy crew healed")
+        }
+        ry += 26
+
+        if (ui.button(cx, ry, bw, 22, "Max Resources")) {
+            DevActions.maxResources(game)
+            menu.setStatus("Resources maxed out")
+        }
+        if (ui.button(cx + bw + 8, ry, bw, 22, "Upgrade Systems")) {
+            DevActions.upgradeAllSystems(game)
+            menu.setStatus("All systems upgraded")
+        }
+        ry += 26
+
+        if (ui.button(cx, ry, width - 24, 22, "Destroy Enemy Ship", hasEnemy)) {
+            DevActions.destroyEnemyShip(game)
+            menu.setStatus("Enemy ship destroyed")
+        }
+    }
+}

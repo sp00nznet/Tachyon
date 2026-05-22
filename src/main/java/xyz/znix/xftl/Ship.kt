@@ -1111,8 +1111,8 @@ class Ship(
         showDamageText(target, hullDamage, damage.effectiveSysDamage, damage.ionDamage, textPos)
         crewWeaponDamage(target, damage.effectiveCrewDamage.f, damage)
 
-        // The No Damage cheat only protects the player's ship.
-        if (sys.debugFlags.noDmg.set && isPlayerShip)
+        // The invincibility cheat is toggled per side (player / enemy).
+        if (sys.debugFlags.isShipInvincible(isPlayerShip))
             return
 
         health -= hullDamage

@@ -21,9 +21,8 @@ import java.util.stream.Collectors
  * format as the debug console's `save` command, so the two are interchangeable.
  */
 object DevActions {
-    /** Repair the player ship's hull, systems, ion damage, fires and breaches. */
-    fun repairPlayerShip(game: InGameState) {
-        val ship = game.player
+    /** Repair a ship's hull, systems, ion damage, fires and breaches. */
+    private fun repairShip(ship: xyz.znix.xftl.Ship) {
         for (system in ship.systems) {
             system.damagedEnergyLevels = 0
             system.ionTimer = 0f
@@ -37,6 +36,21 @@ object DevActions {
             }
         }
         ship.health = ship.maxHealth
+    }
+
+    /** Fully repair the player ship. */
+    fun repairPlayerShip(game: InGameState) = repairShip(game.player)
+
+    /** Fully repair the enemy ship, if there is one. */
+    fun repairEnemyShip(game: InGameState) {
+        game.enemy?.let { repairShip(it) }
+    }
+
+    /** Restore every crew member on the enemy ship to full health. */
+    fun healEnemyCrew(game: InGameState) {
+        for (crew in game.enemy?.crew ?: return) {
+            crew.health = crew.maxHealth
+        }
     }
 
     /** Fill the player ship with scrap, fuel, missiles and drone parts. */

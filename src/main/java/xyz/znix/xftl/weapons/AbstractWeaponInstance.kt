@@ -128,7 +128,7 @@ abstract class AbstractWeaponInstance(val type: AbstractWeaponBlueprint, val shi
         // Deduct a missile (or multiple), if this weapon uses them
         // This really shouldn't be going negative here, but guard
         // it just in case.
-        if (!ship.sys.debugFlags.infiniteMissiles.set) {
+        if (!ship.sys.debugFlags.hasInfiniteMissiles(ship.isPlayerShip)) {
             ship.missilesCount = max(0, ship.missilesCount - type.missilesUsed)
         }
     }
