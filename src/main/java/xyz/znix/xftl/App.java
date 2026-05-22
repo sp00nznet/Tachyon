@@ -16,6 +16,10 @@ public class App {
                 cla.newGameShip = args[++i];
             } else if (arg.equals("--load-debug-save")) {
                 cla.debugLoad = args[++i];
+            } else if (arg.equals("--mp-host")) {
+                cla.mpHost = true;
+            } else if (arg.equals("--mp-join")) {
+                cla.mpJoin = args[++i];
             } else {
                 System.err.printf("Unknown command-line argument '%s'%n", arg);
                 System.exit(1);

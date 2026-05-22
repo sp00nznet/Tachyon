@@ -13,6 +13,7 @@ import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.VanillaDatafile;
 import xyz.znix.xftl.devmenu.DevMenu;
 import xyz.znix.xftl.devutil.DebugConsole;
+import xyz.znix.xftl.net.Multiplayer;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
 import xyz.znix.xftl.rendering.Cursor;
@@ -26,6 +27,8 @@ import xyz.znix.xftl.sys.PlatformSpecific;
 import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -50,6 +53,13 @@ public class MainGame implements Game {
 
     /** The always-on developer menu overlay. */
     private DevMenu devMenu;
+
+    // Multiplayer: how often the host streams a snapshot, and client-side
+    // tracking of which snapshot has been displayed.
+    private static final float SNAPSHOT_INTERVAL = 0.2f;
+    private float snapshotTimer;
+    private int lastAppliedSnapshot;
+    private boolean wasSpectating;
 
     public MainGame(CommandLineArgs args) {
         this.commandLineArgs = args;
@@ -89,6 +99,13 @@ public class MainGame implements Game {
             loadSavedGame(doc);
         } else {
             switchToShipSelect();
+        }
+
+        // Start multiplayer immediately if asked to on the command line.
+        if (commandLineArgs.mpHost) {
+            Multiplayer.INSTANCE.host();
+        } else if (commandLineArgs.mpJoin != null) {
+            Multiplayer.INSTANCE.join(commandLineArgs.mpJoin);
         }
     }
 
@@ -138,7 +155,19 @@ public class MainGame implements Game {
 
     @Override
     public void update(@NotNull GameContainer gc, float dt) throws SlickException {
-        currentState.update(gc, dt);
+        boolean spectating = Multiplayer.INSTANCE.isConnected() && !Multiplayer.INSTANCE.getHosting();
+
+        if (spectating) {
+            // Client: display the host's streamed game, don't simulate locally.
+            applyHostSnapshot();
+        } else {
+            if (wasSpectating) {
+                // We were spectating and the connection ended - leave that game.
+                switchToShipSelect();
+            }
+            currentState.update(gc, dt);
+        }
+        wasSpectating = spectating;
 
         devMenu.update(gc, dt);
 
@@ -146,6 +175,50 @@ public class MainGame implements Game {
         // a bunch of changes in the same update, we won't save multiple times.
         if (profile.getDirty()) {
             saveProfile();
+        }
+
+        // Host: stream the game state to the connected client.
+        if (Multiplayer.INSTANCE.isConnected() && Multiplayer.INSTANCE.getHosting()) {
+            snapshotTimer += dt;
+            if (snapshotTimer >= SNAPSHOT_INTERVAL) {
+                snapshotTimer = 0f;
+                sendHostSnapshot();
+            }
+        }
+    }
+
+    /** Host: serialise the current game and stream it to the client. */
+    private void sendHostSnapshot() {
+        if (!(currentState instanceof InGameState))
+            return;
+        try {
+            Document doc = ((InGameState) currentState).saveGameState();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            new XMLOutputter(Format.getRawFormat()).output(doc, bytes);
+            Multiplayer.INSTANCE.sendSnapshot(bytes.toByteArray());
+        } catch (Exception ex) {
+            System.err.println("Failed to serialise a multiplayer snapshot");
+            ex.printStackTrace();
+        }
+    }
+
+    /** Client: rebuild and display the latest snapshot the host sent. */
+    private void applyHostSnapshot() {
+        int version = Multiplayer.INSTANCE.getSnapshotVersion();
+        if (version == lastAppliedSnapshot)
+            return;
+        byte[] data = Multiplayer.INSTANCE.getLatestSnapshot();
+        if (data == null)
+            return;
+        lastAppliedSnapshot = version;
+        try {
+            SAXBuilder builder = new SAXBuilder();
+            builder.setExpandEntities(false);
+            Document doc = builder.build(new ByteArrayInputStream(data));
+            loadSavedGame(doc);
+        } catch (Exception ex) {
+            System.err.println("Failed to load a multiplayer snapshot");
+            ex.printStackTrace();
         }
     }
 
@@ -394,5 +467,11 @@ public class MainGame implements Game {
 
         // If a save created with the debug 'save' command should be loaded, this is it's name.
         public String debugLoad;
+
+        // Start hosting a multiplayer game immediately.
+        public boolean mpHost;
+
+        // Join a multiplayer game at this address immediately.
+        public String mpJoin;
     }
 }
