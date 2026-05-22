@@ -8,7 +8,6 @@ import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
-import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -36,9 +35,6 @@ object Multiplayer {
     private const val MSG_PING = 0
     private const val MSG_SNAPSHOT = 1
     private const val MSG_COMMAND = 2
-
-    /** Co-op command type: toggle a door. The argument is the door index. */
-    const val CMD_TOGGLE_DOOR = 0
 
     // Reject absurd message sizes rather than allocating a huge buffer.
     private const val MAX_MESSAGE = 64 * 1024 * 1024
@@ -136,19 +132,11 @@ object Multiplayer {
         outQueue.offer(MSG_SNAPSHOT to data)
     }
 
-    /** Queue a co-op command to send to the host (client -> host). */
-    private fun sendCommand(data: ByteArray) {
+    /** Queue an encoded co-op command to send to the host (client -> host). */
+    fun sendCommand(data: ByteArray) {
         if (state != State.CONNECTED)
             return
         outQueue.offer(MSG_COMMAND to data)
-    }
-
-    /** Client -> host: ask the host to toggle the door at [index]. */
-    fun sendDoorToggle(index: Int) {
-        val buf = ByteBuffer.allocate(8)
-        buf.putInt(CMD_TOGGLE_DOOR)
-        buf.putInt(index)
-        sendCommand(buf.array())
     }
 
     /** Host: take the next command a client sent, or null if none are pending. */

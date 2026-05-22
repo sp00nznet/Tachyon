@@ -16,6 +16,7 @@ import xyz.znix.xftl.layout.Room
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.net.Command
 import xyz.znix.xftl.rendering.*
 import xyz.znix.xftl.savegame.ObjectRefs
 import xyz.znix.xftl.savegame.RefLoader
@@ -255,12 +256,15 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (hit) return
         }
 
-        // Check if we're clicking on a door
+        // Check if we're clicking on a door. The toggle goes through a co-op
+        // command, so the host applies it whether the click came from the host
+        // or a connected client.
         if (button == Input.MOUSE_LEFT_BUTTON) {
-            for (door in ship.doors) {
-                val hit = door.click(x - playerShipPosition.x, y - playerShipPosition.y)
-                if (hit)
+            for ((index, door) in ship.doors.withIndex()) {
+                if (door.hitTest(x - playerShipPosition.x, y - playerShipPosition.y)) {
+                    game.submitCommand(Command.ToggleDoor(index))
                     return
+                }
             }
         }
 

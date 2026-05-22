@@ -13,6 +13,7 @@ import xyz.znix.xftl.Datafile;
 import xyz.znix.xftl.VanillaDatafile;
 import xyz.znix.xftl.devmenu.DevMenu;
 import xyz.znix.xftl.devutil.DebugConsole;
+import xyz.znix.xftl.net.Command;
 import xyz.znix.xftl.net.Multiplayer;
 import xyz.znix.xftl.hangar.EditableShip;
 import xyz.znix.xftl.hangar.SelectShipState;
@@ -30,7 +31,6 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -164,34 +164,37 @@ public class MainGame implements Game {
         boolean spectating = Multiplayer.INSTANCE.isConnected() && !Multiplayer.INSTANCE.getHosting();
 
         if (spectating) {
-            // Client: display the host's streamed game, don't simulate locally.
+            // Client: refresh the displayed game from the host's latest snapshot.
             applyHostSnapshot();
-
-            // Test harness: periodically fire a door-toggle command at the host.
-            if (commandLineArgs.mpTest) {
-                mpTestTimer += dt;
-                if (mpTestTimer >= 2f) {
-                    mpTestTimer = 0f;
-                    Multiplayer.INSTANCE.sendDoorToggle(mpTestCounter++);
-                }
-            }
-        } else {
-            if (wasSpectating) {
-                // We were spectating and the connection ended - leave that game.
-                switchToShipSelect();
-            }
-            currentState.update(gc, dt);
+        } else if (wasSpectating) {
+            // We were spectating and the connection ended - leave that game.
+            switchToShipSelect();
         }
         wasSpectating = spectating;
+
+        // Always update the current state. A co-op client's InGameState has
+        // simulate=false, so this only processes its local input - turning
+        // clicks into commands - without running the simulation.
+        currentState.update(gc, dt);
+
+        // Test harness: drive the client to fire door-toggle commands.
+        if (spectating && commandLineArgs.mpTest && currentState instanceof InGameState) {
+            mpTestTimer += dt;
+            if (mpTestTimer >= 2f) {
+                mpTestTimer = 0f;
+                ((InGameState) currentState).submitCommand(new Command.ToggleDoor(mpTestCounter++));
+            }
+        }
 
         // Host: apply any co-op commands the connected client has sent.
         if (Multiplayer.INSTANCE.isConnected() && Multiplayer.INSTANCE.getHosting()
                 && currentState instanceof InGameState) {
-            byte[] cmd;
-            while ((cmd = Multiplayer.INSTANCE.pollCommand()) != null) {
-                if (cmd.length >= 8) {
-                    ByteBuffer buf = ByteBuffer.wrap(cmd);
-                    ((InGameState) currentState).applyCoopCommand(buf.getInt(), buf.getInt());
+            byte[] data;
+            while ((data = Multiplayer.INSTANCE.pollCommand()) != null) {
+                Command command = Command.decode(data);
+                if (command != null) {
+                    System.out.println("Co-op: applying command from client: " + command);
+                    command.apply((InGameState) currentState);
                 }
             }
         }
@@ -243,6 +246,9 @@ public class MainGame implements Game {
             builder.setExpandEntities(false);
             Document doc = builder.build(new ByteArrayInputStream(data));
             loadSavedGame(doc);
+            // The client renders this snapshot; it must not simulate it.
+            if (currentState instanceof InGameState)
+                ((InGameState) currentState).setSimulate(false);
         } catch (Exception ex) {
             System.err.println("Failed to load a multiplayer snapshot");
             ex.printStackTrace();

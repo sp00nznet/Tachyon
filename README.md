@@ -92,12 +92,15 @@ network. It is being built as a vertical slice; the current state:
 - **State streaming** — the host runs the only real simulation and serialises its
   game about five times a second; the client rebuilds and renders each snapshot
   instead of simulating, so it always shows the host's authoritative state.
-- **Commands** — the client sends commands back for the host to apply (currently a
-  door toggle, via the **Toggle a Door** test button); the result reaches the client
-  in the next snapshot. Wiring up the full set of player commands is the next step.
+- **Commands** — player input is funnelled into `Command` objects rather than
+  mutating the game directly. On the host (and in single-player) a command is applied
+  at once; on the client it is sent to the host, which applies it and streams the
+  result back. The client opening a door is wired through this path; the remaining
+  player actions (crew, power, weapons) are being moved onto it action by action.
 
-The netcode is in [`src/main/java/xyz/znix/xftl/net/Multiplayer.kt`](src/main/java/xyz/znix/xftl/net/Multiplayer.kt)
-and adds no new dependencies — just Java sockets and a length-prefixed message protocol.
+The netcode is in [`src/main/java/xyz/znix/xftl/net/`](src/main/java/xyz/znix/xftl/net/)
+— `Multiplayer.kt` (connection, streaming, message protocol) and `Command.kt` (the
+shared input path). It adds no new dependencies, just Java sockets.
 
 ## End-of-run score screen
 

@@ -249,12 +249,19 @@ data class Door(val position: ConstPoint, val left: Room?, val right: Room?, val
         hovered = true
     }
 
-    fun click(x: Int, y: Int): Boolean {
-        // Update our hovered status, since we use that
-        // to determine if we're being clicked.
+    /**
+     * True if the point at ([x], [y]) hits this door, without changing its
+     * state. Co-op routes door clicks through a command, so the hit test and
+     * the actual toggle have to be separable.
+     */
+    fun hitTest(x: Int, y: Int): Boolean {
+        // updateMouseHover sets the hovered flag we use to detect a hit.
         updateMouseHover(x, y)
+        return hovered
+    }
 
-        if (!hovered) {
+    fun click(x: Int, y: Int): Boolean {
+        if (!hitTest(x, y)) {
             return false
         }
 

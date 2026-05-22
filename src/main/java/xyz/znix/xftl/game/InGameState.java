@@ -16,8 +16,8 @@ import xyz.znix.xftl.devutil.DebugConsole;
 import xyz.znix.xftl.devutil.DebugFlagManager;
 import xyz.znix.xftl.drones.AbstractExternalDrone;
 import xyz.znix.xftl.hangar.EditableShip;
-import xyz.znix.xftl.layout.Door;
 import xyz.znix.xftl.layout.Room;
+import xyz.znix.xftl.net.Command;
 import xyz.znix.xftl.net.Multiplayer;
 import xyz.znix.xftl.math.IPoint;
 import xyz.znix.xftl.math.Point;
@@ -62,6 +62,10 @@ public class InGameState extends MainGame.GameState {
     private Ship player;
     private Ship enemy;
     private ShipAI enemyAI;
+
+    // False on a co-op client, which renders the host's streamed snapshots
+    // instead of running the simulation itself.
+    private boolean simulate = true;
 
     // The dev-menu autopilot: a ShipAI run on the player ship.
     private ShipAI playerAutopilot;
@@ -370,14 +374,15 @@ public class InGameState extends MainGame.GameState {
     public void update(@NotNull GameContainer container, float delta) throws SlickException {
         renderingDeltaTime = delta;
 
-        if (!isPaused())
+        if (simulate && !isPaused())
             updateGameState(delta * xyz.znix.xftl.DevSettings.INSTANCE.getGameSpeed());
 
         Input in = container.getInput();
 
         // For debugging, this lets you either step or fast-forward through time.
         // Don't do this in response to typing on the debug console, though.
-        if (!debugConsoleVisible) {
+        // A co-op client never simulates, so it skips this too.
+        if (simulate && !debugConsoleVisible) {
             HotkeyButton fastForwardButton = reverseHotkeyBindings.get(getHotkeyManager().getKeyFastForward());
             HotkeyButton stepButton = reverseHotkeyBindings.get(getHotkeyManager().getKeyFrameStep());
 
@@ -964,24 +969,32 @@ public class InGameState extends MainGame.GameState {
         }
     }
 
+    /** True if this game runs its own simulation (host or single-player). */
+    public boolean isSimulated() {
+        return simulate;
+    }
+
     /**
-     * Apply a co-op command sent by the connected client (host side).
-     * <p>
-     * The client never simulates the game itself; it sends commands like this
-     * one, and the host applies them to its authoritative state. The change
-     * then reaches the client through the next streamed snapshot.
+     * Set whether this game simulates itself. A co-op client sets this false:
+     * it renders the host's streamed snapshots and only processes local input.
      */
-    public void applyCoopCommand(int type, int arg) {
-        if (type == Multiplayer.CMD_TOGGLE_DOOR) {
-            List<Door> doors = player.getDoors();
-            if (doors.isEmpty())
-                return;
-            // The client picks doors by a rolling counter; wrap it into range.
-            int index = ((arg % doors.size()) + doors.size()) % doors.size();
-            Door door = doors.get(index);
-            door.setOpen(!door.getOpen());
-            System.out.println("Co-op: client toggled door " + index
-                    + " -> open=" + door.getOpen());
+    public void setSimulate(boolean simulate) {
+        this.simulate = simulate;
+    }
+
+    /**
+     * Funnel a player action through the co-op command path.
+     * <p>
+     * On a connected client the command is encoded and sent to the host; on
+     * the host - or in single-player - it is applied to this game right away.
+     * Either way every action runs through {@link Command#apply}, so the host
+     * and client share one code path for acting on the ship.
+     */
+    public void submitCommand(Command command) {
+        if (Multiplayer.INSTANCE.isConnected() && !Multiplayer.INSTANCE.getHosting()) {
+            Multiplayer.INSTANCE.sendCommand(command.encode());
+        } else {
+            command.apply(this);
         }
     }
 

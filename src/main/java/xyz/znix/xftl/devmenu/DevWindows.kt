@@ -888,9 +888,6 @@ class AutomationWindow : DevWindow("Automation", 330) {
 class MultiplayerWindow : DevWindow("Multiplayer", 390) {
     override val contentHeight = 168
 
-    // Rolling index so each test door-toggle hits a different door.
-    private var doorCmdCounter = 0
-
     override fun content(ui: DevUI, cx: Int, cy: Int) {
         ui.text(cx, cy, 18, "Status:  ${Multiplayer.status}", DevUI.TEXT)
         var ry = cy + 28
@@ -933,18 +930,12 @@ class MultiplayerWindow : DevWindow("Multiplayer", 390) {
                 ry += 26
                 if (ui.button(cx, ry, 150, 24, "Disconnect"))
                     Multiplayer.disconnect()
-                if (!Multiplayer.hosting) {
-                    if (ui.button(cx + 160, ry, 200, 24, "Toggle a Door - test")) {
-                        Multiplayer.sendDoorToggle(doorCmdCounter++)
-                        menu.setStatus("Sent a door-toggle command to the host")
-                    }
-                }
             }
         }
 
         val hint = when {
             Multiplayer.state == Multiplayer.State.CONNECTED && !Multiplayer.hosting ->
-                "You see the host's game. The test button toggles doors on it."
+                "You share the host's ship - your clicks are sent to the host."
             Multiplayer.state == Multiplayer.State.CONNECTED ->
                 "Your game is streamed to the client about five times a second."
             else -> "The host runs the game and streams it to the client."
