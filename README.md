@@ -52,7 +52,7 @@ the menu never covers it.
 | Menu | Contents |
 |------|----------|
 | **File** | New Game, Save Game, Load Game (save browser), Quit |
-| **Graphics** | V-Sync toggle, FPS counter, window-size presets (720p/900p/1080p), borderless fullscreen |
+| **Graphics** | V-Sync toggle, FPS counter, window-size presets (720p up to 4K) plus Fill Screen, borderless fullscreen |
 | **Audio** | Sound-effect and music volume sliders |
 | **Debug** | Cheat toggles — Ship Invincible, Crew Invincible, Infinite Missiles, Infinite Drones, Fast Weapon Charge, No Enemy Weapons, Jump Anywhere, Reveal Map. One-shot actions — Repair Ship, Max Resources, Upgrade All Systems, Heal All Crew, Destroy Enemy, End Run (Victory/Defeat). Plus the **Game Inspector** and the **Outfitter** |
 | **About** | Credits, license and repository links |
