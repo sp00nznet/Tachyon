@@ -292,7 +292,7 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
             sizeItem("1600 x 900", 1600, 928),
             sizeItem("1920 x 1080", 1920, 1113),
             sizeItem("2560 x 1440", 2560, 1484),
-            sizeItem("3840 x 2160 - 4K", 3840, 2226),
+            sizeItem("3840 x 2160", 3840, 2226),
             DropItem.action("Fill Screen") { container.fitWindowToScreen() },
             DropItem.separator(),
             DropItem.toggle("Fullscreen", container.fullscreen) {
