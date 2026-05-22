@@ -751,3 +751,90 @@ class EventPickerWindow : DevWindow("Load Event", 430) {
         ui.text(cx, cy + rowsShown * 20 + 4, 14, "${names.size} events - scroll for more", DevUI.TEXT_DIM)
     }
 }
+
+/**
+ * Enable, disable and reorder Slipstream mods. Changes are written to
+ * order.txt and take effect when the game is restarted.
+ */
+class ModsWindow : DevWindow("Mods", 430) {
+    /** The enabled mods, in load order (a working copy). */
+    private val order = ArrayList<String>()
+    private var available: List<String> = emptyList()
+    private var scroll = 0
+    private val rowsShown = 9
+
+    override val contentHeight = rowsShown * 24 + 56
+
+    override fun onShown() {
+        available = try {
+            DevMods.availableMods()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            emptyList()
+        }
+        order.clear()
+        // Keep only enabled mods that still exist on disk.
+        order += DevMods.loadOrder().filter { it in available }
+        scroll = 0
+    }
+
+    override fun onScroll(change: Int) {
+        scroll -= change / 40
+    }
+
+    /** Enabled mods first (in load order), then the disabled ones. */
+    private fun rows(): List<String> = order + available.filter { it !in order }
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        if (available.isEmpty()) {
+            ui.text(cx, cy, 16, "No mods found. Put .ftl mod files in:", DevUI.TEXT_DIM)
+            ui.text(cx, cy + 18, 13, DevMods.modDirectory.toString(), DevUI.TEXT_DIM)
+            return
+        }
+
+        val rows = rows()
+        scroll = scroll.coerceIn(0, (rows.size - rowsShown).coerceAtLeast(0))
+
+        val rowW = width - 24
+        for (i in scroll until minOf(rows.size, scroll + rowsShown)) {
+            val mod = rows[i]
+            val enabled = mod in order
+            val ry = cy + (i - scroll) * 24
+
+            // Checkbox + name - click toggles enabled.
+            val toggleW = rowW - 66
+            if (ui.hovered(cx, ry, toggleW, 22))
+                ui.fill(cx, ry, toggleW, 22, DevUI.HOVER_BG)
+            ui.fill(cx + 4, ry + 4, 14, 14, if (enabled) DevUI.ACCENT else DevUI.CONTROL_BG)
+            ui.outline(cx + 4, ry + 4, 14, 14, DevUI.BORDER)
+            ui.text(cx + 26, ry, 22, mod, DevUI.TEXT)
+            if (ui.pressedIn(cx, ry, toggleW, 22)) {
+                ui.consumePress()
+                if (enabled) order.remove(mod) else order.add(mod)
+            }
+
+            // Up / Down reorder, only for enabled mods.
+            if (enabled) {
+                val idx = order.indexOf(mod)
+                if (ui.button(cx + rowW - 62, ry, 30, 22, "Up", idx > 0)) {
+                    order[idx] = order.set(idx - 1, mod)
+                }
+                if (ui.button(cx + rowW - 30, ry, 30, 22, "Dn", idx < order.size - 1)) {
+                    order[idx] = order.set(idx + 1, mod)
+                }
+            }
+        }
+
+        val footY = cy + rowsShown * 24 + 6
+        if (ui.button(cx, footY, 150, 22, "Save Mod Order")) {
+            try {
+                DevMods.saveOrder(order)
+                menu.setStatus("Saved - restart to apply mods")
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                menu.setStatus("Failed to save order.txt - see the log")
+            }
+        }
+        ui.text(cx, footY + 28, 14, "Restart the game to apply mod changes.", DevUI.TEXT_DIM)
+    }
+}

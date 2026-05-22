@@ -43,9 +43,10 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
     private val tuningWindow = TuningWindow()
     private val spawnShipWindow = SpawnShipWindow()
     private val eventPickerWindow = EventPickerWindow()
+    private val modsWindow = ModsWindow()
     private val windows = listOf(
         cheatsWindow, inspectorWindow, outfitterWindow, tuningWindow,
-        spawnShipWindow, eventPickerWindow, loadWindow, audioWindow, aboutWindow
+        spawnShipWindow, eventPickerWindow, modsWindow, loadWindow, audioWindow, aboutWindow
     )
 
     // ---- menu bar state ----
@@ -273,6 +274,7 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
                 }
             },
             DropItem.action("Saved Games...") { loadWindow.open = true },
+            DropItem.action("Mods...") { modsWindow.open = true },
             DropItem.separator(),
             DropItem.action("Quit") { mainGame.quitGame() },
         )
