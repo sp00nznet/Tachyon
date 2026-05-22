@@ -277,10 +277,10 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
 
         // The window is the game area plus the menu bar; the labels name the
         // game area, which is what the player actually cares about.
-        fun sizeItem(label: String, winW: Int, winH: Int): DropItem {
-            val current = !container.fullscreen && container.windowWidth == winW
-            return DropItem.toggle(label, current) { container.setWindowSize(winW, winH) }
-        }
+        // Window sizes name the game area; the window is that plus the menu
+        // bar. setWindowSize clamps anything too big for the monitor.
+        fun sizeItem(label: String, winW: Int, winH: Int) =
+            DropItem.action(label) { container.setWindowSize(winW, winH) }
 
         return listOf(
             DropItem.toggle("V-Sync", container.vSyncEnabled) {
@@ -291,6 +291,10 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
             sizeItem("1280 x 720", 1280, 742),
             sizeItem("1600 x 900", 1600, 928),
             sizeItem("1920 x 1080", 1920, 1113),
+            sizeItem("2560 x 1440", 2560, 1484),
+            sizeItem("3840 x 2160  (4K)", 3840, 2226),
+            DropItem.action("Fill Screen") { container.fitWindowToScreen() },
+            DropItem.separator(),
             DropItem.toggle("Fullscreen", container.fullscreen) {
                 container.setFullscreen(!container.fullscreen)
             },

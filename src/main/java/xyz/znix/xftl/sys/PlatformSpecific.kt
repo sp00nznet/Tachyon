@@ -37,6 +37,13 @@ sealed interface PlatformSpecific {
      */
     fun findRunningInstanceDat(): Path?
 
+    /**
+     * On Windows, set an explicit Application User Model ID so the taskbar
+     * groups the game under its own icon rather than the java.exe icon.
+     * A no-op on other platforms.
+     */
+    fun setApplicationId() {}
+
     companion object {
         @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
         @JvmField
@@ -390,6 +397,33 @@ private class WindowsPlatform : PlatformSpecific {
         }
 
         return result
+    }
+
+    override fun setApplicationId() {
+        try {
+            val abi = when {
+                Pointer.BITS32 -> LibFFI.FFI_STDCALL
+                else -> LibFFI.FFI_DEFAULT_ABI
+            }
+            val fn = shell32.getFunctionAddress("SetCurrentProcessExplicitAppUserModelID")
+
+            MemoryStack.stackPush().use { mem ->
+                // HRESULT SetCurrentProcessExplicitAppUserModelID(PCWSTR AppID)
+                val cif = allocateCIF(abi, LibFFI.ffi_type_uint32, LibFFI.ffi_type_pointer)
+
+                val appId = mem.UTF16("xyz.znix.tachyon")
+
+                val resultBuf = mem.malloc(4)
+                val argsValues = mem.pointers(MemoryUtil.memAddress(appId))
+                val argsBuf = mem.mallocPointer(1)
+                argsBuf.put(0, MemoryUtil.memAddress(argsValues))
+
+                LibFFI.ffi_call(cif, fn, resultBuf, argsBuf)
+            }
+        } catch (ex: Exception) {
+            // This only affects the taskbar icon, so don't let it be fatal.
+            println("Failed to set the Windows application ID: ${ex.localizedMessage}")
+        }
     }
 
     private fun allocateCIF(abi: Int, returnType: FFIType, vararg args: FFIType): FFICIF {

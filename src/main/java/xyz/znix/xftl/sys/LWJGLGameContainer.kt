@@ -76,6 +76,11 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
 
     fun start() {
         println("Using LWJGL version ${Version.getVersion()}")
+
+        // Must happen before any window is created, so the taskbar uses our
+        // icon instead of the java.exe one.
+        PlatformSpecific.INSTANCE.setApplicationId()
+
         init()
 
         try {
@@ -151,6 +156,10 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
 
         // Make the window visible
         glfwShowWindow(window)
+
+        // Re-apply the icon now the window (and its taskbar button) exists,
+        // so the taskbar reliably picks it up.
+        setupWindowIcon()
 
         lwjglInput = LWJGLInput(window, this)
         g = Graphics()
@@ -336,22 +345,60 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
             setFullscreen(false)
         }
 
-        windowWidth = newWidth
-        windowHeight = newHeight
-        windowedWidth = newWidth
-        windowedHeight = newHeight
+        var w = newWidth
+        var h = newHeight
 
-        glfwSetWindowSize(window, newWidth, newHeight)
-        glViewport(0, 0, newWidth, newHeight)
+        // Clamp to the monitor work area (the screen minus the taskbar),
+        // keeping the aspect ratio, so a window larger than the screen never
+        // ends up unusable with its title bar off-screen.
+        val monitor = glfwGetPrimaryMonitor()
+        stackPush().use { stack ->
+            val ax = stack.mallocInt(1)
+            val ay = stack.mallocInt(1)
+            val aw = stack.mallocInt(1)
+            val ah = stack.mallocInt(1)
+            glfwGetMonitorWorkarea(monitor, ax, ay, aw, ah)
+            if (aw[0] > 0 && ah[0] > 0 && (w > aw[0] || h > ah[0])) {
+                val scale = minOf(aw[0].toFloat() / w, ah[0].toFloat() / h)
+                w = (w * scale).toInt()
+                h = (h * scale).toInt()
+            }
+        }
 
-        // Re-centre the window on the primary monitor.
-        val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor())
+        windowWidth = w
+        windowHeight = h
+        windowedWidth = w
+        windowedHeight = h
+
+        glfwSetWindowSize(window, w, h)
+        glViewport(0, 0, w, h)
+
+        // Re-centre the window, keeping the title bar on-screen.
+        val vidmode = glfwGetVideoMode(monitor)
         if (vidmode != null) {
             glfwSetWindowPos(
                 window,
-                (vidmode.width() - newWidth) / 2,
-                (vidmode.height() - newHeight) / 2
+                maxOf(0, (vidmode.width() - w) / 2),
+                maxOf(0, (vidmode.height() - h) / 2)
             )
+        }
+    }
+
+    /**
+     * Resize the window to the largest size that keeps the game's aspect
+     * ratio and fits the monitor work area - the biggest it can be windowed.
+     */
+    fun fitWindowToScreen() {
+        stackPush().use { stack ->
+            val ax = stack.mallocInt(1)
+            val ay = stack.mallocInt(1)
+            val aw = stack.mallocInt(1)
+            val ah = stack.mallocInt(1)
+            glfwGetMonitorWorkarea(glfwGetPrimaryMonitor(), ax, ay, aw, ah)
+
+            val canvasHeight = height + DevMenu.BAR_HEIGHT
+            val scale = minOf(aw[0].toFloat() / width, ah[0].toFloat() / canvasHeight)
+            setWindowSize((width * scale).toInt(), (canvasHeight * scale).toInt())
         }
     }
 
