@@ -477,7 +477,7 @@ class OutfitterWindow : DevWindow("Outfitter", 380) {
  * Cheats, with per-side (player / enemy) toggles plus one-shot actions.
  */
 class CheatsWindow : DevWindow("Cheats", 340) {
-    override val contentHeight = 340
+    override val contentHeight = 364
 
     /** A 16px toggle box; returns true on the frame it's clicked. */
     private fun cell(ui: DevUI, x: Int, rowY: Int, checked: Boolean): Boolean {
@@ -524,6 +524,11 @@ class CheatsWindow : DevWindow("Cheats", 340) {
 
         ui.fill(cx, ry + 2, width - 24, 1, DevUI.SEPARATOR)
         ry += 12
+
+        // Autopilot - the engine's AI plays the player ship.
+        if (ui.checkbox(cx, ry, width - 24, 20, "Autopilot - auto-fight combat", DevSettings.autopilot))
+            DevSettings.autopilot = !DevSettings.autopilot
+        ry += 24
 
         // Single toggles that only make sense one way
         val singles = listOf(

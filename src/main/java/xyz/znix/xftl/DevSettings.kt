@@ -9,6 +9,13 @@ object DevSettings {
     /** Simulation speed multiplier - 1.0 is normal, lower is slow-motion. */
     var gameSpeed: Float = 1f
 
+    /**
+     * When true, the engine's own ship and crew AI run the player ship -
+     * firing weapons, hacking, mind control, manning systems, repairs and
+     * fighting boarders.
+     */
+    var autopilot: Boolean = false
+
     /** Multiplier on the base 20% chance that a sector is a nebula. */
     var nebulaFrequency: Float = 1f
 

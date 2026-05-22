@@ -23,6 +23,12 @@ class FriendlyCrewAI(private val ship: Ship) {
     // Set by ShipGenerator
     var initialCrewCount = 0
 
+    /**
+     * When true, this AI also commands the player's own crew - used by the
+     * dev-menu autopilot. Normally player-controllable crew are left alone.
+     */
+    var controlPlayerCrew = false
+
     // Don't teleport crew over more than 3 times
     private var teleportCount = 0
 
@@ -48,7 +54,9 @@ class FriendlyCrewAI(private val ship: Ship) {
                 continue
 
             // We have to check playerControllable for mind-controlled crew.
-            if (crew.playerControllable)
+            // The autopilot (controlPlayerCrew) overrides this to drive the
+            // player's own crew as well.
+            if (!controlPlayerCrew && crew.playerControllable)
                 continue
 
             // Ignore crew in the flagship's artillery rooms

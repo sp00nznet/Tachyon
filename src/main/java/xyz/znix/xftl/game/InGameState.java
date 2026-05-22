@@ -61,6 +61,10 @@ public class InGameState extends MainGame.GameState {
     private Ship enemy;
     private ShipAI enemyAI;
 
+    // The dev-menu autopilot: a ShipAI run on the player ship.
+    private ShipAI playerAutopilot;
+    private Ship playerAutopilotTarget;
+
     private LootPool lootPool;
 
     private SILFontLoader pauseFont;
@@ -616,6 +620,9 @@ public class InGameState extends MainGame.GameState {
         if (shipUI != null)
             shipUI.update();
 
+        // Autopilot - let the engine's crew AI command the player's crew too.
+        player.getCrewAI().setControlPlayerCrew(xyz.znix.xftl.DevSettings.INSTANCE.getAutopilot());
+
         player.update(dt);
 
         updatePlayerCrew();
@@ -631,6 +638,16 @@ public class InGameState extends MainGame.GameState {
 
             if (enemyIsHostile) {
                 enemyAI.update(dt);
+            }
+
+            // Autopilot - run the ship AI on the player ship as well, so it
+            // fires weapons, hacks, mind-controls and deploys drones.
+            if (xyz.znix.xftl.DevSettings.INSTANCE.getAutopilot() && !enemy.isGone()) {
+                if (playerAutopilot == null || playerAutopilotTarget != enemy) {
+                    playerAutopilot = new ShipAI(player, enemy);
+                    playerAutopilotTarget = enemy;
+                }
+                playerAutopilot.update(dt);
             }
 
             if (enemy.isGone()) {

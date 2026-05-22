@@ -59,8 +59,9 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
         updateMindControl()
 
-        // Check if we need to escape or surrender
-        if (ship.health <= ship.surrenderHealth) {
+        // Check if we need to escape or surrender. Only ships with a spec
+        // (AI enemy ships) do this - the player ship under autopilot can't.
+        if (ship.spec != null && ship.health <= ship.surrenderHealth) {
             // Don't surrender repeatedly
             ship.surrenderHealth = 0
 
@@ -70,7 +71,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
 
             // Use an else-if so we don't try and surrender and escape in
             // the same update cycle.
-        } else if (ship.health <= ship.escapeHealth) {
+        } else if (ship.spec != null && ship.health <= ship.escapeHealth) {
             // Show the event and start the timer running
             ship.escapeHealth = 0
             ship.sys.shipUI.showEventDialogue(ship.spec!!.escape!!.resolve(), Random.nextInt())
@@ -121,7 +122,7 @@ class ShipAI(val ship: Ship, val player: Ship) {
                 fireAtChargeLevel.remove(weapon)
             }
 
-            if (ship.sys.debugFlags.noEnemyFire.set)
+            if (ship.sys.debugFlags.noEnemyFire.set && !ship.isPlayerShip)
                 continue
 
             when (weapon) {
