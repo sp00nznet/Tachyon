@@ -166,19 +166,26 @@ class LWJGLGameContainer(private val game: Game) : GameContainer {
     }
 
     private fun setupWindowIcon() {
-        val path = "assets/img/xftl_icon.png"
+        // Provide the icon at several sizes; the OS picks the best fit for the
+        // title bar, taskbar and alt-tab switcher.
+        val sizes = listOf(16, 32, 48, 64, 128, 256)
 
-        val imageData = ImageDataFactory.getImageDataFor(path)
-        javaClass.classLoader.getResourceAsStream(path).use { stream ->
-            imageData.loadImage(BufferedInputStream(stream), false, null)
+        // The decoded images must stay referenced until glfwSetWindowIcon runs,
+        // since their pixel buffers are read at that point.
+        val images = sizes.map { size ->
+            val path = "assets/img/tachyon_icon_$size.png"
+            val imageData = ImageDataFactory.getImageDataFor(path)
+            javaClass.classLoader.getResourceAsStream(path).use { stream ->
+                imageData.loadImage(BufferedInputStream(stream), false, null)
+            }
+            imageData
         }
 
         stackPush().use { stack ->
-            val imageArray = GLFWImage.Buffer(stack.malloc(GLFWImage.SIZEOF))
-            val image = imageArray[0]
-
-            image.set(imageData.width, imageData.height, imageData.imageBufferData)
-
+            val imageArray = GLFWImage.Buffer(stack.malloc(GLFWImage.SIZEOF * images.size))
+            for ((i, imageData) in images.withIndex()) {
+                imageArray[i].set(imageData.width, imageData.height, imageData.imageBufferData)
+            }
             glfwSetWindowIcon(window, imageArray)
         }
     }
