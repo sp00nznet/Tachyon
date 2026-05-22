@@ -36,20 +36,66 @@ sealed class Command {
             ByteBuffer.allocate(8).putInt(TYPE_TOGGLE_DOOR).putInt(doorIndex).array()
     }
 
+    /**
+     * Order the player crew at [crewIndices] to walk to the room with id
+     * [roomId]. Crew are referenced by their index in the ship's crew list,
+     * which the host and client share.
+     */
+    data class MoveCrew(val crewIndices: List<Int>, val roomId: Int) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val room = ship.rooms.firstOrNull { it.id == roomId } ?: return
+            for (index in crewIndices) {
+                val crew = ship.crew.getOrNull(index) ?: continue
+                // Only move controllable crew that are aboard the player ship.
+                if (crew.playerControllable && crew.room.ship == ship) {
+                    crew.setTargetRoom(room)
+                }
+            }
+        }
+
+        override fun encode(): ByteArray {
+            val buf = ByteBuffer.allocate(12 + crewIndices.size * 4)
+            buf.putInt(TYPE_MOVE_CREW)
+            buf.putInt(roomId)
+            buf.putInt(crewIndices.size)
+            for (index in crewIndices)
+                buf.putInt(index)
+            return buf.array()
+        }
+    }
+
     companion object {
         private const val TYPE_TOGGLE_DOOR = 0
+        private const val TYPE_MOVE_CREW = 1
 
-        /** Rebuild a command from [encode]d bytes, or null if it isn't recognised. */
+        // A sane upper bound on how many crew one command can move.
+        private const val MAX_CREW = 1000
+
+        /** Rebuild a command from [encode]d bytes, or null if it isn't valid. */
         @JvmStatic
         fun decode(data: ByteArray): Command? {
-            if (data.size < 4) return null
-            val buf = ByteBuffer.wrap(data)
-            return when (val type = buf.int) {
-                TYPE_TOGGLE_DOOR -> ToggleDoor(buf.int)
-                else -> {
-                    System.err.println("Co-op: ignoring unknown command type $type")
-                    null
+            try {
+                if (data.size < 4) return null
+                val buf = ByteBuffer.wrap(data)
+                return when (val type = buf.int) {
+                    TYPE_TOGGLE_DOOR -> ToggleDoor(buf.int)
+
+                    TYPE_MOVE_CREW -> {
+                        val roomId = buf.int
+                        val count = buf.int
+                        if (count < 0 || count > MAX_CREW) return null
+                        MoveCrew(MutableList(count) { buf.int }, roomId)
+                    }
+
+                    else -> {
+                        System.err.println("Co-op: ignoring unknown command type $type")
+                        null
+                    }
                 }
+            } catch (ex: Exception) {
+                System.err.println("Co-op: failed to decode a command: ${ex.message}")
+                return null
             }
         }
     }

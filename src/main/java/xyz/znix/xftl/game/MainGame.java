@@ -177,12 +177,25 @@ public class MainGame implements Game {
         // clicks into commands - without running the simulation.
         currentState.update(gc, dt);
 
-        // Test harness: drive the client to fire door-toggle commands.
+        // Test harness: drive the client to fire commands, alternating
+        // between a door toggle and a crew move.
         if (spectating && commandLineArgs.mpTest && currentState instanceof InGameState) {
             mpTestTimer += dt;
             if (mpTestTimer >= 2f) {
                 mpTestTimer = 0f;
-                ((InGameState) currentState).submitCommand(new Command.ToggleDoor(mpTestCounter++));
+                InGameState state = (InGameState) currentState;
+                if (mpTestCounter % 2 == 0) {
+                    state.submitCommand(new Command.ToggleDoor(mpTestCounter));
+                } else {
+                    var player = state.getPlayer();
+                    if (player != null && !player.getCrew().isEmpty()
+                            && !player.getRooms().isEmpty()) {
+                        int roomId = player.getRooms()
+                                .get((mpTestCounter / 2) % player.getRooms().size()).getId();
+                        state.submitCommand(new Command.MoveCrew(java.util.List.of(0), roomId));
+                    }
+                }
+                mpTestCounter++;
             }
         }
 
@@ -241,14 +254,24 @@ public class MainGame implements Game {
         if (data == null)
             return;
         lastAppliedSnapshot = version;
+
+        // Rebuilding the game discards the old UI, so remember the local
+        // player's selection and carry it onto the new one.
+        PlayerShipUI previousUI = (currentState instanceof InGameState)
+                ? ((InGameState) currentState).getShipUI() : null;
+
         try {
             SAXBuilder builder = new SAXBuilder();
             builder.setExpandEntities(false);
             Document doc = builder.build(new ByteArrayInputStream(data));
             loadSavedGame(doc);
-            // The client renders this snapshot; it must not simulate it.
-            if (currentState instanceof InGameState)
-                ((InGameState) currentState).setSimulate(false);
+            if (currentState instanceof InGameState) {
+                InGameState newState = (InGameState) currentState;
+                // The client renders this snapshot; it must not simulate it.
+                newState.setSimulate(false);
+                if (previousUI != null && newState.getShipUI() != null)
+                    newState.getShipUI().carryOverFrom(previousUI);
+            }
         } catch (Exception ex) {
             System.err.println("Failed to load a multiplayer snapshot");
             ex.printStackTrace();

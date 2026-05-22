@@ -285,16 +285,27 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
                 continue
 
             if (button == Input.MOUSE_RIGHT_BUTTON) {
+                // Route crew movement through a co-op command. Crew aboard the
+                // player ship are referenced by index, which the host shares;
+                // boarders on an enemy ship are still moved locally, by
+                // enemyRoomRightClicked.
+                val crewIndices = ArrayList<Int>()
                 for (crew in selectedCrew) {
                     // Skip mind-controlled crew that remained selected.
                     if (!crew.playerControllable)
                         continue
 
-                    // Exclude crew that are boarding an enemy ship, as
-                    // this could cause a crash.
-                    if (crew.room.ship == ship)
-                        crew.setTargetRoom(room)
+                    // Exclude crew that are boarding an enemy ship.
+                    if (crew.room.ship != ship)
+                        continue
+
+                    val index = ship.crew.indexOf(crew)
+                    if (index != -1)
+                        crewIndices += index
                 }
+
+                if (crewIndices.isNotEmpty())
+                    game.submitCommand(Command.MoveCrew(crewIndices, room.id))
 
                 return
             }
@@ -1800,11 +1811,19 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
      *
      * See [InGameState.debugContinuousSaveRestore] for more information.
      */
-    fun debugContinuousSaveRestore(prev: PlayerShipUI) {
+    /**
+     * Carry transient UI state - currently the crew selection - onto this
+     * freshly built UI from [prev].
+     *
+     * The co-op client rebuilds its whole game from each streamed snapshot,
+     * so without this the local player's selection would be lost five times a
+     * second. It is also used by the continuous save/restore debug flag.
+     */
+    fun carryOverFrom(prev: PlayerShipUI) {
         crewSelectionRectangle = prev.crewSelectionRectangle
 
-        // Copy over the selected crew, based on the index into the ship
-        // crew list. This is hacky but it's fine for a debug flag.
+        // Match crew by their index in the ship's crew list, since the crew
+        // objects themselves are replaced when the game is rebuilt.
         for (prevCrew in prev.selectedCrew) {
             val index = prev.ship.crew.indexOf(prevCrew)
 
@@ -1812,8 +1831,12 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             if (index == -1)
                 continue
 
-            selectedCrew += ship.crew[index]
+            ship.crew.getOrNull(index)?.let { selectedCrew += it }
         }
+    }
+
+    fun debugContinuousSaveRestore(prev: PlayerShipUI) {
+        carryOverFrom(prev)
 
         // Reloading should keep the store open, if it's run manually.
         val oldStore = prev.currentWindow as? StoreWindow
