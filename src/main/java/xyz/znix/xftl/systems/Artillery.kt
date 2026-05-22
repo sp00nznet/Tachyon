@@ -81,7 +81,8 @@ class Artillery(blueprint: SystemBlueprint) : MainSystem(blueprint) {
         }
 
         var amount = dt / cooldown
-        if (ship.sys.debugFlags.fastWeaponCharge.set)
+        // The Fast Weapon Charge cheat only speeds up the player's weapons.
+        if (ship.sys.debugFlags.fastWeaponCharge.set && ship.isPlayerShip)
             amount *= 5
         if (ship.opponentCloakActive)
             amount = 0f

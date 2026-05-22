@@ -32,7 +32,8 @@ class Weapons(blueprint: SystemBlueprint) : MainSystem(blueprint) {
     override fun update(dt: Float) {
         super.update(dt)
 
-        var chargeMult = when (ship.sys.debugFlags.fastWeaponCharge.set) {
+        // The Fast Weapon Charge cheat only speeds up the player's weapons.
+        var chargeMult = when (ship.sys.debugFlags.fastWeaponCharge.set && ship.isPlayerShip) {
             true -> 10f
             false -> 1f
         }
