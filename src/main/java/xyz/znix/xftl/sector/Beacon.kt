@@ -64,9 +64,15 @@ class Beacon(
             else -> State.VISITED_CLEAR
         }
 
+    /**
+     * An environment forced onto this beacon by the dev-menu world generation
+     * tuning, overriding whatever the event would otherwise give it.
+     */
+    var environmentOverride: EnvironmentType? = null
+
     val environmentType: EnvironmentType
         get() {
-            val type = event.environment ?: EnvironmentType.NORMAL
+            val type = environmentOverride ?: event.environment ?: EnvironmentType.NORMAL
             return when {
                 !isOvertaken -> type
 
@@ -223,6 +229,9 @@ class Beacon(
         SaveUtil.addTagBoolIfTrue(elem, "hasStore", hasStore)
         SaveUtil.addTagBoolIfTrue(elem, "hasQuest", hasQuest)
 
+        // A dev-menu world-gen environment override, if one was applied.
+        environmentOverride?.let { SaveUtil.addAttr(elem, "envOverride", it.name) }
+
         // Save the event by name - events are immutable and are
         // loaded from the game's XML, so we only need to uniquely
         // identify them, not store all their data.
@@ -288,6 +297,9 @@ class Beacon(
             beacon.visited = SaveUtil.getAttrBool(elem, "visited")
             beacon.hasStore = SaveUtil.getOptionalTagBool(elem, "hasStore") ?: false
             beacon.hasQuest = SaveUtil.getOptionalTagBool(elem, "hasQuest") ?: false
+            elem.getAttributeValue("envOverride")?.let {
+                beacon.environmentOverride = EnvironmentType.valueOf(it)
+            }
 
             // Load environment-specific data, if we've visited this beacon.
             val envName = elem.getAttributeValue("env")

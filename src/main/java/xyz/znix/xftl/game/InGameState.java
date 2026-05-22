@@ -362,7 +362,7 @@ public class InGameState extends MainGame.GameState {
         renderingDeltaTime = delta;
 
         if (!isPaused())
-            updateGameState(delta);
+            updateGameState(delta * xyz.znix.xftl.DevSettings.INSTANCE.getGameSpeed());
 
         Input in = container.getInput();
 

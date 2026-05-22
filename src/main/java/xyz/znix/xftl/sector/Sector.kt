@@ -122,8 +122,10 @@ class Sector {
             val gridPos = grid.random()
             grid.remove(gridPos)
 
-            // There's a 20% chance to omit a given beacon. See doc/sector-map.
-            if (rand.nextInt(5) == 0) {
+            // 20% base chance to omit a beacon (see doc/sector-map), reduced
+            // by the dev-menu beacon-density tuning.
+            val omitChance = 0.2f / xyz.znix.xftl.DevSettings.beaconDensity.coerceAtLeast(0.25f)
+            if (rand.nextFloat() < omitChance) {
                 // Find the number of beacons that haven't been skipped.
                 // -1 here so we don't count the one we're currently generating.
                 val alreadyGenerated = i - 1 - skipped
@@ -228,6 +230,27 @@ class Sector {
                 return@filter it != b
             }
             b.bindSector(this, neighbours)
+        }
+
+        // Dev-menu world generation tuning: sprinkle extra environmental
+        // hazards and stores onto ordinary, non-exit beacons.
+        val hazardTypes = listOf(
+            Beacon.EnvironmentType.ASTEROID,
+            Beacon.EnvironmentType.SUN,
+            Beacon.EnvironmentType.PULSAR,
+        )
+        for (b in beacons) {
+            if (b.isExit)
+                continue
+            if (b.environmentOverride == null &&
+                b.environmentType == Beacon.EnvironmentType.NORMAL &&
+                rand.nextFloat() < xyz.znix.xftl.DevSettings.hazardFrequency
+            ) {
+                b.environmentOverride = hazardTypes.random(rand)
+            }
+            if (!b.hasStore && rand.nextFloat() < xyz.znix.xftl.DevSettings.storeFrequency) {
+                b.hasStore = true
+            }
         }
 
         startBeacon = tmpStartBeacon ?: error("Failed to place a starting beacon!")

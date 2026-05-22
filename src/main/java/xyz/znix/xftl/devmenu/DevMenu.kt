@@ -40,8 +40,10 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
     private val loadWindow = LoadGameWindow()
     private val outfitterWindow = OutfitterWindow()
     private val cheatsWindow = CheatsWindow()
+    private val tuningWindow = TuningWindow()
     private val windows = listOf(
-        cheatsWindow, inspectorWindow, outfitterWindow, loadWindow, audioWindow, aboutWindow
+        cheatsWindow, inspectorWindow, outfitterWindow, tuningWindow,
+        loadWindow, audioWindow, aboutWindow
     )
 
     // ---- menu bar state ----
@@ -312,6 +314,7 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
             DropItem.action("Cheats...", enabled = inGame) { cheatsWindow.open = true },
             DropItem.action("Outfitter...", enabled = inGame) { outfitterWindow.open = true },
             DropItem.action("Game Inspector...") { inspectorWindow.open = true },
+            DropItem.action("Tuning...") { tuningWindow.open = true },
             DropItem.separator(),
             DropItem.action("End Run - Victory", enabled = inGame) {
                 game!!.shipUI.showGameOverScreen(GameOverWindow.Outcome.WIN)

@@ -2,6 +2,7 @@ package xyz.znix.xftl.devmenu
 
 import org.lwjgl.glfw.GLFW
 import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.DevSettings
 import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
@@ -542,5 +543,68 @@ class CheatsWindow : DevWindow("Cheats", 340) {
             DevActions.destroyEnemyShip(game)
             menu.setStatus("Enemy ship destroyed")
         }
+    }
+}
+
+/**
+ * Game-speed and world-generation tuning sliders.
+ */
+class TuningWindow : DevWindow("Tuning", 320) {
+    override val contentHeight = 5 * 38 + 56
+
+    private fun sliderRow(
+        ui: DevUI, key: String, cx: Int, ry: Int, label: String,
+        value: Float, min: Float, max: Float, valueText: String
+    ): Float {
+        ui.text(cx, ry, 16, label, DevUI.TEXT)
+        val vw = ui.textWidth(valueText)
+        ui.text(cx + width - 24 - vw, ry, 16, valueText, DevUI.TEXT_DIM)
+
+        val norm = ((value - min) / (max - min)).coerceIn(0f, 1f)
+        val newNorm = ui.slider(key, cx, ry + 17, width - 24, 14, norm)
+        return min + newNorm * (max - min)
+    }
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        var ry = cy
+
+        DevSettings.gameSpeed = sliderRow(
+            ui, "tune-speed", cx, ry, "Game Speed",
+            DevSettings.gameSpeed, 0.1f, 4f, "%.2fx".format(DevSettings.gameSpeed)
+        )
+        ry += 38
+
+        DevSettings.nebulaFrequency = sliderRow(
+            ui, "tune-neb", cx, ry, "Nebula Sector Frequency",
+            DevSettings.nebulaFrequency, 0f, 4f, "%.1fx".format(DevSettings.nebulaFrequency)
+        )
+        ry += 38
+
+        DevSettings.beaconDensity = sliderRow(
+            ui, "tune-den", cx, ry, "Beacon Density",
+            DevSettings.beaconDensity, 0.5f, 2.5f, "%.1fx".format(DevSettings.beaconDensity)
+        )
+        ry += 38
+
+        DevSettings.hazardFrequency = sliderRow(
+            ui, "tune-haz", cx, ry, "Hazard Beacon Chance",
+            DevSettings.hazardFrequency, 0f, 1f, "${(DevSettings.hazardFrequency * 100).toInt()} pct"
+        )
+        ry += 38
+
+        DevSettings.storeFrequency = sliderRow(
+            ui, "tune-sto", cx, ry, "Extra Store Chance",
+            DevSettings.storeFrequency, 0f, 1f, "${(DevSettings.storeFrequency * 100).toInt()} pct"
+        )
+        ry += 42
+
+        if (ui.button(cx, ry, 130, 22, "Reset to Default")) {
+            DevSettings.gameSpeed = 1f
+            DevSettings.nebulaFrequency = 1f
+            DevSettings.beaconDensity = 1f
+            DevSettings.hazardFrequency = 0f
+            DevSettings.storeFrequency = 0f
+        }
+        ui.text(cx, ry + 28, 14, "World-gen tuning applies to newly visited sectors.", DevUI.TEXT_DIM)
     }
 }

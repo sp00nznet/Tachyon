@@ -450,8 +450,10 @@ class GameMap private constructor(df: Datafile, private val eventManager: EventM
 
         companion object {
             fun random(rand: Random): SectorClass {
-                // 20% chance of a nebula
-                if (rand.nextInt(5) == 0) {
+                // 20% base chance of a nebula, scaled by the dev-menu tuning.
+                val nebulaChance = (0.2f * xyz.znix.xftl.DevSettings.nebulaFrequency)
+                    .coerceIn(0f, 1f)
+                if (rand.nextFloat() < nebulaChance) {
                     return NEBULA
                 }
 
