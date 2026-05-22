@@ -45,9 +45,11 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
     private val eventPickerWindow = EventPickerWindow()
     private val modsWindow = ModsWindow()
     private val automationWindow = AutomationWindow()
+    private val multiplayerWindow = MultiplayerWindow()
     private val windows = listOf(
         cheatsWindow, automationWindow, inspectorWindow, outfitterWindow, tuningWindow,
-        spawnShipWindow, eventPickerWindow, modsWindow, loadWindow, audioWindow, aboutWindow
+        spawnShipWindow, eventPickerWindow, modsWindow, loadWindow,
+        multiplayerWindow, audioWindow, aboutWindow
     )
 
     // ---- menu bar state ----
@@ -124,6 +126,7 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
         x = title(gc, "Graphics", x, hasDropdown = true)
         x = title(gc, "Audio", x, hasDropdown = false) { audioWindow.toggle() }
         x = title(gc, "Debug", x, hasDropdown = true)
+        x = title(gc, "Multiplayer", x, hasDropdown = false) { multiplayerWindow.toggle() }
         title(gc, "About", x, hasDropdown = false) { aboutWindow.toggle() }
 
         // ---- status message and FPS, right-aligned ----

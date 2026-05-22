@@ -8,6 +8,7 @@ import xyz.znix.xftl.crew.CrewBlueprint
 import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.InGameState
+import xyz.znix.xftl.net.Multiplayer
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.systems.SystemBlueprint
@@ -876,5 +877,64 @@ class AutomationWindow : DevWindow("Automation", 330) {
             row(ui, cx, ry, t)
             ry += 22
         }
+    }
+}
+
+/**
+ * Co-operative multiplayer - host or join a game. This is the Step 1
+ * handshake; game-state sync and shared control build on top.
+ */
+class MultiplayerWindow : DevWindow("Multiplayer", 390) {
+    override val contentHeight = 168
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        ui.text(cx, cy, 18, "Status:  ${Multiplayer.status}", DevUI.TEXT)
+        var ry = cy + 28
+
+        when (Multiplayer.state) {
+            Multiplayer.State.IDLE, Multiplayer.State.FAILED -> {
+                if (ui.button(cx, ry, 175, 24, "Host a Game"))
+                    Multiplayer.host()
+                if (ui.button(cx + 185, ry, 175, 24, "Join on localhost"))
+                    Multiplayer.join("127.0.0.1")
+                ry += 30
+                if (ui.button(cx, ry, 240, 24, "Join - address from clipboard")) {
+                    val addr = GLFW.glfwGetClipboardString(GLFW.glfwGetCurrentContext())
+                    if (addr.isNullOrBlank())
+                        menu.setStatus("Clipboard is empty - copy the host's address first")
+                    else
+                        Multiplayer.join(addr.trim())
+                }
+            }
+
+            Multiplayer.State.HOSTING -> {
+                ui.text(cx, ry, 15, "Your address:  ${Multiplayer.localAddress()}", DevUI.TEXT_DIM)
+                ry += 24
+                if (ui.button(cx, ry, 170, 24, "Copy My Address")) {
+                    GLFW.glfwSetClipboardString(GLFW.glfwGetCurrentContext(), Multiplayer.localAddress())
+                    menu.setStatus("Address copied to clipboard")
+                }
+                if (ui.button(cx + 180, ry, 120, 24, "Cancel"))
+                    Multiplayer.disconnect()
+            }
+
+            Multiplayer.State.CONNECTING -> {
+                if (ui.button(cx, ry, 120, 24, "Cancel"))
+                    Multiplayer.disconnect()
+            }
+
+            Multiplayer.State.CONNECTED -> {
+                val role = if (Multiplayer.hosting) "You are hosting." else "You are connected as a client."
+                ui.text(cx, ry, 16, role, DevUI.TEXT_DIM)
+                ry += 26
+                if (ui.button(cx, ry, 150, 24, "Disconnect"))
+                    Multiplayer.disconnect()
+            }
+        }
+
+        ui.text(cx, cy + contentHeight - 38, 13,
+            "Handshake only so far - game sync is the next step.", DevUI.TEXT_DIM)
+        ui.text(cx, cy + contentHeight - 22, 13,
+            "Internet play: the host must forward TCP port ${Multiplayer.DEFAULT_PORT}.", DevUI.TEXT_DIM)
     }
 }
