@@ -83,10 +83,12 @@ class GameOverWindow(private val game: InGameState, val outcome: Outcome) : Wind
                 "SECTORS TRAVELED:  ${game.sectorsVisited}",
                 "CREW REMAINING:  ${game.playerCrew.size}",
             )
-            var statY = 92 + 7
+            // Tighter spacing than the flavour message, so all five lines
+            // sit clear of the score below.
+            var statY = 92
             for (line in statLines) {
                 bodyFont.drawStringCentred(centreX.f, position.y + statY.f, 0f, line, Colour.white)
-                statY += 22
+                statY += 19
             }
         } else {
             // Draw and wrap the main message.
