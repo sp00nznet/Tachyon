@@ -190,25 +190,34 @@ public class MainGame implements Game {
                 mpTestTimer = 0f;
                 InGameState state = (InGameState) currentState;
                 var player = state.getPlayer();
-                switch (mpTestCounter % 5) {
+                switch (mpTestCounter % 6) {
                     case 0 -> state.submitCommand(new Command.ToggleDoor(mpTestCounter));
                     case 1 -> {
                         if (player != null && !player.getCrew().isEmpty()
                                 && !player.getRooms().isEmpty()) {
                             int roomId = player.getRooms()
-                                    .get((mpTestCounter / 5) % player.getRooms().size()).getId();
+                                    .get((mpTestCounter / 6) % player.getRooms().size()).getId();
                             state.submitCommand(new Command.MoveCrew(java.util.List.of(0), roomId));
                         }
                     }
                     case 2 -> {
                         if (player != null && !player.getMainSystems().isEmpty())
-                            state.submitCommand(new Command.SetSystemPower(0, mpTestCounter % 10 == 2));
+                            state.submitCommand(new Command.SetSystemPower(0, mpTestCounter % 12 == 2));
                     }
                     case 3 -> {
                         if (player != null && !player.getHardpoints().isEmpty())
-                            state.submitCommand(new Command.SetWeaponArmed(0, mpTestCounter % 10 == 3));
+                            state.submitCommand(new Command.SetWeaponArmed(0, mpTestCounter % 12 == 3));
                     }
                     case 4 -> state.submitCommand(new Command.SelectDialogueOption(0));
+                    case 5 -> {
+                        var beacon = state.getCurrentBeacon();
+                        if (beacon != null && !beacon.getNeighbours().isEmpty()) {
+                            int idx = beacon.getSector().getBeacons()
+                                    .indexOf(beacon.getNeighbours().get(0));
+                            if (idx >= 0)
+                                state.submitCommand(new Command.JumpToBeacon(idx));
+                        }
+                    }
                 }
                 mpTestCounter++;
             }

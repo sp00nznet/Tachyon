@@ -97,10 +97,12 @@ network. It is being built as a vertical slice; the current state:
 - **Commands** — player input is funnelled into `Command` objects rather than
   mutating the game directly. On the host (and in single-player) a command is applied
   at once; on the client it is sent to the host, which applies it and streams the
-  result back. Doors, crew movement, system power, weapon arming and both
-  room- and beam-weapon targeting go through this path, so a client can fully fly
-  the shared ship. The client keeps its own crew selection and resource counters
-  across snapshots.
+  result back. Doors, crew movement, system power, weapon arming, room- and
+  beam-weapon targeting, event choices and FTL jumps all go through this path, so a
+  client can fully fly the shared ship.
+- **Client UI state** — the client keeps its own crew selection, resource counters
+  and open menus (jump map, ship overview, options) across snapshots, so its
+  windows don't vanish when the game is rebuilt from the host's stream.
 - **Shared cursor** — each player's mouse position is sent to the other and drawn
   as a small amber crosshair, so co-op players can point things out to each other.
 - While a co-op session is connected the game keeps rendering even when its window

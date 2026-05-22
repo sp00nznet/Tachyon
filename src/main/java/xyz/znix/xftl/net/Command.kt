@@ -172,6 +172,31 @@ sealed class Command {
                 .array()
     }
 
+    /** Jump the ship to the beacon at [beaconIndex] within the current sector. */
+    data class JumpToBeacon(val beaconIndex: Int) : Command() {
+        override fun apply(game: InGameState) {
+            val beacons = game.currentBeacon.sector.beacons
+            val beacon = beacons.getOrNull(beaconIndex) ?: return
+            // Only a neighbouring beacon is reachable, unless any-jump is on.
+            if (!game.currentBeacon.neighbours.contains(beacon) && !game.debugFlags.anyJump.set)
+                return
+
+            // Jumping needs fuel.
+            if (game.player.fuelCount <= 0)
+                return
+
+            // Close the jump map first, so the new beacon's event dialogue
+            // (opened by setCurrentBeacon) is not immediately closed again.
+            game.shipUI?.closeJumpWindow()
+            game.player.fuelCount--
+            game.advanceFleet()
+            game.currentBeacon = beacon
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(8).putInt(TYPE_JUMP_TO_BEACON).putInt(beaconIndex).array()
+    }
+
     /** Choose option [optionIndex] in the currently-open event dialogue. */
     data class SelectDialogueOption(val optionIndex: Int) : Command() {
         override fun apply(game: InGameState) {
@@ -190,6 +215,7 @@ sealed class Command {
         private const val TYPE_TARGET_WEAPON = 4
         private const val TYPE_TARGET_BEAM = 5
         private const val TYPE_SELECT_DIALOGUE = 6
+        private const val TYPE_JUMP_TO_BEACON = 7
 
         // A sane upper bound on how many crew one command can move.
         private const val MAX_CREW = 1000
@@ -220,6 +246,8 @@ sealed class Command {
                         TargetBeam(buf.int, buf.int != 0, buf.int, buf.int, buf.float)
 
                     TYPE_SELECT_DIALOGUE -> SelectDialogueOption(buf.int)
+
+                    TYPE_JUMP_TO_BEACON -> JumpToBeacon(buf.int)
 
                     else -> {
                         System.err.println("Co-op: ignoring unknown command type $type")

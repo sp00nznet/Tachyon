@@ -1831,17 +1831,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
     }
 
     /**
-     * FOR DEBUG USE ONLY!
-     *
-     * See [InGameState.debugContinuousSaveRestore] for more information.
-     */
-    /**
-     * Carry transient UI state - currently the crew selection - onto this
-     * freshly built UI from [prev].
+     * Carry transient UI state - crew selection, resource counters and any
+     * open local windows - onto this freshly built UI from [prev].
      *
      * The co-op client rebuilds its whole game from each streamed snapshot,
-     * so without this the local player's selection would be lost five times a
-     * second. It is also used by the continuous save/restore debug flag.
+     * so without this the local player's selection and open menus would be
+     * lost five times a second. It also backs the continuous save/restore
+     * debug flag.
      */
     fun carryOverFrom(prev: PlayerShipUI?) {
         if (prev == null) {
@@ -1873,6 +1869,8 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             prev.lastResources.scrap, prev.lastResources.fuel,
             prev.lastResources.missiles, prev.lastResources.droneParts
         )
+
+        restoreOpenWindows(prev)
     }
 
     /** Set the resource delta counters, so no "+N" is shown until a real change. */
@@ -1883,17 +1881,57 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
         lastResources.droneParts = droneParts
     }
 
+    /**
+     * Re-open whatever local window the player had open before [prev] was
+     * rebuilt, so windows like the jump map, the ship overview or the options
+     * menu don't vanish on the co-op client every time a snapshot arrives.
+     *
+     * Windows that travel inside the snapshot (the event dialogue, game-over)
+     * are restored separately by [loadFromXML], so they are left alone here.
+     */
+    private fun restoreOpenWindows(prev: PlayerShipUI) {
+        if (currentWindow == null) {
+            when (val w = prev.currentWindow) {
+                is JumpWindow -> openJumpMap()
+                is SectorMapWindow -> openSectorMap()
+                is ShipWindow -> showShipWindow(w.openTab, force = true)
+                is StoreWindow -> {
+                    showStoreWindow()
+                    (currentWindow as? StoreWindow)?.let { store ->
+                        store.sellTab = w.sellTab
+                        store.secondBuyTab = w.secondBuyTab
+                    }
+                }
+
+                else -> {} // Dialogue / game-over come from the snapshot.
+            }
+        }
+
+        // The pause and options menus are never part of the snapshot.
+        when (prev.pauseWindow) {
+            is OptionsWindow -> showOptionsWindow()
+            is HotkeysWindow -> showKeybindWindow()
+            is PauseWindow -> showPauseWindow()
+            else -> {}
+        }
+    }
+
+    /** Close the jump map or sector map if either is open. */
+    fun closeJumpWindow() {
+        if (currentWindow is JumpWindow || currentWindow is SectorMapWindow) {
+            currentWindow = null
+            storeAlreadyOpened = false
+            updateButtons()
+        }
+    }
+
+    /**
+     * FOR DEBUG USE ONLY - see [InGameState.debugContinuousSaveRestore].
+     * Carrying UI state across a reload is exactly what the co-op client
+     * needs, so this just defers to [carryOverFrom].
+     */
     fun debugContinuousSaveRestore(prev: PlayerShipUI) {
         carryOverFrom(prev)
-
-        // Reloading should keep the store open, if it's run manually.
-        val oldStore = prev.currentWindow as? StoreWindow
-        if (oldStore != null) {
-            showStoreWindow()
-            val store = currentWindow as StoreWindow
-            store.sellTab = oldStore.sellTab
-            store.secondBuyTab = oldStore.secondBuyTab
-        }
     }
 
     private fun updateHoveredCrew(mouseX: Int, mouseY: Int, playerShipPosition: IPoint) {

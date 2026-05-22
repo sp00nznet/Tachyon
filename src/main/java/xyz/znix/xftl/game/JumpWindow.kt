@@ -6,6 +6,7 @@ import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.Direction
 import xyz.znix.xftl.math.IPoint
 import xyz.znix.xftl.math.Point
+import xyz.znix.xftl.net.Command
 import xyz.znix.xftl.rendering.Colour
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.rendering.Image
@@ -603,17 +604,18 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         if (!game.currentBeacon.neighbours.contains(hovered) && !game.debugFlags.anyJump.set)
             return
 
-        jump(hovered)
+        val index = game.currentBeacon.sector.beacons.indexOf(hovered)
+        if (index < 0)
+            return
 
-        game.player.fuelCount--
+        // Jumping is a shared action - route it through a co-op command, which
+        // runs the actual jump (fuel, fleet pursuit, new beacon) on the host.
+        game.submitCommand(Command.JumpToBeacon(index))
 
-        // Advance the fleet pursuit *before* changing the beacon, since
-        // if we're in a nebula that slows down the fleet pursuit.
-        game.advanceFleet()
-
-        // Make sure we set the beacon after we've called the jump callback, so that the event
-        // dialogue window doesn't get closed by the callback.
-        game.currentBeacon = hovered
+        // On the host the command already closed this window; on a client it
+        // doesn't, so close the local jump map here.
+        if (!game.isSimulated)
+            jump(null)
     }
 
     private fun waitOutOfFuel() {

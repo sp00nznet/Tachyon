@@ -41,6 +41,9 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
 
     private var tab: Tab = initialTab
 
+    /** The tab currently shown, so co-op can re-open the window on the same one. */
+    val openTab: Tab get() = tab
+
     private val equipmentPanel = ShipEquipmentPanel(game, ship)
 
     private val infoPanel = InfoPanel(game)
