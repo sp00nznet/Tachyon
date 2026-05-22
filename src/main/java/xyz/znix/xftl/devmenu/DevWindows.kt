@@ -232,46 +232,69 @@ class InspectorWindow : DevWindow("Game Inspector", 320) {
 }
 
 /** Browse and load saves written by the dev menu or the debug console. */
-class LoadGameWindow : DevWindow("Load Game", 420) {
+/** Browse, load, create and delete saved games. */
+class LoadGameWindow : DevWindow("Saved Games", 430) {
     private var saves = emptyList<Path>()
     private var scroll = 0
 
     private val rowsShown = 9
 
-    override val contentHeight = rowsShown * 24 + 22
+    override val contentHeight = 30 + rowsShown * 24 + 20
 
-    override fun onShown() {
+    private fun refresh() {
         saves = try {
             DevActions.listSaves()
         } catch (ex: Exception) {
             ex.printStackTrace()
             emptyList()
         }
+    }
+
+    override fun onShown() {
+        refresh()
         scroll = 0
     }
 
     override fun onScroll(change: Int) {
-        // 'change' is positive when scrolling up.
         val maxScroll = (saves.size - rowsShown).coerceAtLeast(0)
         scroll = (scroll - change / 40).coerceIn(0, maxScroll)
     }
 
     override fun content(ui: DevUI, cx: Int, cy: Int) {
+        val rowW = width - 24
+
+        // Save the current game into a new slot.
+        val game = menu.currentInGame()
+        if (ui.button(cx, cy, 170, 22, "Save Current Game", enabled = game != null)) {
+            try {
+                val file = DevActions.saveGame(game!!)
+                menu.setStatus("Saved ${file.fileName}")
+                refresh()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                menu.setStatus("Save failed - see the log")
+            }
+        }
+
+        var ry = cy + 30
+
         if (saves.isEmpty()) {
-            ui.text(cx, cy, 18, "No saves found in the debug-saves folder.", DevUI.TEXT_DIM)
+            ui.text(cx, ry, 18, "No saves yet.", DevUI.TEXT_DIM)
             return
         }
 
-        var ry = cy
-        val rowW = width - 24
+        scroll = scroll.coerceIn(0, (saves.size - rowsShown).coerceAtLeast(0))
         for (i in scroll until minOf(saves.size, scroll + rowsShown)) {
             val file = saves[i]
             val name = file.fileName.toString().removeSuffix(".xml")
-            val hot = ui.hovered(cx, ry, rowW, 22)
-            ui.fill(cx, ry, rowW, 22, if (hot) DevUI.HOVER_BG else DevUI.CONTROL_BG)
-            ui.outline(cx, ry, rowW, 22, DevUI.BORDER)
+            val nameW = rowW - 52
+
+            // Name area - click to load.
+            val hot = ui.hovered(cx, ry, nameW, 22)
+            ui.fill(cx, ry, nameW, 22, if (hot) DevUI.HOVER_BG else DevUI.CONTROL_BG)
+            ui.outline(cx, ry, nameW, 22, DevUI.BORDER)
             ui.text(cx + 8, ry, 22, name, DevUI.TEXT)
-            if (ui.pressedIn(cx, ry, rowW, 22)) {
+            if (ui.pressedIn(cx, ry, nameW, 22)) {
                 ui.consumePress()
                 try {
                     DevActions.loadGame(menu.mainGame, file)
@@ -282,12 +305,22 @@ class LoadGameWindow : DevWindow("Load Game", 420) {
                     menu.setStatus("Failed to load $name - see the log")
                 }
             }
+
+            // Delete button.
+            if (ui.button(cx + nameW + 4, ry, 48, 22, "Del")) {
+                try {
+                    DevActions.deleteSave(file)
+                    menu.setStatus("Deleted $name")
+                    refresh()
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    menu.setStatus("Delete failed - see the log")
+                }
+            }
             ry += 24
         }
 
-        if (saves.size > rowsShown) {
-            ui.text(cx, ry + 4, 14, "Scroll for more - ${saves.size} saves", DevUI.TEXT_DIM)
-        }
+        ui.text(cx, ry + 2, 14, "${saves.size} saves - click a name to load", DevUI.TEXT_DIM)
     }
 }
 

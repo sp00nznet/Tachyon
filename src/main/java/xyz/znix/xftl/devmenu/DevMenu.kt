@@ -272,7 +272,7 @@ class DevMenu(val mainGame: MainGame) : InputOverlay {
                     setStatus("Save failed - see the log")
                 }
             },
-            DropItem.action("Load Game...") { loadWindow.open = true },
+            DropItem.action("Saved Games...") { loadWindow.open = true },
             DropItem.separator(),
             DropItem.action("Quit") { mainGame.quitGame() },
         )

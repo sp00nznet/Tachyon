@@ -141,6 +141,11 @@ object DevActions {
         }
     }
 
+    /** Delete a save file. */
+    fun deleteSave(file: Path) {
+        Files.deleteIfExists(file)
+    }
+
     /** Load a save file written by [saveGame] (or the debug console). */
     fun loadGame(mainGame: MainGame, file: Path) {
         val doc = Files.newBufferedReader(file, Charsets.UTF_8).use { reader ->
