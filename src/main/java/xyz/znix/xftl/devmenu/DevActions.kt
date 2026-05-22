@@ -53,6 +53,17 @@ object DevActions {
         }
     }
 
+    /** Set every skill of every player crew member to maximum. */
+    fun maxCrewSkills(game: InGameState) {
+        for (crew in game.player.crew) {
+            if (crew is xyz.znix.xftl.crew.LivingCrew) {
+                for (skill in xyz.znix.xftl.crew.Skill.entries) {
+                    crew.info.skills[skill] = 1f
+                }
+            }
+        }
+    }
+
     /** Fill the player ship with scrap, fuel, missiles and drone parts. */
     fun maxResources(game: InGameState) {
         val ship = game.player

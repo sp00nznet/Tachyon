@@ -9,10 +9,12 @@ import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.crew.LivingCrewInfo
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.rendering.Colour
+import xyz.znix.xftl.shipgen.EnemyShipSpec
 import xyz.znix.xftl.systems.SystemBlueprint
 import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.DroneBlueprint
 import java.nio.file.Path
+import kotlin.random.Random
 
 /**
  * A draggable, closeable floating panel owned by the [DevMenu].
@@ -539,7 +541,11 @@ class CheatsWindow : DevWindow("Cheats", 340) {
         }
         ry += 26
 
-        if (ui.button(cx, ry, width - 24, 22, "Destroy Enemy Ship", hasEnemy)) {
+        if (ui.button(cx, ry, bw, 22, "Max Crew Skills")) {
+            DevActions.maxCrewSkills(game)
+            menu.setStatus("Crew skills maxed out")
+        }
+        if (ui.button(cx + bw + 8, ry, bw, 22, "Destroy Enemy Ship", hasEnemy)) {
             DevActions.destroyEnemyShip(game)
             menu.setStatus("Enemy ship destroyed")
         }
@@ -606,5 +612,55 @@ class TuningWindow : DevWindow("Tuning", 320) {
             DevSettings.storeFrequency = 0f
         }
         ui.text(cx, ry + 28, 14, "World-gen tuning applies to newly visited sectors.", DevUI.TEXT_DIM)
+    }
+}
+
+/** Spawn a chosen enemy ship at the current beacon. */
+class SpawnShipWindow : DevWindow("Spawn Enemy Ship", 380) {
+    private var specs: List<EnemyShipSpec> = emptyList()
+    private var scroll = 0
+    private val rowsShown = 12
+
+    override val contentHeight = rowsShown * 20 + 24
+
+    override fun onShown() {
+        specs = menu.currentInGame()?.eventManager?.getShips()
+            ?.sortedBy { it.name } ?: emptyList()
+        scroll = 0
+    }
+
+    override fun onScroll(change: Int) {
+        scroll -= change / 40
+    }
+
+    override fun content(ui: DevUI, cx: Int, cy: Int) {
+        val game = menu.currentInGame()
+        if (game == null) {
+            ui.text(cx, cy, 18, "Start a game first.", DevUI.TEXT_DIM)
+            return
+        }
+        if (specs.isEmpty())
+            onShown()
+
+        val rowW = width - 24
+        val maxScroll = (specs.size - rowsShown).coerceAtLeast(0)
+        scroll = scroll.coerceIn(0, maxScroll)
+
+        for (i in scroll until minOf(specs.size, scroll + rowsShown)) {
+            val spec = specs[i]
+            val ry = cy + (i - scroll) * 20
+            val hot = ui.hovered(cx, ry, rowW, 19)
+            ui.fill(cx, ry, rowW, 19, if (hot) DevUI.HOVER_BG else DevUI.CONTROL_BG)
+            ui.outline(cx, ry, rowW, 19, DevUI.BORDER)
+            ui.text(cx + 8, ry, 19, spec.name, DevUI.TEXT)
+            if (ui.pressedIn(cx, ry, rowW, 19)) {
+                ui.consumePress()
+                val sectorNum = game.currentBeacon.sector.sectorNumber
+                game.debugSpawnShip(spec, game.difficulty, sectorNum, Random.Default.nextInt())
+                menu.setStatus("Spawned ${spec.name}")
+            }
+        }
+
+        ui.text(cx, cy + rowsShown * 20 + 4, 14, "${specs.size} ship types", DevUI.TEXT_DIM)
     }
 }
