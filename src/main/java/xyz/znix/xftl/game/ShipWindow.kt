@@ -122,10 +122,18 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             reactorUpgradeUndo.clear()
         }
 
+        // Build the upgrade-tab buttons up front so they exist before the
+        // first updateUI runs - otherwise a co-op client's snapshot rebuild
+        // leaves the info-on-hover panel without a button to anchor to for
+        // one frame each rebuild, which the user sees as a pulse.
+        if (tab == Tab.UPGRADES) {
+            populateUpgradesButtons()
+        }
+
         // Update the button window offsets
         positionUpdated()
 
-        // Update any buttons added in the drawing code
+        // Other tabs still add buttons in their drawing code.
         updatingButtons = true
     }
 
@@ -204,20 +212,9 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
         )
 
         undoButtonImage.draw(position.x + 3f, position.y + 464f)
-        if (updatingButtons) {
-            buttons += object : Buttons.BasicButton(
-                game, ConstPoint(26, 471), ConstPoint(97, 32),
-                game.translator["button_undo"],
-                4, game.getFont("HL2", 3f), 25,
-                this::undoAllSystems
-            ) {
-                // Grey the button out when there's nothing to undo
-                override val disabled: Boolean get() = systemUpgradeUndos.all { it.value.isEmpty() } && reactorUpgradeUndo.isEmpty()
-            }
-        }
 
-        // Draw the system power info.
-        // Note the reactor button draws this itself.
+        // Draw the system power info for whichever system is hovered. The
+        // reactor button draws its own info via its overridden draw().
         val hoveredButton = buttons.filterIsInstance(UpgradeButton::class.java).firstOrNull { it.hovered }
         val hoveredSystem = hoveredButton?.system
         if (hoveredSystem != null) {
@@ -225,22 +222,36 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             infoPanel.drawDescriptionBoxSystem(hoveredSystem)
             infoPanel.drawSystemPowerBox(g, hoveredSystem.blueprint, hoveredSystem.energyLevels, undoablePower)
         }
+    }
 
-        // Draw the systems
+    /**
+     * Build the upgrade-tab buttons up front, so hover detection picks them up
+     * on the very first frame after a co-op client rebuilds this window.
+     * (Creating them inside [drawUpgrades] left a one-frame gap each rebuild,
+     * which the user saw as a steady info-panel pulse.)
+     */
+    private fun populateUpgradesButtons() {
+        // Undo button
+        buttons += object : Buttons.BasicButton(
+            game, ConstPoint(26, 471), ConstPoint(97, 32),
+            game.translator["button_undo"],
+            4, game.getFont("HL2", 3f), 25,
+            this::undoAllSystems
+        ) {
+            // Grey the button out when there's nothing to undo.
+            override val disabled: Boolean
+                get() = systemUpgradeUndos.all { it.value.isEmpty() } && reactorUpgradeUndo.isEmpty()
+        }
+
+        // Main system upgrade buttons.
         for (i in 0 until 8) {
-            if (!updatingButtons)
-                continue
-
             val system = ship.mainSystems.getOrNull(i)
-
             val price: Int? = when {
                 system == null -> null
                 system.energyLevels == system.blueprint.maxPower -> null
                 else -> system.blueprint.upgradeCost[system.energyLevels - 1]
             }
-
             val isFullyUpgraded = system != null && price == null
-
             val baseImage = when {
                 system == null -> "img/upgradeUI/upgrade_system_bar_none.png"
                 isFullyUpgraded -> "img/upgradeUI/upgrade_system_bar_max_on.png"
@@ -251,7 +262,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                 isFullyUpgraded -> "img/upgradeUI/upgrade_system_bar_max_select2.png"
                 else -> "img/upgradeUI/upgrade_system_bar_select2.png"
             }
-
             buttons += UpgradeButton(
                 ConstPoint(32 + 66 * i, 115), ConstPoint(66, 150),
                 game.getImg(selectImage), game.getImg(baseImage),
@@ -259,23 +269,16 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             )
         }
 
-        // Draw the subsystems
-        // TODO only go until 3 on non-AE?
+        // Subsystem upgrade buttons (TODO: only go until 3 on non-AE).
         val subsystems = ship.rooms.mapNotNull { it.system as? SubSystem }.sortedBy { it.sortingType }
         for (i in 0 until 4) {
-            if (!updatingButtons)
-                continue
-
             val system = if (i < subsystems.size) subsystems[i] else null
-
             val price: Int? = when {
                 system == null -> null
                 system.energyLevels == system.blueprint.maxPower -> null
                 else -> system.blueprint.upgradeCost[system.energyLevels - 1]
             }
-
             val isFullyUpgraded = system != null && price == null
-
             val baseImage = when {
                 system == null -> "img/upgradeUI/upgrade_subsystem_bar_none.png"
                 isFullyUpgraded -> "img/upgradeUI/upgrade_subsystem_bar_max_on.png"
@@ -286,7 +289,6 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                 isFullyUpgraded -> "img/upgradeUI/upgrade_subsystem_bar_max_select2.png"
                 else -> "img/upgradeUI/upgrade_subsystem_bar_select2.png"
             }
-
             buttons += UpgradeButton(
                 ConstPoint(9 + 66 * i, 330), ConstPoint(66, 113),
                 game.getImg(selectImage), game.getImg(baseImage),
@@ -294,8 +296,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             )
         }
 
-        // Add the reactor button
-        if (updatingButtons) {
+        // Reactor button.
+        run {
             val reactorImg = game.getImg("img/upgradeUI/Equipment/equipment_reactor_on.png")
             val reactorHighlight = game.getImg("img/upgradeUI/Equipment/equipment_reactor_select2.png")
             buttons += object : Button(game, ConstPoint(298, 327), reactorImg.imageSize) {

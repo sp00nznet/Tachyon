@@ -63,7 +63,11 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
     private val beaconOffset = Point(-beaconYellow.width / 2, -beaconYellow.height / 2)
 
     // The offsets to the coordinate system the beacons are positioned on
-    private val mapBase = Point(0, 0)
+    // Derived from the window position so it is correct even on the very first
+    // updateUI - on a co-op client the window is rebuilt every snapshot, and
+    // hover detection needs mapBase before the first draw runs.
+    private val mapBase: Point
+        get() = Point(position.x + Sector.OFFSET.x, position.y + Sector.OFFSET.y)
 
     private val sector = game.currentBeacon.sector
 
@@ -149,8 +153,7 @@ class JumpWindow(val game: InGameState, showSectorMap: () -> Unit, val jump: (Be
         // Draw the background image, offset 4px to account for the line wall of the window.
         background.draw(position.x + 4f, position.y + 4f)
 
-        mapBase.x = position.x + Sector.OFFSET.x
-        mapBase.y = position.y + Sector.OFFSET.y
+        // mapBase is now a position-derived getter, so no assignment needed.
 
         // In the last stand, the danger stripes sit behind everything else.
         // TODO draw the player and boss ships below this.
