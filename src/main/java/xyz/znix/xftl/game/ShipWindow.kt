@@ -122,12 +122,14 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             reactorUpgradeUndo.clear()
         }
 
-        // Build the upgrade-tab buttons up front so they exist before the
+        // Build the tab-specific buttons up front so they exist before the
         // first updateUI runs - otherwise a co-op client's snapshot rebuild
         // leaves the info-on-hover panel without a button to anchor to for
         // one frame each rebuild, which the user sees as a pulse.
-        if (tab == Tab.UPGRADES) {
-            populateUpgradesButtons()
+        when (tab) {
+            Tab.UPGRADES -> populateUpgradesButtons()
+            Tab.CREW -> populateCrewButtons()
+            Tab.EQUIPMENT -> {} // Equipment tab buttons live in equipmentPanel.
         }
 
         // Update the button window offsets
@@ -520,6 +522,140 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
         }
     }
 
+    /**
+     * Same pattern as [populateUpgradesButtons] - build the crew-tab buttons
+     * up front so they exist before the first updateUI on a snapshot rebuild,
+     * so hover (and the crewmember info panel) doesn't flicker once per snapshot.
+     */
+    private fun populateCrewButtons() {
+        val crew = ship.sys.playerCrew
+
+        // Same slot layout as drawCrew.
+        fun addSlot(x: Int, y: Int, id: Int) {
+            val member = crew.getOrNull(id) ?: return
+            addCrewBoxButtons(member, ConstPoint(x, y))
+        }
+        // First row
+        addSlot(68 + 170 * 0, 88 + 133 * 0, 0)
+        addSlot(68 + 170 * 1, 88 + 133 * 0, 1)
+        addSlot(68 + 170 * 2, 88 + 133 * 0, 2)
+        // Second row
+        addSlot(68 + 170 * 0, 88 + 133 * 1, 3)
+        addSlot(68 + 170 * 1, 88 + 133 * 1, 4)
+        addSlot(68 + 170 * 2, 88 + 133 * 1, 5)
+        // Third row
+        if (game.playerHasTooManyCrew()) {
+            addSlot(68 + 170 * 0, 88 + 133 * 2, 6)
+            addSlot(68 + 170 * 1, 88 + 133 * 2, 7)
+            addSlot(68 + 170 * 2, 88 + 133 * 2, 8)
+        } else {
+            addSlot(154, 88 + 133 * 2, 6)
+            addSlot(324, 88 + 133 * 2, 7)
+        }
+
+        if (game.playerHasTooManyCrew()) {
+            buttons += ShipEquipmentPanel.SellDropBox.create(
+                game,
+                ShipEquipmentPanel.SellDropBox.Type.TOO_MANY_CREW,
+                ConstPoint(-275, 107)
+            ) { null }
+        }
+    }
+
+    /** The main + dismiss buttons for one crewmember box. */
+    private fun addCrewBoxButtons(crew: LivingCrew, boxPos: ConstPoint) {
+        val dismissButtonBox = game.getImg("img/customizeUI/box_crewcustom_on.png")
+        val dismissButtonBoxHover = game.getImg("img/customizeUI/box_crewcustom_selected.png")
+        val boxNormal = game.getImg("img/upgradeUI/Equipment/box_crew_on.png")
+        val boxHover = game.getImg("img/upgradeUI/Equipment/box_crew_selected.png")
+
+        val mainButton = object : Button(game, boxPos, boxNormal.imageSize) {
+            override val makesHoverNoise: Boolean get() = false
+
+            var nameHover = false
+
+            override fun draw(g: Graphics) {
+                val box = if (hovered) boxHover else boxNormal
+                box.draw(pos)
+
+                val dismissBox = if (hovered) dismissButtonBoxHover else dismissButtonBox
+                dismissBox.draw(pos.x.f, pos.y + 62f)
+
+                if (renamingCrew == crew) {
+                    // Draw the rename box
+                    val width = 150
+                    val height = 23
+                    val boxX = pos.x + (size.x - width) / 2
+                    val boxY = pos.y + 43
+
+                    g.colour = Colour.white
+                    g.fillRect(boxX, boxY, width, height)
+                    g.colour = Colour.black
+                    g.fillRect(boxX + 1, boxY + 1, width - 2, height - 2)
+
+                    val name = crew.info.name
+                    val nameWidth = crewMessageFont.getWidth(name) + 2 + 2
+                    val nameX = boxX + (width - nameWidth) / 2
+                    crewMessageFont.drawString(nameX.f, pos.y + 61f, name, Colour.white)
+
+                    // Blinking text-input cursor, driven by the global clock.
+                    if (System.nanoTime() % 500_000_000L < 250_000_000L) {
+                        g.colour = Colour.yellow
+                        g.fillRect(nameX + nameWidth - 2, boxY + 8, 2, 13)
+                    }
+                } else {
+                    val name = crew.info.shortName
+                    val nameX = (96 - crewNameFont.getWidth(name)) / 2
+                    val nameColour = when (nameHover) {
+                        true -> Constants.CREW_RENAME_TEXT_COLOUR
+                        false -> Colour.white
+                    }
+                    crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, nameColour)
+                }
+
+                // Draw the crewmember portrait
+                val portrait = crew.icon.currentFrame
+                crew.drawPortrait(
+                    pos.x + 2 + (96 - portrait.width * 2) / 2,
+                    pos.y + 2 + (45 - portrait.height * 2) / 2,
+                    false, 2f
+                )
+
+                if (hovered) {
+                    infoPanel.drawCrew(g, crew.info)
+                }
+            }
+
+            override fun update(x: Int, y: Int, blockHover: Boolean) {
+                super.update(x, y, blockHover)
+                nameHover = x in (pos.x..pos.x + 100) && y in (pos.y + 49..pos.y + 65)
+            }
+
+            override fun click(button: Int) {
+                if (button != Input.MOUSE_LEFT_BUTTON || !nameHover)
+                    return
+                renamingCrew = crew
+            }
+        }
+
+        val dismissButton = Buttons.BasicButton(
+            game, boxPos + ConstPoint(4, 70), ConstPoint(92, 12),
+            game.translator["crewbox_dismiss"],
+            2, dismissFont, 9
+        ) {
+            crewToDismiss = crew
+            updateButtons()
+        }
+
+        buttons += mainButton
+        buttons += dismissButton
+
+        if (crewToDismiss == crew) {
+            dismissHighlightButtons += mainButton
+            dismissHighlightButtons += dismissButton
+        }
+    }
+
     private fun drawCrew(g: Graphics) {
         val crew = ship.sys.playerCrew
 
@@ -571,13 +707,11 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             return
         }
 
-        val dismissButtonBox = game.getImg("img/customizeUI/box_crewcustom_on.png")
-        val dismissButtonBoxHover = game.getImg("img/customizeUI/box_crewcustom_selected.png")
-
-        val boxNormal = game.getImg("img/upgradeUI/Equipment/box_crew_on.png")
-        val boxHover = game.getImg("img/upgradeUI/Equipment/box_crew_selected.png")
-
+        // The actual crewmember drawing (portrait, name, hover info) lives in
+        // the per-crew buttons populated by [populateCrewButtons]. Here we
+        // only update the dismiss-widget position for the slot that owns it.
         if (crewToDismiss == crew) {
+            val boxNormal = game.getImg("img/upgradeUI/Equipment/box_crew_on.png")
             val margin = 22 // Min space between window and warning
             val boxCentre = boxPos.x + boxNormal.width / 2
             val boxWidth = crewDismissWidget.root.size.x
@@ -587,104 +721,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             crewDismissWidgetPos.x = relX
             crewDismissWidgetPos.y = boxPos.y + 70 + 23
         }
-
-        if (!updatingButtons)
-            return
-
-        val mainButton = object : Button(game, boxPos, boxNormal.imageSize) {
-            override val makesHoverNoise: Boolean get() = false
-
-            var nameHover = false
-
-            override fun draw(g: Graphics) {
-                val box = if (hovered) boxHover else boxNormal
-                box.draw(pos)
-
-                val dismissBox = if (hovered) dismissButtonBoxHover else dismissButtonBox
-                dismissBox.draw(pos.x.f, pos.y + 62f)
-
-                if (renamingCrew == crew) {
-                    // Draw the rename box
-                    val width = 150
-                    val height = 23
-                    val boxX = pos.x + (size.x - width) / 2
-                    val boxY = pos.y + 43
-
-                    g.colour = Colour.white
-                    g.fillRect(boxX, boxY, width, height)
-                    g.colour = Colour.black
-                    g.fillRect(boxX + 1, boxY + 1, width - 2, height - 2)
-
-                    val name = crew.info.name
-                    val nameWidth = crewMessageFont.getWidth(name) + 2 + 2 // 2+2 for the gap and cursor
-                    val nameX = boxX + (width - nameWidth) / 2
-                    crewMessageFont.drawString(nameX.f, pos.y + 61f, name, Colour.white)
-
-                    // Draw the text-input cursor, blinking by a global clock so it
-                    // doesn't restart on a co-op client's snapshot rebuild.
-                    if (System.nanoTime() % 500_000_000L < 250_000_000L) {
-                        g.colour = Colour.yellow
-                        g.fillRect(nameX + nameWidth - 2, boxY + 8, 2, 13)
-                    }
-                } else {
-                    // Draw the name
-                    val name = crew.info.shortName
-                    val nameX = (96 - crewNameFont.getWidth(name)) / 2
-                    val nameColour = when (nameHover) {
-                        true -> Constants.CREW_RENAME_TEXT_COLOUR
-                        false -> Colour.white
-                    }
-                    crewNameFont.drawString(pos.x + 2f + nameX, pos.y + 61f, name, nameColour)
-                }
-
-                // Draw the crewmember portrait
-                // TODO align properly
-                val portrait = crew.icon.currentFrame
-                crew.drawPortrait(
-                    pos.x + 2 + (96 - portrait.width * 2) / 2,
-                    pos.y + 2 + (45 - portrait.height * 2) / 2,
-                    false,
-                    2f
-                )
-
-                // Draw the information about this crewmember while hovering over them
-                if (hovered) {
-                    infoPanel.drawCrew(g, crew.info)
-                }
-            }
-
-            override fun update(x: Int, y: Int, blockHover: Boolean) {
-                super.update(x, y, blockHover)
-
-                nameHover = x in (pos.x..pos.x + 100) && y in (pos.y + 49..pos.y + 65)
-            }
-
-            override fun click(button: Int) {
-                if (button != Input.MOUSE_LEFT_BUTTON || !nameHover)
-                    return
-
-                renamingCrew = crew
-            }
-        }
-
-        val dismissButton = Buttons.BasicButton(
-            game, boxPos + ConstPoint(4, 70), ConstPoint(92, 12),
-            game.translator["crewbox_dismiss"],
-            2, dismissFont, 9
-        ) {
-            crewToDismiss = crew
-            updateButtons()
-        }
-
-        buttons += mainButton
-        buttons += dismissButton
-
-        // Don't grey out the buttons corresponding to crew we're about to dismiss
-        if (crewToDismiss == crew) {
-            dismissHighlightButtons += mainButton
-            dismissHighlightButtons += dismissButton
-        }
     }
+
 
     private fun drawEquipment(g: Graphics) {
         equipmentPanel.draw(g)
