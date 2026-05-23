@@ -87,9 +87,9 @@ test:
     expire_in: 1 week
 
 # ── publish ─────────────────────────────────────────────────────────────────
-# Build the fat jar — the single-file Tachyon distribution. The fatJar task
-# bundles every platform's LWJGL natives and all dependencies, so the result
-# runs on any machine with a JDK 17 just by `java -jar`.
+# Build the fat jar — the cross-platform Tachyon distribution. The fatJar
+# task bundles every platform's LWJGL natives and all dependencies, so the
+# result runs on any machine with a JDK 17 just by `java -jar`.
 publish:fatjar:
   stage: publish
   <<: *gradle_cache
@@ -99,6 +99,26 @@ publish:fatjar:
     name: "tachyon-$CI_COMMIT_SHORT_SHA"
     paths:
       - build/libs/XFTL-complete.jar
+    expire_in: 30 days
+
+# Build the standalone Windows app image — a Tachyon.exe with a trimmed
+# bundled JRE next to it. End users double-click Tachyon.exe and play; no
+# separate Java install required. jpackage targets the host OS, so this job
+# has to run on a Windows runner (the default tags above).
+publish:windows:
+  stage: publish
+  <<: *gradle_cache
+  script:
+    - .\gradlew.bat --no-daemon packageWindows
+    - |
+      $zip = "build\dist\tachyon-windows-$env:CI_COMMIT_SHORT_SHA.zip"
+      if (Test-Path $zip) { Remove-Item -Force $zip }
+      Compress-Archive -Path build\dist\Tachyon -DestinationPath $zip
+      "Bundled: $zip ($('{0:N1}' -f ((Get-Item $zip).Length / 1MB)) MB)"
+  artifacts:
+    name: "tachyon-windows-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - build/dist/tachyon-windows-*.zip
     expire_in: 30 days
 
 # ── deploy ──────────────────────────────────────────────────────────────────
@@ -120,6 +140,7 @@ deploy:windows:
   stage: deploy
   needs:
     - publish:fatjar
+    - publish:windows
   variables:
     DEST_SUBDIR: '$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG'
   script:
@@ -133,6 +154,7 @@ deploy:windows:
       $target = "R:\$env:DEST_SUBDIR"
       New-Item -ItemType Directory -Force -Path $target | Out-Null
       Copy-Item -Force .\build\libs\XFTL-complete.jar "$target\"
+      Copy-Item -Force .\build\dist\tachyon-windows-*.zip "$target\"
       Remove-PSDrive -Name R
   rules:
     - if: $CI_COMMIT_TAG

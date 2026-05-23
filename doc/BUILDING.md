@@ -134,14 +134,24 @@ upstream.
 
 ## Continuous integration
 
-[`.gitlab-ci.yml`](../.gitlab-ci.yml) drives a four-stage pipeline —
-*build → test → publish:fatjar → deploy:windows*. The publish stage uploads
-`build/libs/XFTL-complete.jar` as a `tachyon-<short-sha>` artifact; the
-optional deploy stage SMB-pushes it to
-`\\$SMB_HOST\$SMB_SHARE\Tachyon\<branch-or-tag>\` on master, tags and manual
-web triggers. The pipeline expects a Windows shell runner tagged
-`windows`, `win10`, `shell` with JDK 17 installed machine-wide. Drop the
-`deploy:windows` job and you can run the rest on any JDK 17 Linux image.
+[`.gitlab-ci.yml`](../.gitlab-ci.yml) drives a five-job pipeline —
+*build → test → publish:fatjar + publish:windows → deploy:windows*. Two
+artifacts come out of every successful pipeline:
+
+- **`tachyon-<short-sha>`** (publish:fatjar) — the cross-platform fat jar
+  (`build/libs/XFTL-complete.jar`, ~23 MB). Needs a JDK 17 on the user's
+  machine.
+- **`tachyon-windows-<short-sha>`** (publish:windows) — a zip of the
+  standalone Windows app image (`Tachyon.exe` + bundled JRE, ~77 MB
+  compressed). No JDK required.
+
+The optional `deploy:windows` job SMB-pushes both artifacts to
+`\\$SMB_HOST\$SMB_SHARE\Tachyon\<branch-or-tag>\` on master, tags and
+manual web triggers. The pipeline expects a Windows shell runner tagged
+`windows`, `win10`, `shell` with JDK 17 installed machine-wide (jpackage,
+needed for `publish:windows`, ships with JDK 14+). Drop the
+`publish:windows` and `deploy:windows` jobs and the build + test + fat-jar
+publish run fine on any JDK 17 Linux image.
 
 ## Pulling upstream changes
 
