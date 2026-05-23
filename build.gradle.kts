@@ -120,6 +120,11 @@ val fatJar by tasks.registering(Jar::class) {
             exclude("META-INF/*.RSA")
         }
     })
+
+    // Ship the project license + attribution at the jar root, so GPL §3 is
+    // visibly satisfied alongside the binary.
+    from(rootProject.file("LICENCE.txt"))
+    from(rootProject.file("NOTICE.md"))
 }
 
 /**
@@ -156,7 +161,16 @@ val packageWindows by tasks.registering(Exec::class) {
     )
 
     doLast {
-        val exe = outputDir.get().asFile.resolve("Tachyon/Tachyon.exe")
+        val tachyonDir = outputDir.get().asFile.resolve("Tachyon")
+        // Drop the project license and the attribution NOTICE at the top of
+        // the bundle so the GPL §3 distribution requirements are visible
+        // without poking inside the jar or the bundled JRE's legal/ folder.
+        copy {
+            from(rootProject.file("LICENCE.txt"))
+            from(rootProject.file("NOTICE.md"))
+            into(tachyonDir)
+        }
+        val exe = tachyonDir.resolve("Tachyon.exe")
         if (exe.exists()) {
             logger.lifecycle("Built ${exe.absolutePath}")
         }

@@ -30,18 +30,20 @@ the endgame — is upstream's. None of that would exist without ZNix's work; see
 
 ## Run it
 
-Need **JDK 17+** and a copy of FTL.
+**Easiest:** grab a pre-built release from **https://sp00.nz/releases/Tachyon/**
+
+- `tachyon-windows-*.zip` — standalone `Tachyon.exe` with a bundled JRE
+  (Windows; double-click and play, no separate Java install required).
+- `XFTL-complete.jar` — cross-platform fat jar. Needs a JDK 17 on your
+  machine; run with `java -jar XFTL-complete.jar`.
+
+**From source:** need JDK 17+, then:
 
 ```sh
 ./gradlew run
-```
-
-Or, on Windows, build a standalone double-clickable `Tachyon.exe` that bundles
-its own JRE so end users don't have to install Java:
-
-```sh
+# or, on Windows, build the standalone bundle yourself:
 ./gradlew packageWindows
-# -> build/dist/Tachyon/Tachyon.exe  (about 180 MB with the bundled runtime)
+# -> build/dist/Tachyon/Tachyon.exe
 ```
 
 On first launch Tachyon auto-detects FTL via Steam library folders. If it
