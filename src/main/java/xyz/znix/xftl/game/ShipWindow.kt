@@ -15,7 +15,6 @@ import xyz.znix.xftl.ui.Label
 import xyz.znix.xftl.ui.WidgetContainer
 import kotlin.math.max
 
-private typealias UndoFn = () -> Unit
 
 class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private val close: () -> Unit) :
     Window() {
@@ -45,14 +44,46 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
     /** The tab currently shown, so co-op can re-open the window on the same one. */
     val openTab: Tab get() = tab
 
+    /**
+     * Carry in-flight dismiss/rename UI state from [prev] onto this freshly
+     * built window, so a co-op client doesn't lose its confirmation widget
+     * or typed-but-uncommitted name every snapshot rebuild.
+     */
+    fun carryStateFrom(prev: ShipWindow) {
+        prev.crewToDismiss?.let { c ->
+            val idx = prev.ship.crew.indexOf(c)
+            if (idx >= 0) crewToDismiss = ship.crew.getOrNull(idx) as? LivingCrew
+        }
+        prev.renamingCrew?.let { c ->
+            val idx = prev.ship.crew.indexOf(c)
+            if (idx >= 0) renamingCrew = ship.crew.getOrNull(idx) as? LivingCrew
+        }
+        renameBuffer = prev.renameBuffer
+        if (crewToDismiss != null) updateButtons()
+    }
+
     private val equipmentPanel = ShipEquipmentPanel(game, ship)
 
     private val infoPanel = InfoPanel(game)
 
-    // These store functions that each undo the last
-    // upgrade of a system or the reactor.
-    private val systemUpgradeUndos = HashMap<AbstractSystem, ArrayList<UndoFn>>()
-    private val reactorUpgradeUndo = ArrayList<UndoFn>()
+    /**
+     * Count of pending upgrades for [sys] (main or sub), looked up in the
+     * snapshot-shared history on [game]. Used to draw the "undoable" energy
+     * bars in a distinct colour.
+     */
+    private fun systemUpgradeCount(sys: AbstractSystem): Int = if (sys is SubSystem) {
+        val subs = ship.rooms.mapNotNull { it.system as? SubSystem }.sortedBy { it.sortingType }
+        val idx = subs.indexOf(sys)
+        if (idx < 0) 0 else game.subSystemUpgradeHistory[idx]?.size ?: 0
+    } else {
+        val idx = ship.mainSystems.indexOf(sys)
+        if (idx < 0) 0 else game.mainSystemUpgradeHistory[idx]?.size ?: 0
+    }
+
+    private val hasAnyPendingUpgrade: Boolean
+        get() = game.mainSystemUpgradeHistory.values.any { it.isNotEmpty() } ||
+                game.subSystemUpgradeHistory.values.any { it.isNotEmpty() } ||
+                game.reactorUpgradeHistory.isNotEmpty()
 
     private val crewDismissWidget: WidgetContainer = game.uiLoader.load("confirm").mainWidget
     private val crewDismissWidgetPos = Point(0, 0)
@@ -60,8 +91,13 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
     private var crewDismissWidgetButtons: List<Button> = emptyList()
     private val dismissHighlightButtons = ArrayList<Button>()
 
-    // If non-null, this is the crewmember whose name we're changing
+    // If non-null, this is the crewmember whose name we're changing.
     private var renamingCrew: LivingCrew? = null
+
+    // The rename-in-progress text. Lives separately from crew.info.name so a
+    // co-op client can show what the local player is typing without each
+    // keypress racing the snapshot.
+    private var renameBuffer: String = ""
 
     // If true, the drawing code should re-create any buttons it added
     private var updatingButtons = false
@@ -88,10 +124,14 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
         crewDismissWidget.root.updateLayout()
 
         crewDismissWidget.addButtonListener("yes") {
-            // If the crewmember is in the cloning queue, remove them from there.
-            ship.clonebay?.queue?.remove(crewToDismiss!!)
-
-            crewToDismiss!!.removeFromShip()
+            // Route the dismiss through a co-op command, so the host removes
+            // the crew member on the authoritative ship.
+            val crew = crewToDismiss
+            if (crew != null) {
+                val idx = ship.crew.indexOf(crew)
+                if (idx >= 0)
+                    game.submitCommand(Command.DismissCrew(idx))
+            }
             crewToDismiss = null
             updateButtons()
         }
@@ -116,11 +156,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
         if (tab != Tab.EQUIPMENT)
             buttons += TabButton(Tab.EQUIPMENT, ConstPoint(175, -GLOW_WIDTH), ConstPoint(123, 48))
 
-        // Switching tabs away from upgrades commits the system upgrades
-        if (tab != Tab.UPGRADES) {
-            systemUpgradeUndos.clear()
-            reactorUpgradeUndo.clear()
-        }
+        // Upgrade history now lives in InGameState (shared via snapshot) and
+        // clears on jump, so tab-switching no longer commits the upgrades.
 
         // Build the tab-specific buttons up front so they exist before the
         // first updateUI runs - otherwise a co-op client's snapshot rebuild
@@ -220,7 +257,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
         val hoveredButton = buttons.filterIsInstance(UpgradeButton::class.java).firstOrNull { it.hovered }
         val hoveredSystem = hoveredButton?.system
         if (hoveredSystem != null) {
-            val undoablePower = systemUpgradeUndos[hoveredSystem]?.size ?: 0
+            val undoablePower = systemUpgradeCount(hoveredSystem)
             infoPanel.drawDescriptionBoxSystem(hoveredSystem)
             infoPanel.drawSystemPowerBox(g, hoveredSystem.blueprint, hoveredSystem.energyLevels, undoablePower)
         }
@@ -242,7 +279,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
         ) {
             // Grey the button out when there's nothing to undo.
             override val disabled: Boolean
-                get() = systemUpgradeUndos.all { it.value.isEmpty() } && reactorUpgradeUndo.isEmpty()
+                get() = !hasAnyPendingUpgrade
         }
 
         // Main system upgrade buttons.
@@ -332,7 +369,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                     }
 
                     // Figure out the power range that should show as downgrades
-                    val lastNonRefundablePower = ship.purchasedReactorPower - reactorUpgradeUndo.size
+                    val lastNonRefundablePower = ship.purchasedReactorPower - game.reactorUpgradeHistory.size
                     val refundRange = lastNonRefundablePower until ship.purchasedReactorPower
 
                     // Draw the energy bars
@@ -373,9 +410,8 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
 
                 override fun click(button: Int) {
                     if (button == Input.MOUSE_RIGHT_BUTTON) {
-                        val undoLast = reactorUpgradeUndo.lastOrNull() ?: return
-                        reactorUpgradeUndo.remove(undoLast)
-                        undoLast()
+                        if (game.reactorUpgradeHistory.isEmpty()) return
+                        game.submitCommand(Command.UndoReactorUpgrade)
                         downgradeSystemSound.play()
                         return
                     }
@@ -386,27 +422,15 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                     if (ship.purchasedReactorPower >= ship.maxReactorPower)
                         return
 
-                    // Store the price so undos work properly.
-                    val price = currentPrice
-
-                    if (ship.scrap < price) {
+                    if (ship.scrap < currentPrice) {
                         game.shipUI.playInsufficientScrapAnimation()
                         return
                     }
 
-                    // The reactor upgrade goes through a co-op command, which
-                    // runs the actual scrap/power change on the host.
+                    // Routed through a co-op command - the host charges the scrap
+                    // and records the price in the snapshot-shared undo history.
                     game.submitCommand(Command.UpgradeReactor)
                     upgradeSystemSound.play()
-
-                    // Local undo tracking is host/single-player only - the
-                    // client doesn't keep its own staged-upgrade state.
-                    if (game.isSimulated) {
-                        reactorUpgradeUndo += {
-                            ship.scrap += price
-                            ship.purchasedReactorPower--
-                        }
-                    }
                 }
             }
         }
@@ -442,7 +466,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             )
 
             // Figure out the power range that should show as downgrades
-            val undoablePower = systemUpgradeUndos[system]?.size ?: 0
+            val undoablePower = systemUpgradeCount(system)
             val lastNonRefundablePower = system.energyLevels - undoablePower + 1 // Power here is 1-indexed
             val refundRange = lastNonRefundablePower..system.energyLevels
 
@@ -474,28 +498,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
         }
 
         override fun click(button: Int) {
-            if (button == Input.MOUSE_RIGHT_BUTTON) {
-                val undos = systemUpgradeUndos[system] ?: return
-                val undoLast = undos.lastOrNull() ?: return
-                undos.remove(undoLast)
-                undoLast()
-                downgradeSystemSound.play()
-                return
-            }
-
-            if (button != Input.MOUSE_LEFT_BUTTON)
-                return
-
-            val price = upgradePrice ?: return
-
-            if (ship.scrap < price) {
-                game.shipUI.playInsufficientScrapAnimation()
-                return
-            }
-
-            // Find this system's index in the host/client's shared list so
-            // the host applies the upgrade to the matching system.
-            val sys = system!!
+            val sys = system ?: return
             val isSub = sys is SubSystem
             val index = if (isSub) {
                 ship.rooms.mapNotNull { it.system as? SubSystem }
@@ -505,20 +508,27 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
             }
             if (index < 0) return
 
+            if (button == Input.MOUSE_RIGHT_BUTTON) {
+                val historyMap = if (isSub) game.subSystemUpgradeHistory else game.mainSystemUpgradeHistory
+                if (historyMap[index].isNullOrEmpty()) return
+                game.submitCommand(Command.UndoSystemUpgrade(index, isSub))
+                downgradeSystemSound.play()
+                return
+            }
+
+            if (button != Input.MOUSE_LEFT_BUTTON)
+                return
+
+            val price = upgradePrice ?: return
+            if (ship.scrap < price) {
+                game.shipUI.playInsufficientScrapAnimation()
+                return
+            }
+
+            // Routed through a co-op command - the host charges the scrap and
+            // records the upgrade in the snapshot-shared undo history.
             game.submitCommand(Command.UpgradeSystem(index, isSub))
             upgradeSystemSound.play()
-
-            // Local undo tracking is host/single-player only.
-            if (game.isSimulated) {
-                val undos = systemUpgradeUndos.getOrPut(sys) { ArrayList() }
-                undos += {
-                    sys.energyLevels--
-                    ship.scrap += price
-                    updateButtons()
-                }
-                // Replace this button to reflect the upgrade.
-                updateButtons()
-            }
         }
     }
 
@@ -593,7 +603,9 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                     g.colour = Colour.black
                     g.fillRect(boxX + 1, boxY + 1, width - 2, height - 2)
 
-                    val name = crew.info.name
+                    // Display the in-progress buffer, which only commits to the
+                    // crew on Enter (via a co-op command).
+                    val name = renameBuffer
                     val nameWidth = crewMessageFont.getWidth(name) + 2 + 2
                     val nameX = boxX + (width - nameWidth) / 2
                     crewMessageFont.drawString(nameX.f, pos.y + 61f, name, Colour.white)
@@ -635,6 +647,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
                 if (button != Input.MOUSE_LEFT_BUTTON || !nameHover)
                     return
                 renamingCrew = crew
+                renameBuffer = crew.info.name
             }
         }
 
@@ -786,22 +799,28 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
     }
 
     override fun onTextInput(key: Int, c: Char): Boolean {
-        val info = renamingCrew?.info ?: return false
+        val crew = renamingCrew ?: return false
 
         if (key == Input.KEY_BACK) {
-            val endPos = max(0, info.name.length - 1)
-            info.name = info.name.substring(0, endPos)
+            if (renameBuffer.isNotEmpty())
+                renameBuffer = renameBuffer.substring(0, renameBuffer.length - 1)
             return true
         }
 
         if (key == Input.KEY_ENTER) {
+            // Commit the typed name via a co-op command, so the host renames
+            // the crew member on the authoritative ship.
+            val idx = ship.crew.indexOf(crew)
+            if (idx >= 0)
+                game.submitCommand(Command.RenameCrew(idx, renameBuffer))
             renamingCrew = null
+            renameBuffer = ""
             return true
         }
 
         if (c != 0.toChar()) {
-            if (info.name.length < 15)
-                info.name += c
+            if (renameBuffer.length < 15)
+                renameBuffer += c
             return true
         }
 
@@ -809,17 +828,7 @@ class ShipWindow(val game: InGameState, val ship: Ship, initialTab: Tab, private
     }
 
     private fun undoAllSystems() {
-        for (undos in systemUpgradeUndos.values) {
-            for (undo in undos) {
-                undo()
-            }
-        }
-        for (undo in reactorUpgradeUndo) {
-            undo()
-        }
-        systemUpgradeUndos.clear()
-        reactorUpgradeUndo.clear()
-
+        game.submitCommand(Command.UndoAllUpgrades)
         downgradeSystemSound.play()
     }
 

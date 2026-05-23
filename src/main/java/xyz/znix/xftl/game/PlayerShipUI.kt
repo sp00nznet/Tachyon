@@ -1898,7 +1898,10 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             when (val w = prev.currentWindow) {
                 is JumpWindow -> openJumpMap()
                 is SectorMapWindow -> openSectorMap()
-                is ShipWindow -> showShipWindow(w.openTab, force = true)
+                is ShipWindow -> {
+                    showShipWindow(w.openTab, force = true)
+                    (currentWindow as? ShipWindow)?.carryStateFrom(w)
+                }
                 is StoreWindow -> {
                     showStoreWindow()
                     (currentWindow as? StoreWindow)?.let { store ->

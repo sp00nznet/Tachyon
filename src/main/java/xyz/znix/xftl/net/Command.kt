@@ -1,12 +1,21 @@
 package xyz.znix.xftl.net
 
+import xyz.znix.xftl.Blueprint
+import xyz.znix.xftl.Ship
+import xyz.znix.xftl.augments.AugmentBlueprint
+import xyz.znix.xftl.crew.LivingCrew
 import xyz.znix.xftl.game.InGameState
 import xyz.znix.xftl.math.ConstPoint
+import xyz.znix.xftl.systems.Drones
 import xyz.znix.xftl.systems.SelectedTarget
 import xyz.znix.xftl.systems.SubSystem
+import xyz.znix.xftl.weapons.AbstractWeaponBlueprint
 import xyz.znix.xftl.weapons.BeamBlueprint
+import xyz.znix.xftl.weapons.DroneBlueprint
 import xyz.znix.xftl.weapons.IRoomTargetingWeapon
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import kotlin.math.min
 
 /**
  * A single player action on the shared co-op ship.
@@ -222,6 +231,8 @@ sealed class Command {
 
             ship.scrap -= price
             system.energyLevels++
+            // Remember the price so either player can undo this upgrade.
+            game.pushSystemUpgrade(systemIndex, isSubsystem, price)
         }
 
         override fun encode(): ByteArray =
@@ -239,10 +250,161 @@ sealed class Command {
             if (ship.scrap < price) return
             ship.scrap -= price
             ship.purchasedReactorPower++
+            game.pushReactorUpgrade(price)
         }
 
         override fun encode(): ByteArray =
             ByteBuffer.allocate(4).putInt(TYPE_UPGRADE_REACTOR).array()
+    }
+
+    /**
+     * Undo the most recent upgrade for the player ship's [systemIndex]
+     * (main or sub), refunding the scrap.
+     */
+    data class UndoSystemUpgrade(val systemIndex: Int, val isSubsystem: Boolean) : Command() {
+        override fun apply(game: InGameState) {
+            val refund = game.popSystemUpgrade(systemIndex, isSubsystem)
+            if (refund == 0) return
+            val ship = game.player
+            val system = if (isSubsystem) {
+                ship.rooms.mapNotNull { it.system as? SubSystem }
+                    .sortedBy { it.sortingType }.getOrNull(systemIndex)
+            } else {
+                ship.mainSystems.getOrNull(systemIndex)
+            }
+            if (system == null || system.energyLevels <= 1) {
+                // Nothing to revert - restore the price so we don't lose track.
+                game.pushSystemUpgrade(systemIndex, isSubsystem, refund)
+                return
+            }
+            system.energyLevels--
+            ship.scrap += refund
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(12)
+                .putInt(TYPE_UNDO_SYSTEM_UPGRADE)
+                .putInt(systemIndex)
+                .putInt(if (isSubsystem) 1 else 0)
+                .array()
+    }
+
+    /** Undo the most recent reactor upgrade, refunding the scrap. */
+    object UndoReactorUpgrade : Command() {
+        override fun apply(game: InGameState) {
+            val refund = game.popReactorUpgrade()
+            if (refund == 0) return
+            val ship = game.player
+            if (ship.purchasedReactorPower <= 0) {
+                game.pushReactorUpgrade(refund)
+                return
+            }
+            ship.purchasedReactorPower--
+            ship.scrap += refund
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(4).putInt(TYPE_UNDO_REACTOR_UPGRADE).array()
+    }
+
+    /**
+     * Swap or drag-drop a piece of equipment between two slots on the player
+     * ship. [srcKind]/[dstKind] are EQUIP_KIND_* constants. Dropping onto the
+     * sell slot ([EQUIP_KIND_SELL]) destroys the source for half its scrap
+     * cost.
+     */
+    data class SwapEquipment(
+        val srcKind: Int, val srcIndex: Int,
+        val dstKind: Int, val dstIndex: Int,
+    ) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val src = equipmentSlot(ship, srcKind, srcIndex) ?: return
+            val dst = equipmentSlot(ship, dstKind, dstIndex) ?: return
+
+            val srcVal = src.get() ?: return
+            if (!dst.accepts(srcVal)) return
+            val dstVal = dst.get()
+            if (dstVal != null && !src.accepts(dstVal)) return
+
+            dst.set(srcVal)
+            src.set(dstVal)
+            ship.cargoUpdated()
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(20).putInt(TYPE_SWAP_EQUIPMENT)
+                .putInt(srcKind).putInt(srcIndex)
+                .putInt(dstKind).putInt(dstIndex)
+                .array()
+    }
+
+    /** Dismiss the crew member at [crewIndex] from the player ship. */
+    data class DismissCrew(val crewIndex: Int) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val crew = ship.crew.getOrNull(crewIndex) as? LivingCrew ?: return
+            ship.clonebay?.queue?.remove(crew)
+            crew.removeFromShip()
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(8).putInt(TYPE_DISMISS_CREW).putInt(crewIndex).array()
+    }
+
+    /** Rename the crew member at [crewIndex] to [name]. */
+    data class RenameCrew(val crewIndex: Int, val name: String) : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            val crew = ship.crew.getOrNull(crewIndex) as? LivingCrew ?: return
+            // The game's text-input handler caps the length too; clamp here in
+            // case a client sends something longer.
+            crew.info.name = name.take(MAX_CREW_NAME)
+        }
+
+        override fun encode(): ByteArray {
+            val nameBytes = name.toByteArray(StandardCharsets.UTF_8)
+            val buf = ByteBuffer.allocate(12 + nameBytes.size)
+            buf.putInt(TYPE_RENAME_CREW)
+            buf.putInt(crewIndex)
+            buf.putInt(nameBytes.size)
+            buf.put(nameBytes)
+            return buf.array()
+        }
+    }
+
+    /** Undo every pending upgrade in the current session. */
+    object UndoAllUpgrades : Command() {
+        override fun apply(game: InGameState) {
+            val ship = game.player
+            // Main systems.
+            for ((idx, prices) in game.mainSystemUpgradeHistory) {
+                val system = ship.mainSystems.getOrNull(idx) ?: continue
+                while (prices.isNotEmpty() && system.energyLevels > 1) {
+                    system.energyLevels--
+                    ship.scrap += prices.removeAt(prices.size - 1)
+                }
+            }
+            // Subsystems.
+            val subs = ship.rooms.mapNotNull { it.system as? SubSystem }.sortedBy { it.sortingType }
+            for ((idx, prices) in game.subSystemUpgradeHistory) {
+                val system = subs.getOrNull(idx) ?: continue
+                while (prices.isNotEmpty() && system.energyLevels > 1) {
+                    system.energyLevels--
+                    ship.scrap += prices.removeAt(prices.size - 1)
+                }
+            }
+            // Reactor.
+            val reactor = game.reactorUpgradeHistory
+            while (reactor.isNotEmpty() && ship.purchasedReactorPower > 0) {
+                ship.purchasedReactorPower--
+                ship.scrap += reactor.removeAt(reactor.size - 1)
+            }
+            game.clearUpgradeHistory()
+        }
+
+        override fun encode(): ByteArray =
+            ByteBuffer.allocate(4).putInt(TYPE_UNDO_ALL_UPGRADES).array()
     }
 
     /** Jump the ship to the beacon at [beaconIndex] within the current sector. */
@@ -293,6 +455,89 @@ sealed class Command {
         private const val TYPE_JUMP_TO_SECTOR = 9
         private const val TYPE_UPGRADE_SYSTEM = 10
         private const val TYPE_UPGRADE_REACTOR = 11
+        private const val TYPE_UNDO_SYSTEM_UPGRADE = 12
+        private const val TYPE_UNDO_REACTOR_UPGRADE = 13
+        private const val TYPE_UNDO_ALL_UPGRADES = 14
+        private const val TYPE_DISMISS_CREW = 15
+        private const val TYPE_RENAME_CREW = 16
+        private const val TYPE_SWAP_EQUIPMENT = 17
+
+        // Equipment slot kinds, used by SwapEquipment.
+        const val EQUIP_KIND_WEAPON = 0
+        const val EQUIP_KIND_DRONE = 1
+        const val EQUIP_KIND_AUGMENT = 2
+        const val EQUIP_KIND_CARGO = 3
+        const val EQUIP_KIND_SELL = 4
+
+        private const val MAX_CREW_NAME = 15
+        private const val MAX_NAME_BYTES = 64
+
+        /**
+         * Build a Get/Set accessor for the equipment slot identified by
+         * [kind] and [idx] on [ship]. Mirrors the dropBlueprint logic in
+         * ShipEquipmentPanel so SwapEquipment can apply on the host without
+         * needing the UI.
+         */
+        private fun equipmentSlot(ship: Ship, kind: Int, idx: Int): EquipmentSlot? = when (kind) {
+            EQUIP_KIND_WEAPON -> {
+                val hp = ship.hardpoints.getOrNull(idx)
+                if (hp == null) null else object : EquipmentSlot {
+                    override fun get(): Blueprint? = hp.weapon?.type
+                    override fun set(value: Blueprint?) {
+                        hp.weapon = (value as? AbstractWeaponBlueprint)?.buildInstance(ship)
+                    }
+                    override fun accepts(value: Blueprint): Boolean = value is AbstractWeaponBlueprint
+                }
+            }
+            EQUIP_KIND_DRONE -> {
+                val drones = ship.drones
+                if (drones == null || idx !in drones.drones.indices) null
+                else object : EquipmentSlot {
+                    override fun get(): Blueprint? = drones.drones[idx]?.type
+                    override fun set(value: Blueprint?) {
+                        drones.drones[idx]?.instance?.removeInstance()
+                        drones.drones[idx] = (value as? DroneBlueprint)?.let { Drones.DroneInfo(it, null) }
+                    }
+                    override fun accepts(value: Blueprint): Boolean = value is DroneBlueprint
+                }
+            }
+            EQUIP_KIND_AUGMENT -> object : EquipmentSlot {
+                override fun get(): Blueprint? = ship.augments.getOrNull(idx)
+                override fun set(value: Blueprint?) {
+                    val current = ship.augments.getOrNull(idx)
+                    if (current != null) ship.augments.remove(current)
+                    if (value is AugmentBlueprint) {
+                        val insertAt = min(ship.augments.size, idx)
+                        ship.augments.add(insertAt, value)
+                    }
+                }
+                override fun accepts(value: Blueprint): Boolean = value is AugmentBlueprint
+            }
+            EQUIP_KIND_CARGO -> {
+                if (idx !in ship.cargoBlueprints.indices) null
+                else object : EquipmentSlot {
+                    override fun get(): Blueprint? = ship.cargoBlueprints[idx]
+                    override fun set(value: Blueprint?) { ship.cargoBlueprints[idx] = value }
+                    override fun accepts(value: Blueprint): Boolean = true
+                }
+            }
+            EQUIP_KIND_SELL -> object : EquipmentSlot {
+                override fun get(): Blueprint? = null
+                override fun set(value: Blueprint?) {
+                    // Refund half the cost; the source slot is cleared by the
+                    // swap that put us here.
+                    ship.scrap += (value?.cost ?: 0) / 2
+                }
+                override fun accepts(value: Blueprint): Boolean = true
+            }
+            else -> null
+        }
+
+        private interface EquipmentSlot {
+            fun get(): Blueprint?
+            fun set(value: Blueprint?)
+            fun accepts(value: Blueprint): Boolean
+        }
 
         // A sane upper bound on how many crew one command can move.
         private const val MAX_CREW = 1000
@@ -333,6 +578,26 @@ sealed class Command {
                     TYPE_UPGRADE_SYSTEM -> UpgradeSystem(buf.int, buf.int != 0)
 
                     TYPE_UPGRADE_REACTOR -> UpgradeReactor
+
+                    TYPE_UNDO_SYSTEM_UPGRADE -> UndoSystemUpgrade(buf.int, buf.int != 0)
+
+                    TYPE_UNDO_REACTOR_UPGRADE -> UndoReactorUpgrade
+
+                    TYPE_UNDO_ALL_UPGRADES -> UndoAllUpgrades
+
+                    TYPE_DISMISS_CREW -> DismissCrew(buf.int)
+
+                    TYPE_RENAME_CREW -> {
+                        val idx = buf.int
+                        val len = buf.int
+                        if (len < 0 || len > MAX_NAME_BYTES) return null
+                        val nameBytes = ByteArray(len)
+                        buf.get(nameBytes)
+                        RenameCrew(idx, String(nameBytes, StandardCharsets.UTF_8))
+                    }
+
+                    TYPE_SWAP_EQUIPMENT ->
+                        SwapEquipment(buf.int, buf.int, buf.int, buf.int)
 
                     else -> {
                         System.err.println("Co-op: ignoring unknown command type $type")

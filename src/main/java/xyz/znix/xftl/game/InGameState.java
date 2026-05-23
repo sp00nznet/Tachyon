@@ -144,6 +144,14 @@ public class InGameState extends MainGame.GameState {
      */
     private final List<Hotkey> queuedHotkeys = Collections.synchronizedList(new ArrayList<>());
 
+    // Per-system stacks of upgrade prices, so either player can undo their
+    // recent upgrades. Lives on InGameState (rather than ShipWindow) so the
+    // history survives a co-op client's snapshot rebuild, and so an undo
+    // command can refund the right amount on the host. Cleared on jump.
+    private final Map<Integer, List<Integer>> mainSystemUpgradeHistory = new HashMap<>();
+    private final Map<Integer, List<Integer>> subSystemUpgradeHistory = new HashMap<>();
+    private final List<Integer> reactorUpgradeHistory = new ArrayList<>();
+
     public InGameState(MainGame mainGame, GameContent content, String playerShipName, Difficulty difficulty, EditableShip customised) {
         this(mainGame, content);
         this.difficulty = difficulty;
@@ -195,6 +203,27 @@ public class InGameState extends MainGame.GameState {
         isCurrentlyLoadingSave = true;
         loadGameState(root);
         isCurrentlyLoadingSave = false;
+
+        // Load the per-session upgrade history (used for undo). This runs
+        // after loadGameState because setCurrentBeacon inside it would
+        // otherwise clear the freshly-loaded history.
+        mainSystemUpgradeHistory.clear();
+        subSystemUpgradeHistory.clear();
+        reactorUpgradeHistory.clear();
+        Element upgradeHistory = root.getChild("upgradeHistory");
+        if (upgradeHistory != null) {
+            for (Element el : upgradeHistory.getChildren("main")) {
+                int idx = Integer.parseInt(el.getAttributeValue("idx"));
+                mainSystemUpgradeHistory.put(idx, parseInts(el.getAttributeValue("prices")));
+            }
+            for (Element el : upgradeHistory.getChildren("sub")) {
+                int idx = Integer.parseInt(el.getAttributeValue("idx"));
+                subSystemUpgradeHistory.put(idx, parseInts(el.getAttributeValue("prices")));
+            }
+            Element react = upgradeHistory.getChild("reactor");
+            if (react != null)
+                reactorUpgradeHistory.addAll(parseInts(react.getAttributeValue("prices")));
+        }
 
         // This just loads stuff from XML, we don't need to serialise it
         lootPool = new LootPool(blueprintManager, currentBeacon.getSector().getType());
@@ -759,6 +788,9 @@ public class InGameState extends MainGame.GameState {
     }
 
     public void setCurrentBeacon(Beacon currentBeacon) {
+        // Jumping closes the upgrade session, so the next visit starts fresh.
+        clearUpgradeHistory();
+
         if (this.currentBeacon == null || this.currentBeacon.getSector() != currentBeacon.getSector()) {
             SectorType sectorType = currentBeacon.getSector().getType();
             lootPool = new LootPool(blueprintManager, sectorType);
@@ -976,6 +1008,73 @@ public class InGameState extends MainGame.GameState {
         return simulate;
     }
 
+    // Upgrade-history accessors. The maps and list are returned live so the
+    // ShipWindow can read counts directly when drawing.
+
+    public Map<Integer, List<Integer>> getMainSystemUpgradeHistory() {
+        return mainSystemUpgradeHistory;
+    }
+
+    public Map<Integer, List<Integer>> getSubSystemUpgradeHistory() {
+        return subSystemUpgradeHistory;
+    }
+
+    public List<Integer> getReactorUpgradeHistory() {
+        return reactorUpgradeHistory;
+    }
+
+    public void pushSystemUpgrade(int index, boolean subsystem, int price) {
+        Map<Integer, List<Integer>> map =
+                subsystem ? subSystemUpgradeHistory : mainSystemUpgradeHistory;
+        map.computeIfAbsent(index, k -> new ArrayList<>()).add(price);
+    }
+
+    /** Pop the most recent upgrade for [index]/[subsystem], or 0 if none. */
+    public int popSystemUpgrade(int index, boolean subsystem) {
+        Map<Integer, List<Integer>> map =
+                subsystem ? subSystemUpgradeHistory : mainSystemUpgradeHistory;
+        List<Integer> list = map.get(index);
+        if (list == null || list.isEmpty())
+            return 0;
+        return list.remove(list.size() - 1);
+    }
+
+    public void pushReactorUpgrade(int price) {
+        reactorUpgradeHistory.add(price);
+    }
+
+    /** Pop the most recent reactor upgrade, or 0 if none. */
+    public int popReactorUpgrade() {
+        if (reactorUpgradeHistory.isEmpty())
+            return 0;
+        return reactorUpgradeHistory.remove(reactorUpgradeHistory.size() - 1);
+    }
+
+    /** Discard all pending upgrades - called when the player jumps. */
+    public void clearUpgradeHistory() {
+        mainSystemUpgradeHistory.clear();
+        subSystemUpgradeHistory.clear();
+        reactorUpgradeHistory.clear();
+    }
+
+    private static String joinInts(List<Integer> values) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) sb.append(' ');
+            sb.append(values.get(i));
+        }
+        return sb.toString();
+    }
+
+    private static List<Integer> parseInts(String s) {
+        List<Integer> out = new ArrayList<>();
+        if (s == null || s.isEmpty()) return out;
+        for (String tok : s.split(" ")) {
+            if (!tok.isEmpty()) out.add(Integer.parseInt(tok));
+        }
+        return out;
+    }
+
     /**
      * Set whether this game simulates itself. A co-op client sets this false:
      * it renders the host's streamed snapshots and only processes local input.
@@ -1011,6 +1110,30 @@ public class InGameState extends MainGame.GameState {
         root.setAttribute("enableAE", Boolean.toString(enableAdvancedEdition));
         root.setAttribute("difficulty", difficulty.name());
         root.setAttribute("paused", Boolean.toString(paused));
+
+        // Serialise the per-session upgrade history so a co-op client can show
+        // its undo bars and right-click to undo upgrades made by either player.
+        Element upgradeHistory = new Element("upgradeHistory");
+        for (Map.Entry<Integer, List<Integer>> e : mainSystemUpgradeHistory.entrySet()) {
+            if (e.getValue().isEmpty()) continue;
+            Element el = new Element("main");
+            el.setAttribute("idx", e.getKey().toString());
+            el.setAttribute("prices", joinInts(e.getValue()));
+            upgradeHistory.addContent(el);
+        }
+        for (Map.Entry<Integer, List<Integer>> e : subSystemUpgradeHistory.entrySet()) {
+            if (e.getValue().isEmpty()) continue;
+            Element el = new Element("sub");
+            el.setAttribute("idx", e.getKey().toString());
+            el.setAttribute("prices", joinInts(e.getValue()));
+            upgradeHistory.addContent(el);
+        }
+        if (!reactorUpgradeHistory.isEmpty()) {
+            Element el = new Element("reactor");
+            el.setAttribute("prices", joinInts(reactorUpgradeHistory));
+            upgradeHistory.addContent(el);
+        }
+        root.addContent(upgradeHistory);
 
         ObjectRefs refs = new ObjectRefs();
         Sector sector = currentBeacon.getSector();

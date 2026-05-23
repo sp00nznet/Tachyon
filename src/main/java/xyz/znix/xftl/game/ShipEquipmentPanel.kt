@@ -7,6 +7,7 @@ import xyz.znix.xftl.augments.AugmentBlueprint
 import xyz.znix.xftl.f
 import xyz.znix.xftl.math.ConstPoint
 import xyz.znix.xftl.math.IPoint
+import xyz.znix.xftl.net.Command
 import xyz.znix.xftl.rendering.Graphics
 import xyz.znix.xftl.systems.Drones
 import xyz.znix.xftl.ui.ImageView
@@ -336,116 +337,45 @@ class ShipEquipmentPanel(private val game: InGameState, val ship: Ship) {
         drag.dragPosition = null
         draggingBlueprint = null
 
-        data class SlotAccess(
-            val get: () -> Blueprint?,
-            val set: (Blueprint?) -> Unit
-        )
-
-        fun getAccess(target: Button): SlotAccess? {
-            // Check the weapons
-            for ((i, button) in weaponButtons.withIndex()) {
-                if (button != target)
-                    continue
-
-                return SlotAccess(
-                    { ship.hardpoints[i].weapon?.type },
-                    { ship.hardpoints[i].weapon = (it as? AbstractWeaponBlueprint)?.buildInstance(ship) }
-                )
-            }
-
-            // Check the drone system
-            for ((i, button) in droneButtons.withIndex()) {
-                if (button != target)
-                    continue
-
-                val drones = ship.drones ?: break
-
-                return SlotAccess(
-                    { drones.drones[i]?.type },
-                    { drone ->
-                        // If the current slot contains an already-deployed drone, get rid of it.
-                        drones.drones[i]?.instance?.removeInstance()
-
-                        drones.drones[i] = drone?.let { Drones.DroneInfo(it as DroneBlueprint, null) }
-                    }
-                )
-            }
-
-            // Check the augments
-            for ((i, button) in augmentButtons.withIndex()) {
-                if (button != target)
-                    continue
-
-                // Grab the augment here, in case the ordering changes
-                val aug = ship.augments.getOrNull(i)
-
-                return SlotAccess(
-                    { aug },
-                    {
-                        require(it is AugmentBlueprint?)
-                        if (aug != null) {
-                            require(ship.augments.remove(aug)) { "Augment '${aug.name}' disappeared while dragging!" }
-                        }
-                        if (it != null) {
-                            val index = min(ship.augments.size, i)
-                            ship.augments.add(index, it)
-                        }
-                    }
-                )
-            }
-
-            // Check the cargo bay
-            for ((i, button) in cargoButtons.withIndex()) {
-                if (button != target)
-                    continue
-
-                return SlotAccess(
-                    { ship.cargoBlueprints[i] },
-                    { ship.cargoBlueprints[i] = it }
-                )
-            }
-
-            // Check the sell button
-            if (target == sellButton) {
-                return SlotAccess({ null }) {
-                    // Give the player scrap for the item
-                    ship.scrap += (it?.cost ?: 0) / 2
-
-                    // Do nothing with it, thus destroying it.
-
-                    sellSound.play()
-                }
-            }
-
-            return null
-        }
-
-        // Find the blueprint the user is trying to drop the item into
         val hovered = buttons.firstOrNull { it.hovered } ?: return
 
-        // Get access to where this blueprint is being dragged to and from
-        val src = getAccess(drag) ?: return
-        val dst = getAccess(hovered) ?: return
+        // Identify which equipment slots the source and destination buttons
+        // refer to, so the swap can travel as a co-op command.
+        val srcSlot = slotIdOf(drag) ?: return
+        val dstSlot = slotIdOf(hovered) ?: return
 
-        // Make sure something crazy hasn't happened
-        require(drag.blueprint == src.get())
-
-        // Check if the blueprint will fit - the sell button is the exception
-        // here, you can sell anything you can drag.
-        if (hovered is Buttons.DragDropBlueprintButton && !hovered.compatible(drag.blueprint!!))
+        // Compatibility - same checks the old direct-swap code did.
+        val draggedBlueprint = drag.blueprint ?: return
+        if (hovered is Buttons.DragDropBlueprintButton && !hovered.compatible(draggedBlueprint))
             return
 
-        // If the user drops one blueprint onto another, they swap.
-        // Make sure that'll work.
-        val replacing = dst.get()
-        if (replacing != null && !drag.compatible(replacing))
-            return
+        // Routed through a co-op command - the host performs the swap on the
+        // authoritative ship and streams the result back.
+        game.submitCommand(
+            Command.SwapEquipment(srcSlot.first, srcSlot.second, dstSlot.first, dstSlot.second)
+        )
 
-        // Swap them
-        dst.set(drag.blueprint)
-        src.set(replacing)
+        // Local sound feedback for sells.
+        if (dstSlot.first == Command.EQUIP_KIND_SELL)
+            sellSound.play()
+    }
 
-        ship.cargoUpdated()
+    /** The (kind, index) slot a draggable button targets, mirroring SwapEquipment.apply. */
+    private fun slotIdOf(target: Button): Pair<Int, Int>? {
+        for ((i, button) in weaponButtons.withIndex()) {
+            if (button == target) return Command.EQUIP_KIND_WEAPON to i
+        }
+        for ((i, button) in droneButtons.withIndex()) {
+            if (button == target) return Command.EQUIP_KIND_DRONE to i
+        }
+        for ((i, button) in augmentButtons.withIndex()) {
+            if (button == target) return Command.EQUIP_KIND_AUGMENT to i
+        }
+        for ((i, button) in cargoButtons.withIndex()) {
+            if (button == target) return Command.EQUIP_KIND_CARGO to i
+        }
+        if (target == sellButton) return Command.EQUIP_KIND_SELL to 0
+        return null
     }
 
     class SellDropBox private constructor(
