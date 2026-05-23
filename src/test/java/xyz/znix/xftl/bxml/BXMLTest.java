@@ -6,6 +6,8 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Assume;
+import org.junit.Before;
 import xyz.znix.xftl.VanillaDatafile;
 
 import java.io.ByteArrayInputStream;
@@ -14,7 +16,22 @@ import java.io.IOException;
 import java.util.List;
 
 public class BXMLTest {
-    private final VanillaDatafile df = VanillaDatafile.createWithDefaultPath();
+    // ftl.dat is required to run these tests. When the runner doesn'''t
+    // have a copy configured (typical for CI), skip the tests gracefully via
+    // JUnit Assume so the report shows them as skipped (with a reason), not
+    // failed. To enable them, point MainGame at a real ftl.dat by setting
+    // env var XFTL_DATAFILE or system property -Dxftl.datafile-path.
+    private VanillaDatafile df;
+
+    @Before
+    public void setUp() {
+        try {
+            df = VanillaDatafile.createWithDefaultPath();
+        } catch (IllegalStateException e) {
+            Assume.assumeNoException(
+                "BXMLTest skipped: set XFTL_DATAFILE or -Dxftl.datafile-path to enable", e);
+        }
+    }
 
     @Test
     public void verifyKestral() {
