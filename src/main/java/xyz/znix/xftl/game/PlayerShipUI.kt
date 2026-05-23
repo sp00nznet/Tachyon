@@ -1845,6 +1845,13 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             return
         }
 
+        // Carry the cached window size so restored windows can position
+        // themselves immediately. Otherwise buttons sit at (0,0) for the
+        // first updateUI of every snapshot rebuild, hover misses, and
+        // hover-driven info panels flicker once per snapshot.
+        width = prev.width
+        height = prev.height
+
         crewSelectionRectangle = prev.crewSelectionRectangle
 
         // Match crew by their index in the ship's crew list, since the crew
@@ -1911,6 +1918,20 @@ class PlayerShipUI(val ship: Ship, private val game: InGameState) {
             is PauseWindow -> showPauseWindow()
             else -> {}
         }
+
+        // Centre the restored windows now, so their buttons have correct
+        // windowOffset for the very first updateUI hit-test of this
+        // snapshot - otherwise hover misses and info panels flicker.
+        currentWindow?.let { centreWindow(it) }
+        pauseWindow?.let { centreWindow(it) }
+    }
+
+    /** Position a window centred on the cached game-container size. */
+    private fun centreWindow(window: Window) {
+        window.position = window.windowCentreOffset + ConstPoint(
+            (width - window.size.x) / 2,
+            (height - window.size.y) / 2
+        )
     }
 
     /** Close the jump map or sector map if either is open. */
