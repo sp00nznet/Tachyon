@@ -57,6 +57,8 @@ dependencies {
     implementation("org.lwjgl", "lwjgl-glfw")
     implementation("org.lwjgl", "lwjgl-openal")
     implementation("org.lwjgl", "lwjgl-opengl")
+    // Native file-open dialog (used to point Tachyon at ftl.dat manually).
+    implementation("org.lwjgl", "lwjgl-tinyfd")
 
     // Include all the platform-specific libraries, so our fatJar can run
     // on any supported platform.
@@ -65,6 +67,7 @@ dependencies {
         runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = platform)
         runtimeOnly("org.lwjgl", "lwjgl-openal", classifier = platform)
         runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = platform)
+        runtimeOnly("org.lwjgl", "lwjgl-tinyfd", classifier = platform)
     }
 }
 
@@ -117,4 +120,45 @@ val fatJar by tasks.registering(Jar::class) {
             exclude("META-INF/*.RSA")
         }
     })
+}
+
+/**
+ * Build a runnable Windows app image: build/dist/Tachyon/Tachyon.exe plus a
+ * trimmed-down JRE alongside it. The user double-clicks Tachyon.exe - no
+ * separate Java install required. jpackage ships with JDK 14+; the task
+ * only works when run on Windows (jpackage cross-packaging isn't supported).
+ */
+val packageWindows by tasks.registering(Exec::class) {
+    group = "distribution"
+    description = "Build a standalone Tachyon.exe + bundled JRE in build/dist/Tachyon."
+    dependsOn(fatJar)
+
+    val inputDir = layout.buildDirectory.dir("libs")
+    val outputDir = layout.buildDirectory.dir("dist")
+
+    doFirst {
+        // jpackage refuses to write into an existing output directory.
+        val existing = outputDir.get().asFile.resolve("Tachyon")
+        if (existing.exists()) existing.deleteRecursively()
+        outputDir.get().asFile.mkdirs()
+    }
+
+    commandLine(
+        "jpackage",
+        "--type", "app-image",
+        "--input", inputDir.get().asFile.absolutePath,
+        "--main-jar", "XFTL-complete.jar",
+        "--main-class", application.mainClass.get(),
+        "--name", "Tachyon",
+        "--dest", outputDir.get().asFile.absolutePath,
+        // Hide the console window so double-clicking Tachyon.exe just opens
+        // the game (--win-console would keep a black box around for stdout).
+    )
+
+    doLast {
+        val exe = outputDir.get().asFile.resolve("Tachyon/Tachyon.exe")
+        if (exe.exists()) {
+            logger.lifecycle("Built ${exe.absolutePath}")
+        }
+    }
 }

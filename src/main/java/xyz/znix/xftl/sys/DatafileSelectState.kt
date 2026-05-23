@@ -1,5 +1,6 @@
 package xyz.znix.xftl.sys
 
+import org.lwjgl.util.tinyfd.TinyFileDialogs
 import xyz.znix.xftl.SILFontLoader
 import xyz.znix.xftl.Translator
 import xyz.znix.xftl.f
@@ -25,6 +26,11 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
     private val optionHeight = 25
 
     private var hoveredOption: Int? = null
+
+    // The Browse... button below the auto-detected options.
+    private val browseLabel = "Browse..."
+    private var browseY: Int = 0
+    private var browseHovered: Boolean = false
 
     private lateinit var descriptionLines: List<String>
 
@@ -119,25 +125,42 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
         hoveredOption = null
         optionBaseY = y
         optionWidth = container.width - optionX - 50
-        for ((index, opt) in options.withIndex()) {
-            val optY = getOptionY(index)
 
-            val hover = input.mouseX in optionX..optionX + optionWidth
-                    && input.mouseY in optY..optY + optionHeight
-            if (hover) {
-                hoveredOption = index
+        if (options.isEmpty()) {
+            font.drawString(70f, y.f, notFound, Colour.black)
+        } else {
+            for ((index, opt) in options.withIndex()) {
+                val optY = getOptionY(index)
+
+                val hover = input.mouseX in optionX..optionX + optionWidth
+                        && input.mouseY in optY..optY + optionHeight
+                if (hover) {
+                    hoveredOption = index
+                }
+
+                g.colour = when (hover) {
+                    true -> Colour.white
+                    false -> Colour.lightGray
+                }
+                g.fillRect(optionX, optY, optionWidth, optionHeight)
+                g.colour = Colour.black
+                g.drawRect(optionX, optY, optionWidth - 1, optionHeight - 1)
+
+                font.drawString(optionX + 5f, optY + 18f, opt.toString(), Colour.black)
             }
-
-            g.colour = when (hover) {
-                true -> Colour.white
-                false -> Colour.lightGray
-            }
-            g.fillRect(optionX, optY, optionWidth, optionHeight)
-            g.colour = Colour.black
-            g.drawRect(optionX, optY, optionWidth - 1, optionHeight - 1)
-
-            font.drawString(optionX + 5f, optY + 18f, opt.toString(), Colour.black)
         }
+
+        // Browse... button - always shown, in case auto-detection missed the
+        // install or the user wants to point at a different copy.
+        browseY = optionBaseY + 30 * options.size.coerceAtLeast(1) + 10
+        val browseWidth = 140
+        browseHovered = input.mouseX in optionX..optionX + browseWidth
+                && input.mouseY in browseY..browseY + optionHeight
+        g.colour = if (browseHovered) Colour.white else Colour.lightGray
+        g.fillRect(optionX, browseY, browseWidth, optionHeight)
+        g.colour = Colour.black
+        g.drawRect(optionX, browseY, browseWidth - 1, optionHeight - 1)
+        font.drawString(optionX + 12f, browseY + 18f, browseLabel, Colour.black)
     }
 
     override fun mouseClicked(button: Int, x: Int, y: Int, clickCount: Int) {
@@ -145,6 +168,21 @@ class DatafileSelectState(private val game: MainGame) : MainGame.GameState() {
             return
         if (clickCount != 1)
             return
+
+        if (browseHovered) {
+            val picked = TinyFileDialogs.tinyfd_openFileDialog(
+                "Pick ftl.dat",
+                "",
+                null, // no filter list - some installs have ftl.dat at different layouts
+                "FTL data file (ftl.dat)",
+                false,
+            )
+            if (picked != null) {
+                Files.writeString(PlatformSpecific.INSTANCE.ftlDatPathFile, picked)
+                game.switchToShipSelect()
+            }
+            return
+        }
 
         val hovered = hoveredOption ?: return
         val selected = options[hovered].toString()

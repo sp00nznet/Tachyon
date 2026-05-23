@@ -27,6 +27,20 @@ The build is cross-platform — Linux, Windows and macOS hosts all produce the
 same jars. The fat jar bundles every platform's LWJGL natives, so it can be
 copied to another OS and run there with just a JDK installed.
 
+### Standalone Windows .exe
+
+For users without a JDK installed, package the game as a self-contained
+Windows application with `jpackage` (which ships in JDK 14+):
+
+```sh
+./gradlew packageWindows
+# -> build/dist/Tachyon/Tachyon.exe  (plus a runtime/ folder, ~180 MB total)
+```
+
+Zip up `build/dist/Tachyon/` and ship it — the user extracts, double-clicks
+`Tachyon.exe`, and runs the game without ever installing Java. (jpackage
+can only target the host OS, so produce the Windows build on Windows.)
+
 ## Running
 
 ```sh
@@ -40,9 +54,12 @@ java -jar build/libs/XFTL-complete.jar
 ### Pointing Tachyon at `ftl.dat`
 
 On first launch the engine tries to auto-detect FTL via Steam library folders
-(`libraryfolders.vdf`) and the standard Epic install location. If your `ftl.dat`
-sits somewhere it can't find — for example directly in the FTL install folder
-instead of a `data/` subfolder — point it there explicitly:
+(`libraryfolders.vdf`) and the standard Epic install location. If it can't
+find your install you get a picker screen — auto-detected paths plus a
+**Browse…** button that opens a native file dialog so you can point at
+`ftl.dat` directly.
+
+You can also tell the engine where to look up front:
 
 ```sh
 # Environment variable

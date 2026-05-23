@@ -70,14 +70,25 @@ object FTLFinder {
                 continue
 
             val steamDir = Path.of(matcher.group(1))
-            val ftlDat = when (Platform.get()) {
-                Platform.MACOSX -> steamDir.resolve("steamapps/common/FTL Faster Than Light/FTL.app/Contents/Resources/ftl.dat")
-                else -> steamDir.resolve("steamapps/common/FTL Faster Than Light/data/ftl.dat")
+            // FTL on Steam has lived under several layouts over the years -
+            // try them all rather than missing valid installs.
+            val candidates = when (Platform.get()) {
+                Platform.MACOSX -> listOf(
+                    steamDir.resolve("steamapps/common/FTL Faster Than Light/FTL.app/Contents/Resources/ftl.dat"),
+                )
+                else -> listOf(
+                    // Current Windows / Linux Steam install layout.
+                    steamDir.resolve("steamapps/common/FTL Faster Than Light/ftl.dat"),
+                    // Older / cross-platform layout with a data/ subfolder.
+                    steamDir.resolve("steamapps/common/FTL Faster Than Light/data/ftl.dat"),
+                )
             }
-            if (!Files.isRegularFile(ftlDat))
-                continue
-
-            result.add(ftlDat)
+            for (ftlDat in candidates) {
+                if (Files.isRegularFile(ftlDat)) {
+                    result.add(ftlDat)
+                    break
+                }
+            }
         }
 
         return result

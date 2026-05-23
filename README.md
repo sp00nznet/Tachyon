@@ -36,10 +36,18 @@ Need **JDK 17+** and a copy of FTL.
 ./gradlew run
 ```
 
-On first launch Tachyon auto-detects FTL through the Steam library folders. If
-it can't find `ftl.dat`, pick it in the in-game selection screen — or for the
-full reference (fat jar, env vars, OS-specific save paths) see
-[`doc/BUILDING.md`](doc/BUILDING.md).
+Or, on Windows, build a standalone double-clickable `Tachyon.exe` that bundles
+its own JRE so end users don't have to install Java:
+
+```sh
+./gradlew packageWindows
+# -> build/dist/Tachyon/Tachyon.exe  (about 180 MB with the bundled runtime)
+```
+
+On first launch Tachyon auto-detects FTL via Steam library folders. If it
+can't find `ftl.dat`, you get a picker screen with detected installs plus a
+**Browse…** button that opens a native file dialog. Full reference (fat jar,
+env vars, OS-specific save paths): [`doc/BUILDING.md`](doc/BUILDING.md).
 
 ## Play co-op
 
