@@ -117,13 +117,14 @@ upstream.
 
 ## Continuous integration
 
-[`.gitlab-ci.yml`](../.gitlab-ci.yml) drives a four-stage pipeline on the
-`buildforever.cloud` GitLab instance — *build → test → publish:fatjar →
-deploy:windows*. The publish stage uploads `build/libs/XFTL-complete.jar` as a
-`tachyon-<short-sha>` artifact; the deploy stage SMB-pushes it to
-`\\$SMB_HOST\releases\Tachyon\<branch-or-tag>\` on master, tags and manual web
-triggers. The pipeline expects a Windows shell runner tagged
-`windows`, `win10`, `shell` with JDK 17 installed machine-wide.
+[`.gitlab-ci.yml`](../.gitlab-ci.yml) drives a four-stage pipeline —
+*build → test → publish:fatjar → deploy:windows*. The publish stage uploads
+`build/libs/XFTL-complete.jar` as a `tachyon-<short-sha>` artifact; the
+optional deploy stage SMB-pushes it to
+`\\$SMB_HOST\$SMB_SHARE\Tachyon\<branch-or-tag>\` on master, tags and manual
+web triggers. The pipeline expects a Windows shell runner tagged
+`windows`, `win10`, `shell` with JDK 17 installed machine-wide. Drop the
+`deploy:windows` job and you can run the rest on any JDK 17 Linux image.
 
 ## Pulling upstream changes
 
