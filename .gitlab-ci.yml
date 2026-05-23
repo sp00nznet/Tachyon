@@ -1,0 +1,137 @@
+# ============================================================================
+#  Tachyon — GitLab CI/CD  (buildforever.cloud)
+# ============================================================================
+#  Tachyon is a Kotlin/Java/LWJGL game built with Gradle. The build itself is
+#  cross-platform, but this pipeline targets the same Windows shell runners
+#  that the futureburn project uses, so the SMB-share deploy job below can run.
+#
+#  ── One-time runner setup (on the GitLab server side) ──────────────────────
+#   1. A Windows 10/11 or Windows Server machine.
+#   2. Install JDK 17 MACHINE-WIDE — a per-user install puts java on *your*
+#      PATH but not on the gitlab-runner service account's PATH:
+#        winget install EclipseAdoptium.Temurin.17.JDK --scope machine
+#      (or grab the installer from https://adoptium.net/temurin/releases/ —
+#       any JDK 17 will do, Temurin is just the easy default.)
+#   3. Set JAVA_HOME machine-wide too, pointing at the install (e.g.
+#      C:\Program Files\Eclipse Adoptium\jdk-17.x.x-hotspot), and add
+#      %JAVA_HOME%\bin to the system PATH.
+#   4. Restart the runner so the new PATH takes effect in the service:
+#        Restart-Service gitlab-runner
+#   5. Install gitlab-runner and register it with the shell executor:
+#        gitlab-runner register --url https://buildforever.cloud/ `
+#          --executor shell --shell pwsh
+#   6. Tag that runner `windows`, `win10`, `shell` (in the runner's settings
+#      on GitLab) so the jobs below land on it.
+#
+#  Until a runner carrying all three tags exists, pipelines stay "pending" —
+#  that's expected, not a failure.
+# ============================================================================
+
+stages:
+  - build
+  - test
+  - publish
+  - deploy
+
+variables:
+  # Gradle picks these up automatically. --no-daemon keeps each job from
+  # leaving a stray Gradle daemon process on the runner.
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.welcome=never"
+
+# Every job runs on the Windows shell runner.
+# Multiple tags are ANDed — the runner must carry all three.
+default:
+  tags:
+    - windows
+    - win10
+    - shell
+
+# Share the downloaded Gradle distribution and the cached dependencies
+# across jobs in the same pipeline, so the test and publish stages don't
+# re-download what build just fetched.
+.gradle_cache: &gradle_cache
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .gradle/caches/
+      - .gradle/wrapper/
+
+# ── build ───────────────────────────────────────────────────────────────────
+# Does the whole project still compile? Java + Kotlin sources, no tests.
+build:
+  stage: build
+  <<: *gradle_cache
+  script:
+    - .\gradlew.bat --version
+    - .\gradlew.bat --no-daemon compileJava compileKotlin
+
+# ── test ────────────────────────────────────────────────────────────────────
+# Run the JUnit suite. Tests that need ftl.dat use the FakeDatafile testkit,
+# so the runner doesn't need a real FTL install.
+test:
+  stage: test
+  <<: *gradle_cache
+  script:
+    - .\gradlew.bat --no-daemon test
+  artifacts:
+    when: always
+    paths:
+      - build/reports/tests/
+      - build/test-results/
+    reports:
+      junit: build/test-results/test/TEST-*.xml
+    expire_in: 1 week
+
+# ── publish ─────────────────────────────────────────────────────────────────
+# Build the fat jar — the single-file Tachyon distribution. The fatJar task
+# bundles every platform's LWJGL natives and all dependencies, so the result
+# runs on any machine with a JDK 17 just by `java -jar`.
+publish:fatjar:
+  stage: publish
+  <<: *gradle_cache
+  script:
+    - .\gradlew.bat --no-daemon fatJar
+  artifacts:
+    name: "tachyon-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - build/libs/XFTL-complete.jar
+    expire_in: 30 days
+
+# ── deploy ──────────────────────────────────────────────────────────────────
+# Drop the fat jar onto the `releases` SMB share on beta — laid out as
+# <project>/<ref>/, so:
+#     \\$SMB_HOST\releases\tachyon\main\XFTL-complete.jar
+# Every push to main overwrites the main/ slot; future git tags land in
+# their own subdir (e.g. .../tachyon/v0.1.0/).
+#
+# Same four CI/CD variables that futureburn uses — set them on the project
+# or group (see scripts/CI_SMB_USAGE.md in the buildforever repo):
+#     SMB_HOST       192.168.100.23
+#     SMB_SHARE      releases
+#     SMB_USER       gitlab-ci
+#     SMB_PASSWORD   (masked; rotated via setup_gitlab_ci_smb_user.py)
+#
+# New-PSDrive -Credential keeps the password off the process command line.
+deploy:windows:
+  stage: deploy
+  needs:
+    - publish:fatjar
+  variables:
+    DEST_SUBDIR: '$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG'
+  script:
+    - |
+      $cred = New-Object System.Management.Automation.PSCredential(
+                "$env:SMB_USER",
+                (ConvertTo-SecureString "$env:SMB_PASSWORD" -AsPlainText -Force))
+      New-PSDrive -Name R -PSProvider FileSystem `
+                  -Root "\\$env:SMB_HOST\$env:SMB_SHARE" `
+                  -Credential $cred -ErrorAction Stop | Out-Null
+      $target = "R:\$env:DEST_SUBDIR"
+      New-Item -ItemType Directory -Force -Path $target | Out-Null
+      Copy-Item -Force .\build\libs\XFTL-complete.jar "$target\"
+      Remove-PSDrive -Name R
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "master"
